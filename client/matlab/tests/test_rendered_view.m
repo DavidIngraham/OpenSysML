@@ -62,4 +62,10 @@ function test_rendered_view()
     empty = opensysml.RenderedView(struct());
     assert(isempty(empty.canvas));
     assert(isempty(empty.nodes));
+    assert(isempty(empty.artifact));
+    present = opensysml.RenderedView(struct('artifact', struct('form', 'dot', 'text', ''), ...
+        'nodes', struct('verdict', 'fail')));
+    assert(strcmp(present.artifact.form, 'dot'));
+    assert(isempty(present.artifact.text));
+    assert(strcmp(present.nodes.verdict, 'fail'));
 end

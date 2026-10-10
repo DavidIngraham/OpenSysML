@@ -2,6 +2,7 @@ package opensysml
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/Open-MBEE/OpenSysML/api/proto"
 )
@@ -10,7 +11,8 @@ import (
 type RenderViewOption func(*renderViewOptions)
 
 type renderViewOptions struct {
-	ports string
+	ports    string
+	artifact *RenderArtifactOptions
 }
 
 // WithFullPorts includes ports whether or not a connector uses them.
@@ -18,19 +20,44 @@ func WithFullPorts() RenderViewOption {
 	return func(options *renderViewOptions) { options.ports = "full" }
 }
 
+// RenderArtifactOptions selects a formatted artifact; Form is required.
+type RenderArtifactOptions struct {
+	Form         string
+	Palette      string
+	DrawingStyle string
+	Overlay      string
+	Direction    string
+	Unplaced     string
+	Width        int32
+	LinkTemplate string
+}
+
+// WithRenderArtifact requests formatted text alongside the diagram data.
+func WithRenderArtifact(artifact RenderArtifactOptions) RenderViewOption {
+	return func(options *renderViewOptions) { options.artifact = &artifact }
+}
+
+// RenderArtifact is formatted UTF-8 diagram or table source.
+type RenderArtifact struct {
+	Form      string
+	MediaType string
+	Text      string
+}
+
 // RenderedView is the lossless diagram data returned for a declared or
 // targeted pseudo-view.
 type RenderedView struct {
-	View    string
-	Kind    string
-	Stated  string
-	Nodes   []RenderNode
-	Edges   []RenderEdge
-	Columns []string
-	Rows    []RenderRow
-	Canvas  *RenderCanvas
-	Notes   []RenderNote
-	Notices []string
+	View     string
+	Kind     string
+	Stated   string
+	Nodes    []RenderNode
+	Edges    []RenderEdge
+	Columns  []string
+	Rows     []RenderRow
+	Canvas   *RenderCanvas
+	Notes    []RenderNote
+	Notices  []string
+	Artifact *RenderArtifact
 }
 
 // RenderNode is a view node with optional geometry and style.
@@ -44,6 +71,7 @@ type RenderNode struct {
 	Text            string
 	StandIn         bool
 	Parent          string
+	Verdict         string
 	Ports           []RenderPort
 	Origin          *Span
 	Geometry        *RenderGeometry
@@ -141,13 +169,24 @@ func (c *client) RenderView(ctx context.Context, model *Model, viewName string, 
 	for _, opt := range opts {
 		opt(&options)
 	}
+	var artifact *pb.RenderArtifactOptions
+	if a := options.artifact; a != nil {
+		if err := c.requireCapabilities(ctx, CapabilityRenderViewArtifact); err != nil {
+			return nil, err
+		}
+		artifact = &pb.RenderArtifactOptions{Form: a.Form, Palette: a.Palette, DrawingStyle: a.DrawingStyle, Overlay: a.Overlay, Direction: a.Direction, Unplaced: a.Unplaced, Width: a.Width, LinkTemplate: a.LinkTemplate}
+	}
 	response, err := c.caller.renderView(ctx, &pb.RenderViewRequest{
 		ModelHash: hash,
 		View:      viewName,
 		Ports:     options.ports,
+		Artifact:  artifact,
 	})
 	if err != nil {
 		return nil, err
+	}
+	if artifact != nil && response.Artifact == nil {
+		return nil, fmt.Errorf("RenderView response omitted the requested artifact")
 	}
 	return renderedViewFromProto(response), nil
 }
@@ -157,11 +196,14 @@ func renderedViewFromProto(response *pb.RenderViewResponse) *RenderedView {
 		View: response.View, Kind: response.Kind, Stated: response.Stated,
 		Columns: append([]string(nil), response.Columns...), Notices: append([]string(nil), response.Notices...),
 	}
+	if a := response.Artifact; a != nil {
+		result.Artifact = &RenderArtifact{Form: a.Form, MediaType: a.MediaType, Text: a.Text}
+	}
 	for _, node := range response.Nodes {
 		converted := RenderNode{
 			ID: node.Id, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized,
 			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn, Parent: node.Parent,
-			Origin: renderSpanFromProto(node.Origin),
+			Origin: renderSpanFromProto(node.Origin), Verdict: node.Verdict,
 		}
 		for _, port := range node.Ports {
 			converted.Ports = append(converted.Ports, RenderPort{

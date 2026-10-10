@@ -489,3 +489,11 @@ include("extended_client.jl")
 include("authoring.jl")
 include("binary.jl")
 include("typed_generation.jl")
+
+@testset "artifact presence and verdicts" begin
+    @test OpenSysML.rendered_view_result(Dict{String,Any}()).artifact === nothing
+    result = OpenSysML.rendered_view_result(Dict{String,Any}("artifact" => Dict("form"=>"dot", "text"=>""), "nodes"=>[Dict("verdict"=>"fail")]))
+    @test result.artifact isa RenderArtifact
+    @test result.artifact.text == ""
+    @test result.nodes[1].verdict == "fail"
+end

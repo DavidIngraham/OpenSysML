@@ -1,3 +1,4 @@
+import type { RenderViewOptions } from "./render-view.js";
 // The ergonomic surface: a loaded model, its symbols, and the objects it
 // instantiates. Everything here is built on Connection.rpc.
 
@@ -427,7 +428,7 @@ export class Model {
   /** Renders a named view or targeted pseudo-view as diagram data. */
   renderView(
     viewName: string,
-    options: { ports?: "minimal" | "full" } = {},
+    options: RenderViewOptions = {},
   ): Promise<RenderedView> {
     return this.connection.renderView(this.hash, viewName, options);
   }

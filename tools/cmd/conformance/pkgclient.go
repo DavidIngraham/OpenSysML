@@ -732,6 +732,9 @@ func (c *pkgClient) renderView(ctx context.Context, request protoreflect.Message
 	if req.Ports == "full" {
 		options = append(options, opensysml.WithFullPorts())
 	}
+	if a := req.Artifact; a != nil {
+		options = append(options, opensysml.WithRenderArtifact(opensysml.RenderArtifactOptions{Form: a.Form, Palette: a.Palette, DrawingStyle: a.DrawingStyle, Overlay: a.Overlay, Direction: a.Direction, Unplaced: a.Unplaced, Width: a.Width, LinkTemplate: a.LinkTemplate}))
+	}
 	rendered, err := c.api.RenderView(ctx, c.model(req.ModelHash), req.View, options...)
 	if err != nil {
 		return nil, apiError(err)
@@ -739,6 +742,9 @@ func (c *pkgClient) renderView(ctx context.Context, request protoreflect.Message
 	response := &pb.RenderViewResponse{
 		View: rendered.View, Kind: rendered.Kind, Stated: rendered.Stated,
 		Columns: rendered.Columns, Notices: rendered.Notices,
+	}
+	if a := rendered.Artifact; a != nil {
+		response.Artifact = &pb.RenderArtifact{Form: a.Form, MediaType: a.MediaType, Text: a.Text}
 	}
 	if rendered.Canvas != nil {
 		response.Canvas = &pb.RenderCanvas{
@@ -753,7 +759,7 @@ func (c *pkgClient) renderView(ctx context.Context, request protoreflect.Message
 		}
 		converted := &pb.RenderNode{
 			Id: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized,
-			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn, Parent: node.Parent,
+			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn, Parent: node.Parent, Verdict: node.Verdict,
 			Origin: origin,
 		}
 		for _, port := range node.Ports {

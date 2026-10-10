@@ -2052,6 +2052,46 @@ Pictures are not included; a refused picture contributes its reason to `notices`
 declared port. The service advertises this method as
 the `render_view` capability.
 
+### Formatted view artifacts
+
+An optional `artifact` request message asks the service to run the same writers
+as the CLI, returning `{form, mediaType, text}` in the response's `artifact`
+message. The existing structured data remains available. For example:
+
+```json
+{"modelHash":"...","view":"RenderViewDemo::connections","artifact":{"form":"mermaid","direction":"LR"}}
+```
+
+This requires both `render_view` and `render_view_artifact`. Clients check the
+capability before sending; the service returns `UNIMPLEMENTED` when withheld.
+Old data-only requests are unchanged. Omitted artifact messages mean no artifact;
+a present artifact with empty `text` is still a successfully rendered artifact.
+Clients reject a response missing the artifact they requested.
+
+`form` is required: `text`, `mermaid`, `markdown`, `dot`, `plantuml`, `d2`, `csv`,
+or `tsv`. The shared writer decides which forms support the selected view kind;
+unsupported combinations return `INVALID_ARGUMENT`. `mediaType` is
+`text/markdown; charset=utf-8`, `text/csv; charset=utf-8`, or
+`text/tab-separated-values; charset=utf-8` for those three forms, and
+`text/plain; charset=utf-8` for the others. Text crosses protobuf as a UTF-8 string,
+without base64 encoding, filenames, generated images, or server-side filesystem writes.
+
+Optional fields mirror the CLI: `palette`, `drawingStyle`, `overlay`, `direction`,
+`unplaced`, nonnegative `width` (zero means unbounded), and `linkTemplate`.
+Empty options retain writer defaults. Invalid options return `INVALID_ARGUMENT`,
+even if the selected writer would not use them. See the
+[view rendering forms](../project/view-rendering-forms.md) for choices and
+kind-specific behavior. Source links resolve against loaded source documents;
+the service does not fetch link destinations.
+
+Presentation choices affect the artifact, not model-stated geometry or styles
+in the typed data. The `verdicts` overlay is semantic: it also populates
+`nodes[].verdict` and overlay styling, using the service's execution budgets.
+Rendering notices are included in `notices`; writer-specific notices, such as
+DOT placement omissions, remain comments in the artifact. Targetless discovery and bulk CLI
+rendering are outside this single-view operation. The JSON engine/WASM surface
+does not advertise artifact support and refuses an artifact request.
+
 This excerpt was captured by calling the gRPC service with
 `RenderViewDemo::connections` from `conformance/fixtures/views.sysml` and marshaling the response
 with protobuf JSON:

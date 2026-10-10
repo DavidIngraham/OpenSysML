@@ -238,4 +238,31 @@ public interface RenderViewResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getNoticesBytes(int index);
+
+  /**
+   * <pre>
+   * Present only when an artifact was requested, even when its text is empty.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+   * @return Whether the artifact field is set.
+   */
+  boolean hasArtifact();
+  /**
+   * <pre>
+   * Present only when an artifact was requested, even when its text is empty.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+   * @return The artifact.
+   */
+  org.openmbee.opensysml.proto.RenderArtifact getArtifact();
+  /**
+   * <pre>
+   * Present only when an artifact was requested, even when its text is empty.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+   */
+  org.openmbee.opensysml.proto.RenderArtifactOrBuilder getArtifactOrBuilder();
 }

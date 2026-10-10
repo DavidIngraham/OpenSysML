@@ -1666,18 +1666,28 @@ public final class Model {
 
   /** Renders a view with an explicit port selection. */
   public RenderedView renderView(String viewName, RenderViewPorts ports) {
+    return renderView(viewName, ports, null);
+  }
+
+  /** Renders a view with optional formatted source alongside its diagram data. */
+  public RenderedView renderView(String viewName, RenderViewPorts ports, RenderArtifactOptions artifact) {
     Objects.requireNonNull(viewName, "viewName");
     Objects.requireNonNull(ports, "ports");
     connection.capabilities().require(Capabilities.RENDER_VIEW);
+    RenderViewRequest.Builder request = RenderViewRequest.newBuilder()
+        .setModelHash(hash).setView(viewName).setPorts(ports.wireName());
+    if (artifact != null) {
+      connection.capabilities().require(Capabilities.RENDER_VIEW_ARTIFACT);
+      request.setArtifact(artifact.wire());
+    }
     RenderViewResponse response =
         connection.call(
             "RenderView",
-            RenderViewRequest.newBuilder()
-                .setModelHash(hash)
-                .setView(viewName)
-                .setPorts(ports.wireName())
-                .build(),
+            request.build(),
             RenderViewResponse.getDefaultInstance());
+    if (artifact != null && !response.hasArtifact()) {
+      throw new ServiceException(StatusCode.DATA_LOSS, "RenderView response omitted the requested artifact");
+    }
     return RenderedView.from(response);
   }
 

@@ -1889,17 +1889,49 @@ class RenderDocumentResponse(_message.Message):
     def __init__(self, markdown: _Optional[str] = ..., html: _Optional[str] = ...) -> None: ...
 
 class RenderViewRequest(_message.Message):
-    __slots__ = ("model_hash", "view", "ports")
+    __slots__ = ("model_hash", "view", "ports", "artifact")
     MODEL_HASH_FIELD_NUMBER: _ClassVar[int]
     VIEW_FIELD_NUMBER: _ClassVar[int]
     PORTS_FIELD_NUMBER: _ClassVar[int]
+    ARTIFACT_FIELD_NUMBER: _ClassVar[int]
     model_hash: str
     view: str
     ports: str
-    def __init__(self, model_hash: _Optional[str] = ..., view: _Optional[str] = ..., ports: _Optional[str] = ...) -> None: ...
+    artifact: RenderArtifactOptions
+    def __init__(self, model_hash: _Optional[str] = ..., view: _Optional[str] = ..., ports: _Optional[str] = ..., artifact: _Optional[_Union[RenderArtifactOptions, _Mapping]] = ...) -> None: ...
+
+class RenderArtifactOptions(_message.Message):
+    __slots__ = ("form", "palette", "drawing_style", "overlay", "direction", "unplaced", "width", "link_template")
+    FORM_FIELD_NUMBER: _ClassVar[int]
+    PALETTE_FIELD_NUMBER: _ClassVar[int]
+    DRAWING_STYLE_FIELD_NUMBER: _ClassVar[int]
+    OVERLAY_FIELD_NUMBER: _ClassVar[int]
+    DIRECTION_FIELD_NUMBER: _ClassVar[int]
+    UNPLACED_FIELD_NUMBER: _ClassVar[int]
+    WIDTH_FIELD_NUMBER: _ClassVar[int]
+    LINK_TEMPLATE_FIELD_NUMBER: _ClassVar[int]
+    form: str
+    palette: str
+    drawing_style: str
+    overlay: str
+    direction: str
+    unplaced: str
+    width: int
+    link_template: str
+    def __init__(self, form: _Optional[str] = ..., palette: _Optional[str] = ..., drawing_style: _Optional[str] = ..., overlay: _Optional[str] = ..., direction: _Optional[str] = ..., unplaced: _Optional[str] = ..., width: _Optional[int] = ..., link_template: _Optional[str] = ...) -> None: ...
+
+class RenderArtifact(_message.Message):
+    __slots__ = ("form", "media_type", "text")
+    FORM_FIELD_NUMBER: _ClassVar[int]
+    MEDIA_TYPE_FIELD_NUMBER: _ClassVar[int]
+    TEXT_FIELD_NUMBER: _ClassVar[int]
+    form: str
+    media_type: str
+    text: str
+    def __init__(self, form: _Optional[str] = ..., media_type: _Optional[str] = ..., text: _Optional[str] = ...) -> None: ...
 
 class RenderViewResponse(_message.Message):
-    __slots__ = ("view", "kind", "stated", "nodes", "edges", "columns", "rows", "canvas", "notes", "notices")
+    __slots__ = ("view", "kind", "stated", "nodes", "edges", "columns", "rows", "canvas", "notes", "notices", "artifact")
     VIEW_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
     STATED_FIELD_NUMBER: _ClassVar[int]
@@ -1910,6 +1942,7 @@ class RenderViewResponse(_message.Message):
     CANVAS_FIELD_NUMBER: _ClassVar[int]
     NOTES_FIELD_NUMBER: _ClassVar[int]
     NOTICES_FIELD_NUMBER: _ClassVar[int]
+    ARTIFACT_FIELD_NUMBER: _ClassVar[int]
     view: str
     kind: str
     stated: str
@@ -1920,10 +1953,11 @@ class RenderViewResponse(_message.Message):
     canvas: RenderCanvas
     notes: _containers.RepeatedCompositeFieldContainer[RenderNote]
     notices: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, view: _Optional[str] = ..., kind: _Optional[str] = ..., stated: _Optional[str] = ..., nodes: _Optional[_Iterable[_Union[RenderNode, _Mapping]]] = ..., edges: _Optional[_Iterable[_Union[RenderEdge, _Mapping]]] = ..., columns: _Optional[_Iterable[str]] = ..., rows: _Optional[_Iterable[_Union[RenderRow, _Mapping]]] = ..., canvas: _Optional[_Union[RenderCanvas, _Mapping]] = ..., notes: _Optional[_Iterable[_Union[RenderNote, _Mapping]]] = ..., notices: _Optional[_Iterable[str]] = ...) -> None: ...
+    artifact: RenderArtifact
+    def __init__(self, view: _Optional[str] = ..., kind: _Optional[str] = ..., stated: _Optional[str] = ..., nodes: _Optional[_Iterable[_Union[RenderNode, _Mapping]]] = ..., edges: _Optional[_Iterable[_Union[RenderEdge, _Mapping]]] = ..., columns: _Optional[_Iterable[str]] = ..., rows: _Optional[_Iterable[_Union[RenderRow, _Mapping]]] = ..., canvas: _Optional[_Union[RenderCanvas, _Mapping]] = ..., notes: _Optional[_Iterable[_Union[RenderNote, _Mapping]]] = ..., notices: _Optional[_Iterable[str]] = ..., artifact: _Optional[_Union[RenderArtifact, _Mapping]] = ...) -> None: ...
 
 class RenderNode(_message.Message):
-    __slots__ = ("id", "kind", "name", "name_synthesized", "type", "detail", "text", "stand_in", "parent", "ports", "origin", "geometry", "style")
+    __slots__ = ("id", "kind", "name", "name_synthesized", "type", "detail", "text", "stand_in", "parent", "ports", "origin", "geometry", "style", "verdict")
     ID_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -1937,6 +1971,7 @@ class RenderNode(_message.Message):
     ORIGIN_FIELD_NUMBER: _ClassVar[int]
     GEOMETRY_FIELD_NUMBER: _ClassVar[int]
     STYLE_FIELD_NUMBER: _ClassVar[int]
+    VERDICT_FIELD_NUMBER: _ClassVar[int]
     id: str
     kind: str
     name: str
@@ -1950,7 +1985,8 @@ class RenderNode(_message.Message):
     origin: Span
     geometry: RenderGeometry
     style: RenderStyle
-    def __init__(self, id: _Optional[str] = ..., kind: _Optional[str] = ..., name: _Optional[str] = ..., name_synthesized: _Optional[bool] = ..., type: _Optional[str] = ..., detail: _Optional[str] = ..., text: _Optional[str] = ..., stand_in: _Optional[bool] = ..., parent: _Optional[str] = ..., ports: _Optional[_Iterable[_Union[RenderPort, _Mapping]]] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., geometry: _Optional[_Union[RenderGeometry, _Mapping]] = ..., style: _Optional[_Union[RenderStyle, _Mapping]] = ...) -> None: ...
+    verdict: str
+    def __init__(self, id: _Optional[str] = ..., kind: _Optional[str] = ..., name: _Optional[str] = ..., name_synthesized: _Optional[bool] = ..., type: _Optional[str] = ..., detail: _Optional[str] = ..., text: _Optional[str] = ..., stand_in: _Optional[bool] = ..., parent: _Optional[str] = ..., ports: _Optional[_Iterable[_Union[RenderPort, _Mapping]]] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., geometry: _Optional[_Union[RenderGeometry, _Mapping]] = ..., style: _Optional[_Union[RenderStyle, _Mapping]] = ..., verdict: _Optional[str] = ...) -> None: ...
 
 class RenderPort(_message.Message):
     __slots__ = ("id", "name", "type", "direction")

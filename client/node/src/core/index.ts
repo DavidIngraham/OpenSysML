@@ -60,6 +60,9 @@ export {
 } from "./document.js";
 export type { BindingValues, DocumentValue } from "./document.js";
 export type {
+  RenderArtifact,
+  RenderArtifactOptions,
+  RenderViewOptions,
   RenderCanvas,
   RenderEdge,
   RenderGeometry,

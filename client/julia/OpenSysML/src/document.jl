@@ -104,7 +104,10 @@ struct RenderNode
     origin::Union{Nothing,RenderSpan}
     geometry::Union{Nothing,RenderGeometry}
     style::Union{Nothing,RenderStyle}
+    verdict::String
 end
+RenderNode(id, kind, name, synthesized, type, detail, text, stand_in, parent, ports, origin, geometry, style) =
+    RenderNode(id, kind, name, synthesized, type, detail, text, stand_in, parent, ports, origin, geometry, style, "")
 
 struct RenderEdge
     from::String
@@ -144,6 +147,13 @@ struct RenderNote
     origin::Union{Nothing,RenderSpan}
 end
 
+"""Formatted UTF-8 diagram or table source."""
+struct RenderArtifact
+    form::String
+    media_type::String
+    text::String
+end
+
 struct RenderedView
     view::String
     kind::String
@@ -155,7 +165,10 @@ struct RenderedView
     canvas::Union{Nothing,RenderCanvas}
     notes::Vector{RenderNote}
     notices::Vector{String}
+    artifact::Union{Nothing,RenderArtifact}
 end
+RenderedView(view, kind, stated, nodes, edges, columns, rows, canvas, notes, notices) =
+    RenderedView(view, kind, stated, nodes, edges, columns, rows, canvas, notes, notices, nothing)
 
 function _document_ref(raw)
     ElementRef(String(get(raw, "elementId", get(raw, "id", ""))),
@@ -368,7 +381,7 @@ function rendered_view_result(raw)
             _render_string(node, "text"), _render_bool(node, "standIn"),
             _render_string(node, "parent"), ports, _render_span(get(node, "origin", nothing)),
             _render_geometry(get(node, "geometry", nothing)),
-            _render_style(get(node, "style", nothing))))
+            _render_style(get(node, "style", nothing)), _render_string(node, "verdict")))
     end
     edges = RenderEdge[RenderEdge(_render_string(edge, "from"), _render_string(edge, "to"),
         _render_string(edge, "fromPort"), _render_string(edge, "toPort"),
@@ -391,19 +404,35 @@ function rendered_view_result(raw)
     RenderedView(_render_string(raw, "view"), _render_string(raw, "kind"),
         _render_string(raw, "stated"), nodes, edges,
         String[String(c) for c in get(raw, "columns", Any[])], rows, canvas, notes,
-        String[String(n) for n in get(raw, "notices", Any[])])
+        String[String(n) for n in get(raw, "notices", Any[])],
+        get(raw, "artifact", nothing) isa AbstractDict ? RenderArtifact(
+            _render_string(raw["artifact"], "form"), _render_string(raw["artifact"], "mediaType"),
+            _render_string(raw["artifact"], "text")) : nothing)
 end
 
 """Render a named view with minimal or full ports."""
-function render_view(model::Model, view_name::AbstractString; ports="minimal")
+function render_view(model::Model, view_name::AbstractString; ports="minimal", form=nothing,
+    palette="", drawing_style="", overlay="", direction="", unplaced="", width=0, link_template="")
     ports in ("minimal", "full") || throw(ArgumentError("ports must be 'minimal' or 'full'"))
     conn = model.connection
-    require_capability(conn, CAPABILITY_RENDER_VIEW)
+    if form === nothing && (any(!isempty, (palette, drawing_style, overlay, direction, unplaced, link_template)) || width != 0)
+        throw(ArgumentError("artifact options require form"))
+    end
+    caps = form === nothing ? (CAPABILITY_RENDER_VIEW,) : (CAPABILITY_RENDER_VIEW, CAPABILITY_RENDER_VIEW_ARTIFACT)
+    foreach(c -> require_capability(conn, c), caps)
+    request = Dict{String,Any}("modelHash" => model.hash, "view" => String(view_name), "ports" => ports == "minimal" ? "" : ports)
+    if form !== nothing
+        request["artifact"] = Dict{String,Any}("form" => form, "palette" => palette,
+            "drawingStyle" => drawing_style, "overlay" => overlay, "direction" => direction,
+            "unplaced" => unplaced, "width" => width, "linkTemplate" => link_template)
+    end
     answer = _translate(; not_found=(message, _) ->
         SymbolNotFoundError(view_name; service_message=message),
-        capabilities=(CAPABILITY_RENDER_VIEW,), connection=conn) do
-        call(conn, "RenderView", Dict{String,Any}("modelHash" => model.hash,
-            "view" => String(view_name), "ports" => ports == "minimal" ? "" : ports))
+        capabilities=caps, connection=conn) do
+        call(conn, "RenderView", request)
+    end
+    if form !== nothing && !(get(answer, "artifact", nothing) isa AbstractDict)
+        throw(TransportError("RenderView response omitted the requested artifact"))
     end
     rendered_view_result(answer)
 end

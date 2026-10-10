@@ -472,6 +472,44 @@ private static final long serialVersionUID = 0L;
     return notices_.getByteString(index);
   }
 
+  public static final int ARTIFACT_FIELD_NUMBER = 11;
+  private org.openmbee.opensysml.proto.RenderArtifact artifact_;
+  /**
+   * <pre>
+   * Present only when an artifact was requested, even when its text is empty.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+   * @return Whether the artifact field is set.
+   */
+  @java.lang.Override
+  public boolean hasArtifact() {
+    return ((bitField0_ & 0x00000002) != 0);
+  }
+  /**
+   * <pre>
+   * Present only when an artifact was requested, even when its text is empty.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+   * @return The artifact.
+   */
+  @java.lang.Override
+  public org.openmbee.opensysml.proto.RenderArtifact getArtifact() {
+    return artifact_ == null ? org.openmbee.opensysml.proto.RenderArtifact.getDefaultInstance() : artifact_;
+  }
+  /**
+   * <pre>
+   * Present only when an artifact was requested, even when its text is empty.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+   */
+  @java.lang.Override
+  public org.openmbee.opensysml.proto.RenderArtifactOrBuilder getArtifactOrBuilder() {
+    return artifact_ == null ? org.openmbee.opensysml.proto.RenderArtifact.getDefaultInstance() : artifact_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -515,6 +553,9 @@ private static final long serialVersionUID = 0L;
     }
     for (int i = 0; i < notices_.size(); i++) {
       com.google.protobuf.GeneratedMessage.writeString(output, 10, notices_.getRaw(i));
+    }
+    if (((bitField0_ & 0x00000002) != 0)) {
+      output.writeMessage(11, getArtifact());
     }
     getUnknownFields().writeTo(output);
   }
@@ -570,6 +611,10 @@ private static final long serialVersionUID = 0L;
       size += dataSize;
       size += 1 * getNoticesList().size();
     }
+    if (((bitField0_ & 0x00000002) != 0)) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeMessageSize(11, getArtifact());
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -608,6 +653,11 @@ private static final long serialVersionUID = 0L;
         .equals(other.getNotesList())) return false;
     if (!getNoticesList()
         .equals(other.getNoticesList())) return false;
+    if (hasArtifact() != other.hasArtifact()) return false;
+    if (hasArtifact()) {
+      if (!getArtifact()
+          .equals(other.getArtifact())) return false;
+    }
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -652,6 +702,10 @@ private static final long serialVersionUID = 0L;
     if (getNoticesCount() > 0) {
       hash = (37 * hash) + NOTICES_FIELD_NUMBER;
       hash = (53 * hash) + getNoticesList().hashCode();
+    }
+    if (hasArtifact()) {
+      hash = (37 * hash) + ARTIFACT_FIELD_NUMBER;
+      hash = (53 * hash) + getArtifact().hashCode();
     }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
@@ -792,6 +846,7 @@ private static final long serialVersionUID = 0L;
         internalGetRowsFieldBuilder();
         internalGetCanvasFieldBuilder();
         internalGetNotesFieldBuilder();
+        internalGetArtifactFieldBuilder();
       }
     }
     @java.lang.Override
@@ -838,6 +893,11 @@ private static final long serialVersionUID = 0L;
       bitField0_ = (bitField0_ & ~0x00000100);
       notices_ =
           com.google.protobuf.LazyStringArrayList.emptyList();
+      artifact_ = null;
+      if (artifactBuilder_ != null) {
+        artifactBuilder_.dispose();
+        artifactBuilder_ = null;
+      }
       return this;
     }
 
@@ -934,6 +994,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000200) != 0)) {
         notices_.makeImmutable();
         result.notices_ = notices_;
+      }
+      if (((from_bitField0_ & 0x00000400) != 0)) {
+        result.artifact_ = artifactBuilder_ == null
+            ? artifact_
+            : artifactBuilder_.build();
+        to_bitField0_ |= 0x00000002;
       }
       result.bitField0_ |= to_bitField0_;
     }
@@ -1092,6 +1158,9 @@ private static final long serialVersionUID = 0L;
         }
         onChanged();
       }
+      if (other.hasArtifact()) {
+        mergeArtifact(other.getArtifact());
+      }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
       return this;
@@ -1204,6 +1273,13 @@ private static final long serialVersionUID = 0L;
               notices_.add(s);
               break;
             } // case 82
+            case 90: {
+              input.readMessage(
+                  internalGetArtifactFieldBuilder().getBuilder(),
+                  extensionRegistry);
+              bitField0_ |= 0x00000400;
+              break;
+            } // case 90
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2846,6 +2922,163 @@ private static final long serialVersionUID = 0L;
       bitField0_ |= 0x00000200;
       onChanged();
       return this;
+    }
+
+    private org.openmbee.opensysml.proto.RenderArtifact artifact_;
+    private com.google.protobuf.SingleFieldBuilder<
+        org.openmbee.opensysml.proto.RenderArtifact, org.openmbee.opensysml.proto.RenderArtifact.Builder, org.openmbee.opensysml.proto.RenderArtifactOrBuilder> artifactBuilder_;
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     * @return Whether the artifact field is set.
+     */
+    public boolean hasArtifact() {
+      return ((bitField0_ & 0x00000400) != 0);
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     * @return The artifact.
+     */
+    public org.openmbee.opensysml.proto.RenderArtifact getArtifact() {
+      if (artifactBuilder_ == null) {
+        return artifact_ == null ? org.openmbee.opensysml.proto.RenderArtifact.getDefaultInstance() : artifact_;
+      } else {
+        return artifactBuilder_.getMessage();
+      }
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    public Builder setArtifact(org.openmbee.opensysml.proto.RenderArtifact value) {
+      if (artifactBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        artifact_ = value;
+      } else {
+        artifactBuilder_.setMessage(value);
+      }
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    public Builder setArtifact(
+        org.openmbee.opensysml.proto.RenderArtifact.Builder builderForValue) {
+      if (artifactBuilder_ == null) {
+        artifact_ = builderForValue.build();
+      } else {
+        artifactBuilder_.setMessage(builderForValue.build());
+      }
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    public Builder mergeArtifact(org.openmbee.opensysml.proto.RenderArtifact value) {
+      if (artifactBuilder_ == null) {
+        if (((bitField0_ & 0x00000400) != 0) &&
+          artifact_ != null &&
+          artifact_ != org.openmbee.opensysml.proto.RenderArtifact.getDefaultInstance()) {
+          getArtifactBuilder().mergeFrom(value);
+        } else {
+          artifact_ = value;
+        }
+      } else {
+        artifactBuilder_.mergeFrom(value);
+      }
+      if (artifact_ != null) {
+        bitField0_ |= 0x00000400;
+        onChanged();
+      }
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    public Builder clearArtifact() {
+      bitField0_ = (bitField0_ & ~0x00000400);
+      artifact_ = null;
+      if (artifactBuilder_ != null) {
+        artifactBuilder_.dispose();
+        artifactBuilder_ = null;
+      }
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    public org.openmbee.opensysml.proto.RenderArtifact.Builder getArtifactBuilder() {
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return internalGetArtifactFieldBuilder().getBuilder();
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    public org.openmbee.opensysml.proto.RenderArtifactOrBuilder getArtifactOrBuilder() {
+      if (artifactBuilder_ != null) {
+        return artifactBuilder_.getMessageOrBuilder();
+      } else {
+        return artifact_ == null ?
+            org.openmbee.opensysml.proto.RenderArtifact.getDefaultInstance() : artifact_;
+      }
+    }
+    /**
+     * <pre>
+     * Present only when an artifact was requested, even when its text is empty.
+     * </pre>
+     *
+     * <code>.sysml.RenderArtifact artifact = 11 [json_name = "artifact"];</code>
+     */
+    private com.google.protobuf.SingleFieldBuilder<
+        org.openmbee.opensysml.proto.RenderArtifact, org.openmbee.opensysml.proto.RenderArtifact.Builder, org.openmbee.opensysml.proto.RenderArtifactOrBuilder> 
+        internalGetArtifactFieldBuilder() {
+      if (artifactBuilder_ == null) {
+        artifactBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+            org.openmbee.opensysml.proto.RenderArtifact, org.openmbee.opensysml.proto.RenderArtifact.Builder, org.openmbee.opensysml.proto.RenderArtifactOrBuilder>(
+                getArtifact(),
+                getParentForChildren(),
+                isClean());
+        artifact_ = null;
+      }
+      return artifactBuilder_;
     }
 
     // @@protoc_insertion_point(builder_scope:sysml.RenderViewResponse)

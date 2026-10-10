@@ -257,6 +257,7 @@ class RenderNode:
     origin: Optional[RenderSpan]
     geometry: Optional[RenderGeometry]
     style: Optional[RenderStyle]
+    verdict: str = ""
 
 
 @dataclass(frozen=True)
@@ -326,6 +327,15 @@ def graphs_result(response):
 
 
 @dataclass(frozen=True)
+class RenderArtifact:
+    """Formatted UTF-8 diagram or table source."""
+
+    form: str
+    media_type: str
+    text: str
+
+
+@dataclass(frozen=True)
 class RenderedView:
     """Lossless diagram data returned by ``RenderView``."""
 
@@ -339,6 +349,7 @@ class RenderedView:
     canvas: Optional[RenderCanvas]
     notes: tuple
     notices: tuple
+    artifact: Optional[RenderArtifact] = None
 
 
 def _render_span(span):
@@ -368,6 +379,7 @@ def render_view_result(response):
                 node.geometry.has_size, node.geometry.collapsed,
             ),
             _render_style(node.style if node.HasField("style") else None),
+            node.verdict,
         )
         for node in response.nodes
     )
@@ -399,6 +411,9 @@ def render_view_result(response):
     return RenderedView(
         response.view, response.kind, response.stated, nodes, edges, tuple(response.columns),
         rows, canvas, notes, tuple(response.notices),
+        None if not response.HasField("artifact") else RenderArtifact(
+            response.artifact.form, response.artifact.media_type, response.artifact.text,
+        ),
     )
 #: What a binding value or an answered cell value may be.
 DocumentValue = Union[

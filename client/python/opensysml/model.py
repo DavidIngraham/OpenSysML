@@ -382,12 +382,24 @@ class Model:
         """
         return self.connection.render_document(self._hash, document_id, form=form)
 
-    def render_view(self, view_name, ports="minimal") -> RenderedView:
+    def render_view(self, view_name, ports="minimal", *, form=None, palette="", drawing_style="",
+                    overlay="", direction="", unplaced="", width=0, link_template="") -> RenderedView:
         """Render one named view as typed diagram data.
 
         Args:
             view_name (str): Qualified view name or targeted pseudo-view
             ports (str): ``"minimal"`` (the default) or ``"full"``
+            form (str | None): Optional source form, such as ``"mermaid"`` or ``"dot"``
+            palette (str): Writer palette; empty keeps the default
+            drawing_style (str): Writer drawing style; empty keeps the default
+            overlay (str): Optional ``"verdicts"`` semantic overlay
+            direction (str): Writer direction, such as ``"LR"``
+            unplaced (str): Treatment of unplaced nodes, such as ``"strip"``
+            width (int): Text width; zero is unbounded
+            link_template (str): Optional source URL template
+
+        Artifact options require ``form``. Formatted source is returned in
+        ``result.artifact.text`` alongside the typed diagram data.
 
         Returns:
             RenderedView: Ordered nodes, edges, table data and optional layout
@@ -400,7 +412,11 @@ class Model:
                 also a SymbolNotFoundError and KeyError
             ModelNotFoundError: If the service no longer holds this model
         """
-        return self.connection.render_view(self._hash, view_name, ports=ports)
+        return self.connection.render_view(
+            self._hash, view_name, ports=ports, form=form, palette=palette,
+            drawing_style=drawing_style, overlay=overlay, direction=direction,
+            unplaced=unplaced, width=width, link_template=link_template,
+        )
 
 
     def export_graphs(self, subject) -> Graphs:

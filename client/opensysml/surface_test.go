@@ -1410,3 +1410,19 @@ func TestAModelThatNoParseAnsweredIsInvalid(t *testing.T) {
 		t.Errorf("err = %v, want CodeInvalidArgument", err)
 	}
 }
+
+func TestRenderViewArtifactAgainstService(t *testing.T) {
+	c := newClient(t)
+	source, err := os.ReadFile(filepath.Join("..", "..", "conformance", "fixtures", "views.sysml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := parse(t, c, string(source))
+	got, err := c.RenderView(context.Background(), m, "RenderViewDemo::connections", opensysml.WithFullPorts(), opensysml.WithRenderArtifact(opensysml.RenderArtifactOptions{Form: "dot", Palette: "okabe-ito", DrawingStyle: "cameo", Direction: "LR", Unplaced: "strip"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Artifact == nil || got.Artifact.Form != "dot" || !strings.Contains(got.Artifact.Text, "digraph") || len(got.Nodes) == 0 {
+		t.Fatalf("artifact = %+v", got)
+	}
+}

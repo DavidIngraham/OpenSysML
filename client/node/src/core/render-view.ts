@@ -52,6 +52,7 @@ export interface RenderPoint {
 }
 
 export interface RenderNode {
+  verdict: string;
   id: string;
   kind: string;
   name: string;
@@ -106,6 +107,7 @@ export interface RenderNote {
 }
 
 export interface RenderedView {
+  artifact?: RenderArtifact;
   view: string;
   kind: string;
   stated: string;
@@ -179,6 +181,7 @@ function nodeOf(node: PbRenderNode): RenderNode {
     text: node.text,
     standIn: node.standIn,
     parent: node.parent,
+    verdict: node.verdict,
     ports: node.ports.map(portOf),
     ...(origin === undefined ? {} : { origin }),
     ...(geometry === undefined ? {} : { geometry }),
@@ -236,6 +239,7 @@ function canvasOf(canvas: PbRenderCanvas | undefined): RenderCanvas | undefined 
 export function renderedViewOf(response: RenderViewResponse): RenderedView {
   const canvas = canvasOf(response.canvas);
   return {
+    ...(response.artifact === undefined ? {} : { artifact: {form: response.artifact.form, mediaType: response.artifact.mediaType, text: response.artifact.text} }),
     view: response.view,
     kind: response.kind,
     stated: response.stated,
@@ -247,4 +251,27 @@ export function renderedViewOf(response: RenderViewResponse): RenderedView {
     notices: [...response.notices],
     ...(canvas === undefined ? {} : { canvas }),
   };
+}
+
+/** Options for formatted source; form must name a supported text format. */
+export interface RenderArtifactOptions {
+  form: string;
+  palette?: string;
+  drawingStyle?: string;
+  overlay?: string;
+  direction?: string;
+  unplaced?: string;
+  width?: number;
+  linkTemplate?: string;
+}
+
+export interface RenderArtifact {
+  form: string;
+  mediaType: string;
+  text: string;
+}
+
+export interface RenderViewOptions {
+  ports?: "minimal" | "full";
+  artifact?: RenderArtifactOptions;
 }

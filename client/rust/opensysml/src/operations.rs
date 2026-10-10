@@ -464,10 +464,27 @@ impl Connection {
         view_name: &str,
         ports: RenderViewPorts,
     ) -> Result<RenderedView, Error> {
-        self.require_all(&[crate::capabilities::CAPABILITY_RENDER_VIEW])?;
-        let response = self.gated_rpc(
+        self.render_view_with_artifact(model_hash, view_name, ports, None)
+    }
+
+    /// Render a view with optional formatted source alongside its diagram data.
+    pub fn render_view_with_artifact(
+        &self,
+        model_hash: &str,
+        view_name: &str,
+        ports: RenderViewPorts,
+        artifact: Option<crate::document::RenderArtifactOptions>,
+    ) -> Result<RenderedView, Error> {
+        let mut capabilities = vec![crate::capabilities::CAPABILITY_RENDER_VIEW];
+        let requested = artifact.is_some();
+        if requested {
+            capabilities.push(crate::capabilities::CAPABILITY_RENDER_VIEW_ARTIFACT);
+        }
+        self.require_all(&capabilities)?;
+        let response: wire::RenderViewResponse = self.gated_rpc(
             "RenderView",
             wire::RenderViewRequest {
+                artifact: artifact.map(crate::document::RenderArtifactOptions::into_wire),
                 model_hash: model_hash.to_owned(),
                 view: view_name.to_owned(),
                 ports: match ports {
@@ -475,8 +492,13 @@ impl Connection {
                     RenderViewPorts::Full => "full".to_owned(),
                 },
             },
-            &[crate::capabilities::CAPABILITY_RENDER_VIEW],
+            &capabilities,
         )?;
+        if requested && response.artifact.is_none() {
+            return Err(Error::Decode(
+                "RenderView response omitted the requested artifact".into(),
+            ));
+        }
         Ok(rendered_view_of(response))
     }
 

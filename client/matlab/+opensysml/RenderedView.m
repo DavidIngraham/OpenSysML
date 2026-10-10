@@ -12,10 +12,17 @@ classdef RenderedView
         canvas
         notes
         notices
+        artifact
     end
 
     methods
         function result = RenderedView(answer)
+            result.artifact = [];
+            if isfield(answer, 'artifact') && isstruct(answer.artifact)
+                a = answer.artifact;
+                result.artifact = struct('form', fieldOr(a, 'form', ''), ...
+                    'mediaType', fieldOr(a, 'mediaType', ''), 'text', fieldOr(a, 'text', ''));
+            end
             result.view = fieldOr(answer, 'view', '');
             result.kind = fieldOr(answer, 'kind', '');
             result.stated = fieldOr(answer, 'stated', '');
@@ -41,6 +48,7 @@ classdef RenderedView
                     'type', fieldOr(node, 'type', ''), 'detail', fieldOr(node, 'detail', ''), ...
                     'text', fieldOr(node, 'text', ''), 'standIn', fieldOr(node, 'standIn', false), ...
                     'parent', fieldOr(node, 'parent', ''), 'ports', ports, ...
+                    'verdict', fieldOr(node, 'verdict', ''), ...
                     'origin', origin, 'geometry', geometry, 'style', style);
                 result.nodes = appendStruct(result.nodes, value);
             end

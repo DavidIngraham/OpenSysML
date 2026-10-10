@@ -27,6 +27,8 @@ pub const CAPABILITY_RENDER_DOCUMENT: &str = "render_document";
 pub const CAPABILITY_RENDER_DOCUMENT_HTML: &str = "render_document_html";
 /// The `RenderView` RPC, rendering named views as machine-readable diagram data.
 pub const CAPABILITY_RENDER_VIEW: &str = "render_view";
+/// Formatted view artifacts and their options.
+pub const CAPABILITY_RENDER_VIEW_ARTIFACT: &str = "render_view_artifact";
 /// The `ExportGraphs` RPC, exporting a behavior's lowered graph as `graphs:1` JSON.
 pub const CAPABILITY_EXPORT_GRAPHS: &str = "export_graphs";
 /// An enumeration literal as `Value.enum_literal`.

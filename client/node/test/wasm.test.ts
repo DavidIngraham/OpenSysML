@@ -546,7 +546,14 @@ for (const thread of ["worker", "inline"] as const) {
       "big_int_values",
     ]);
 
+    assert.equal(wasm.info.has("render_view_artifact"), false);
     const wasmModel = await wasm.loads(SAMPLE);
+    const requestsBeforeArtifact = wasmResponses.length;
+    await assert.rejects(
+      () => wasmModel.renderView("Sample::Car", { artifact: { form: "dot" } }),
+      MissingCapabilityError,
+    );
+    assert.equal(wasmResponses.length, requestsBeforeArtifact);
     const nativeModel = await native.loads(SAMPLE);
     assert.equal(wasmModel.hash, nativeModel.hash);
     assert.deepEqual(wasmModel.diagnostics, nativeModel.diagnostics);

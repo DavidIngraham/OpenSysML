@@ -1,3 +1,4 @@
+import type { RenderViewOptions } from "./render-view.js";
 // A connection: one Connect client against one service, plus the handshake that
 // tells the client what that service can do.
 
@@ -26,6 +27,7 @@ import {
   CAPABILITY_RENDER_DOCUMENT,
   CAPABILITY_RENDER_DOCUMENT_HTML,
   CAPABILITY_RENDER_VIEW,
+  CAPABILITY_RENDER_VIEW_ARTIFACT,
   CAPABILITY_EXPORT_GRAPHS,
   CAPABILITY_SCHEDULE,
   CAPABILITY_SCHEDULE_EXPLORE,
@@ -689,13 +691,14 @@ export class Connection {
   async renderView(
     modelHash: string,
     viewName: string,
-    options: { ports?: "minimal" | "full" } = {},
+    options: RenderViewOptions = {},
   ): Promise<RenderedView> {
     const ports: string = options.ports ?? "minimal";
     if (ports !== "minimal" && ports !== "full") {
       throw new RangeError("ports must be 'minimal' or 'full'");
     }
     const capabilities = [CAPABILITY_RENDER_VIEW];
+    if (options.artifact !== undefined) capabilities.push(CAPABILITY_RENDER_VIEW_ARTIFACT);
     for (const capability of capabilities) {
       requireCapability(this.info, capability, upgradeRemedy(capability));
     }
@@ -705,12 +708,16 @@ export class Connection {
           modelHash,
           view: viewName,
           ports: ports === "minimal" ? "" : ports,
+          ...(options.artifact === undefined ? {} : { artifact: options.artifact }),
         }),
         this.callOptions(),
       ),
       "model",
       capabilityRefusal(this.info, capabilities),
     );
+    if (options.artifact !== undefined && response.artifact === undefined) {
+      throw new ConnectError("RenderView response omitted the requested artifact", Code.DataLoss);
+    }
     return renderedViewOf(response);
   }
 

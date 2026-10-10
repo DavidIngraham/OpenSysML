@@ -18,6 +18,17 @@ import org.openmbee.opensysml.proto.RenderViewResponse;
 import org.openmbee.opensysml.proto.Span;
 
 class RenderedViewTest {
+  @org.junit.jupiter.api.Test
+  void artifactPresencePreservesEmptyTextAndVerdicts() {
+    var absent = RenderedView.from(RenderViewResponse.getDefaultInstance());
+    org.junit.jupiter.api.Assertions.assertTrue(absent.artifact().isEmpty());
+    var present = RenderedView.from(RenderViewResponse.newBuilder()
+        .setArtifact(org.openmbee.opensysml.proto.RenderArtifact.newBuilder().setForm("dot"))
+        .addNodes(org.openmbee.opensysml.proto.RenderNode.newBuilder().setVerdict("fail")).build());
+    org.junit.jupiter.api.Assertions.assertEquals("", present.artifact().orElseThrow().text());
+    org.junit.jupiter.api.Assertions.assertEquals("fail", present.nodes().get(0).verdict());
+  }
+
 
   @Test
   void decodesAllFieldsAndPreservesOptionalMessagePresence() {

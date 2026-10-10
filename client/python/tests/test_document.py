@@ -1100,3 +1100,58 @@ class TestDocumentsAgainstRealService:
                 conn.run_document_query("deadbeef", "Observatory::SubsystemTable")
             with pytest.raises(ModelNotFoundError):
                 conn.render_document("deadbeef", "Observatory::MassReport")
+
+
+def test_render_artifact_presence_and_verdict_decoding():
+    from opensysml import RenderArtifact
+    response = sysml_pb2.RenderViewResponse()
+    assert render_view_result(response).artifact is None
+    response.artifact.CopyFrom(sysml_pb2.RenderArtifact(form="dot", media_type="text/plain; charset=utf-8", text=""))
+    response.nodes.add(verdict="fail")
+    result = render_view_result(response)
+    assert result.artifact == RenderArtifact("dot", "text/plain; charset=utf-8", "")
+    assert result.nodes[0].verdict == "fail"
+
+
+def test_render_artifact_capability_and_missing_response(fake_service):
+    from opensysml.capabilities import CAPABILITY_RENDER_VIEW_ARTIFACT
+    from opensysml.errors import ConnectionError
+    port, service = fake_service(capabilities=(CAPABILITY_RENDER_VIEW,))
+    with Connection(port=port, auto_start=False) as conn:
+        model = conn.load_from_content("package Demo;")
+        with pytest.raises(MissingCapabilityError) as err:
+            model.render_view("Demo::View", form="dot")
+        assert err.value.capability == CAPABILITY_RENDER_VIEW_ARTIFACT
+    assert service.requests == []
+    port, service = fake_service(capabilities=(CAPABILITY_RENDER_VIEW, CAPABILITY_RENDER_VIEW_ARTIFACT), response=sysml_pb2.RenderViewResponse())
+    with Connection(port=port, auto_start=False) as conn:
+        model = conn.load_from_content("package Demo;")
+        with pytest.raises(ConnectionError, match="omitted"):
+            model.render_view("Demo::View", form="dot")
+
+
+def test_render_artifact_options_reach_service(fake_service):
+    from opensysml.capabilities import CAPABILITY_RENDER_VIEW_ARTIFACT
+    response = sysml_pb2.RenderViewResponse(artifact=sysml_pb2.RenderArtifact(form="dot", text="digraph {é}"))
+    port, service = fake_service(capabilities=(CAPABILITY_RENDER_VIEW, CAPABILITY_RENDER_VIEW_ARTIFACT), response=response)
+    with Connection(port=port, auto_start=False) as conn:
+        model = conn.load_from_content("package Demo;")
+        result = model.render_view("Demo::View", ports="full", form="dot", palette="okabe-ito", drawing_style="cameo", overlay="verdicts", direction="LR", unplaced="strip", width=40, link_template="https://example.test/{qname}")
+        assert result.artifact.text == "digraph {é}"
+        with pytest.raises(ValueError, match="require form"):
+            model.render_view("Demo::View", palette="okabe-ito")
+    request, = service.requests
+    assert request.ports == "full"
+    assert request.artifact == sysml_pb2.RenderArtifactOptions(form="dot", palette="okabe-ito", drawing_style="cameo", overlay="verdicts", direction="LR", unplaced="strip", width=40, link_template="https://example.test/{qname}")
+
+
+def test_formatted_view_against_real_service(real_service):
+    with open(os.path.join(REPO_ROOT, "conformance", "fixtures", "views.sysml"), encoding="utf-8") as f:
+        source = f.read()
+    with Connection(port=real_service, auto_start=False) as conn:
+        model = conn.load_from_content(source)
+        for form in ("text", "mermaid", "dot", "plantuml", "d2"):
+            result = model.render_view("RenderViewDemo::connections", form=form, ports="full", palette="okabe-ito", drawing_style="cameo", unplaced="strip", direction="LR")
+            assert result.artifact.form == form
+            assert result.artifact.text
+            assert result.nodes and result.edges

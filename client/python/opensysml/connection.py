@@ -55,6 +55,7 @@ from opensysml.capabilities import (
     CAPABILITY_RENDER_DOCUMENT,
     CAPABILITY_RENDER_DOCUMENT_HTML,
     CAPABILITY_RENDER_VIEW,
+    CAPABILITY_RENDER_VIEW_ARTIFACT,
     CAPABILITY_EXPORT_GRAPHS,
     CAPABILITY_SCHEDULE,
     CAPABILITY_SCHEDULE_EXPLORE,
@@ -1848,23 +1849,36 @@ class Connection:
             response = self._stub.RenderDocument(request)
         return response.html if form == "html" else response.markdown
 
-    def render_view(self, model_hash, view_name, ports="minimal"):
+    def render_view(self, model_hash, view_name, ports="minimal", *, form=None, palette="", drawing_style="",
+                    overlay="", direction="", unplaced="", width=0, link_template=""):
         """Render a named view with minimal or full ports."""
         if ports not in ("minimal", "full"):
             raise ValueError("ports must be 'minimal' or 'full'")
-        require(self.server_info(), CAPABILITY_RENDER_VIEW, upgrade_remedy(CAPABILITY_RENDER_VIEW))
+        if form is None and any((palette, drawing_style, overlay, direction, unplaced, width, link_template)):
+            raise ValueError("artifact options require form")
+        capabilities = [CAPABILITY_RENDER_VIEW]
+        if form is not None:
+            capabilities.append(CAPABILITY_RENDER_VIEW_ARTIFACT)
+        for capability in capabilities:
+            require(self.server_info(), capability, upgrade_remedy(capability))
         request = sysml_pb2.RenderViewRequest(
             model_hash=model_hash,
             view=view_name,
             ports="" if ports == "minimal" else ports,
+            artifact=None if form is None else sysml_pb2.RenderArtifactOptions(
+                form=form, palette=palette, drawing_style=drawing_style, overlay=overlay,
+                direction=direction, unplaced=unplaced, width=width, link_template=link_template,
+            ),
         )
         with translate_rpc_errors(
             not_found=lambda message, code: ViewNotFoundError(
                 view_name, message, code=code
             ),
-            unimplemented=self._capability_refusal((CAPABILITY_RENDER_VIEW,)),
+            unimplemented=self._capability_refusal(capabilities),
         ):
             response = self._stub.RenderView(request)
+        if form is not None and not response.HasField("artifact"):
+            raise ConnectionError("RenderView response omitted the requested artifact")
         return render_view_result(response)
 
     def export_graphs(self, model_hash, subject):

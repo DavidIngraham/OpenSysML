@@ -186,4 +186,24 @@ public interface RenderNodeOrBuilder extends
    * <code>.sysml.RenderStyle style = 13 [json_name = "style"];</code>
    */
   org.openmbee.opensysml.proto.RenderStyleOrBuilder getStyleOrBuilder();
+
+  /**
+   * <pre>
+   * Worst verification verdict when the verdicts overlay is requested.
+   * </pre>
+   *
+   * <code>string verdict = 14 [json_name = "verdict"];</code>
+   * @return The verdict.
+   */
+  java.lang.String getVerdict();
+  /**
+   * <pre>
+   * Worst verification verdict when the verdicts overlay is requested.
+   * </pre>
+   *
+   * <code>string verdict = 14 [json_name = "verdict"];</code>
+   * @return The bytes for verdict.
+   */
+  com.google.protobuf.ByteString
+      getVerdictBytes();
 }

@@ -1,0 +1,1 @@
+- Formatted view artifacts over the service: request text, Mermaid, Markdown, DOT, PlantUML, D2, CSV or TSV source alongside typed diagram data, with CLI presentation options, source links and verdict overlays. Available in Go, Python, Node, Java, Rust, Julia and MATLAB clients, gated by `render_view_artifact`.

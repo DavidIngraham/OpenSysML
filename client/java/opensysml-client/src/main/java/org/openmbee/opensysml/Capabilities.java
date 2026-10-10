@@ -177,6 +177,8 @@ public final class Capabilities {
 
   /** The service renders named and targeted pseudo-views as diagram data. */
   public static final String RENDER_VIEW = "render_view";
+  /** Formatted view artifacts and their options. */
+  public static final String RENDER_VIEW_ARTIFACT = "render_view_artifact";
 
   /** The {@code ExportGraphs} RPC exports a behavior's lowered graph as {@code graphs:1} JSON. */
   public static final String EXPORT_GRAPHS = "export_graphs";

@@ -170,6 +170,12 @@ Connections own or reach a service, and resolve their address and release.
 A parsed model is the entry point for symbol lookup, evaluation and execution.
 `Model.render_view(view_name, ports="minimal")` returns a typed `RenderedView`;
 pass `ports="full"` to include every declared port.
+Pass `form="mermaid"` (or another [supported artifact form](wire-contract.md#formatted-view-artifacts))
+to receive formatted UTF-8 source in `result.artifact.text`, alongside the typed data.
+Keyword options are `palette`, `drawing_style`, `overlay`, `direction`, `unplaced`,
+`width` and `link_template`; these require `form`. The call checks
+`render_view_artifact` before sending. Without `form`, `artifact` is `None`.
+
 `Model.export_graphs(subject)` returns a typed `Graphs`: the canonical `graphs:1`
 JSON of an action or state machine's lowered graph, its version and the subject
 as resolved.
@@ -655,6 +661,10 @@ Typed query rows, document values, and document and view render results.
       heading_level: 3
 
 ::: opensysml.DocumentQueryResult
+    options:
+      heading_level: 3
+
+::: opensysml.RenderArtifact
     options:
       heading_level: 3
 

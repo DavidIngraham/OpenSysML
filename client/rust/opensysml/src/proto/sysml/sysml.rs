@@ -2355,6 +2355,7 @@ pub struct ServerInfoResponse {
     ///                   and answers with typed rows.
     ///    "render_document" - the RenderDocument RPC renders a named document to
     ///                   Markdown.
+    ///    "render_view_artifact" - formatted text artifacts and verdict overlays.
     ///    "render_view" - the RenderView RPC renders a declared view or targeted
     ///                   pseudo-view as machine-readable diagram data.
     ///    "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -2913,6 +2914,41 @@ pub struct RenderViewRequest {
     /// "" or "minimal" (the default), or "full", as view.ParsePorts reads it.
     #[prost(string, tag="3")]
     pub ports: ::prost::alloc::string::String,
+    /// Optional formatted output; requires render_view_artifact.
+    #[prost(message, optional, tag="4")]
+    pub artifact: ::core::option::Option<RenderArtifactOptions>,
+}
+/// RenderArtifactOptions selects a text artifact from the shared view writers.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct RenderArtifactOptions {
+    /// Required when artifact options are present.
+    #[prost(string, tag="1")]
+    pub form: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub palette: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub drawing_style: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub overlay: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub direction: ::prost::alloc::string::String,
+    #[prost(string, tag="6")]
+    pub unplaced: ::prost::alloc::string::String,
+    /// Nonnegative text width; zero is unbounded.
+    #[prost(int32, tag="7")]
+    pub width: i32,
+    #[prost(string, tag="8")]
+    pub link_template: ::prost::alloc::string::String,
+}
+/// RenderArtifact is UTF-8 source, not a rasterized image.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct RenderArtifact {
+    #[prost(string, tag="1")]
+    pub form: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub media_type: ::prost::alloc::string::String,
+    #[prost(string, tag="3")]
+    pub text: ::prost::alloc::string::String,
 }
 /// RenderViewResponse carries all machine-readable fields of the rendering.
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2939,6 +2975,9 @@ pub struct RenderViewResponse {
     pub notes: ::prost::alloc::vec::Vec<RenderNote>,
     #[prost(string, repeated, tag="10")]
     pub notices: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Present only when an artifact was requested, even when its text is empty.
+    #[prost(message, optional, tag="11")]
+    pub artifact: ::core::option::Option<RenderArtifact>,
 }
 /// RenderNode is one flattened node of the rendering.
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2970,6 +3009,9 @@ pub struct RenderNode {
     pub geometry: ::core::option::Option<RenderGeometry>,
     #[prost(message, optional, tag="13")]
     pub style: ::core::option::Option<RenderStyle>,
+    /// Worst verification verdict when the verdicts overlay is requested.
+    #[prost(string, tag="14")]
+    pub verdict: ::prost::alloc::string::String,
 }
 /// RenderPort is a feature drawn on a node's border.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]

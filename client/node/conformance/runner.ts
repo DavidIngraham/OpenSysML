@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { isAbsolute, join, normalize, resolve as resolvePath, sep } from "node:path";
 import { fromJson, type DescMessage, type JsonValue, type Message } from "@bufbuild/protobuf";
 import {
+  RenderArtifactOptionsSchema,
   DocumentValueSchema,
   EditOperationSchema,
   QuerySchema,
@@ -441,6 +442,7 @@ export class Runner {
     RenderView: (call) =>
       this.model(call).renderView(String(call.request["view"]), {
         ports: call.request["ports"] === "full" ? "full" : "minimal",
+        ...(call.request["artifact"] === undefined ? {} : {artifact: fromJson(RenderArtifactOptionsSchema, call.request["artifact"] as JsonValue)}),
       }),
     ExportGraphs: (call) => this.model(call).exportGraphs(String(call.request["subject"])),
     RunAnalysis: (call) =>

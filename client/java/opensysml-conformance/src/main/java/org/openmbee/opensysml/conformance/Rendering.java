@@ -619,6 +619,7 @@ final class Rendering {
             .setStated(view.stated())
             .addAllColumns(view.columns())
             .addAllNotices(view.notices());
+    view.artifact().ifPresent(a -> response.setArtifact(org.openmbee.opensysml.proto.RenderArtifact.newBuilder().setForm(a.form()).setMediaType(a.mediaType()).setText(a.text())));
     view.canvas()
         .ifPresent(
             canvas ->
@@ -639,7 +640,8 @@ final class Rendering {
               .setDetail(node.detail())
               .setText(node.text())
               .setStandIn(node.standIn())
-              .setParent(node.parent());
+              .setParent(node.parent())
+              .setVerdict(node.verdict());
       node.ports()
           .forEach(
               port ->

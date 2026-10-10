@@ -287,3 +287,12 @@ status (a v1 model offered to `convert`, a v2 one to `migrate`) runs as that sta
 `--mutate <name>` corrupts a response on its way through the client and each
 mutation must make a scenario fail, which is what keeps the run from being
 vacuous.
+
+## Formatted view artifacts
+
+`model.renderView(name, {artifact: {form: "mermaid", direction: "LR"}})` returns
+formatted source in `result.artifact.text` alongside the typed diagram data.
+Artifact options use camelCase names (`drawingStyle`, `linkTemplate`). The
+optional result has `form`, `mediaType`, and `text`; absent means data-only.
+The client requires `render_view_artifact`, including on WASM connections,
+which currently refuse this option. See the [wire contract](wire-contract.md#formatted-view-artifacts).

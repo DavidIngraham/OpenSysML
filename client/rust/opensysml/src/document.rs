@@ -405,6 +405,8 @@ pub struct RenderPoint {
 /// One flattened rendered node; parents precede children.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RenderNode {
+    /// Worst overlaid verification verdict, empty when absent.
+    pub verdict: String,
     /// Stable identifier within the rendered view.
     pub id: String,
     /// Rendered node kind.
@@ -508,6 +510,8 @@ pub struct RenderNote {
 /// The complete machine-readable rendering of a named or targeted pseudo-view.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RenderedView {
+    /// Formatted source, present only when requested.
+    pub artifact: Option<RenderArtifact>,
     /// Qualified view name or pseudo-view name.
     pub view: String,
     /// Rendered view kind.
@@ -557,6 +561,11 @@ pub(crate) fn rendered_view_of(response: wire::RenderViewResponse) -> RenderedVi
         italic: style.italic,
     };
     RenderedView {
+        artifact: response.artifact.map(|a| RenderArtifact {
+            form: a.form,
+            media_type: a.media_type,
+            text: a.text,
+        }),
         view: response.view,
         kind: response.kind,
         stated: response.stated,
@@ -564,6 +573,7 @@ pub(crate) fn rendered_view_of(response: wire::RenderViewResponse) -> RenderedVi
             .nodes
             .into_iter()
             .map(|node| RenderNode {
+                verdict: node.verdict,
                 id: node.id,
                 kind: node.kind,
                 name: node.name,
@@ -656,11 +666,31 @@ pub(crate) fn rendered_view_of(response: wire::RenderViewResponse) -> RenderedVi
 
 #[cfg(test)]
 mod render_view_tests {
+    #[test]
+    fn artifact_presence_preserves_empty_text_and_verdicts() {
+        let absent = super::rendered_view_of(super::wire::RenderViewResponse::default());
+        assert!(absent.artifact.is_none());
+        let present = super::rendered_view_of(super::wire::RenderViewResponse {
+            artifact: Some(super::wire::RenderArtifact {
+                form: "dot".into(),
+                ..Default::default()
+            }),
+            nodes: vec![super::wire::RenderNode {
+                verdict: "fail".into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        });
+        assert_eq!(present.artifact.unwrap().text, "");
+        assert_eq!(present.nodes[0].verdict, "fail");
+    }
+
     use super::*;
 
     #[test]
     fn rendered_view_decoder_preserves_fields_and_optional_messages() {
         let response = wire::RenderViewResponse {
+            artifact: None,
             view: "Demo::view".to_owned(),
             kind: "interconnection".to_owned(),
             stated: "rendered".to_owned(),
@@ -1203,4 +1233,51 @@ mod tests {
         assert_eq!(row.verdict.as_ref().unwrap().status, "pass");
         assert_eq!(row.cells[0], [DocumentValue::Text("pass".to_owned())]);
     }
+}
+
+/// Options for formatted view source; form is required when supplied.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RenderArtifactOptions {
+    /// Text output format.
+    pub form: String,
+    /// Node palette, or empty for the default.
+    pub palette: String,
+    /// Pilot or Cameo drawing style.
+    pub drawing_style: String,
+    /// Semantic overlay, or empty for none.
+    pub overlay: String,
+    /// Flow direction, or empty for the kind's default.
+    pub direction: String,
+    /// Placement of unpositioned nodes.
+    pub unplaced: String,
+    /// Text width; zero is unbounded.
+    pub width: i32,
+    /// Source link template, or empty for no links.
+    pub link_template: String,
+}
+
+impl RenderArtifactOptions {
+    pub(crate) fn into_wire(self) -> wire::RenderArtifactOptions {
+        wire::RenderArtifactOptions {
+            form: self.form,
+            palette: self.palette,
+            drawing_style: self.drawing_style,
+            overlay: self.overlay,
+            direction: self.direction,
+            unplaced: self.unplaced,
+            width: self.width,
+            link_template: self.link_template,
+        }
+    }
+}
+
+/// Formatted UTF-8 diagram or table source.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RenderArtifact {
+    /// Actual output format.
+    pub form: String,
+    /// Content media type.
+    pub media_type: String,
+    /// Source text, possibly empty.
+    pub text: String,
 }

@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/Open-MBEE/OpenSysML/api/proto"
+	"github.com/Open-MBEE/OpenSysML/internal/exec/runtime"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/symbolfacts"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
@@ -16,6 +17,11 @@ import (
 func (s *Service) RenderView(ctx context.Context, req *pb.RenderViewRequest) (*pb.RenderViewResponse, error) {
 	if err := s.requireCapability(CapabilityRenderView); err != nil {
 		return nil, err
+	}
+	if req.Artifact != nil {
+		if err := s.requireCapability(CapabilityRenderViewArtifact); err != nil {
+			return nil, err
+		}
 	}
 	cached, ok := s.cache.Get(req.ModelHash)
 	if !ok {
@@ -29,9 +35,16 @@ func (s *Service) RenderView(ctx context.Context, req *pb.RenderViewRequest) (*p
 		return nil, statusError(connect.CodeInvalidArgument, (&view.UnknownPortsError{Name: req.Ports}).Error())
 	}
 
+	options, overlay, err := renderArtifactOptions(req.Artifact, ports)
+	if err != nil {
+		return nil, statusError(connect.CodeInvalidArgument, err.Error())
+	}
 	worker, release := cached.worker()
 	defer release()
 	renderer := view.NewRenderer(worker.Model.Semantics(), worker.Model.Resolver(), cachedSourceText(cached))
+	if overlay == view.OverlayVerdicts {
+		renderer.SetVerdicts(runtime.RequirementVerdicts(s.newRuntimeOver(ctx, worker), cached.DocumentRoots()))
+	}
 	rendering, err := view.RenderNamed(renderer, req.View, func(name string) []*symbols.Symbol {
 		return symbolfacts.LookupNamed(cached.Index, name)
 	})
@@ -42,7 +55,30 @@ func (s *Service) RenderView(ctx context.Context, req *pb.RenderViewRequest) (*p
 		}
 		return nil, statusError(connect.CodeInvalidArgument, err.Error())
 	}
-	return renderViewData(cached, rendering.DataFor(ports)), nil
+	if !rendering.Kind.SupportsOverlay(overlay) {
+		return nil, statusErrorf(connect.CodeInvalidArgument, "%s: a %s rendering draws no %s overlay", rendering.View, rendering.Kind, overlay)
+	}
+	var artifact *pb.RenderArtifact
+	if req.Artifact != nil {
+		if options.Links.Template != "" {
+			options.Links.Sites = renderer.Sites(func(origin view.Origin) (string, source.Pos, bool) {
+				for _, document := range cached.Documents {
+					if document.Source != nil && document.Source.Name() == origin.Doc {
+						return origin.Doc, document.Source.Lines().PosAt(origin.Span.Offset), true
+					}
+				}
+				return "", source.Pos{}, false
+			})
+		}
+		text, err := rendering.WriteWith(view.Form(req.Artifact.Form), options)
+		if err != nil {
+			return nil, statusError(connect.CodeInvalidArgument, err.Error())
+		}
+		artifact = &pb.RenderArtifact{Form: req.Artifact.Form, MediaType: renderArtifactMediaType(req.Artifact.Form), Text: text}
+	}
+	response := renderViewData(cached, rendering.DataFor(ports))
+	response.Artifact = artifact
+	return response, nil
 }
 
 type renderViewOrigins struct {
@@ -99,7 +135,7 @@ func renderViewData(model *CachedModel, data view.Data) *pb.RenderViewResponse {
 		item := &pb.RenderNode{
 			Id: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized,
 			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn,
-			Parent: node.Parent, Origin: origins.span(node.Origin),
+			Parent: node.Parent, Origin: origins.span(node.Origin), Verdict: node.Verdict,
 		}
 		for _, port := range node.Ports {
 			item.Ports = append(item.Ports, &pb.RenderPort{

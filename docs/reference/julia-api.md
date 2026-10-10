@@ -249,3 +249,12 @@ The package's [README](../../client/julia/OpenSysML/README.md) includes
 installation and examples. See the [wire contract](wire-contract.md) for the
 Connect-JSON shapes and the [client guide](../clients/julia.md)
 for a walkthrough.
+
+## Formatted view artifacts
+
+`render_view(model, name; form="mermaid", direction="LR")` returns formatted
+source in `result.artifact.text` alongside typed diagram data. Other keyword
+options are `palette`, `drawing_style`, `overlay`, `unplaced`, `width`, and
+`link_template`; they require `form`. `artifact` is `nothing` for data-only
+requests, otherwise a `RenderArtifact` with `form`, `media_type`, and `text`.
+This requires `render_view_artifact`; see the [wire contract](wire-contract.md#formatted-view-artifacts).

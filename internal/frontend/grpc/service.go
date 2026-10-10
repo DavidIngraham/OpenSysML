@@ -79,6 +79,9 @@ const CapabilityRenderDocumentHTML = "render_document_html"
 // renders a declared or targeted pseudo-view as machine-readable diagram data.
 const CapabilityRenderView = "render_view"
 
+// CapabilityRenderViewArtifact names formatted view output and its options.
+const CapabilityRenderViewArtifact = "render_view_artifact"
+
 // CapabilityExportGraphs names the capability of the ExportGraphs RPC, which
 // exports the lowered graph of an action or state machine as `graphs:1` JSON.
 const CapabilityExportGraphs = "export_graphs"
@@ -328,6 +331,7 @@ var capabilities = []string{
 	CapabilityRationalValues,
 	CapabilityStateTrace,
 	CapabilityRenderView,
+	CapabilityRenderViewArtifact,
 	CapabilityExportGraphs,
 	CapabilityConvertDocuments,
 	CapabilityConvertCompact,

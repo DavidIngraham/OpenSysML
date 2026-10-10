@@ -188,6 +188,7 @@ private static final long serialVersionUID = 0L;
    * and answers with typed rows.
    * "render_document" - the RenderDocument RPC renders a named document to
    * Markdown.
+   * "render_view_artifact" - formatted text artifacts and verdict overlays.
    * "render_view" - the RenderView RPC renders a declared view or targeted
    * pseudo-view as machine-readable diagram data.
    * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -319,6 +320,7 @@ private static final long serialVersionUID = 0L;
    * and answers with typed rows.
    * "render_document" - the RenderDocument RPC renders a named document to
    * Markdown.
+   * "render_view_artifact" - formatted text artifacts and verdict overlays.
    * "render_view" - the RenderView RPC renders a declared view or targeted
    * pseudo-view as machine-readable diagram data.
    * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -449,6 +451,7 @@ private static final long serialVersionUID = 0L;
    * and answers with typed rows.
    * "render_document" - the RenderDocument RPC renders a named document to
    * Markdown.
+   * "render_view_artifact" - formatted text artifacts and verdict overlays.
    * "render_view" - the RenderView RPC renders a declared view or targeted
    * pseudo-view as machine-readable diagram data.
    * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -580,6 +583,7 @@ private static final long serialVersionUID = 0L;
    * and answers with typed rows.
    * "render_document" - the RenderDocument RPC renders a named document to
    * Markdown.
+   * "render_view_artifact" - formatted text artifacts and verdict overlays.
    * "render_view" - the RenderView RPC renders a declared view or targeted
    * pseudo-view as machine-readable diagram data.
    * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1160,6 +1164,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1292,6 +1297,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1422,6 +1428,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1553,6 +1560,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1685,6 +1693,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1823,6 +1832,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -1960,6 +1970,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -2097,6 +2108,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -2231,6 +2243,7 @@ private static final long serialVersionUID = 0L;
      * and answers with typed rows.
      * "render_document" - the RenderDocument RPC renders a named document to
      * Markdown.
+     * "render_view_artifact" - formatted text artifacts and verdict overlays.
      * "render_view" - the RenderView RPC renders a declared view or targeted
      * pseudo-view as machine-readable diagram data.
      * "export_graphs" - the ExportGraphs RPC exports the lowered graph of an

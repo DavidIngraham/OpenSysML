@@ -1901,6 +1901,7 @@ message ServerInfoResponse {
   //                  and answers with typed rows.
   //   "render_document" - the RenderDocument RPC renders a named document to
   //                  Markdown.
+  //   "render_view_artifact" - formatted text artifacts and verdict overlays.
   //   "render_view" - the RenderView RPC renders a declared view or targeted
   //                  pseudo-view as machine-readable diagram data.
   //   "export_graphs" - the ExportGraphs RPC exports the lowered graph of an
@@ -2337,6 +2338,29 @@ message RenderViewRequest {
   string view = 2;
   // "" or "minimal" (the default), or "full", as view.ParsePorts reads it.
   string ports = 3;
+  // Optional formatted output; requires render_view_artifact.
+  RenderArtifactOptions artifact = 4;
+}
+
+// RenderArtifactOptions selects a text artifact from the shared view writers.
+message RenderArtifactOptions {
+  // Required when artifact options are present.
+  string form = 1;
+  string palette = 2;
+  string drawing_style = 3;
+  string overlay = 4;
+  string direction = 5;
+  string unplaced = 6;
+  // Nonnegative text width; zero is unbounded.
+  int32 width = 7;
+  string link_template = 8;
+}
+
+// RenderArtifact is UTF-8 source, not a rasterized image.
+message RenderArtifact {
+  string form = 1;
+  string media_type = 2;
+  string text = 3;
 }
 
 // RenderViewResponse carries all machine-readable fields of the rendering.
@@ -2353,6 +2377,8 @@ message RenderViewResponse {
   RenderCanvas canvas = 8;
   repeated RenderNote notes = 9;
   repeated string notices = 10;
+  // Present only when an artifact was requested, even when its text is empty.
+  RenderArtifact artifact = 11;
 }
 
 // RenderNode is one flattened node of the rendering.
@@ -2371,6 +2397,8 @@ message RenderNode {
   // Unset when no layout positions the node.
   RenderGeometry geometry = 12;
   RenderStyle style = 13;
+  // Worst verification verdict when the verdicts overlay is requested.
+  string verdict = 14;
 }
 
 // RenderPort is a feature drawn on a node's border.

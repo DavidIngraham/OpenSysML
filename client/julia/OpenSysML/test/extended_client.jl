@@ -691,6 +691,10 @@ end
                 @test !isempty(render_document(document_model, "Observatory::MassReport"; form="html"))
                 views_model = parse_file(conn, joinpath(FIXTURES, "views.sysml"))
                 rendered_view = render_view(views_model, "RenderViewDemo::connections")
+                @test rendered_view.artifact === nothing
+                artifact_view = render_view(views_model, "RenderViewDemo::connections"; form="dot", ports="full", palette="okabe-ito", drawing_style="cameo", direction="LR", unplaced="strip")
+                @test artifact_view.artifact.form == "dot"
+                @test occursin("digraph", artifact_view.artifact.text)
                 @test rendered_view.kind == "interconnection"
                 @test length(rendered_view.edges) == 1
                 @test !isempty(rendered_view.edges[1].from_port)

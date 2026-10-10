@@ -13,10 +13,13 @@ import {
   ElementRef,
   ObjectRef,
   SymbolNotFoundError,
+  MissingCapabilityError,
   connect,
 } from "../src/node/index.js";
 import { repoRoot, useServiceBinary } from "./support/service.js";
 import { RenderViewResponseSchema } from "../src/generated/sysml_pb.js";
+import { Code, ConnectError } from "@connectrpc/connect";
+import { fakeConnection } from "./support/fake.js";
 import { renderedViewOf } from "../src/core/render-view.js";
 
 before(() => {
@@ -233,4 +236,43 @@ test("exportGraphs returns the canonical graphs form of a behavior", async () =>
   assert.ok(missing instanceof SymbolNotFoundError);
   assert.equal(missing.symbolName, "Test::Missing");
   await assert.rejects(model.exportGraphs("Test"), /no lowered graph/);
+});
+
+
+test("rendered artifacts preserve empty text, absence, and semantic verdicts", () => {
+  assert.equal(renderedViewOf(create(RenderViewResponseSchema, {})).artifact, undefined);
+  const result = renderedViewOf(create(RenderViewResponseSchema, {
+    artifact: {form: "dot", mediaType: "text/plain; charset=utf-8", text: ""},
+    nodes: [{verdict: "fail"}],
+  }));
+  assert.deepEqual(result.artifact, {form: "dot", mediaType: "text/plain; charset=utf-8", text: ""});
+  assert.equal(result.nodes[0]?.verdict, "fail");
+});
+
+test("renderView returns formatted source alongside its graph", async () => {
+  const connection = await connect();
+  try {
+    const model = await connection.load(VIEW_FIXTURE);
+    for (const form of ["text", "mermaid", "dot", "plantuml", "d2"]) {
+      const result = await model.renderView("RenderViewDemo::connections", {ports: "full", artifact: {form, palette: "okabe-ito", drawingStyle: "cameo", direction: "LR", unplaced: "strip"}});
+      assert.equal(result.artifact?.form, form);
+      assert.ok(result.artifact.text);
+      assert.ok(result.nodes.length);
+    }
+  } finally { await connection.close(); }
+});
+
+
+test("artifact requests require capability and a present response", async () => {
+  await using older = await fakeConnection(["render_view"]);
+  await assert.rejects(
+    () => older.renderView("hash", "V", {artifact: {form: "dot"}}),
+    MissingCapabilityError,
+  );
+  await using missing = await fakeConnection(["render_view", "render_view_artifact"], () =>
+    create(RenderViewResponseSchema, {}));
+  await assert.rejects(
+    () => missing.renderView("hash", "V", {artifact: {form: "dot"}}),
+    (error: unknown) => error instanceof ConnectError && error.code === Code.DataLoss,
+  );
 });

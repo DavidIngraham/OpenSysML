@@ -228,6 +228,11 @@ returns a `DocumentQueryResult` with `columns` and `rows`; both are cell collect
 `opensysml.RenderedView` with ordered nodes, edges, ports, rows, notes and
 origins; geometry, style and canvas are empty when absent. Use `'full'` to
 include every declared port. The call requires `render_view`.
+Use `model.renderView(name, 'artifact', struct('form', 'mermaid'))`
+for formatted source in `result.artifact.text`. The artifact is `[]` for a
+data-only request; option struct fields use protobuf JSON names.
+This option requires `render_view_artifact`; see the [artifact wire contract](wire-contract.md#formatted-view-artifacts).
+
 
 ## Edit builder
 

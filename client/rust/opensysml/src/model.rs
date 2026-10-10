@@ -106,6 +106,17 @@ impl Model {
     pub fn render_view(&self, view_name: &str) -> Result<crate::document::RenderedView, Error> {
         self.connection.render_view(self.hash(), view_name)
     }
+    /// Render a view with optional formatted text and an explicit port selection.
+    pub fn render_view_with_artifact(
+        &self,
+        view_name: &str,
+        ports: crate::document::RenderViewPorts,
+        artifact: Option<crate::document::RenderArtifactOptions>,
+    ) -> Result<crate::document::RenderedView, Error> {
+        self.connection
+            .render_view_with_artifact(self.hash(), view_name, ports, artifact)
+    }
+
     /// Render a named view with the requested port selection.
     pub fn render_view_with_ports(
         &self,

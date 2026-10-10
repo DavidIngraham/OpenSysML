@@ -151,6 +151,10 @@ function test_surface_live()
         'name', 'views.sysml');
     renderedView = opensysml.renderView(viewModel, 'RenderViewDemo::connections');
     renderedViewMethod = viewModel.renderView('RenderViewDemo::connections');
+    artifactView = viewModel.renderView('RenderViewDemo::connections', 'ports', 'full', ...
+        'artifact', struct('form', 'dot', 'palette', 'okabe-ito', 'drawingStyle', 'cameo', 'direction', 'LR', 'unplaced', 'strip'));
+    assert_equal(artifactView.artifact.form, 'dot', 'artifact form');
+    assert_equal(~isempty(strfind(artifactView.artifact.text, 'digraph')), true, 'artifact text');
     assert_equal(strcmp(renderedView.kind, 'interconnection'), true, 'RenderView kind');
     assert_equal(numel(renderedView.edges), 1, 'RenderView edges');
     assert_equal(~isempty(renderedView.edges(1).fromPort), true, 'RenderView from port');

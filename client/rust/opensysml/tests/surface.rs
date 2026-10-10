@@ -441,6 +441,22 @@ fn a_rendered_view_keeps_ports_edges_and_origins() {
         include_str!("../../../../conformance/fixtures/views.sysml"),
     );
     let rendered = model.render_view("RenderViewDemo::connections").unwrap();
+    assert!(rendered.artifact.is_none());
+    let artifact = model
+        .render_view_with_artifact(
+            "RenderViewDemo::connections",
+            RenderViewPorts::Full,
+            Some(opensysml::RenderArtifactOptions {
+                form: "dot".into(),
+                palette: "okabe-ito".into(),
+                drawing_style: "cameo".into(),
+                direction: "LR".into(),
+                unplaced: "strip".into(),
+                ..Default::default()
+            }),
+        )
+        .unwrap();
+    assert!(artifact.artifact.unwrap().text.contains("digraph"));
     assert_eq!(rendered.kind, "interconnection");
     assert_eq!(rendered.edges.len(), 1);
     assert!(!rendered.edges[0].from_port.is_empty());

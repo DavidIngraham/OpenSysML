@@ -46,9 +46,9 @@ pub use conversion::{
 };
 pub use document::{
     document_event_to_wire, DocumentEvent, DocumentForm, DocumentQueryResult, DocumentRow,
-    DocumentState, DocumentValue, DocumentVerdict, ElementRef, ObjectRef, RenderCanvas, RenderEdge,
-    RenderGeometry, RenderNode, RenderNote, RenderPoint, RenderPort, RenderRow, RenderSpan,
-    RenderStyle, RenderViewPorts, RenderedView,
+    DocumentState, DocumentValue, DocumentVerdict, ElementRef, ObjectRef, RenderArtifact,
+    RenderArtifactOptions, RenderCanvas, RenderEdge, RenderGeometry, RenderNode, RenderNote,
+    RenderPoint, RenderPort, RenderRow, RenderSpan, RenderStyle, RenderViewPorts, RenderedView,
 };
 pub use edit::{
     ActionOptions, AppliedEdit, Body, CalcOptions, CommentOptions, ConnectionOptions,

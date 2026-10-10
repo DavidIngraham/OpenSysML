@@ -1,0 +1,319 @@
+{
+  "scenarios": [
+    {
+      "id": "render_view_artifact/text",
+      "description": "Formatted text source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "RenderViewDemo::connections",
+        "artifact": {
+          "form": "text"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "text"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/mermaid",
+      "description": "Formatted mermaid source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "RenderViewDemo::connections",
+        "artifact": {
+          "form": "mermaid"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "mermaid"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/dot",
+      "description": "Formatted dot source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "RenderViewDemo::connections",
+        "artifact": {
+          "form": "dot"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "dot"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/plantuml",
+      "description": "Formatted plantuml source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "RenderViewDemo::connections",
+        "artifact": {
+          "form": "plantuml"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "plantuml"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/d2",
+      "description": "Formatted d2 source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "RenderViewDemo::connections",
+        "artifact": {
+          "form": "d2"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "d2"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/markdown",
+      "description": "Formatted markdown source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "#table:RenderViewDemo::Assembly",
+        "artifact": {
+          "form": "markdown"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "markdown"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/csv",
+      "description": "Formatted csv source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "#table:RenderViewDemo::Assembly",
+        "artifact": {
+          "form": "csv"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "csv"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/tsv",
+      "description": "Formatted tsv source is returned alongside structured view data.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "#table:RenderViewDemo::Assembly",
+        "artifact": {
+          "form": "tsv"
+        }
+      },
+      "expect": {
+        "non_empty": [
+          "artifact.text"
+        ],
+        "contains_all": {
+          "artifact.form": [
+            "tsv"
+          ],
+          "artifact.media_type": [
+            "charset=utf-8"
+          ]
+        }
+      }
+    },
+    {
+      "id": "render_view_artifact/invalid_form",
+      "description": "Unknown artifact formats are rejected explicitly.",
+      "rpc": "RenderView",
+      "requires_capabilities": [
+        "render_view",
+        "render_view_artifact"
+      ],
+      "expect_without_capability": {
+        "status": "UNIMPLEMENTED",
+        "status_message_contains": "render_view"
+      },
+      "model": {
+        "fixture": "views.sysml"
+      },
+      "request": {
+        "model_hash": "${model_hash}",
+        "view": "RenderViewDemo::connections",
+        "artifact": {
+          "form": "png"
+        }
+      },
+      "expect": {
+        "status": "INVALID_ARGUMENT",
+        "status_message_contains": "form"
+      }
+    }
+  ]
+}

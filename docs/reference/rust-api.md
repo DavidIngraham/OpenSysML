@@ -72,6 +72,11 @@ let external = Connection::external("localhost", 50051)?; // a service someone e
 `RenderedView`; use `RenderViewPorts::Full` to include every declared port.
 Unset geometry, style and canvas are represented as absent optionals. The RPC
 requires the `render_view` capability.
+Use `model.render_view_with_artifact(name, RenderViewPorts::Minimal,
+Some(RenderArtifactOptions { form: "mermaid".into(), ..Default::default() }))`
+for formatted source in `result.artifact: Option<RenderArtifact>`.
+This option requires `render_view_artifact`; see the [artifact wire contract](wire-contract.md#formatted-view-artifacts).
+
 
 A private child is started with `-port 0 -health-port 0 -report-address
 -exit-with-parent` and its address read from its first stdout line, so no port is

@@ -16,7 +16,23 @@ public record RenderedView(
     List<Row> rows,
     Optional<Canvas> canvas,
     List<Note> notes,
-    List<String> notices) {
+    List<String> notices,
+    Optional<RenderArtifact> artifact) {
+
+  /** Constructs diagram data without a formatted artifact. */
+  public RenderedView(
+      String view,
+      String kind,
+      String stated,
+      List<Node> nodes,
+      List<Edge> edges,
+      List<String> columns,
+      List<Row> rows,
+      Optional<Canvas> canvas,
+      List<Note> notes,
+      List<String> notices) {
+    this(view, kind, stated, nodes, edges, columns, rows, canvas, notes, notices, Optional.empty());
+  }
 
   public RenderedView {
     Objects.requireNonNull(view, "view");
@@ -29,6 +45,7 @@ public record RenderedView(
     Objects.requireNonNull(canvas, "canvas");
     notes = List.copyOf(notes);
     notices = List.copyOf(notices);
+    Objects.requireNonNull(artifact, "artifact");
   }
 
   /** A flattened rendered node; parents precede children. */
@@ -45,8 +62,29 @@ public record RenderedView(
       List<Port> ports,
       Optional<Span> origin,
       Optional<Geometry> geometry,
-      Optional<Style> style) {
+      Optional<Style> style,
+      String verdict) {
+    /** Constructs a node without an overlaid verification verdict. */
+    public Node(
+        String id,
+        String kind,
+        String name,
+        boolean nameSynthesized,
+        String type,
+        String detail,
+        String text,
+        boolean standIn,
+        String parent,
+        List<Port> ports,
+        Optional<Span> origin,
+        Optional<Geometry> geometry,
+        Optional<Style> style) {
+      this(id, kind, name, nameSynthesized, type, detail, text, standIn, parent, ports,
+          origin, geometry, style, "");
+    }
+
     public Node {
+      Objects.requireNonNull(verdict, "verdict");
       ports = List.copyOf(ports);
       Objects.requireNonNull(origin, "origin");
       Objects.requireNonNull(geometry, "geometry");
@@ -163,7 +201,7 @@ public record RenderedView(
                                     node.getGeometry().getHasSize(),
                                     node.getGeometry().getCollapsed()))
                             : Optional.empty(),
-                        node.hasStyle() ? Optional.of(style(node.getStyle())) : Optional.empty()))
+                        node.hasStyle() ? Optional.of(style(node.getStyle())) : Optional.empty(), node.getVerdict()))
             .toList(),
         response.getEdgesList().stream()
             .map(
@@ -213,7 +251,9 @@ public record RenderedView(
                         note.getHasSize(),
                         note.hasOrigin() ? Optional.of(span(note.getOrigin())) : Optional.empty()))
             .toList(),
-        response.getNoticesList());
+        response.getNoticesList(),
+        response.hasArtifact() ? Optional.of(new RenderArtifact(response.getArtifact().getForm(),
+            response.getArtifact().getMediaType(), response.getArtifact().getText())) : Optional.empty());
   }
 
   private static Span span(org.openmbee.opensysml.proto.Span span) {

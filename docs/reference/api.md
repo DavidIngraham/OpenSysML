@@ -1224,6 +1224,12 @@ ports. It is advertised by `render_view`, and a service without that capability
 refuses the request with `UNIMPLEMENTED`.
 Python exposes this as `model.render_view(view_name, ports="minimal")`, returning
 a typed `RenderedView`.
+An optional `artifact` request selects formatted source through the shared CLI
+writers; Python uses `model.render_view(view_name, form="mermaid")` and reads
+`result.artifact.text`. This requires `render_view_artifact`. See the
+[artifact wire contract](wire-contract.md#formatted-view-artifacts) for formats,
+options, media types and compatibility behavior.
+
 
 `ExportGraphs` answers the lowered graph of an action or state machine — the
 subject's `ActionGraph`/`StateGraph` IR and that of every behavior it performs —

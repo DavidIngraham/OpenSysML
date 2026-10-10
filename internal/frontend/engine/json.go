@@ -327,9 +327,10 @@ type JParseSourcesResponse struct {
 }
 
 type JRenderViewRequest struct {
-	ModelHash string `json:"modelHash,omitempty"`
-	View      string `json:"view,omitempty"`
-	Ports     string `json:"ports,omitempty"`
+	Artifact  json.RawMessage `json:"artifact,omitempty"`
+	ModelHash string          `json:"modelHash,omitempty"`
+	View      string          `json:"view,omitempty"`
+	Ports     string          `json:"ports,omitempty"`
 }
 
 type JRenderViewResponse struct {

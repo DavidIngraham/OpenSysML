@@ -62,6 +62,9 @@ CAPABILITY_RENDER_DOCUMENT = "render_document"
 #: The ``RenderView`` RPC, which returns typed diagram data.
 CAPABILITY_RENDER_VIEW = "render_view"
 
+#: Formatted text artifacts and their rendering options.
+CAPABILITY_RENDER_VIEW_ARTIFACT = "render_view_artifact"
+
 #: The ``ExportGraphs`` RPC, which exports the lowered graph of an action or
 #: state machine as the canonical ``graphs:1`` JSON an external engine is sent.
 CAPABILITY_EXPORT_GRAPHS = "export_graphs"

@@ -309,6 +309,9 @@ func (e *Engine) Call(ctx context.Context, method string, params []byte) (result
 // renderView builds the data a diagram client draws from a declared view or a
 // targeted pseudo-view, without requiring a current-document context.
 func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
+	if len(req.Artifact) != 0 && string(req.Artifact) != "null" {
+		return nil, statusError(codeUnimplemented, "render_view_artifact is not served by sysml-engine")
+	}
 	cached, ok := e.get(req.ModelHash)
 	if !ok {
 		return nil, statusErrorf(codeNotFound, msgModelNotFound, req.ModelHash)

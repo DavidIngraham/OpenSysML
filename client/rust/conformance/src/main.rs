@@ -851,10 +851,21 @@ impl Runner {
             "full" => RenderViewPorts::Full,
             other => return Answer::Unrepresentable(format!("render-view ports {other:?}")),
         };
-        match self
-            .connection
-            .render_view_with_ports(&request.model_hash, &request.view, ports)
-        {
+        match self.connection.render_view_with_artifact(
+            &request.model_hash,
+            &request.view,
+            ports,
+            request.artifact.map(|a| opensysml::RenderArtifactOptions {
+                form: a.form,
+                palette: a.palette,
+                drawing_style: a.drawing_style,
+                overlay: a.overlay,
+                direction: a.direction,
+                unplaced: a.unplaced,
+                width: a.width,
+                link_template: a.link_template,
+            }),
+        ) {
             Ok(rendered) => {
                 Answer::Response(self.wire_json("sysml.RenderViewResponse", rendered.wire()))
             }

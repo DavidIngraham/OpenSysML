@@ -1442,6 +1442,11 @@ class ApiIntegrationTest {
   void renderViewReturnsTypedPortsEdgesAndOrigins() {
     Model model = connection.load(fixture("views.sysml"));
     RenderedView rendered = model.renderView("RenderViewDemo::connections");
+    assertTrue(rendered.artifact().isEmpty());
+    RenderedView withArtifact = model.renderView("RenderViewDemo::connections", RenderViewPorts.FULL,
+        new RenderArtifactOptions("dot", "okabe-ito", "cameo", "", "LR", "strip", 0, ""));
+    assertEquals("dot", withArtifact.artifact().orElseThrow().form());
+    assertTrue(withArtifact.artifact().orElseThrow().text().contains("digraph"));
     assertEquals("interconnection", rendered.kind());
     assertEquals(1, rendered.edges().size());
     assertFalse(rendered.edges().get(0).fromPort().isEmpty());

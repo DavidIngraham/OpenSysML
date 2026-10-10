@@ -61,6 +61,8 @@ export const CAPABILITY_RENDER_DOCUMENT = "render_document";
 export const CAPABILITY_RENDER_DOCUMENT_HTML = "render_document_html";
 /** The `RenderView` RPC, returning typed diagram data. */
 export const CAPABILITY_RENDER_VIEW = "render_view";
+/** Formatted view artifacts and their options. */
+export const CAPABILITY_RENDER_VIEW_ARTIFACT = "render_view_artifact";
 /** The `ExportGraphs` RPC, exporting a behavior's lowered graph as `graphs:1` JSON. */
 export const CAPABILITY_EXPORT_GRAPHS = "export_graphs";
 /** What the body of a verification case answered, as `verification_verdicts`. */

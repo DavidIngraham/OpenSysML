@@ -1059,7 +1059,12 @@ final class Api {
     Model model = connection.model(request.getModelHash());
     RenderViewPorts ports =
         request.getPorts().equals("full") ? RenderViewPorts.FULL : RenderViewPorts.MINIMAL;
-    RenderedView rendered = model.renderView(request.getView(), ports);
+    org.openmbee.opensysml.RenderArtifactOptions artifact = null;
+    if (request.hasArtifact()) {
+      var a = request.getArtifact();
+      artifact = new org.openmbee.opensysml.RenderArtifactOptions(a.getForm(), a.getPalette(), a.getDrawingStyle(), a.getOverlay(), a.getDirection(), a.getUnplaced(), a.getWidth(), a.getLinkTemplate());
+    }
+    RenderedView rendered = model.renderView(request.getView(), ports, artifact);
     return Rendering.renderedView(rendered);
   }
 

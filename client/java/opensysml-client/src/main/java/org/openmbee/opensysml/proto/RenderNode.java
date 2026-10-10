@@ -40,6 +40,7 @@ private static final long serialVersionUID = 0L;
     text_ = "";
     parent_ = "";
     ports_ = java.util.Collections.emptyList();
+    verdict_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -482,6 +483,53 @@ private static final long serialVersionUID = 0L;
     return style_ == null ? org.openmbee.opensysml.proto.RenderStyle.getDefaultInstance() : style_;
   }
 
+  public static final int VERDICT_FIELD_NUMBER = 14;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object verdict_ = "";
+  /**
+   * <pre>
+   * Worst verification verdict when the verdicts overlay is requested.
+   * </pre>
+   *
+   * <code>string verdict = 14 [json_name = "verdict"];</code>
+   * @return The verdict.
+   */
+  @java.lang.Override
+  public java.lang.String getVerdict() {
+    java.lang.Object ref = verdict_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      verdict_ = s;
+      return s;
+    }
+  }
+  /**
+   * <pre>
+   * Worst verification verdict when the verdicts overlay is requested.
+   * </pre>
+   *
+   * <code>string verdict = 14 [json_name = "verdict"];</code>
+   * @return The bytes for verdict.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getVerdictBytes() {
+    java.lang.Object ref = verdict_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      verdict_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -534,6 +582,9 @@ private static final long serialVersionUID = 0L;
     }
     if (((bitField0_ & 0x00000004) != 0)) {
       output.writeMessage(13, getStyle());
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(verdict_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 14, verdict_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -589,6 +640,9 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(13, getStyle());
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(verdict_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(14, verdict_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -639,6 +693,8 @@ private static final long serialVersionUID = 0L;
       if (!getStyle()
           .equals(other.getStyle())) return false;
     }
+    if (!getVerdict()
+        .equals(other.getVerdict())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -686,6 +742,8 @@ private static final long serialVersionUID = 0L;
       hash = (37 * hash) + STYLE_FIELD_NUMBER;
       hash = (53 * hash) + getStyle().hashCode();
     }
+    hash = (37 * hash) + VERDICT_FIELD_NUMBER;
+    hash = (53 * hash) + getVerdict().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -861,6 +919,7 @@ private static final long serialVersionUID = 0L;
         styleBuilder_.dispose();
         styleBuilder_ = null;
       }
+      verdict_ = "";
       return this;
     }
 
@@ -953,6 +1012,9 @@ private static final long serialVersionUID = 0L;
             : styleBuilder_.build();
         to_bitField0_ |= 0x00000004;
       }
+      if (((from_bitField0_ & 0x00002000) != 0)) {
+        result.verdict_ = verdict_;
+      }
       result.bitField0_ |= to_bitField0_;
     }
 
@@ -1043,6 +1105,11 @@ private static final long serialVersionUID = 0L;
       }
       if (other.hasStyle()) {
         mergeStyle(other.getStyle());
+      }
+      if (!other.getVerdict().isEmpty()) {
+        verdict_ = other.verdict_;
+        bitField0_ |= 0x00002000;
+        onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1149,6 +1216,11 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00001000;
               break;
             } // case 106
+            case 114: {
+              verdict_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00002000;
+              break;
+            } // case 114
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2371,6 +2443,98 @@ private static final long serialVersionUID = 0L;
         style_ = null;
       }
       return styleBuilder_;
+    }
+
+    private java.lang.Object verdict_ = "";
+    /**
+     * <pre>
+     * Worst verification verdict when the verdicts overlay is requested.
+     * </pre>
+     *
+     * <code>string verdict = 14 [json_name = "verdict"];</code>
+     * @return The verdict.
+     */
+    public java.lang.String getVerdict() {
+      java.lang.Object ref = verdict_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        verdict_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <pre>
+     * Worst verification verdict when the verdicts overlay is requested.
+     * </pre>
+     *
+     * <code>string verdict = 14 [json_name = "verdict"];</code>
+     * @return The bytes for verdict.
+     */
+    public com.google.protobuf.ByteString
+        getVerdictBytes() {
+      java.lang.Object ref = verdict_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        verdict_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <pre>
+     * Worst verification verdict when the verdicts overlay is requested.
+     * </pre>
+     *
+     * <code>string verdict = 14 [json_name = "verdict"];</code>
+     * @param value The verdict to set.
+     * @return This builder for chaining.
+     */
+    public Builder setVerdict(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      verdict_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Worst verification verdict when the verdicts overlay is requested.
+     * </pre>
+     *
+     * <code>string verdict = 14 [json_name = "verdict"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearVerdict() {
+      verdict_ = getDefaultInstance().getVerdict();
+      bitField0_ = (bitField0_ & ~0x00002000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Worst verification verdict when the verdicts overlay is requested.
+     * </pre>
+     *
+     * <code>string verdict = 14 [json_name = "verdict"];</code>
+     * @param value The bytes for verdict to set.
+     * @return This builder for chaining.
+     */
+    public Builder setVerdictBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      verdict_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
     }
 
     // @@protoc_insertion_point(builder_scope:sysml.RenderNode)

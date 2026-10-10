@@ -369,6 +369,11 @@ ordered nodes, edges, ports, source spans, table data and notes. Optional
 geometry, style and canvas remain `Optional` when the view does not state them.
 Use `RenderViewPorts.FULL` to include every declared port; the default is
 `MINIMAL`. This call requires the `render_view` capability.
+Use `model.renderView(name, RenderViewPorts.MINIMAL, new RenderArtifactOptions("mermaid"))`
+to request formatted source. `result.artifact()` is an `Optional<RenderArtifact>`;
+its value exposes `form()`, `mediaType()` and `text()`.
+This option requires `render_view_artifact`; see the [artifact wire contract](wire-contract.md#formatted-view-artifacts).
+
 
 `DocumentValue` is sealed over `ElementRef`, `ObjectRef` (an `Instance` plus its
 element ids), `Verdict`, `State`, `Event`, `LiteralValue` (wrapping a `Value`),

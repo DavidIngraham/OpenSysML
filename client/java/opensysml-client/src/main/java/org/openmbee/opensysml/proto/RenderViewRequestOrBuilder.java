@@ -61,4 +61,31 @@ public interface RenderViewRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getPortsBytes();
+
+  /**
+   * <pre>
+   * Optional formatted output; requires render_view_artifact.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifactOptions artifact = 4 [json_name = "artifact"];</code>
+   * @return Whether the artifact field is set.
+   */
+  boolean hasArtifact();
+  /**
+   * <pre>
+   * Optional formatted output; requires render_view_artifact.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifactOptions artifact = 4 [json_name = "artifact"];</code>
+   * @return The artifact.
+   */
+  org.openmbee.opensysml.proto.RenderArtifactOptions getArtifact();
+  /**
+   * <pre>
+   * Optional formatted output; requires render_view_artifact.
+   * </pre>
+   *
+   * <code>.sysml.RenderArtifactOptions artifact = 4 [json_name = "artifact"];</code>
+   */
+  org.openmbee.opensysml.proto.RenderArtifactOptionsOrBuilder getArtifactOrBuilder();
 }

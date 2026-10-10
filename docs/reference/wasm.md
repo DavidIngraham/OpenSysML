@@ -318,3 +318,6 @@ The `wasip1` cases are driven with files and end each server at end of input, fo
 under [Running a WASI build](#running-a-wasi-build); the `js` cases hold a pipe open across a
 request and its answer, and run a full service session and a full language server
 `initialize`/`shutdown`. Both halves say so where they differ.
+
+Formatted view artifacts require `render_view_artifact`, which the WASM engine
+does not advertise. Raw engine artifact requests are refused as unsupported.

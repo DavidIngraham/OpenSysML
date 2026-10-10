@@ -51,7 +51,7 @@ from opensysml.document import (
     DocumentEvent, DocumentQueryError, DocumentQueryResult, DocumentRow, DocumentState,
     DocumentVerdict, ElementRef, Graphs, INFINITY, ObjectRef, RenderCanvas, RenderEdge,
     RenderGeometry, RenderNode, RenderNote, RenderPoint, RenderPort, RenderRow,
-    RenderSpan, RenderStyle, RenderedView,
+    RenderSpan, RenderStyle, RenderedView, RenderArtifact,
 )
 from opensysml.conversion import (
     FORMAT_API_JSON, FORMAT_SYSML, FORMAT_TURTLE, Conversion,
@@ -98,7 +98,7 @@ __all__ = [
     "DocumentEvent", "DocumentQueryError", "DocumentQueryResult", "DocumentRow",
     "DocumentState", "DocumentVerdict", "ElementRef", "INFINITY", "ObjectRef",
     "RenderCanvas", "RenderEdge", "RenderGeometry", "RenderNode", "RenderNote",
-    "RenderPoint", "RenderPort", "RenderRow", "RenderSpan", "RenderStyle", "RenderedView",
+    "RenderPoint", "RenderPort", "RenderRow", "RenderSpan", "RenderStyle", "RenderedView", "RenderArtifact",
     "Graphs",
     "OpenSysMLError", "AnalysisRunError", "ChecksumMismatchError", "ConnectionError",
     "ConversionError", "ExecutionError", "FeatureValueError", "MigrationError",

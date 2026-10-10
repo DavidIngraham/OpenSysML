@@ -43,6 +43,12 @@ inst, err := client.Instantiate(ctx, model, "Demo::Vehicle")
 | Change its source | `ApplyEdits` |
 
 `RenderView` returns ordered, typed node, edge, port and source-origin data.
+Pass `opensysml.WithRenderArtifact(opensysml.RenderArtifactOptions{Form: "mermaid"})`
+to receive formatted source in `result.Artifact.Text`. `Artifact` is nil for a
+data-only request. Options mirror the CLI (`Palette`, `DrawingStyle`, `Overlay`,
+`Direction`, `Unplaced`, `Width`, `LinkTemplate`) and require the
+`render_view_artifact` capability. See the [wire contract](../../docs/reference/wire-contract.md#formatted-view-artifacts).
+
 Ports used by connections are returned by default; pass `opensysml.WithFullPorts()`
 to include every declared port.
 
