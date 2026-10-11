@@ -5,7 +5,7 @@ Java client for OpenSysML: parse, inspect and evaluate SysML v2 models over the
 Eclipse-based tool, a Cameo plugin, a web service.
 
 For a task-oriented walkthrough, see the
-[Java client guide](https://redk.opensysml.org/clients/java/).
+[Java client guide](https://runtime.opensysml.org/clients/java/).
 
 ```xml
 <dependency>
@@ -393,12 +393,12 @@ unnoticed.
 
 Or as a test, which is what CI runs: `mvn -f client/java/pom.xml test`.
 
-Per protocol, of 138 scenarios:
+Per protocol, of 166 scenarios:
 
 | protocol       | ran | passed | failed | skipped |
 | -------------- | --: | -----: | -----: | ------: |
-| `connect`      | 133 |    133 |      0 |       5 |
-| `connect-json` | 133 |    133 |      0 |       5 |
+| `connect`      | 161 |    161 |      0 |       5 |
+| `connect-json` | 161 |    161 |      0 |       5 |
 
 **5 skipped**: only the requests the public API cannot express —
 `parse/naming_no_source_is_invalid` (the API always names a
