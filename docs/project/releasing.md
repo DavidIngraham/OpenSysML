@@ -107,8 +107,11 @@ Central token probes, the GPG key import and test-sign, the npm packs,
 are skipped: cosign keyless signing and attestation (which write to the public
 Rekor log), `ghr` (the GitHub release), `twine upload`, `npm publish`,
 `mvn deploy` and `cargo publish`. A rehearsal exports a stand-in `CIRCLE_TAG`
-from `_version.py` before any step reads it, so the version bumps must already
-be on the branch.
+from `_version.py` (`scripts/rehearsal-version.sh`) before any step reads it,
+so the version bumps must already be on the branch, and the Go suite's jobs tag
+their checkout locally as that release first: a tag build reports the tag as
+the module version in every binary the toolchain builds, a branch build reports
+`(devel)`, and the suite must pass under the former.
 
 Trigger it from the CircleCI UI with *Trigger pipeline*: choose the release
 branch for both the config and the checkout source, then add the boolean
