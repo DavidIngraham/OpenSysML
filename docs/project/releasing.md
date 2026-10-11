@@ -107,8 +107,11 @@ Central token probes, the GPG key import and test-sign, the npm packs,
 are skipped: cosign keyless signing and attestation (which write to the public
 Rekor log), `ghr` (the GitHub release), `twine upload`, `npm publish`,
 `mvn deploy` and `cargo publish`. A rehearsal exports a stand-in `CIRCLE_TAG`
-from `_version.py` before any step reads it, so the version bumps must already
-be on the branch.
+from `_version.py` (`scripts/rehearsal-version.sh`) before any step reads it,
+so the version bumps must already be on the branch, and the Go suite's jobs tag
+their checkout locally as that release first: a tag build reports the tag as
+the module version in every binary the toolchain builds, a branch build reports
+`(devel)`, and the suite must pass under the former.
 
 Trigger it from the CircleCI UI with *Trigger pipeline*: choose the release
 branch for both the config and the checkout source, then add the boolean
@@ -170,7 +173,7 @@ branch that moves the integration state onto `main`:
    set `[package] version` to the same spelling and run
    `cargo update -p opensysml` in `client/rust` so the lockfile
    agrees. The editors carry the same spelling too, though nothing publishes them:
-   `"version"` in `editors/vscode/package.json` and
+   `"version"` in `editors/vscode/package.json`, `editors/jupyterlab/package.json` and
    `editors/syson/frontend/package.json`, each lock regenerated with
    `npm install --package-lock-only` in that directory; `<version>` in
    `editors/mdk/pom.xml` and `editors/syson/pom.xml`; and `<parent><version>`
@@ -1383,9 +1386,12 @@ Everything below is already in place; it is recorded so it can be re-created.
 3. Requires `NPM_TOKEN` from the `npm` context.
 4. Refuses to run if any of the seven packages is already on the registry at this
    version (a publish cannot be repeated).
-5. Builds and tests the client against the release's linux binary (`npm ci`,
-   build, typecheck, lint, tests), with `$OPENSYSML_EXPECT_PINNED_RELEASE` set
-   to the tag so the suite asserts the stamped table pins it.
+5. Installs Z3, then builds and tests the client against the release's linux
+   binary (`npm ci`, build, typecheck, lint, tests), with
+   `$OPENSYSML_EXPECT_PINNED_RELEASE` set to the tag so the suite asserts the
+   stamped table pins it. The suite's verification tests ask the service
+   solver-backed questions, and the service finds the solver on PATH; without
+   one those questions are undecided and the tests fail.
 6. Builds the five platform packages from `dist/grpc` and the WASM package
    from `dist/wasm`, checking every asset against its `.sha256` sidecar.
 7. Packs the client into `dist/npm/` with `npm pack` and opens the tarball:
