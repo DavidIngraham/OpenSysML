@@ -459,7 +459,10 @@ jobs:
               go test -v -race -pgo=off -timeout 30m ./tests/wasm
               go test -C tools -v -race -pgo=off -timeout 30m ./...
             else
-              go test -v -race -pgo=off -timeout 30m $pkgs
+              # tests/migrate alone runs 23-32 minutes under -race on this class, so its
+              # shard gets the Makefile's per-package timeout (see make test-shard).
+              timeout=30m; [ "$shard" = migrate ] && timeout=55m
+              go test -v -race -pgo=off -timeout "$timeout" $pkgs
             fi
           no_output_timeout: 30m
           environment:
@@ -2799,6 +2802,16 @@ jobs:
                 exit 1
               fi
             done
+
+      # The suite's verification tests ask the service solver-backed questions;
+      # the solver is an external process the service finds on PATH, so without
+      # it those questions are undecided and the tests fail, as in node-test.
+      - run:
+          name: Install Z3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y z3
+            z3 --version
 
       - run:
           name: Build and test the package
