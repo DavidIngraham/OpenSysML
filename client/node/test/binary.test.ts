@@ -39,9 +39,8 @@ import { type Release, serveRelease } from "./release-server.js";
 
 const REPO = "Test-Owner/OpenSysML";
 const VERSION = "v0.9.9";
-// The repository the package's own release-digests.json pins, the service
-// assets every release of it publishes, and the Jupyter kernel assets it
-// publishes beside them from the release that introduced the kernel.
+// The repository the package's own release-digests.json pins, the service assets
+// every release of it publishes, and the kernel assets published from v0.10.0 on.
 const SHIPPED_REPO = "Open-MBEE/OpenSysML";
 const SERVICE_ASSETS = [
   "sysml-grpc-darwin-amd64",
