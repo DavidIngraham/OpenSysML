@@ -389,9 +389,8 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 	return nil, routeNoMember
 }
 
-// endEdge is a classifier-owned member end an anonymous association is
-// written as: ref names it from inside the view's body, owner is the classifier
-// whose node the tree rendering draws its edge from.
+// endEdge is a classifier-owned end an anonymous association is written as: ref
+// names it from inside the view's body, owner is the node its edge is drawn from.
 type endEdge struct {
 	ref   string
 	owner *sysmlv1.Element
