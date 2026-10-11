@@ -111,7 +111,7 @@ The tokenizer marks reserved keywords, the words that are keywords only in conte
 `deep`, `done`, `history`, `junction`, `shallow`, …), the literals `true`, `false` and `null`,
 `//` and `/* */` comments, the bodies of `doc` and `comment` as documentation, strings with
 their escapes, numbers, `'unrestricted names'`, the `A::B` of qualified names, operators and
-punctuation, and a cell's first token when it is a kernel command (`%help`, `%run`, …). The
+punctuation, and a cell's first token when it is a kernel command (`%help`, `%render`, …). The
 keyword tables are generated from the lexer's keyword list by the same tool that generates the
 VS Code grammars (`make vscode-grammar`), and a test holds the committed table to the lexer.
 
@@ -241,5 +241,5 @@ Each release publishes `sysml-jupyter-kernel-<os>-<arch>` for `linux-amd64`, `li
 `darwin-amd64`, `darwin-arm64` and `windows-amd64.exe`, raw with a `.sha256` sidecar and
 listed in the signed `SHA256SUMS.txt`, beside the five `jupyter_opensysml_kernel` platform
 wheels that bundle them and the sdist that pins them. `install.sh --tools
-sysml-jupyter-kernel` installs the binary and verifies it against the manifest; see
-[downloads](../downloads.md).
+sysml-jupyter-kernel` (`install.ps1 -Tools sysml-jupyter-kernel` on Windows) installs the
+binary and verifies it against the manifest; see [downloads](../downloads.md).
