@@ -302,12 +302,16 @@ func (m *Model) UnresolvedGenerals(e *Element) []string {
 }
 
 // Ancestors returns every classifier e specializes, transitively, nearest
-// first and each once, in-document elements and proxies alike. e itself is
-// among them exactly when its generalizations cycle back to it.
+// first and each once, in-document elements and proxies alike; a proxy into a
+// module snapshot continues through the stereotypes the snapshot declares it
+// specializes. e itself is among them exactly when its generalizations cycle
+// back to it.
 func (m *Model) Ancestors(e *Element) []*Element {
 	if a, ok := m.ancestors[e]; ok {
 		return a
 	}
+	// A snapshot general leading back to e finds the walk in progress and stops.
+	m.ancestors[e] = nil
 	seen := map[*Element]bool{}
 	var out []*Element
 	queue := m.Generals(e)
@@ -320,6 +324,9 @@ func (m *Model) Ancestors(e *Element) []*Element {
 		seen[g] = true
 		out = append(out, g)
 		queue = append(queue, m.Generals(g)...)
+		if decl, ok := m.moduleGeneral(g); ok {
+			queue = append(queue, m.moduleAncestors(decl)...)
+		}
 	}
 	m.ancestors[e] = out
 	return out

@@ -1001,6 +1001,11 @@ followed as the document's own are: a class stereotyped «Subsystem», which the
 profile derives from «Block», is a `part def`, mapped, with nested parts and ports, connection
 defs typed by it, and tables filtered by it (rows filtered as blocks, with the note) all as for
 a «Block»; its own kind is kept as an `AppliedStereotype` marker, `stereotype = "Subsystem";`.
+A snapshot's generalizations count whatever module declares them — a user profile module's
+«Structural» :> «Block» classifies and filters as «Subsystem» does — and a stereotype the
+document itself defines as specializing a module's stereotype by `href` inherits the
+snapshot's generalizations through it: «Instrument» :> «Subsystem» is a block, and its classes
+carry `@Tailoring::Instrument` as a user stereotype's classes do.
 When no snapshot declares the stereotype either — a plain XMI export — the tool's block
 stereotypes are known by name: «System», «Subsystem», «Domain» and «External», applied under
 the OMG SysML namespace, which MagicDraw's SysML profile defines as specializations of «Block»

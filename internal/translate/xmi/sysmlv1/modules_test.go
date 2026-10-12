@@ -33,21 +33,35 @@ const snapshotDocument = `<?xml version="1.0" encoding="ASCII"?>
   </uml:Package>
 </xmi:XMI>`
 
+// snapshotHref points into the snapshot module at the element an id names.
+func snapshotHref(id string) string {
+	return "local:/PROJECT-1?resource=com.nomagic.magicdraw.uml_umodel.shared_umodel#" + id
+}
+
 func snapshotModel(t *testing.T, applications string) *Model {
+	t.Helper()
+	return snapshotModelWith(t, "", applications, snapshotDocument)
+}
+
+// snapshotModelWith parses an archive of a model holding two classes and the
+// packaged elements given, the applications, and a snapshot of module 1.
+func snapshotModelWith(t *testing.T, packaged, applications, snapshot string) *Model {
 	t.Helper()
 	model := `<?xml version="1.0"?>
 <xmi:XMI xmi:version="2.5.1" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101"
-         xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML" xmlns:Org="http://www.magicdraw.com/schemas/Org.xmi">
+         xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML" xmlns:Org="http://www.magicdraw.com/schemas/Org.xmi"
+         xmlns:P="http://example.com/schemas/P.xmi">
   <uml:Model xmi:id="_m" name="M">
     <packagedElement xmi:type="uml:Class" xmi:id="_c" name="C"/>
     <packagedElement xmi:type="uml:Class" xmi:id="_d" name="D"/>
+` + packaged + `
   </uml:Model>
 ` + applications + `
 </xmi:XMI>`
 	data := archive(t, "", map[string][]byte{
 		"com.nomagic.ci.metamodel.project":      []byte(`<?xml version="1.0"?><project/>`),
 		"com.nomagic.magicdraw.uml_model.model": []byte(model),
-		"proxy.local__PROJECT$h1_resource_com$dnomagic$dmagicdraw$duml_umodel$dshared_umodel$dsnapshot": []byte(snapshotDocument),
+		"proxy.local__PROJECT$h1_resource_com$dnomagic$dmagicdraw$duml_umodel$dshared_umodel$dsnapshot": []byte(snapshot),
 	})
 	m, err := Parse(data)
 	if err != nil {
@@ -119,5 +133,61 @@ func TestModuleSnapshotGeneralsByHrefTable(t *testing.T) {
   </xmi:Extension>`)
 	if got := generalNames(m.Lookup("_c").Stereotype("Subsystem")); got != "" {
 		t.Errorf("the table's Org::Subsystem inherited %q", got)
+	}
+}
+
+// instrumentProfile defines «Instrument» in the document, specializing a
+// stereotype of the snapshot module by href.
+func instrumentProfile(general string) string {
+	return `    <packagedElement xmi:type="uml:Profile" xmi:id="_p" name="P" URI="http://example.com/schemas/P.xmi">
+      <packagedElement xmi:type="uml:Stereotype" xmi:id="_instrument" name="Instrument">
+        <generalization xmi:id="_instrument_gen">
+          <general xmi:type="uml:Stereotype" href="` + snapshotHref(general) + `"/>
+        </generalization>
+      </packagedElement>
+    </packagedElement>`
+}
+
+// A stereotype the document defines specializing a module's stereotype by href
+// inherits the snapshot's generalizations beyond the proxy: «Instrument» :>
+// «Subsystem» :> «System» :> «Block».
+func TestDocumentStereotypeAncestorsCrossIntoSnapshot(t *testing.T) {
+	m := snapshotModelWith(t, instrumentProfile("_subsystem"), `  <P:Instrument xmi:id="_a1" base_Class="_c"/>`, snapshotDocument)
+	if len(m.Stereotypes) != 1 || m.Stereotypes[0].Definition == nil {
+		t.Fatalf("applications: %+v", m.Stereotypes)
+	}
+	s := m.Stereotypes[0]
+	var names []string
+	for _, g := range s.Generals {
+		if g.Name != "" {
+			names = append(names, g.Parent.Name+"::"+g.Name)
+		}
+	}
+	if got, want := strings.Join(names, ", "), "SysML::System, SysML::Block"; got != want {
+		t.Errorf("generals of «Instrument» = %q, want %q", got, want)
+	}
+	if s.Module {
+		t.Error("a stereotype the document defines is reported as a module's")
+	}
+}
+
+// A snapshot generalization leading back into the document ends the walk: the
+// stereotype is among its own ancestors, as a document cycle makes it, and
+// Ancestors returns.
+func TestDocumentStereotypeAncestorsCycleThroughSnapshot(t *testing.T) {
+	cyclic := strings.Replace(snapshotDocument,
+		`<packagedElement xsi:type="uml:Stereotype" xmi:id="_domain" name="Domain"/>`,
+		`<packagedElement xsi:type="uml:Stereotype" xmi:id="_domain" name="Domain"><generalization xmi:id="_domain_gen" general="_instrument"/></packagedElement>`, 1)
+	if cyclic == snapshotDocument {
+		t.Fatal("the snapshot no longer declares «Domain»")
+	}
+	m := snapshotModelWith(t, instrumentProfile("_domain"), `  <P:Instrument xmi:id="_a1" base_Class="_c"/>`, cyclic)
+	if len(m.Stereotypes) != 1 || m.Stereotypes[0].Definition == nil {
+		t.Fatalf("applications: %+v", m.Stereotypes)
+	}
+	def := m.Stereotypes[0].Definition
+	ancestors := m.Ancestors(def)
+	if len(ancestors) != 2 || ancestors[0].Href != snapshotHref("_domain") || ancestors[1] != def {
+		t.Errorf("ancestors of a stereotype cycling through the snapshot: %+v", ancestors)
 	}
 }
