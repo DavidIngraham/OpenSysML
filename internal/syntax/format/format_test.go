@@ -286,3 +286,16 @@ func TestSourceIndentsAClosingBracketAtStatementLevel(t *testing.T) {
 		t.Errorf("Source() =\n%s\nwant\n%s", out, want)
 	}
 }
+
+func TestKeepsTrailingSequenceComma(t *testing.T) {
+	// The formatter rewrites whitespace only, so a trailing comma in a sequence
+	// expression stays where the author put it, tightened like any other comma.
+	got := format(t, "package P { attribute s = ( 1 , 2 , ) ; }\n")
+	if want := "package P { attribute s = (1, 2,); }\n"; got != want {
+		t.Fatalf("got:\n%q\nwant:\n%q", got, want)
+	}
+	got = format(t, "package P {\nattribute s = (\n1,\n2,\n);\n}\n")
+	if want := "package P {\n    attribute s = (\n        1,\n        2,\n    );\n}\n"; got != want {
+		t.Fatalf("got:\n%q\nwant:\n%q", got, want)
+	}
+}
