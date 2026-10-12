@@ -104,6 +104,7 @@ package 'Vehicle Design' {
     part vehicle : Vehicle;
     connection drives : Drives connect Driver to vehicle;
     action drive : Drive;
+    metadata MigrationMetadata::SynthesizedName about drives;
 }
 package RequirementsModel {
     requirement <R1> 'Mass Requirement' {

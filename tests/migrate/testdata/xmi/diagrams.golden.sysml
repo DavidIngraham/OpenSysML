@@ -122,6 +122,7 @@ package Usage {
         expose 'Driver to Drive Vehicle';
         render Views::asInterconnectionDiagram;
     }
+    metadata MigrationMetadata::SynthesizedName about 'Driver to Drive Vehicle';
 }
 package Reports {
     view 'Vehicle Overview' {

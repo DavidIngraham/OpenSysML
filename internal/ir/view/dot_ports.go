@@ -68,13 +68,7 @@ func (b nodeBox) faces(end, next Point) Point {
 	if b.holds(end) {
 		return end
 	}
-	c := b.centre()
-	dx, dy := next.X-c.X, next.Y-c.Y
-	if b.holds(next) || dx == 0 && dy == 0 {
-		return c
-	}
-	t := math.Min((b.high.X-b.low.X)/2/math.Abs(dx), (b.high.Y-b.low.Y)/2/math.Abs(dy))
-	return Point{X: halfPixel(c.X + dx*t), Y: halfPixel(c.Y + dy*t)}
+	return b.toward(next)
 }
 
 // holds reports whether p lies in the box, its border included.
