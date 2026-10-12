@@ -1980,8 +1980,10 @@ func (w *dotWriter) placeLabel(route []Point, text string, pts float64, end labe
 	return w.placer.place(route, text, pts, end)
 }
 
-// edgePts is the font size an edge's text is drawn in: its Style's when that
+// edgePts is the font size an edge's texts are drawn in: its Style's when that
 // sets one, as dotStyleAttributes emits it, else the skin's edge text size.
+// Graphviz draws headlabel and taillabel at labelfontsize, which defaults to
+// the edge's fontsize, and nothing here sets it, so one size serves all three.
 func (w *dotWriter) edgePts(edge Edge) float64 {
 	if edge.Style != nil && edge.Style.FontSize > 0 {
 		return edge.Style.FontSize
