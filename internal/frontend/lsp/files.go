@@ -194,7 +194,11 @@ func (s *Server) Rescan(ctx context.Context) {
 			if onDisk[name] || s.ws.IsLibraryDocument(name) || s.ws.IsOpen(name) || !underFolders(name, folders) {
 				continue
 			}
-			if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
+			// Not walked: gone, grown past the size limit, or moved under a
+			// directory the walk skips. readFromDisk drops the first two as a
+			// watched change would; the third is dropped as the walk never
+			// indexed it. A file that cannot be read right now is kept.
+			if _, readable := s.readFromDisk(name); readable {
 				s.ws.DeleteOnDisk(name)
 			}
 		}

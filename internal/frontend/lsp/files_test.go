@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -233,6 +234,16 @@ func TestRescanReconcilesTheFoldersWithDisk(t *testing.T) {
 	}
 	if s.ws.Document(extra) == nil || s.ws.Document(lib) == nil {
 		t.Errorf("rescan dropped a document still on disk")
+	}
+
+	// A file grown past the size limit leaves the workspace, as a watched
+	// change to it would make it leave.
+	if err := os.WriteFile(lib, bytes.Repeat([]byte("// padding\n"), maxScannedFileSize/11+1), 0o600); err != nil {
+		t.Fatalf("grow lib: %v", err)
+	}
+	s.Rescan(ctx)
+	if s.ws.Document(lib) != nil {
+		t.Errorf("rescan kept %q after it grew past the size limit", lib)
 	}
 }
 
