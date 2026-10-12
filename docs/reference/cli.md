@@ -955,8 +955,8 @@ the default, draws on each part the ports a connector, interface, flow or bindin
 ends at and no other — each a small square on the part's border with its name beside it, the
 connector ending at the square — so a crowded diagram shows what it connects and nothing more;
 a part none of whose ports is connected draws as a part without ports does. `full` draws every
-port a part has, its own and those from its definition, labelled `name : Type` with `~` for a
-conjugated one. The display applies to the DOT, PlantUML, Mermaid and text forms alike, and to
+port a part has, its own and those from its definition, labelled `name : Type` (with `~` for a
+conjugated one) when `-render-show typings` shows the typings. The display applies to the DOT, PlantUML, Mermaid and text forms alike, and to
 no kinds but interconnection and mixed renderings; a `Diagram` block of a document states its own
 ([`ports`](../manual/authoring.md#diagrams)). A name that is neither display is refused with
 status 2 and the two there are; `-render-ports` without `-render` or `-render-all` is refused

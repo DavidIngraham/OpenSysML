@@ -15,7 +15,7 @@ import (
 
 // A view stating no rendering renders as a containment tree, of what it exposes.
 func TestRenderDefaultsToATree(t *testing.T) {
-	out, _, err := viewSession(t).RunMeta("%render Demo::summary")
+	out, _, err := viewSession(t).RunMeta("%render Demo::summary text show=typings")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestRenderLinksUseLoadedSourcePositions(t *testing.T) {
 // offered by the usage and help text.
 func TestRenderWritesDotWhenAskedFor(t *testing.T) {
 	s := viewSession(t)
-	out, _, err := s.RunMeta("%render Demo::summary dot")
+	out, _, err := s.RunMeta("%render Demo::summary dot show=keywords,qualifiers")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestRenderWritesDotWhenAskedFor(t *testing.T) {
 // grammar, takes a palette as the dot form does, and completes with it.
 func TestRenderWritesPlantUMLWhenAskedFor(t *testing.T) {
 	s := viewSession(t)
-	out, _, err := s.RunMeta("%render Demo::summary plantuml")
+	out, _, err := s.RunMeta("%render Demo::summary plantuml show=keywords")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestRenderWritesPlantUMLWhenAskedFor(t *testing.T) {
 // an unknown palette names the known ones, and no other form takes one.
 func TestRenderDotTakesAPalette(t *testing.T) {
 	s := viewSession(t)
-	out, _, err := s.RunMeta("%render Demo::summary dot okabe-ito")
+	out, _, err := s.RunMeta("%render Demo::summary dot okabe-ito show=keywords")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -773,11 +773,11 @@ func TestRenderDrawsVerdictsWhenAskedFor(t *testing.T) {
 	if !strings.Contains(plain, "requirement rendering") || strings.Contains(plain, "verdict") {
 		t.Errorf("the structural rendering is not purely structural:\n%s", plain)
 	}
-	overlaid := run(t, s, "%render GeneralViews::requirementView text verdicts")
+	overlaid := run(t, s, "%render GeneralViews::requirementView text verdicts show=typings")
 	wants(t, overlaid,
 		"vehicleMass : MassRequirement (id R1.1, verdict pass by VehicleVerification::lightMassTest, fail by VehicleVerification::heavyMassTest)",
 		"emergencyStop : EmergencyStopRequirement (id R3.1, verdict inconclusive by VehicleVerification::stopTest")
-	dot := run(t, s, "%render GeneralViews::requirementView dot okabe-ito cameo verdicts")
+	dot := run(t, s, "%render GeneralViews::requirementView dot okabe-ito cameo verdicts show=typings")
 	if !strings.Contains(dot, `color="#D55E00"`) {
 		t.Errorf("the failed requirement is not drawn in the fail colour:\n%s", dot)
 	}

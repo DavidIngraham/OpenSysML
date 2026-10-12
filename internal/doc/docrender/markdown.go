@@ -161,7 +161,7 @@ func figureOptions(node docir.Content, opts DiagramOptions) view.Options {
 	options := node.Options()
 	options.Unplaced = opts.Unplaced
 	options.Style = opts.Style
-	options.Show = opts.Show
+	options.Show = options.Show.Union(opts.Show)
 	options.Links = view.Links{Template: opts.LinkTemplate, Sites: node.Sites()}
 	return options
 }

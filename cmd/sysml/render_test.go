@@ -34,7 +34,7 @@ const renderModel = `package Demo {
 func TestRenderWritesTheArtifactOnStdout(t *testing.T) {
 	binary := buildCLI(t)
 
-	got := runStreams(t, binary, renderModel, "-render", "Demo::overview")
+	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-show", "keywords,typings")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -240,7 +240,7 @@ func TestRenderAllForcedDelimitedFormWritesTablesOnly(t *testing.T) {
 func TestRenderDotForm(t *testing.T) {
 	binary := buildCLI(t)
 
-	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "dot")
+	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "dot", "-render-show", "keywords,typings")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -290,7 +290,7 @@ func TestRenderDotForm(t *testing.T) {
 func TestRenderPlantUMLForm(t *testing.T) {
 	binary := buildCLI(t)
 
-	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "plantuml")
+	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "plantuml", "-render-show", "keywords,typings")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -352,7 +352,7 @@ func TestRenderPlantUMLForm(t *testing.T) {
 func TestRenderD2Form(t *testing.T) {
 	binary := buildCLI(t)
 
-	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "d2")
+	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "d2", "-render-show", "keywords,typings")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -366,7 +366,7 @@ func TestRenderD2Form(t *testing.T) {
 	}
 
 	dir := filepath.Join(t.TempDir(), "rendered")
-	got = runStreams(t, binary, renderAllModel, "-render-all", dir, "-render-form", "d2", "-render-palette", "okabe-ito")
+	got = runStreams(t, binary, renderAllModel, "-render-all", dir, "-render-form", "d2", "-render-palette", "okabe-ito", "-render-show", "keywords")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -445,7 +445,7 @@ func TestRenderD2Form(t *testing.T) {
 func TestRenderPalette(t *testing.T) {
 	binary := buildCLI(t)
 
-	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "dot", "-render-palette", "okabe-ito")
+	got := runStreams(t, binary, renderModel, "-render", "Demo::overview", "-render-form", "dot", "-render-palette", "okabe-ito", "-render-show", "keywords,typings")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -549,7 +549,7 @@ func TestRenderSeveralFiles(t *testing.T) {
 }
 `)
 
-	got := runFiles(t, binary, []string{types, diagrams}, "-render", "Diagrams::overview")
+	got := runFiles(t, binary, []string{types, diagrams}, "-render", "Diagrams::overview", "-render-show", "keywords")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}
@@ -1184,7 +1184,7 @@ const portedModel = `package Demo {
 func TestRenderPorts(t *testing.T) {
 	binary := buildCLI(t)
 
-	minimal := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "dot")
+	minimal := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "dot", "-render-show", "edge-labels")
 	if minimal.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", minimal.status, exitHolds, minimal.output())
 	}
@@ -1197,7 +1197,7 @@ func TestRenderPorts(t *testing.T) {
 		t.Errorf("the default drew an unconnected port or a type:\n%s", minimal.stdout)
 	}
 
-	full := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "plantuml", "-render-ports", "full")
+	full := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "plantuml", "-render-ports", "full", "-render-show", "typings")
 	if full.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", full.status, exitHolds, full.output())
 	}

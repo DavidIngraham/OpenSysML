@@ -207,10 +207,17 @@ func render(t *testing.T, s *Server, docURI uri.URI, viewName string) *renderRes
 
 func renderWithLinkTemplate(t *testing.T, s *Server, docURI uri.URI, viewName, template string) *renderResult {
 	t.Helper()
+	return renderShowing(t, s, docURI, viewName, template, nil)
+}
+
+// renderShowing renders with the optional notation elements show names drawn too.
+func renderShowing(t *testing.T, s *Server, docURI uri.URI, viewName, template string, show []string) *renderResult {
+	t.Helper()
 	raw, err := call(t, s, MethodRender, &renderParams{
 		TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
 		View:         viewName,
 		LinkTemplate: template,
+		Show:         show,
 	})
 	if err != nil {
 		t.Fatalf("render %q: %v", viewName, err)
@@ -386,7 +393,7 @@ func TestRenderOriginsLocateTheDeclaration(t *testing.T) {
 func TestRenderTreeCarriesRelationshipEdges(t *testing.T) {
 	src := "package Kit {\n\tpart def Widget {\n\t\tpart cogs[2] : Cog;\n\t}\n\tpart def Cog;\n\tpart def Gear :> Cog;\n}\n"
 	s, docURI := renderServer(t, "kit.sysml", src)
-	out := render(t, s, docURI, "#tree")
+	out := renderShowing(t, s, docURI, "#tree", "", []string{"typings", "multiplicities"})
 	ids := map[string]string{}
 	for _, node := range out.Nodes {
 		ids[node.ID] = node.Name
@@ -425,7 +432,7 @@ func TestRenderTreeCarriesRelationshipEdges(t *testing.T) {
 func TestRenderNodesCarryTheTypeApartFromTheDetail(t *testing.T) {
 	src := "package Kit {\n\tpart def Widget {\n\t\tpart cog : Cog;\n\t\tpart gear;\n\t}\n\tpart def Cog;\n}\n"
 	s, docURI := renderServer(t, "kit.sysml", src)
-	out := render(t, s, docURI, "#tree")
+	out := renderShowing(t, s, docURI, "#tree", "", []string{"typings", "multiplicities"})
 	want := map[string]renderNode{
 		"Kit::Widget": {Kind: "part def"},
 		"cog":         {Kind: "part", Type: "Cog"},
@@ -474,7 +481,7 @@ func TestRenderBehaviorNodesCarryTheTypeApartFromTheDetail(t *testing.T) {
 		"idle":    {Kind: "state", Detail: "initial"},
 	}
 	for view, field := range map[string]string{"#action:Ops::run": `"type":"Warm"`, "#state:Ops::Boiler": `"type":"Heating"`} {
-		out := render(t, s, docURI, view)
+		out := renderShowing(t, s, docURI, view, "", []string{"typings", "multiplicities"})
 		for _, node := range out.Nodes {
 			expected, ok := want[node.Name]
 			if !ok {
@@ -1446,7 +1453,7 @@ func TestRenderTakesAPortDisplay(t *testing.T) {
 		t.Helper()
 		raw, err := call(t, s, MethodRender, &renderParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
-			View:         "Demo::link", Form: string(view.FormPlantUML), Ports: ports,
+			View:         "Demo::link", Form: string(view.FormPlantUML), Ports: ports, Show: []string{"typings"},
 		})
 		if err != nil {
 			t.Fatalf("render ports=%q: %v", ports, err)
@@ -1504,8 +1511,8 @@ func TestRenderTakesAPortDisplay(t *testing.T) {
 		fullResult.Edges[0].ToPort != fullPorts["in1"].ID {
 		t.Errorf("full edges = %+v, want endpoints at out1 and in1", fullResult.Edges)
 	}
-	assertEngineRenderMatchesLSP(t, ported, minimalResult, "")
-	assertEngineRenderMatchesLSP(t, ported, fullResult, "full")
+	assertEngineRenderMatchesLSP(t, ported, minimalResult, "", []string{"typings"})
+	assertEngineRenderMatchesLSP(t, ported, fullResult, "full", []string{"typings"})
 	_, err = call(t, s, MethodRender, &renderParams{
 		TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
 		View:         "Demo::link", Form: string(view.FormDot), Ports: "all",
@@ -1677,7 +1684,7 @@ func TestRenderMixedCarriesConnectorPortData(t *testing.T) {
 			if !strings.Contains(out.Artifact, edge.FromPort) || !strings.Contains(out.Artifact, edge.ToPort) {
 				t.Errorf("mixed artifact does not draw connector pins %s and %s:\n%s", edge.FromPort, edge.ToPort, out.Artifact)
 			}
-			assertEngineRenderMatchesLSP(t, mixed, out, display.name)
+			assertEngineRenderMatchesLSP(t, mixed, out, display.name, nil)
 		})
 	}
 
@@ -1694,7 +1701,7 @@ func TestRenderMixedCarriesConnectorPortData(t *testing.T) {
 	}
 }
 
-func assertEngineRenderMatchesLSP(t *testing.T, src string, lspResult *renderResult, ports string) {
+func assertEngineRenderMatchesLSP(t *testing.T, src string, lspResult *renderResult, ports string, show []string) {
 	t.Helper()
 	eng, err := engine.New()
 	if err != nil {
@@ -1714,8 +1721,8 @@ func assertEngineRenderMatchesLSP(t *testing.T, src string, lspResult *renderRes
 	if err := json.Unmarshal(parsedBody, &parsed); err != nil {
 		t.Fatalf("decode ParseSources: %v", err)
 	}
-	renderBody, err := json.Marshal(map[string]string{
-		"modelHash": parsed.ModelHash, "view": "Demo::link", "ports": ports,
+	renderBody, err := json.Marshal(map[string]any{
+		"modelHash": parsed.ModelHash, "view": "Demo::link", "ports": ports, "show": show,
 	})
 	if err != nil {
 		t.Fatalf("marshal RenderView request: %v", err)
@@ -1798,6 +1805,7 @@ func TestRenderKeepsActionPinsForEveryPortDisplay(t *testing.T) {
 			TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
 			View:         "#action:Pins::ToastBread",
 			Ports:        ports,
+			Show:         []string{"parameter-symbols"},
 		})
 		if err != nil {
 			t.Fatalf("render action ports=%q: %v", ports, err)
