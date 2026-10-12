@@ -151,7 +151,7 @@ func TestToolExecutionWithoutRunnerIsNotRegistered(t *testing.T) {
 	ctx, scope := analysisFixture(t, toolModel)
 	_, err := ctx.ExecuteAction(calcNamed(t, scope, "Drive"))
 	var refusal *ToolNotRegisteredError
-	if !errors.As(err, &refusal) || !errors.Is(err, ErrToolNotRegistered) {
+	if !errors.As(err, &refusal) || !errors.Is(err, errToolNotRegistered) {
 		t.Fatalf("ExecuteAction = %v, want ToolNotRegisteredError", err)
 	}
 	if want := "tool 'ModelCenter' is not registered; set OPENSYSML_TOOLS"; !strings.Contains(err.Error(), want) {
@@ -319,7 +319,7 @@ const scaleModel = `package test {
 	}
 }`
 
-// An input carrying a ToolVariable that no argument binds is ErrUnboundParameter before
+// An input carrying a ToolVariable that no argument binds is errUnboundParameter before
 // any tool runs, as it is for an action run by its body; an optional one is omitted from
 // the call, never sent as an invented value.
 func TestToolCallInputsFollowTheParameters(t *testing.T) {
@@ -350,7 +350,7 @@ func TestToolCallInputsFollowTheParameters(t *testing.T) {
 		runner := &recordingRunner{answer: map[string]ToolValue{"y": {Value: toolReal(4)}}}
 		ctx.SetToolRunner(runner)
 		_, err := ctx.ExecuteAction(calcNamed(t, scope, "Unscaled"))
-		if !errors.Is(err, ErrUnboundParameter) || !strings.Contains(err.Error(), "input parameter k is bound by no argument") {
+		if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "input parameter k is bound by no argument") {
 			t.Fatalf("ExecuteAction = %v, want ErrUnboundParameter for k", err)
 		}
 		if len(runner.calls) != 0 {
@@ -378,7 +378,7 @@ func TestToolCallRefusesAmbiguousVariables(t *testing.T) {
 			ctx.SetToolRunner(runner)
 			_, err := ctx.ExecuteActionWithInputs(calcNamed(t, scope, tc.action), tc.inputs)
 			var fault *ToolError
-			if !errors.As(err, &fault) || fault.Kind != ToolAmbiguousVariable || !strings.Contains(fault.Detail, tc.detail) {
+			if !errors.As(err, &fault) || fault.Kind != toolAmbiguousVariable || !strings.Contains(fault.Detail, tc.detail) {
 				t.Fatalf("ExecuteAction = %v, want ToolError %q", err, tc.detail)
 			}
 			if len(runner.calls) != 0 {
@@ -417,7 +417,7 @@ func TestToolExecutionThroughTheDebuggerExecutor(t *testing.T) {
 
 	bare, _ := analysisFixture(t, scaleModel)
 	_, err = bare.CreateActionExecutor(scale)
-	if !errors.Is(err, ErrToolNotRegistered) {
+	if !errors.Is(err, errToolNotRegistered) {
 		t.Fatalf("CreateActionExecutor without a runner = %v, want ErrToolNotRegistered", err)
 	}
 }
@@ -509,7 +509,7 @@ func TestToolExecutionOnATypedUsage(t *testing.T) {
 			}
 
 			bare, bareScope := analysisFixture(t, annotatedUsageModel)
-			if _, err := bare.ExecuteAction(calcNamed(t, bareScope, driver)); !errors.Is(err, ErrToolNotRegistered) {
+			if _, err := bare.ExecuteAction(calcNamed(t, bareScope, driver)); !errors.Is(err, errToolNotRegistered) {
 				t.Fatalf("ExecuteAction without a runner = %v, want ErrToolNotRegistered", err)
 			}
 		})
@@ -644,7 +644,7 @@ func TestToolExecutionOnASpecializationAddingParameters(t *testing.T) {
 		runner := &recordingRunner{answer: map[string]ToolValue{"y": {Value: toolReal(4)}}}
 		ctx.SetToolRunner(runner)
 		_, err := ctx.ExecuteActionWithInputs(calcNamed(t, scope, "RunSized"), map[string]Value{"n": realOf(7)})
-		if !errors.Is(err, ErrUnboundParameter) || !strings.Contains(err.Error(), "input parameter x is bound by no argument") {
+		if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "input parameter x is bound by no argument") {
 			t.Fatalf("ExecuteActionWithInputs = %v, want ErrUnboundParameter for x", err)
 		}
 		if len(runner.calls) != 0 {
@@ -752,8 +752,8 @@ func TestToolExecutionOnAnExpressionCall(t *testing.T) {
 		driver string
 		want   error
 	}{
-		"too many arguments": {"CallingWithTooManyArguments", ErrActionArity},
-		"unknown parameter":  {"CallingAnUnknownParameter", ErrUnknownParameter},
+		"too many arguments": {"CallingWithTooManyArguments", errActionArity},
+		"unknown parameter":  {"CallingAnUnknownParameter", errUnknownParameter},
 	}
 	for name, tc := range refusals {
 		t.Run(name, func(t *testing.T) {
@@ -876,7 +876,7 @@ func TestToolExecutionOfAPerformedAction(t *testing.T) {
 			if len(runner.calls) != 1 {
 				t.Fatalf("tool invoked %d times, want once", len(runner.calls))
 			}
-			behavior, ok := inst.Behavior("scale")
+			behavior, ok := inst.behavior("scale")
 			if !ok || behavior.Action == nil || behavior.Action.State() != StateCompleted {
 				t.Fatalf("scale is not a completed performance: %v", inst.Behaviors())
 			}
@@ -885,7 +885,7 @@ func TestToolExecutionOfAPerformedAction(t *testing.T) {
 			}
 
 			bare, bareScope := analysisFixture(t, annotatedUsageModel)
-			if _, err := bare.Instantiate(calcNamed(t, bareScope, rig)); !errors.Is(err, ErrToolNotRegistered) {
+			if _, err := bare.Instantiate(calcNamed(t, bareScope, rig)); !errors.Is(err, errToolNotRegistered) {
 				t.Fatalf("Instantiate without a runner = %v, want ErrToolNotRegistered", err)
 			}
 		})

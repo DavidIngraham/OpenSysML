@@ -39,7 +39,7 @@ func testTerminateOfAnEndedPerformance(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrPerformanceEnded) {
+	if !errors.Is(err, errPerformanceEnded) {
 		t.Fatalf("error = %v, want ErrPerformanceEnded", err)
 	}
 }
@@ -54,7 +54,7 @@ func testTerminateOfAnUnknownName(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateTarget) {
+	if !errors.Is(err, errTerminateTarget) {
 		t.Fatalf("error = %v, want ErrTerminateTarget", err)
 	}
 }
@@ -71,7 +71,7 @@ func testTerminateOfANonActionFeature(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateOccurrence) {
+	if !errors.Is(err, errTerminateOccurrence) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence", err)
 	}
 }
@@ -89,7 +89,7 @@ func testTerminateOfAQualifiedOccurrence(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateOccurrence) || !errors.Is(err, ErrOccurrenceLifetime) {
+	if !errors.Is(err, errTerminateOccurrence) || !errors.Is(err, errOccurrenceLifetime) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence wrapping ErrOccurrenceLifetime", err)
 	}
 }
@@ -104,7 +104,7 @@ func testTerminateOfAnOccurrenceExpression(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateTarget) {
+	if !errors.Is(err, errTerminateTarget) {
 		t.Fatalf("error = %v, want ErrTerminateTarget", err)
 	}
 }
@@ -133,7 +133,7 @@ func testTerminateOfANodeOfASiblingFlow(t *testing.T) {
 			succession first sync then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateTarget) {
+	if !errors.Is(err, errTerminateTarget) {
 		t.Fatalf("error = %v, want ErrTerminateTarget", err)
 	}
 }
@@ -148,7 +148,7 @@ func testTerminateOfALiteralValue(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateOccurrence) || !errors.Is(err, ErrNotAnOccurrence) {
+	if !errors.Is(err, errTerminateOccurrence) || !errors.Is(err, errNotAnOccurrence) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence wrapping ErrNotAnOccurrence", err)
 	}
 }
@@ -168,7 +168,7 @@ func testTerminateOfADestroyedOccurrence(t *testing.T) {
 		}
 	}`))
 	_, err := ctx.ExecuteAction(findSymbolByName(idx.DocumentRoot("<test>"), "host", ast.DefAction))
-	if !errors.Is(err, ErrTerminateOccurrence) || !errors.Is(err, ErrOccurrenceDestroyed) {
+	if !errors.Is(err, errTerminateOccurrence) || !errors.Is(err, errOccurrenceDestroyed) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence wrapping ErrOccurrenceDestroyed", err)
 	}
 }
@@ -191,7 +191,7 @@ func testTerminateOfAPartReachedAfterItsWholeEnded(t *testing.T) {
 		}
 	}`))
 	_, err := ctx.ExecuteAction(findSymbolByName(idx.DocumentRoot("<test>"), "host", ast.DefAction))
-	if !errors.Is(err, ErrTerminateOccurrence) || !errors.Is(err, ErrOccurrenceLifetime) {
+	if !errors.Is(err, errTerminateOccurrence) || !errors.Is(err, errOccurrenceLifetime) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence wrapping ErrOccurrenceLifetime", err)
 	}
 	whole, ok := ctx.OccurrenceLife(1)
@@ -213,7 +213,7 @@ func testTerminateOfAnUnknownNameInAStateBody(t *testing.T) {
 			state s { entry { terminate nowhere; } }
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateTarget) {
+	if !errors.Is(err, errTerminateTarget) {
 		t.Fatalf("error = %v, want ErrTerminateTarget", err)
 	}
 }
@@ -236,7 +236,7 @@ func testTerminateOfAnEndedOccurrenceInAStateBody(t *testing.T) {
 			}
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateOccurrence) || !errors.Is(err, ErrOccurrenceLifetime) {
+	if !errors.Is(err, errTerminateOccurrence) || !errors.Is(err, errOccurrenceLifetime) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence wrapping ErrOccurrenceLifetime", err)
 	}
 }
@@ -256,7 +256,7 @@ func testTerminateOfAValueInATransitionEffect(t *testing.T) {
 	}`))
 	sym := findSymbolByName(idx.DocumentRoot("<test>"), "Machine", ast.DefState)
 	_, _, err := ctx.ExecuteStateWithEvents(sym, []string{"Go"})
-	if !errors.Is(err, ErrTerminateOccurrence) || !errors.Is(err, ErrNotAnOccurrence) {
+	if !errors.Is(err, errTerminateOccurrence) || !errors.Is(err, errNotAnOccurrence) {
 		t.Fatalf("error = %v, want ErrTerminateOccurrence wrapping ErrNotAnOccurrence", err)
 	}
 }
@@ -289,7 +289,7 @@ func testBehaviorOfAnEndedPerformer(t *testing.T) {
 		t.Fatalf("test::Probe::bump: %d matching symbols, want 1", len(bump))
 	}
 	_, err = ctx.CreateActionExecutorFor(bump[0], inst)
-	if !errors.Is(err, ErrOccurrenceLifetime) {
+	if !errors.Is(err, errOccurrenceLifetime) {
 		t.Fatalf("error = %v, want ErrOccurrenceLifetime", err)
 	}
 }

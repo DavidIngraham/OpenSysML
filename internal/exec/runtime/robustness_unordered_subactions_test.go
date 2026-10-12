@@ -17,7 +17,7 @@ func TestRuntimeRobustnessUnorderedSubactions(t *testing.T) {
 				succession b then a;
 			}
 		}`)
-		if !errors.Is(err, ErrInvalidActionFlow) {
+		if !errors.Is(err, errInvalidActionFlow) {
 			t.Fatalf("error = %v, want ErrInvalidActionFlow: no step is unpreceded", err)
 		}
 	})

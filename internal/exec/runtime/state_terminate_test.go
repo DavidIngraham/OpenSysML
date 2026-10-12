@@ -64,11 +64,11 @@ func TestTerminatedMachineHoldsNoPendingWork(t *testing.T) {
 	if sequenceLen(exec.StateData()["busy.r1.a.deferred"]) != 1 {
 		t.Fatalf("deferred = %s; want the Later event kept by a", FormatValue(exec.StateData()["busy.r1.a.deferred"]))
 	}
-	exec.SendSignal("Abort", nil)
+	exec.sendSignal("Abort", nil)
 	if fired, err := exec.PollChangeEvents(); err != nil || fired {
 		t.Fatalf("poll = %v, %v; want nothing fired with level at 0", fired, err)
 	}
-	if got := exec.ChangeWaits(); len(got) != 1 {
+	if got := exec.describeChangeWaits(); len(got) != 1 {
 		t.Fatalf("ChangeWaits() = %v; want the level condition b waits on", got)
 	}
 	if err := exec.ProcessNextEvent(); err != nil {
@@ -89,7 +89,7 @@ func TestTerminatedMachineHoldsNoPendingWork(t *testing.T) {
 	if _, waiting := exec.NextWait(); waiting {
 		t.Errorf("NextWait() reports a timer on a terminated machine")
 	}
-	if got := exec.ChangeWaits(); len(got) != 0 {
+	if got := exec.describeChangeWaits(); len(got) != 0 {
 		t.Errorf("ChangeWaits() = %v after termination; want none", got)
 	}
 }
@@ -123,7 +123,7 @@ func TestTerminatedMachineDropsHeldEntry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec.SendSignal("Start", nil)
+	exec.sendSignal("Start", nil)
 	if err := exec.RunToQuiescence(); err != nil {
 		t.Fatalf("RunToQuiescence: %v", err)
 	}
@@ -171,7 +171,7 @@ func TestChangeTriggeredTerminationHoldsNoWaits(t *testing.T) {
 	if fired, err := exec.PollChangeEvents(); err != nil || fired {
 		t.Fatalf("poll = %v, %v; want nothing fired while both conditions are false", fired, err)
 	}
-	if got := exec.ChangeWaits(); len(got) != 2 {
+	if got := exec.describeChangeWaits(); len(got) != 2 {
 		t.Fatalf("ChangeWaits() = %v; want both conditions", got)
 	}
 	exec.stateData["abort"] = boolValue(true)
@@ -182,7 +182,7 @@ func TestChangeTriggeredTerminationHoldsNoWaits(t *testing.T) {
 	if exec.State() != StateTerminated {
 		t.Fatalf("state = %v; want Terminated", exec.State())
 	}
-	if got := exec.ChangeWaits(); len(got) != 0 {
+	if got := exec.describeChangeWaits(); len(got) != 0 {
 		t.Errorf("ChangeWaits() = %v after termination; want none", got)
 	}
 	if exec.HasPendingWork() {

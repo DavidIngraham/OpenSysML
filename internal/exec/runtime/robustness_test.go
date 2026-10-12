@@ -512,7 +512,7 @@ func testSharedDefaultOverACyclicDerivation(t *testing.T) {
 		}
 		part def Fleet { part sats : Sat[3]; }
 	}`))
-	ctx.SetSharedDefaults(true)
+	ctx.setSharedDefaults(true)
 	fleet, err := ctx.Instantiate(oneSymbol(t, idx, "P::Fleet"))
 	if err != nil {
 		t.Fatalf("instantiate: %v", err)
@@ -535,7 +535,7 @@ func testSharedDefaultOverACyclicDerivation(t *testing.T) {
 			t.Errorf("sats#(%d).a fails as %q, the first as %q", i+1, err, first)
 		}
 	}
-	if taken := ctx.SharedDefaultsTaken(); taken != 0 {
+	if taken := ctx.sharedDefaultsTaken(); taken != 0 {
 		t.Errorf("%d shared defaults taken from a derivation that never produced a value", taken)
 	}
 }
@@ -551,7 +551,7 @@ func testSharedDefaultTakenOverAWriteThatThenFails(t *testing.T) {
 		}
 		part def Fleet { part sats : Sat[2]; }
 	}`))
-	ctx.SetSharedDefaults(true)
+	ctx.setSharedDefaults(true)
 	fleet, err := ctx.Instantiate(oneSymbol(t, idx, "P::Fleet"))
 	if err != nil {
 		t.Fatalf("instantiate: %v", err)
@@ -575,7 +575,7 @@ func testSharedDefaultTakenOverAWriteThatThenFails(t *testing.T) {
 			t.Fatalf("sats#(%d).q = %s, want 5.0", i+1, got)
 		}
 	}
-	if taken := ctx.SharedDefaultsTaken(); taken != 1 {
+	if taken := ctx.sharedDefaultsTaken(); taken != 1 {
 		t.Fatalf("shared defaults taken = %d, want 1", taken)
 	}
 	if err := sat(1).SetFeatureValue(ctx, "d", integerValue(0)); err != nil {
@@ -606,7 +606,7 @@ func testBindingConflict(t *testing.T) {
 		t.Fatalf("instantiate: %v", err)
 	}
 	_, err = inst.GetFeatureValue(ctx, "b")
-	if !errors.Is(err, ErrBindingConflict) {
+	if !errors.Is(err, errBindingConflict) {
 		t.Fatalf("GetFeatureValue(b) = %v, want ErrBindingConflict", err)
 	}
 	if got, want := err.Error(), "binding conflict: b = 2, a = 1"; got != want {
@@ -628,7 +628,7 @@ func testBindingCollectionConflictsDoNotUseHashes(t *testing.T) {
 			t.Fatalf("instantiate: %v", err)
 		}
 		_, err = inst.GetFeatureValue(ctx, "b")
-		if !errors.Is(err, ErrBindingConflict) {
+		if !errors.Is(err, errBindingConflict) {
 			t.Fatalf("GetFeatureValue(b) = %v, want ErrBindingConflict", err)
 		}
 		if got, want := err.Error(),
@@ -650,7 +650,7 @@ func testBindingCollectionConflictsDoNotUseHashes(t *testing.T) {
 			t.Fatalf("instantiate: %v", err)
 		}
 		_, err = inst.GetFeatureValue(ctx, "b")
-		if !errors.Is(err, ErrBindingConflict) {
+		if !errors.Is(err, errBindingConflict) {
 			t.Fatalf("GetFeatureValue(b) = %v, want ErrBindingConflict", err)
 		}
 		if got, want := err.Error(),
@@ -676,7 +676,7 @@ func testBindingMultipleScalarContributors(t *testing.T) {
 			t.Fatalf("instantiate: %v", err)
 		}
 		_, err = inst.GetFeatureValue(ctx, "a")
-		if !errors.Is(err, ErrBindingConflict) {
+		if !errors.Is(err, errBindingConflict) {
 			t.Fatalf("GetFeatureValue(a) = %v, want ErrBindingConflict", err)
 		}
 		if got, want := err.Error(), "binding conflict at Sys.a: b = 1, c = 2"; got != want {
@@ -724,7 +724,7 @@ func testBindingMultipleCollectionContributors(t *testing.T) {
 			t.Fatalf("instantiate: %v", err)
 		}
 		_, err = inst.GetFeatureValue(ctx, "edges")
-		if !errors.Is(err, ErrBindingEnd) {
+		if !errors.Is(err, errBindingEnd) {
 			t.Fatalf("GetFeatureValue(edges) = %v, want ErrBindingEnd", err)
 		}
 		if got, want := err.Error(), "binding end cannot be resolved: Sys.edges is bound by `binding [1] bind [0..1] edges = [0..1] leftEdge`, "+
@@ -764,7 +764,7 @@ func testBindingMultipleCollectionContributors(t *testing.T) {
 		if err != nil {
 			t.Fatalf("instantiate two: %v", err)
 		}
-		if _, err := two.GetFeatureValue(ctx, "pick"); !errors.Is(err, ErrBindingEnd) {
+		if _, err := two.GetFeatureValue(ctx, "pick"); !errors.Is(err, errBindingEnd) {
 			t.Fatalf("two.pick = %v, want ErrBindingEnd", err)
 		}
 		// An end valued on its own — written, as one valued by a default — keeps that value.
@@ -992,7 +992,7 @@ func testBindingMultipleCollectionContributors(t *testing.T) {
 			t.Fatalf("instantiate: %v", err)
 		}
 		_, err = inst.GetFeatureValue(ctx, "edges")
-		if !errors.Is(err, ErrBindingConflict) {
+		if !errors.Is(err, errBindingConflict) {
 			t.Fatalf("GetFeatureValue(edges) = %v, want ErrBindingConflict", err)
 		}
 		if got, want := err.Error(), "binding conflict at Sys.edges: left = [1, 2], right = [2, 1]"; got != want {
@@ -1065,7 +1065,7 @@ func testBindingDistinctMaterializedObjectsConflict(t *testing.T) {
 		t.Fatalf("materialize p2: %v", err)
 	}
 	_, err = inst.GetFeatureValue(ctx, "p1")
-	if !errors.Is(err, ErrBindingConflict) {
+	if !errors.Is(err, errBindingConflict) {
 		t.Fatalf("GetFeatureValue(p1) = %v, want ErrBindingConflict", err)
 	}
 }
@@ -1107,7 +1107,7 @@ func testBindingCycle(t *testing.T) {
 		t.Fatalf("instantiate: %v", err)
 	}
 	_, err = inst.GetFeatureValue(ctx, "a")
-	if !errors.Is(err, ErrBindingCycle) {
+	if !errors.Is(err, errBindingCycle) {
 		t.Fatalf("GetFeatureValue(a) = %v, want ErrBindingCycle", err)
 	}
 	if !strings.Contains(err.Error(), "a") || !strings.Contains(err.Error(), "b") {
@@ -1138,7 +1138,7 @@ func testBindingSingleValueless(t *testing.T) {
 	}
 	sym := oneSymbol(t, idx, "P::Sys")
 	expr := parser.New(source.New("<binding-single-valueless-eval>", []byte("b"))).ParseExpression()
-	if _, err := ctx.EvalWithScopeOn(expr, sym.Scope, inst); !errors.Is(err, ErrUninitializedFeatureValue) {
+	if _, err := ctx.EvalWithScopeOn(expr, sym.Scope, inst); !errors.Is(err, errUninitializedFeatureValue) {
 		t.Fatalf("evaluating b = %v, want ErrUninitializedFeatureValue", err)
 	}
 }
@@ -1159,7 +1159,7 @@ func testBindingThreeBindingRing(t *testing.T) {
 		t.Fatalf("instantiate: %v", err)
 	}
 	_, err = inst.GetFeatureValue(ctx, "a")
-	if !errors.Is(err, ErrBindingCycle) {
+	if !errors.Is(err, errBindingCycle) {
 		t.Fatalf("GetFeatureValue(a) = %v, want ErrBindingCycle", err)
 	}
 	for _, name := range []string{"a", "c"} {
@@ -1332,7 +1332,7 @@ func testBindingResultTracksLaterMutation(t *testing.T) {
 			t.Fatalf("assign b: %v", err)
 		}
 		_, err = inst.GetFeatureValue(ctx, "b")
-		if !errors.Is(err, ErrBindingConflict) {
+		if !errors.Is(err, errBindingConflict) {
 			t.Fatalf("GetFeatureValue(b) = %v, want ErrBindingConflict", err)
 		}
 	})
@@ -1557,24 +1557,24 @@ func testMeasurementReferenceFailureModes(t *testing.T) {
 		{"conversion to a scale", "ISQ::ThermodynamicTemperatureValue", "QuantityCalculations::ConvertQuantity(300.0 [SI::K], SI::'°C_abs')", nil},
 		{"conversion from a scale", "ISQ::ThermodynamicTemperatureValue", "QuantityCalculations::ConvertQuantity(26.85 [SI::'°C_abs'], SI::K)", nil},
 		{"conversion to a scale placed on another dimension", "ISQ::LengthValue", "QuantityCalculations::ConvertQuantity(3.0 [SI::m], SI::'°C_abs')", ErrIncommensurableUnits},
-		{"conversion to a scale with no mapping", "ISQ::DurationValue", "QuantityCalculations::ConvertQuantity(3.0 [SI::s], Time::UTC)", ErrUnevaluableLibraryFunction},
-		{"conversion from a scale with no mapping", "ISQ::DurationValue", "QuantityCalculations::ConvertQuantity(3.0 [Time::UTC], SI::s)", ErrUnevaluableLibraryFunction},
+		{"conversion to a scale with no mapping", "ISQ::DurationValue", "QuantityCalculations::ConvertQuantity(3.0 [SI::s], Time::UTC)", errUnevaluableLibraryFunction},
+		{"conversion from a scale with no mapping", "ISQ::DurationValue", "QuantityCalculations::ConvertQuantity(3.0 [Time::UTC], SI::s)", errUnevaluableLibraryFunction},
 		{"incommensurable conversion", "ISQ::LengthValue", "QuantityCalculations::ConvertQuantity(3.0 [SI::m], SI::s)", ErrIncommensurableUnits},
 		{"conversion to a number", "ISQ::LengthValue", "QuantityCalculations::ConvertQuantity(3.0 [SI::m], 3)", ErrTypeMismatch},
 		{"reference scaled by a number", "ISQ::LengthUnit", "SI::m * 3", ErrTypeMismatch},
 		{"reference raised to a reference", "ISQ::LengthUnit", "SI::m ** SI::m", ErrTypeMismatch},
 		{"declaration member of a reference", "Quantities::QuantityDimension", "SI::m.quantityDimension", nil},
-		{"quantity dimension of a composed unit", "Quantities::QuantityDimension", "(SI::m / SI::s).quantityDimension", ErrUnevaluableLibraryFunction},
-		{"unit conversion of a composed unit", "MeasurementReferences::UnitConversion", "(SI::m / SI::s).unitConversion", ErrUnevaluableLibraryFunction},
-		{"unit power factors of a composed unit", "MeasurementReferences::UnitPowerFactor", "(SI::m ** 2).unitPowerFactors", ErrUnevaluableLibraryFunction},
-		{"definitional quantity values of a composed unit", "MeasurementReferences::DefinitionalQuantityValue", "(SI::m / SI::s).definitionalQuantityValues", ErrUnevaluableLibraryFunction},
+		{"quantity dimension of a composed unit", "Quantities::QuantityDimension", "(SI::m / SI::s).quantityDimension", errUnevaluableLibraryFunction},
+		{"unit conversion of a composed unit", "MeasurementReferences::UnitConversion", "(SI::m / SI::s).unitConversion", errUnevaluableLibraryFunction},
+		{"unit power factors of a composed unit", "MeasurementReferences::UnitPowerFactor", "(SI::m ** 2).unitPowerFactors", errUnevaluableLibraryFunction},
+		{"definitional quantity values of a composed unit", "MeasurementReferences::DefinitionalQuantityValue", "(SI::m / SI::s).definitionalQuantityValues", errUnevaluableLibraryFunction},
 		{"vector reference over two units", "Quantities::VectorQuantityValue", "VectorCalculations::'['((1.0, 2.0), (SI::m, SI::s))", ErrTypeMismatch},
 		{"vector reference over a unit", "Quantities::VectorQuantityValue", "VectorCalculations::'['((1.0, 2.0), SI::m)", ErrTypeMismatch},
 		{"transformation that is a vector", "Quantities::VectorQuantityValue", "VectorCalculations::transform(VectorFunctions::VectorOf((1.0, 2.0)) [SI::m], VectorFunctions::VectorOf((0.0, 1.0)) [SI::m])", ErrTypeMismatch},
-		{"scale scaled by a unit", "MeasurementReferences::CoordinateFrame", "Time::UTC / SI::s", ErrUnevaluableLibraryFunction},
-		{"outer product", "Quantities::TensorQuantityValue", "VectorCalculations::outer((1.0, 2.0), (3.0, 4.0))", ErrUnevaluableLibraryFunction},
+		{"scale scaled by a unit", "MeasurementReferences::CoordinateFrame", "Time::UTC / SI::s", errUnevaluableLibraryFunction},
+		{"outer product", "Quantities::TensorQuantityValue", "VectorCalculations::outer((1.0, 2.0), (3.0, 4.0))", errUnevaluableLibraryFunction},
 		{"tensor sum of number sequences", "Quantities::TensorQuantityValue", "TensorCalculations::'+'((1.0, 2.0), (3.0, 4.0))", ErrTypeMismatch},
-		{"tensor product", "Quantities::TensorQuantityValue", "TensorCalculations::tensorTensorMult(VectorFunctions::VectorOf((1.0, 2.0)) [SI::m], VectorFunctions::VectorOf((3.0, 4.0)) [SI::m])", ErrUnevaluableLibraryFunction},
+		{"tensor product", "Quantities::TensorQuantityValue", "TensorCalculations::tensorTensorMult(VectorFunctions::VectorOf((1.0, 2.0)) [SI::m], VectorFunctions::VectorOf((3.0, 4.0)) [SI::m])", errUnevaluableLibraryFunction},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			src := fmt.Sprintf(`
@@ -1625,14 +1625,14 @@ func testTensorQuantityFailureModes(t *testing.T) {
 		{"shape mismatch", "stress + TensorCalculations::'['((1.0, 2.0, 3.0), rowRef)", ErrMultiplicityViolation, "dimensions [2, 2] and [3] differ"},
 		{"tensor minus scalar", "stress - 2 [Pa]", ErrMultiplicityViolation, "dimensions [2, 2] and [] differ"},
 		{"incommensurable components", "stress + TensorCalculations::'['((1.0, 2.0, 3.0, 4.0), lengthRef)", ErrIncommensurableUnits, ""},
-		{"non-square unit predicate", "TensorCalculations::isUnitTensorQuantity(TensorCalculations::'['((1.0, 2.0, 3.0), rowRef))", ErrUnevaluableLibraryFunction, "only a square tensor of order two has an identity"},
-		{"unset covariance", "stress.contravariantOrder", ErrUnevaluableLibraryFunction, "orderSum"},
-		{"tensor times vector", "TensorCalculations::tensorVectorMult(stress, VectorFunctions::VectorOf((1.0, 2.0)) [Pa])", ErrUnevaluableLibraryFunction, "TensorCalculations::tensorVectorMult"},
-		{"vector times tensor", "TensorCalculations::vectorTensorMult(VectorFunctions::VectorOf((1.0, 2.0)) [Pa], stress)", ErrUnevaluableLibraryFunction, "TensorCalculations::vectorTensorMult"},
-		{"tensor times tensor", "TensorCalculations::tensorTensorMult(stress, stress)", ErrUnevaluableLibraryFunction, "TensorCalculations::tensorTensorMult"},
-		{"tensor times tensor by operator", "stress * stress", ErrUnevaluableLibraryFunction, "TensorCalculations::tensorTensorMult"},
-		{"outer product", "VectorCalculations::outer(VectorFunctions::VectorOf((1.0, 2.0)) [Pa], VectorFunctions::VectorOf((1.0, 2.0)) [Pa])", ErrUnevaluableLibraryFunction, "VectorCalculations::outer"},
-		{"transform", "TensorCalculations::transform(stressRef, stress)", ErrUnevaluableLibraryFunction, "TensorCalculations::transform"},
+		{"non-square unit predicate", "TensorCalculations::isUnitTensorQuantity(TensorCalculations::'['((1.0, 2.0, 3.0), rowRef))", errUnevaluableLibraryFunction, "only a square tensor of order two has an identity"},
+		{"unset covariance", "stress.contravariantOrder", errUnevaluableLibraryFunction, "orderSum"},
+		{"tensor times vector", "TensorCalculations::tensorVectorMult(stress, VectorFunctions::VectorOf((1.0, 2.0)) [Pa])", errUnevaluableLibraryFunction, "TensorCalculations::tensorVectorMult"},
+		{"vector times tensor", "TensorCalculations::vectorTensorMult(VectorFunctions::VectorOf((1.0, 2.0)) [Pa], stress)", errUnevaluableLibraryFunction, "TensorCalculations::vectorTensorMult"},
+		{"tensor times tensor", "TensorCalculations::tensorTensorMult(stress, stress)", errUnevaluableLibraryFunction, "TensorCalculations::tensorTensorMult"},
+		{"tensor times tensor by operator", "stress * stress", errUnevaluableLibraryFunction, "TensorCalculations::tensorTensorMult"},
+		{"outer product", "VectorCalculations::outer(VectorFunctions::VectorOf((1.0, 2.0)) [Pa], VectorFunctions::VectorOf((1.0, 2.0)) [Pa])", errUnevaluableLibraryFunction, "VectorCalculations::outer"},
+		{"transform", "TensorCalculations::transform(stressRef, stress)", errUnevaluableLibraryFunction, "TensorCalculations::transform"},
 		{"rank three, too few indexes", "cube#(1, 2)", ErrMultiplicityViolation, "2 indexes address an array of rank 3"},
 		{"rank three, too many indexes", "cube#(1, 1, 1, 1)", ErrMultiplicityViolation, "4 indexes address an array of rank 3"},
 		{"rank three, first index low", "cube#(0, 1, 1)", ErrIndexOutOfRange, "index 1 is 0, dimension 1 has 1..2"},
@@ -1643,7 +1643,7 @@ func testTensorQuantityFailureModes(t *testing.T) {
 		{"rank three, too many components", "TensorCalculations::'['((1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0), cubeRef)", ErrMultiplicityViolation, "9 elements for a reference of dimensions [2, 2, 2]"},
 		{"rank three against rank two", "cube + stress", ErrMultiplicityViolation, "dimensions [2, 2, 2] and [2, 2] differ"},
 		{"rank three shapes differ", "cube - TensorCalculations::'['((1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0), slabRef)", ErrMultiplicityViolation, "dimensions [2, 2, 2] and [2, 3, 2] differ"},
-		{"rank three unit predicate", "TensorCalculations::isUnitTensorQuantity(cube)", ErrUnevaluableLibraryFunction, "only a square tensor of order two has an identity"},
+		{"rank three unit predicate", "TensorCalculations::isUnitTensorQuantity(cube)", errUnevaluableLibraryFunction, "only a square tensor of order two has an identity"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			src := fmt.Sprintf(`
@@ -1710,7 +1710,7 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 		{"frame whose mRefs are not one per stated dimension", `attribute bad : CoordinateFrame { :>> dimensions = 2; :>> mRefs = (m, m, m); }`,
 			"CoordinateFrame", "bad", ErrMultiplicityViolation, "bad states 3 mRefs for dimensions [2], whose flattenedSize is 2"},
 		{"frame whose dimensions overflow", `attribute bad : CoordinateFrame { :>> dimensions : Positive[2] = (4611686018427387904, 4); :>> mRefs = (m, m, m); }`,
-			"CoordinateFrame", "bad", ErrIntegerUnaddressable, "bad: flattenedSize of dimensions [4611686018427387904, 4] is 18446744073709551616"},
+			"CoordinateFrame", "bad", errIntegerUnaddressable, "bad: flattenedSize of dimensions [4611686018427387904, 4] is 18446744073709551616"},
 		{"frame whose mRef is a number", `attribute bad : CoordinateFrame { :>> mRefs = (m, 2); }`,
 			"CoordinateFrame", "bad", ErrTypeMismatch, "bad.mRefs: type mismatch: cannot write 2 (an Integer) to a feature typed by ScalarMeasurementReference"},
 		{"vector short of an axis", ``,
@@ -1718,9 +1718,9 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 		{"vector of a number too many", ``,
 			"Position3dVector", "(1.0, 2.0, 3.0, 4.0) [spatialCF]", ErrMultiplicityViolation, "4 elements over the coordinate frame spatialCF, whose flattenedSize is 3"},
 		{"vector of no numbers", ``,
-			"Position3dVector", "(m, m, m) [spatialCF]", ErrNotAQuantity, "want 3 numbers, one per axis"},
+			"Position3dVector", "(m, m, m) [spatialCF]", errNotAQuantity, "want 3 numbers, one per axis"},
 		{"scale composed with a unit", ``,
-			"CoordinateFrame", "Time::UTC * s", ErrUnevaluableLibraryFunction, "UTC is a measurement scale"},
+			"CoordinateFrame", "Time::UTC * s", errUnevaluableLibraryFunction, "UTC is a measurement scale"},
 		{"frame composed with a number", ``,
 			"CoordinateFrame", "spatialCF / 2", ErrTypeMismatch, "operator '/' is not defined for a coordinate frame and an Integer"},
 		{"frame composed with a frame", ``,
@@ -1746,7 +1746,7 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 		{"transformation of no recognized shape", `
 			attribute def Bespoke :> CoordinateTransformation;
 			attribute odd : CartesianSpatial3dCoordinateFrame { :>> mRefs = (mm, mm, mm); :>> transformation : Bespoke { :>> source = datum; } }`,
-			"Position3dVector", "transform(odd.transformation, (1.0, 2.0, 3.0) [datum])", ErrUnevaluableLibraryFunction, "transformation is a Bespoke, a CoordinateTransformation of no shape the library gives a meaning"},
+			"Position3dVector", "transform(odd.transformation, (1.0, 2.0, 3.0) [datum])", errUnevaluableLibraryFunction, "transformation is a Bespoke, a CoordinateTransformation of no shape the library gives a meaning"},
 		{"placement whose origin is a string", `
 			attribute odd : CartesianSpatial3dCoordinateFrame { :>> mRefs = (mm, mm, mm); :>> transformation : CoordinateFramePlacement { :>> source = datum; :>> origin = "2024-01-01T00:00:00Z"; } }`,
 			"Position3dVector", "transform(odd.transformation, (1.0, 2.0, 3.0) [datum])", ErrTypeMismatch, `transformation.origin: type mismatch: cannot write "2024-01-01T00:00:00Z" (string) to a feature typed by VectorQuantityValue`},
@@ -1800,7 +1800,7 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 		{"rotation of a plane frame", `
 			attribute plane : CoordinateFrame { :>> mRefs = (mm, mm); }
 			attribute odd : CoordinateFrame { :>> mRefs = (mm, mm); :>> transformation : TranslationRotationSequence { :>> source = plane; :>> elements = (new Rotation((0.0, 1.0) [plane], 90 ['°'])); } }`,
-			"Quantities::VectorQuantityValue", "transform(odd.transformation, (1.0, 2.0) [plane])", ErrUnevaluableLibraryFunction, "rotates about an axis, which a frame of 2 axes has no meaning for"},
+			"Quantities::VectorQuantityValue", "transform(odd.transformation, (1.0, 2.0) [plane])", errUnevaluableLibraryFunction, "rotates about an axis, which a frame of 2 axes has no meaning for"},
 		{"affine matrix of too few elements", `
 			attribute odd : CartesianSpatial3dCoordinateFrame { :>> mRefs = (mm, mm, mm); :>> transformation : AffineTransformationMatrix3d { :>> source = datum; :>> rotationMatrix { :>> elements = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0); } :>> translationVector { :>> elements = (0.0, 0.0, 0.0); } } }`,
 			"Position3dVector", "transform(odd.transformation, (1.0, 2.0, 3.0) [datum])", ErrMultiplicityViolation, "rotationMatrix.elements: multiplicity violation: 6 value(s) bound to a feature with multiplicity lower bound 9"},
@@ -1840,7 +1840,7 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 				:>> transformation : CoordinateFramePlacement { :>> source = K; :>> origin = 300.0 [K]; }
 			}
 			attribute muddled : Muddled;`,
-			"ThermodynamicTemperatureValue", "ConvertQuantity(300.0 [K], muddled)", ErrUnevaluableLibraryFunction, "its transformation places zero at 300.0 [K] but its quantityValueMapping places it at 273.15"},
+			"ThermodynamicTemperatureValue", "ConvertQuantity(300.0 [K], muddled)", errUnevaluableLibraryFunction, "its transformation places zero at 300.0 [K] but its quantityValueMapping places it at 273.15"},
 		{"scale whose mapping maps a quantity, not a definitional value", `
 			attribute def Muddled :> IntervalScale {
 				:>> unit = SI::'°C';
@@ -1862,7 +1862,7 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 			"LengthValue", "ConvertQuantity(3.0 [shifted], m)", nil, ""},
 		{"scale whose basis direction scales the axis in another unit", `
 			attribute shifted : IntervalScale { :>> unit = s; :>> transformation : CoordinateFramePlacement { :>> source = s; :>> origin = 10.0 [s]; :>> basisDirections = 1.0 [min]; } }`,
-			"DurationValue", "ConvertQuantity(3.0 [shifted], s)", ErrUnevaluableLibraryFunction, "the basisDirection 1.0 [min] of its transformation transformation is not the identity 1 [s]"},
+			"DurationValue", "ConvertQuantity(3.0 [shifted], s)", errUnevaluableLibraryFunction, "the basisDirection 1.0 [min] of its transformation transformation is not the identity 1 [s]"},
 		{"scale placed on a frame of two axes", `
 			attribute plane : CoordinateFrame { :>> mRefs = (K, K); }
 			attribute shifted : IntervalScale { :>> unit = K; :>> transformation : CoordinateFramePlacement { :>> source = plane; :>> origin = 10.0 [K]; } }`,
@@ -1879,7 +1879,7 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 			"ThermodynamicTemperatureValue", "ConvertQuantity(3.0 [shifted], K)", ErrTypeMismatch, "is a vector quantity in line, not a quantity on K, its source"},
 		{"scale whose basis direction scales the axis", `
 			attribute shifted : IntervalScale { :>> unit = K; :>> transformation : CoordinateFramePlacement { :>> source = K; :>> origin = 10.0 [K]; :>> basisDirections = 2.0 [K]; } }`,
-			"ThermodynamicTemperatureValue", "ConvertQuantity(3.0 [shifted], K)", ErrUnevaluableLibraryFunction, "is not the identity 1 [K], and the library gives a scale no other basis"},
+			"ThermodynamicTemperatureValue", "ConvertQuantity(3.0 [shifted], K)", errUnevaluableLibraryFunction, "is not the identity 1 [K], and the library gives a scale no other basis"},
 		{"scale with no unit", `
 			attribute def Unitless :> IntervalScale;
 			attribute unitless : Unitless;`,
@@ -1908,39 +1908,39 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 		// A point on an interval scale has the affine operations and no other: the
 		// refusal names the operation and the scale.
 		{"point added to a point", ``,
-			"ThermodynamicTemperatureValue", "warm + 10.0 [SI::'°C_abs']", ErrScalePoint, "operator '+' on a point of the interval scale SI::'°C_abs': two points have no sum"},
+			"ThermodynamicTemperatureValue", "warm + 10.0 [SI::'°C_abs']", errScalePoint, "operator '+' on a point of the interval scale SI::'°C_abs': two points have no sum"},
 		{"time instant added to a time instant", ``,
-			"Time::TimeInstantValue", "5.0 [Time::UTC] + 3.0 [Time::UTC]", ErrScalePoint, "operator '+' on a point of the interval scale Time::UTC: two points have no sum; their difference `x - y` is a magnitude in s"},
+			"Time::TimeInstantValue", "5.0 [Time::UTC] + 3.0 [Time::UTC]", errScalePoint, "operator '+' on a point of the interval scale Time::UTC: two points have no sum; their difference `x - y` is a magnitude in s"},
 		{"point taken from a magnitude", ``,
-			"ThermodynamicTemperatureValue", "300.0 [K] - warm", ErrScalePoint, "subtracting a point from a magnitude on a point of the interval scale SI::'°C_abs'"},
+			"ThermodynamicTemperatureValue", "300.0 [K] - warm", errScalePoint, "subtracting a point from a magnitude on a point of the interval scale SI::'°C_abs'"},
 		{"point scaled by a number", ``,
-			"ThermodynamicTemperatureValue", "2 * warm", ErrScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs': a point has no multiple"},
+			"ThermodynamicTemperatureValue", "2 * warm", errScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs': a point has no multiple"},
 		{"number scaled by a point", ``,
-			"ThermodynamicTemperatureValue", "warm * 2.0", ErrScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs'"},
+			"ThermodynamicTemperatureValue", "warm * 2.0", errScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs'"},
 		{"time instant scaled by a number", ``,
-			"Time::TimeInstantValue", "2 * 5.0 [Time::UTC]", ErrScalePoint, "operator '*' on a point of the interval scale Time::UTC"},
+			"Time::TimeInstantValue", "2 * 5.0 [Time::UTC]", errScalePoint, "operator '*' on a point of the interval scale Time::UTC"},
 		{"point multiplied by a quantity", ``,
-			"ScalarQuantityValue", "warm * 2.0 [s]", ErrScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs': a point has no multiple and its scale is no unit to compose"},
+			"ScalarQuantityValue", "warm * 2.0 [s]", errScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs': a point has no multiple and its scale is no unit to compose"},
 		{"quantity multiplied by a point", ``,
-			"ScalarQuantityValue", "2.0 [s] * warm", ErrScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "2.0 [s] * warm", errScalePoint, "operator '*' on a point of the interval scale SI::'°C_abs'"},
 		{"point divided by a number", ``,
-			"ThermodynamicTemperatureValue", "warm / 2", ErrScalePoint, "operator '/' on a point of the interval scale SI::'°C_abs'"},
+			"ThermodynamicTemperatureValue", "warm / 2", errScalePoint, "operator '/' on a point of the interval scale SI::'°C_abs'"},
 		{"point divided by a quantity", ``,
-			"ScalarQuantityValue", "warm / 2.0 [s]", ErrScalePoint, "operator '/' on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "warm / 2.0 [s]", errScalePoint, "operator '/' on a point of the interval scale SI::'°C_abs'"},
 		{"quantity divided by a point", ``,
-			"ScalarQuantityValue", "2.0 [s] / warm", ErrScalePoint, "operator '/' on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "2.0 [s] / warm", errScalePoint, "operator '/' on a point of the interval scale SI::'°C_abs'"},
 		{"point raised to a power", ``,
-			"ScalarQuantityValue", "warm ** 2", ErrScalePoint, "operator '**' on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "warm ** 2", errScalePoint, "operator '**' on a point of the interval scale SI::'°C_abs'"},
 		{"point raised to a power by exponentiation", ``,
-			"ScalarQuantityValue", "warm ^ 2", ErrScalePoint, "operator '**' on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "warm ^ 2", errScalePoint, "operator '**' on a point of the interval scale SI::'°C_abs'"},
 		{"square root of a point", ``,
-			"ScalarQuantityValue", "sqrt(warm)", ErrScalePoint, "sqrt on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "sqrt(warm)", errScalePoint, "sqrt on a point of the interval scale SI::'°C_abs'"},
 		{"negated point", ``,
-			"ThermodynamicTemperatureValue", "-warm", ErrScalePoint, "negation on a point of the interval scale SI::'°C_abs': a point has no negative"},
+			"ThermodynamicTemperatureValue", "-warm", errScalePoint, "negation on a point of the interval scale SI::'°C_abs': a point has no negative"},
 		{"points summed", ``,
-			"ThermodynamicTemperatureValue", "sum((warm, 20.0 [SI::'°C_abs']))", ErrScalePoint, "QuantityCalculations::sum on a point of the interval scale SI::'°C_abs': points have no sum or product to fold"},
+			"ThermodynamicTemperatureValue", "sum((warm, 20.0 [SI::'°C_abs']))", errScalePoint, "QuantityCalculations::sum on a point of the interval scale SI::'°C_abs': points have no sum or product to fold"},
 		{"points multiplied together", ``,
-			"ScalarQuantityValue", "product((warm, 20.0 [SI::'°C_abs']))", ErrScalePoint, "QuantityCalculations::product on a point of the interval scale SI::'°C_abs'"},
+			"ScalarQuantityValue", "product((warm, 20.0 [SI::'°C_abs']))", errScalePoint, "QuantityCalculations::product on a point of the interval scale SI::'°C_abs'"},
 		{"point moved by a magnitude of another dimension", ``,
 			"ThermodynamicTemperatureValue", "warm + 1.0 [m]", ErrIncommensurableUnits, "a point on the interval scale SI::'°C_abs' moves by a magnitude in its unit '°C'"},
 		{"point compared with a magnitude of another dimension", ``,
@@ -1948,17 +1948,17 @@ func testCoordinateFrameFailureModes(t *testing.T) {
 		{"point equated with a magnitude of another dimension", ``,
 			"Boolean", "warm == 1.0 [m]", ErrIncommensurableUnits, ""},
 		{"point on an unanchored scale compared with a magnitude", ``,
-			"Boolean", "5.0 [Time::UTC] == 5.0 [s]", ErrUnevaluableLibraryFunction, "Time::UTC states neither a transformation placing it on another reference nor a quantityValueMapping"},
+			"Boolean", "5.0 [Time::UTC] == 5.0 [s]", errUnevaluableLibraryFunction, "Time::UTC states neither a transformation placing it on another reference nor a quantityValueMapping"},
 		{"point on an ordinal scale moved by a magnitude", `attribute mohs : OrdinalScale { :>> unit = K; }`,
-			"ScalarQuantityValue", "7 [mohs] + 1 [K]", ErrScalePoint, "operator '+' on a point of the ordinal scale test::Holder::mohs: only an IntervalScale relates its points by differences in its unit"},
+			"ScalarQuantityValue", "7 [mohs] + 1 [K]", errScalePoint, "operator '+' on a point of the ordinal scale test::Holder::mohs: only an IntervalScale relates its points by differences in its unit"},
 		{"points on an ordinal scale subtracted", `attribute mohs : OrdinalScale { :>> unit = K; }`,
-			"ScalarQuantityValue", "9 [mohs] - 7 [mohs]", ErrScalePoint, "operator '-' on a point of the ordinal scale test::Holder::mohs"},
+			"ScalarQuantityValue", "9 [mohs] - 7 [mohs]", errScalePoint, "operator '-' on a point of the ordinal scale test::Holder::mohs"},
 		{"point on an ordinal scale compared with a magnitude", `attribute mohs : OrdinalScale { :>> unit = K; }`,
-			"Boolean", "7 [mohs] < 300.0 [K]", ErrScalePoint, "comparison with another reference on a point of the ordinal scale test::Holder::mohs"},
+			"Boolean", "7 [mohs] < 300.0 [K]", errScalePoint, "comparison with another reference on a point of the ordinal scale test::Holder::mohs"},
 		{"point on a cyclic ratio scale scaled", `attribute compass : CyclicRatioScale { :>> unit = rad; :>> modulus = 6.283185307179586; }`,
-			"ScalarQuantityValue", "2 * 1.0 [compass]", ErrScalePoint, "operator '*' on a point of the cyclic ratio scale test::Holder::compass"},
+			"ScalarQuantityValue", "2 * 1.0 [compass]", errScalePoint, "operator '*' on a point of the cyclic ratio scale test::Holder::compass"},
 		{"point on a logarithmic scale moved by a magnitude", `attribute decibel : LogarithmicScale { :>> unit = W; :>> logarithmBase = 10; :>> factor = 10; :>> exponent = 1; }`,
-			"ScalarQuantityValue", "30.0 [decibel] + 1.0 [W]", ErrScalePoint, "operator '+' on a point of the logarithmic scale test::Holder::decibel: only an IntervalScale relates its points by differences in its unit"},
+			"ScalarQuantityValue", "30.0 [decibel] + 1.0 [W]", errScalePoint, "operator '+' on a point of the logarithmic scale test::Holder::decibel: only an IntervalScale relates its points by differences in its unit"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			src := fmt.Sprintf(`
@@ -2115,7 +2115,7 @@ func testMetaCastFailureModes(t *testing.T) {
 		{"a datum subject", "42 meta KerML::Feature", "element", semantics.ErrFilterUnevaluable},
 		{"a string subject", `"belt" meta KerML::Feature`, "element", semantics.ErrFilterUnevaluable},
 		{"an unresolved subject", "test::nope meta KerML::Feature", "nope", ErrUnresolvedReference},
-		{"an unresolved type", "test::seatBelt meta KerML::Nonexistent", "KerML::Nonexistent", ErrUnresolvedType},
+		{"an unresolved type", "test::seatBelt meta KerML::Nonexistent", "KerML::Nonexistent", errUnresolvedType},
 		{"a feature the metaclass lacks", "(test::seatBelt meta KerML::Feature).wheels", "wheels", ErrNoSuchFeature},
 		{"a feature the runtime does not derive", "(test::seatBelt meta KerML::Feature).ownedRelationship", "ownedRelationship", ErrReflectiveFeatureUnsupported},
 		{"a documentation body without the notation", "(test::Vehicle meta KerML::Element).documentation.body", "body", ErrReflectiveFeatureUnsupported},
@@ -2276,7 +2276,7 @@ func testFeatureChainThroughAnUnsetFeatureValue(t *testing.T) {
 	if err == nil {
 		t.Fatal("want the unset feature value's error, got a value")
 	}
-	if !errors.Is(err, ErrUninitializedFeatureValue) {
+	if !errors.Is(err, errUninitializedFeatureValue) {
 		t.Errorf("expected ErrUninitializedFeatureValue, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "volume") {
@@ -2393,7 +2393,7 @@ func testNumericLibraryCallThatHasNoValue(t *testing.T) {
 		{"VectorFunctions::cartesianNorm(flags)", ErrTypeMismatch},
 		{"VectorFunctions::cartesianAngle(xs, (0.0, 0.0, 0.0))", semantics.ErrArithmeticDomain},
 		{"VectorFunctions::vectorScalarDiv(xs, 0)", ErrDivisionByZero},
-		{"VectorFunctions::cartesianInner(xs)", ErrCalcArity},
+		{"VectorFunctions::cartesianInner(xs)", errCalcArity},
 		// Flat numbers are no collection of vectors; unequal dimensions have no
 		// sum or inner product; Booleans or a two-component three-vector are no vector.
 		{"VectorFunctions::sum(xs)", ErrTypeMismatch},
@@ -2418,7 +2418,7 @@ func testNumericLibraryCallThatHasNoValue(t *testing.T) {
 		{"ComplexFunctions::'/'(ComplexFunctions::rect(0.0, 1.0), ComplexFunctions::rect(0.0, 0.0))", ErrDivisionByZero},
 		{"ComplexFunctions::re(xs)", ErrTypeMismatch},
 		{"ComplexFunctions::re(ys)", ErrTypeMismatch},
-		{"ComplexFunctions::ToString(ComplexFunctions::rect(0.0, 1.0))", ErrUnevaluableLibraryFunction},
+		{"ComplexFunctions::ToString(ComplexFunctions::rect(0.0, 1.0))", errUnevaluableLibraryFunction},
 		// includingAt inserts before a position of 1..size+1, so an index past the
 		// end of the sequence names no insertion point and is reported rather than
 		// appending or dropping the values.
@@ -2426,7 +2426,7 @@ func testNumericLibraryCallThatHasNoValue(t *testing.T) {
 		{"SequenceFunctions::includingAt(xs, 9, 0)", ErrIndexOutOfRange},
 		{"SequenceFunctions::includingAt((), 9, 2)", ErrIndexOutOfRange},
 		{"SequenceFunctions::includingAt(xs, 9, 1.5)", ErrTypeMismatch},
-		{"SequenceFunctions::includingAt(xs, 9)", ErrCalcArity},
+		{"SequenceFunctions::includingAt(xs, 9)", errCalcArity},
 	} {
 		got, err := evalCollectionExpr(t, tt.expr)
 		if !errors.Is(err, tt.want) {
@@ -2443,13 +2443,13 @@ func testNamedLibraryCallThatHasNoValue(t *testing.T) {
 		expr string
 		want error
 	}{
-		{`RealFunctions::ToReal("1.5 meters")`, ErrInvalidNotation},
-		{`RealFunctions::ToReal("NaN")`, ErrInvalidNotation},
-		{`RealFunctions::ToReal(" 1.5 ")`, ErrInvalidNotation},
-		{`IntegerFunctions::ToInteger(" 7")`, ErrInvalidNotation},
-		{`RationalFunctions::ToRational("1/x")`, ErrInvalidNotation},
-		{`IntegerFunctions::ToInteger("2.0")`, ErrInvalidNotation},
-		{`BooleanFunctions::ToBoolean("yes")`, ErrInvalidNotation},
+		{`RealFunctions::ToReal("1.5 meters")`, errInvalidNotation},
+		{`RealFunctions::ToReal("NaN")`, errInvalidNotation},
+		{`RealFunctions::ToReal(" 1.5 ")`, errInvalidNotation},
+		{`IntegerFunctions::ToInteger(" 7")`, errInvalidNotation},
+		{`RationalFunctions::ToRational("1/x")`, errInvalidNotation},
+		{`IntegerFunctions::ToInteger("2.0")`, errInvalidNotation},
+		{`BooleanFunctions::ToBoolean("yes")`, errInvalidNotation},
 		{`IntegerFunctions::ToNatural(-1)`, semantics.ErrArithmeticDomain},
 		{`NaturalFunctions::ToNatural("-1")`, semantics.ErrArithmeticDomain},
 		{`RealFunctions::ToReal(xs)`, ErrTypeMismatch},
@@ -2461,17 +2461,17 @@ func testNamedLibraryCallThatHasNoValue(t *testing.T) {
 		{`RationalFunctions::numer("0.5")`, ErrTypeMismatch},
 		{`CollectionFunctions::'array#'(xs, (1, 1))`, ErrTypeMismatch},
 		{`OccurrenceFunctions::isDuring(xs)`, ErrMultiplicityViolation},
-		{`OccurrenceFunctions::isDuring(factor)`, ErrNotAnOccurrence},
+		{`OccurrenceFunctions::isDuring(factor)`, errNotAnOccurrence},
 		{`OccurrenceFunctions::'==='(xs, xs)`, ErrMultiplicityViolation},
-		{`OccurrenceFunctions::'==='(factor, factor)`, ErrNotAnOccurrence},
-		{`OccurrenceFunctions::create(factor)`, ErrNotAnOccurrence},
-		{`OccurrenceFunctions::destroy(factor)`, ErrNotAnOccurrence},
-		{`OccurrenceFunctions::addNew(xs)`, ErrCalcArity},
+		{`OccurrenceFunctions::'==='(factor, factor)`, errNotAnOccurrence},
+		{`OccurrenceFunctions::create(factor)`, errNotAnOccurrence},
+		{`OccurrenceFunctions::destroy(factor)`, errNotAnOccurrence},
+		{`OccurrenceFunctions::addNew(xs)`, errCalcArity},
 		{`OccurrenceFunctions::addNew(occ = xs)`, ErrMultiplicityViolation},
-		{`OccurrenceFunctions::addNew(xs, factor)`, ErrNotAnOccurrence},
-		{`OccurrenceFunctions::addNewAt(xs, xs)`, ErrCalcArity},
+		{`OccurrenceFunctions::addNew(xs, factor)`, errNotAnOccurrence},
+		{`OccurrenceFunctions::addNewAt(xs, xs)`, errCalcArity},
 		{`OccurrenceFunctions::addNewAt(occ = xs, index = 1)`, ErrMultiplicityViolation},
-		{`OccurrenceFunctions::addNewAt((), factor, 0)`, ErrNotAnOccurrence},
+		{`OccurrenceFunctions::addNewAt((), factor, 0)`, errNotAnOccurrence},
 		{`IntegerFunctions::'+'("a", 1)`, ErrTypeMismatch},
 		{`IntegerFunctions::'/'(1, 0)`, ErrDivisionByZero},
 		{`NaturalFunctions::'/'(7, 2)`, semantics.ErrArithmeticDomain},
@@ -2508,7 +2508,7 @@ func testNamedLibraryCallThatHasNoValue(t *testing.T) {
 		{`NumericalFunctions::sum0(xs, 1)`, ErrTypeMismatch},
 		{`NumericalFunctions::product1(xs, 0)`, ErrTypeMismatch},
 		{`NumericalFunctions::sum0(flags, 0)`, ErrTypeMismatch},
-		{`NumericalFunctions::sum0(xs)`, ErrCalcArity},
+		{`NumericalFunctions::sum0(xs)`, errCalcArity},
 	} {
 		got, err := evalCollectionExpr(t, tt.expr)
 		if !errors.Is(err, tt.want) {
@@ -2526,19 +2526,19 @@ func testBuiltinNamedArgumentThatBindsNothing(t *testing.T) {
 		expr string
 		want error
 	}{
-		{`NumericalFunctions::sum0(zero = 0, elements = xs)`, ErrUnknownParameter},
-		{`NumericalFunctions::sum0(zero = 0, zero = 1)`, ErrCalcArity},
-		{`NumericalFunctions::sum0(zero = 0, zero = 1, elements = xs)`, ErrCalcArity},
-		{`NumericalFunctions::sum0(collection = xs)`, ErrCalcArity},
-		{`ControlFunctions::'if'(thenValue = 1, elseValue = 2)`, ErrCalcArity},
+		{`NumericalFunctions::sum0(zero = 0, elements = xs)`, errUnknownParameter},
+		{`NumericalFunctions::sum0(zero = 0, zero = 1)`, errCalcArity},
+		{`NumericalFunctions::sum0(zero = 0, zero = 1, elements = xs)`, errCalcArity},
+		{`NumericalFunctions::sum0(collection = xs)`, errCalcArity},
+		{`ControlFunctions::'if'(thenValue = 1, elseValue = 2)`, errCalcArity},
 		{`ControlFunctions::'if'(test = true, thenValue = {in x; x})`, ErrBodyArity},
-		{`ControlFunctions::'and'(secondValue = true)`, ErrCalcArity},
-		{`ControlFunctions::'if'()`, ErrCalcArity},
-		{`ControlFunctions::'and'()`, ErrCalcArity},
-		{`SequenceFunctions::subsequence(xs)`, ErrCalcArity},
-		{`SequenceFunctions::subsequence(seq = xs)`, ErrCalcArity},
-		{`SequenceFunctions::size(xs, 1)`, ErrCalcArity},
-		{`SequenceFunctions::'#'(xs, 1, 2)`, ErrCalcArity},
+		{`ControlFunctions::'and'(secondValue = true)`, errCalcArity},
+		{`ControlFunctions::'if'()`, errCalcArity},
+		{`ControlFunctions::'and'()`, errCalcArity},
+		{`SequenceFunctions::subsequence(xs)`, errCalcArity},
+		{`SequenceFunctions::subsequence(seq = xs)`, errCalcArity},
+		{`SequenceFunctions::size(xs, 1)`, errCalcArity},
+		{`SequenceFunctions::'#'(xs, 1, 2)`, errCalcArity},
 		{`SequenceFunctions::'#'(seq = xs, index = 0)`, ErrIndexOutOfRange},
 		{`ControlFunctions::select(collection = xs, selector = factor)`, ErrTypeMismatch},
 		{`xs->select factor`, ErrTypeMismatch},
@@ -2576,8 +2576,8 @@ func testBodilessModelCalcNamedAsABuiltin(t *testing.T) {
 	`
 	for _, calc := range []string{"Total", "Size", "Parsed", "Added"} {
 		err := calcErrorWithLibraries(t, src, calc, nil, 10000)
-		if !errors.Is(err, ErrNoResultExpression) {
-			t.Errorf("%s = %v, want %v", calc, err, ErrNoResultExpression)
+		if !errors.Is(err, errNoResultExpression) {
+			t.Errorf("%s = %v, want %v", calc, err, errNoResultExpression)
 		}
 	}
 }
@@ -2668,8 +2668,8 @@ func testBaseIndexWithSeveralIndexes(t *testing.T) {
 		t.Errorf("Ragged = %v, want %v naming flattenedSize", err, ErrMultiplicityViolation)
 	}
 	err = calcErrorWithLibraries(t, src, "Vast", nil, 10000)
-	if !errors.Is(err, ErrIntegerUnaddressable) || !strings.Contains(err.Error(), "flattenedSize") || !strings.Contains(err.Error(), "18446744073709551616") {
-		t.Errorf("Vast = %v, want %v naming flattenedSize and its exact value", err, ErrIntegerUnaddressable)
+	if !errors.Is(err, errIntegerUnaddressable) || !strings.Contains(err.Error(), "flattenedSize") || !strings.Contains(err.Error(), "18446744073709551616") {
+		t.Errorf("Vast = %v, want %v naming flattenedSize and its exact value", err, errIntegerUnaddressable)
 	}
 }
 
@@ -2873,7 +2873,7 @@ func testStringOperandOfTheWrongKind(t *testing.T) {
 		{`StringFunctions::Substring("héllo", 1, 6)`, ErrIndexOutOfRange},
 		{`StringFunctions::Substring("abc", 0, 2)`, ErrIndexOutOfRange},
 		{`StringFunctions::Substring("abc", "1", 2)`, ErrTypeMismatch},
-		{`StringFunctions::Substring("abc", 1)`, ErrCalcArity},
+		{`StringFunctions::Substring("abc", 1)`, errCalcArity},
 	} {
 		got, err := evalCollectionExpr(t, tt.expr)
 		if !errors.Is(err, tt.want) {
@@ -3156,7 +3156,7 @@ func testSatisfyBoundedByTheStepBudget(t *testing.T) {
 	// The subject is built inside the same run, so a budget exhausted there is
 	// still reported as such rather than as a missing subject.
 	ctx.maxSteps = 0
-	if _, err := ctx.EvaluateSatisfaction(assertions[0]); !errors.Is(err, ErrStepLimitExceeded) || !errors.Is(err, ErrNoSubject) {
+	if _, err := ctx.EvaluateSatisfaction(assertions[0]); !errors.Is(err, ErrStepLimitExceeded) || !errors.Is(err, errNoSubject) {
 		t.Errorf("expected ErrStepLimitExceeded while building the subject, got: %v", err)
 	}
 }
@@ -3371,7 +3371,7 @@ func testStateSubactionReferenceFeatureChain(t *testing.T) {
 	}`, "Machine")
 
 	_, _, err := ctx.ExecuteStateWithEvents(machine, nil)
-	if !errors.Is(err, ErrPerformerNotObject) {
+	if !errors.Is(err, errPerformerNotObject) {
 		t.Fatalf("expected ErrPerformerNotObject over an empty controller, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "controller.coolDown") {
@@ -3637,14 +3637,14 @@ func testStateEventAfterCompletion(t *testing.T) {
 			transition first init accept stop then done;
 		}
 	}`)
-	exec.SendSignal("stop", nil)
+	exec.sendSignal("stop", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if exec.State() != StateCompleted {
 		t.Fatalf("expected StateCompleted, got %s", exec.State())
 	}
-	exec.SendSignal("stop", nil)
+	exec.sendSignal("stop", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run after completion: %v", err)
 	}
@@ -3665,7 +3665,7 @@ func testStateCompletionRestsInDone(t *testing.T) {
 			transition first busy accept stop then done;
 		}
 	}`)
-	exec.SendSignal("stop", nil)
+	exec.sendSignal("stop", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -3697,21 +3697,21 @@ func testStateNestedRegionCompletionKeepsSiblingsRunning(t *testing.T) {
 			}
 		}
 	}`)
-	exec.SendSignal("stop", nil)
+	exec.sendSignal("stop", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if exec.State() == StateCompleted {
 		t.Fatalf("the machine completed with the sibling region still running")
 	}
-	exec.SendSignal("go", nil)
+	exec.sendSignal("go", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run after the first region completed: %v", err)
 	}
 	if exec.State() == StateCompleted {
 		t.Errorf("the machine completed while the sibling region rests outside `done`")
 	}
-	if got := exec.FinalStateName(); got != "done+rbusy" {
+	if got := exec.finalStateName(); got != "done+rbusy" {
 		t.Errorf("expected the regions in done+rbusy, got %q", got)
 	}
 }
@@ -3769,7 +3769,7 @@ func testStateChoiceWithoutAnEnabledBranch(t *testing.T) {
 	go func() { done <- exec.RunToCompletion() }()
 	select {
 	case err := <-done:
-		if !errors.Is(err, ErrChoiceWithoutBranch) {
+		if !errors.Is(err, errChoiceWithoutBranch) {
 			t.Fatalf("expected ErrChoiceWithoutBranch: the incoming effect wrote x := 2 and the only branch wants 1; got %v", err)
 		}
 		if !strings.Contains(err.Error(), "pick") {
@@ -4056,7 +4056,7 @@ func testCallOfUnhandledOperation(t *testing.T) {
 			transition first waiting accept go() then moving;
 		}
 	}`)
-	exec.InvokeOperation("halt", nil)
+	exec.invokeOperation("halt", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run to completion: %v", err)
 	}
@@ -4089,7 +4089,7 @@ func testSignalNoLevelOfACompositeStateAccepts(t *testing.T) {
 			transition first outer accept shutdown then stopped;
 		}
 	}`)
-	exec.SendSignal("unknown", nil)
+	exec.sendSignal("unknown", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run to completion: %v", err)
 	}
@@ -4114,7 +4114,7 @@ func testCompositeSelfTransitionWithNoSubstateToReEnter(t *testing.T) {
 			transition first Working accept restart then Working;
 		}
 	}`)
-	exec.SendSignal("restart", nil)
+	exec.sendSignal("restart", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run to completion: %v", err)
 	}
@@ -4155,7 +4155,7 @@ func testStaleCompositeTimerInARegion(t *testing.T) {
 			succession first init then working;
 		}
 	}`)
-	exec.SendSignal("skip", nil)
+	exec.sendSignal("skip", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run to completion: %v", err)
 	}
@@ -4207,7 +4207,7 @@ func testExitOfNestedRegionsWithAHistoryPseudostate(t *testing.T) {
 		}
 	}`)
 	for _, signal := range []string{"advance", "leave", "back"} {
-		exec.SendSignal(signal, nil)
+		exec.sendSignal(signal, nil)
 		if err := exec.RunToCompletion(); err != nil {
 			t.Fatalf("run to completion after %s: %v", signal, err)
 		}
@@ -4234,7 +4234,7 @@ func testCallArgumentOfWrongType(t *testing.T) {
 			transition first waiting accept setSpeed(value) if value > 0 then moving;
 		}
 	}`)
-	exec.InvokeOperation("setSpeed", map[string]Value{
+	exec.invokeOperation("setSpeed", map[string]Value{
 		"value": NewStringValue("fast"),
 	})
 	err := exec.RunToCompletion()
@@ -4310,7 +4310,7 @@ func testHistoryWithoutRecordDefaultOrEntry(t *testing.T) {
 	fire(t, exec, "init", "away")
 
 	_, err := exec.resolveAndFire(nil, transitionBetween(t, exec, "away", "H"), nil, nil)
-	if !errors.Is(err, ErrHistoryWithoutEntry) {
+	if !errors.Is(err, errHistoryWithoutEntry) {
 		t.Fatalf("expected ErrHistoryWithoutEntry: nothing recorded, no default transition and outer has no entry transition; got %v", err)
 	}
 	for _, name := range []string{"H", "outer"} {
@@ -4343,7 +4343,7 @@ func testSendViaUnconnectedPort(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error: nothing connects outPort to inPort")
 	}
-	if !errors.Is(err, ErrUnroutableSend) {
+	if !errors.Is(err, errUnroutableSend) {
 		t.Errorf("expected ErrUnroutableSend, got: %v", err)
 	}
 }
@@ -4375,8 +4375,8 @@ func testSendViaConnectorIntoAnEmptyPart(t *testing.T) {
 		t.Fatalf("instantiate bay: %v", err)
 	}
 	_, err = ctx.ExecuteActionPerformedBy(oneSymbol(t, idx, "P::bay::ship"), bay, nil)
-	if !errors.Is(err, ErrUnroutableSend) {
-		t.Fatalf("execute action: err = %v, want %v", err, ErrUnroutableSend)
+	if !errors.Is(err, errUnroutableSend) {
+		t.Fatalf("execute action: err = %v, want %v", err, errUnroutableSend)
 	}
 	if pending := ctx.PendingMessages(); len(pending) != 0 {
 		t.Errorf("pending messages = %+v, want none", pending)
@@ -4410,8 +4410,8 @@ func testSendViaBoundBoundaryPortJoinedToNothing(t *testing.T) {
 		}
 	}`))
 	_, err := ctx.Instantiate(oneSymbol(t, idx, "P::ctx"))
-	if !errors.Is(err, ErrUnroutableSend) {
-		t.Fatalf("instantiate ctx: err = %v, want %v", err, ErrUnroutableSend)
+	if !errors.Is(err, errUnroutableSend) {
+		t.Fatalf("instantiate ctx: err = %v, want %v", err, errUnroutableSend)
 	}
 	if pending := ctx.PendingMessages(); len(pending) != 0 {
 		t.Errorf("pending messages = %+v, want none", pending)
@@ -4490,7 +4490,7 @@ func testAcceptViaAPortThatFailsToMaterialize(t *testing.T) {
 	// use, so only materializing `in` can tell whether it is the same port.
 	viaPort := func(signal string, value Value) Message {
 		return Message{SignalType: signal, Port: "other", Object: listener.ID, PortID: -1,
-			Delivery: DeliverPort, Value: &value}
+			Delivery: deliverPort, Value: &value}
 	}
 	ctx.PostMessage(viaPort("String", NewStringValue("not for you")))
 	if exec.HasPendingSignal() {
@@ -4510,7 +4510,7 @@ func testAcceptViaAPortThatFailsToMaterialize(t *testing.T) {
 	if !errors.Is(err, ErrDivisionByZero) {
 		t.Fatalf("run with an Integer in flight: err = %v, want the port's %v", err, ErrDivisionByZero)
 	}
-	if visits := exec.GetStateVisits(); len(visits) != 1 || visits[0] != "Idle" {
+	if visits := exec.getStateVisits(); len(visits) != 1 || visits[0] != "Idle" {
 		t.Errorf("state visits = %v, want [Idle]", visits)
 	}
 	if pending := ctx.PendingMessages(); len(pending) != 2 || pending[0].SignalType != "String" || pending[1].SignalType != "Integer" {
@@ -4555,7 +4555,7 @@ func testActionAcceptViaAPortThatFailsToMaterialize(t *testing.T) {
 	}
 	viaPort := func(signal string, value Value) Message {
 		return Message{SignalType: signal, Target: "reader", Port: "other", Object: listener.ID, PortID: -1,
-			Delivery: DeliverPort, Value: &value}
+			Delivery: deliverPort, Value: &value}
 	}
 	ctx.PostMessage(viaPort("String", NewStringValue("not for you")))
 	if exec.HasPendingSignal() {
@@ -4591,14 +4591,14 @@ func testRoutedSendViaUnknownPort(t *testing.T) {
 			succession first sender then done;
 		}
 	}`)
-	var typed *UnknownSendPortError
+	var typed *unknownSendPortError
 	if !errors.As(err, &typed) {
 		t.Fatalf("expected UnknownSendPortError, got: %v", err)
 	}
-	if !errors.Is(err, ErrSendViaUnknownPort) {
+	if !errors.Is(err, errSendViaUnknownPort) {
 		t.Errorf("expected ErrSendViaUnknownPort, got: %v", err)
 	}
-	if errors.Is(err, ErrUnroutableSend) {
+	if errors.Is(err, errUnroutableSend) {
 		t.Errorf("unknown routed port must not be ErrUnroutableSend: %v", err)
 	}
 	if !strings.Contains(err.Error(), `"missing"`) || !strings.Contains(err.Error(), `"reader"`) {
@@ -4624,11 +4624,11 @@ func testRoutedSendPortTypeMismatch(t *testing.T) {
 			succession first reader then done;
 		}
 	}`)
-	var typed *SendPortTypeMismatchError
+	var typed *sendPortTypeMismatchError
 	if !errors.As(err, &typed) {
 		t.Fatalf("expected SendPortTypeMismatchError, got: %v", err)
 	}
-	if !errors.Is(err, ErrSendPortTypeMismatch) {
+	if !errors.Is(err, errSendPortTypeMismatch) {
 		t.Errorf("expected ErrSendPortTypeMismatch, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), `"outPort"`) ||
@@ -4677,11 +4677,11 @@ func testRoutedSendScalarTypedFlowMismatch(t *testing.T) {
 			succession first reader then done;
 		}
 	}`)
-	var typed *SendPortTypeMismatchError
+	var typed *sendPortTypeMismatchError
 	if !errors.As(err, &typed) {
 		t.Fatalf("expected scalar SendPortTypeMismatchError, got: %v", err)
 	}
-	if !errors.Is(err, ErrSendPortTypeMismatch) {
+	if !errors.Is(err, errSendPortTypeMismatch) {
 		t.Errorf("expected ErrSendPortTypeMismatch for scalar message, got: %v", err)
 	}
 }
@@ -4699,11 +4699,11 @@ func testRoutedSendUnreachableReceiver(t *testing.T) {
 			succession first sender then done;
 		}
 	}`)
-	var typed *UnreachableSendReceiverError
+	var typed *unreachableSendReceiverError
 	if !errors.As(err, &typed) {
 		t.Fatalf("expected UnreachableSendReceiverError, got: %v", err)
 	}
-	if !errors.Is(err, ErrUnreachableSendReceiver) {
+	if !errors.Is(err, errUnreachableSendReceiver) {
 		t.Errorf("expected ErrUnreachableSendReceiver, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), `"outPort"`) ||
@@ -4845,7 +4845,7 @@ func testTypeClassificationUnresolvedType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected unresolved type classification to fail")
 	}
-	if !errors.Is(err, ErrUnresolvedType) {
+	if !errors.Is(err, errUnresolvedType) {
 		t.Fatalf("expected ErrUnresolvedType, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "MissingType") {
@@ -4867,7 +4867,7 @@ func testTypeClassificationUndeterminedValueType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected undetermined value type classification to fail")
 	}
-	if !errors.Is(err, ErrUndeterminedValueType) {
+	if !errors.Is(err, errUndeterminedValueType) {
 		t.Fatalf("expected ErrUndeterminedValueType, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "Rational") {
@@ -4894,7 +4894,7 @@ func testCastToAnUnresolvedType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected a cast to an unresolved type to fail")
 	}
-	if !errors.Is(err, ErrUnresolvedType) {
+	if !errors.Is(err, errUnresolvedType) {
 		t.Fatalf("expected ErrUnresolvedType, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "MissingType") {
@@ -4934,15 +4934,15 @@ func testExtentOfAnUnresolvedOrUnboundedType(t *testing.T) {
 		want error
 		name string
 	}{
-		{"missing", ErrUnresolvedType, "MissingType"},
+		{"missing", errUnresolvedType, "MissingType"},
 		{"noName", ErrTypeMismatch, "requires the name of a type"},
 		{"ofPackage", ErrTypeMismatch, "Spares is a package"},
 		{"ofQualifiedPackage", ErrTypeMismatch, "P::Spares is a package"},
 		{"ofRelationship", ErrTypeMismatch, "Supply is a dependency"},
 		{"ofComment", ErrTypeMismatch, "Note is a comment"},
-		{"unbounded", ErrUnboundedExtent, "Integer"},
-		{"unboundedString", ErrUnboundedExtent, "String"},
-		{"unboundedStructured", ErrUnboundedExtent, "Point is a data type"},
+		{"unbounded", errUnboundedExtent, "Integer"},
+		{"unboundedString", errUnboundedExtent, "String"},
+		{"unboundedStructured", errUnboundedExtent, "Point is a data type"},
 	} {
 		_, err := ctx.InvokeCalc(resolveSymbol(t, pkg.Scope, tc.calc), nil, pkg.Scope)
 		if !errors.Is(err, tc.want) {
@@ -5031,8 +5031,8 @@ func testExtentReachingANamespaceCollection(t *testing.T) {
 		t.Error("spares, a [0..*] usage, denotes objects; want none")
 	}
 	_, err = ctx.InvokeCalc(resolveSymbol(t, pkg.Scope, "linkCount"), nil, pkg.Scope)
-	if !errors.Is(err, ErrExtentUnavailable) || !strings.Contains(err.Error(), "link is a port") {
-		t.Errorf("size(all Link) = %v, want %v naming the port link", err, ErrExtentUnavailable)
+	if !errors.Is(err, errExtentUnavailable) || !strings.Contains(err.Error(), "link is a port") {
+		t.Errorf("size(all Link) = %v, want %v naming the port link", err, errExtentUnavailable)
 	}
 	q := resolveSymbol(t, pkg.Scope, "Q")
 	got, err := ctx.InvokeCalc(resolveSymbol(t, q.Scope, "seatCount"), nil, q.Scope)
@@ -5048,12 +5048,12 @@ func testExtentReachingANamespaceCollection(t *testing.T) {
 	}
 	r := resolveSymbol(t, root, "R")
 	_, err = ctx.InvokeCalc(resolveSymbol(t, r.Scope, "linkCount"), nil, r.Scope)
-	if !errors.Is(err, ErrExtentUnavailable) || !strings.Contains(err.Error(), "link is a port") {
+	if !errors.Is(err, errExtentUnavailable) || !strings.Contains(err.Error(), "link is a port") {
 		t.Errorf("R: size(all Link) = %v, want the other package's port refused", err)
 	}
 	s := resolveSymbol(t, r.Scope, "S")
 	_, err = ctx.InvokeCalc(resolveSymbol(t, s.Scope, "linkCount"), nil, s.Scope)
-	if !errors.Is(err, ErrExtentUnavailable) || !strings.Contains(err.Error(), "link is a port") {
+	if !errors.Is(err, errExtentUnavailable) || !strings.Contains(err.Error(), "link is a port") {
 		t.Errorf("S: size(all Link) = %v, want the first unreadable usage of the model refused", err)
 	}
 
@@ -5087,7 +5087,7 @@ func testExtentReachingANamespaceCollection(t *testing.T) {
 	s = resolveSymbol(t, root, "S")
 	ctx = NewContext(typedModel(model, resolver), 1000)
 	_, err = ctx.InvokeCalc(resolveSymbol(t, s.Scope, "linkCount"), nil, s.Scope)
-	if !errors.Is(err, ErrExtentUnavailable) || !strings.Contains(err.Error(), "links") || !strings.Contains(err.Error(), "port") {
+	if !errors.Is(err, errExtentUnavailable) || !strings.Contains(err.Error(), "links") || !strings.Contains(err.Error(), "port") {
 		t.Errorf("S: size(all Link) = %v, want the nested package's two-port usage refused", err)
 	}
 }
@@ -5115,8 +5115,8 @@ func testNamespaceCollectionOfUnfixedCount(t *testing.T) {
 	ctx := NewContext(typedModel(model, resolver), 1000)
 	for calc, want := range map[string]string{"wheelCount": "wheels declares [2..?]", "hubCount": "hubs declares [?..?]"} {
 		_, err := ctx.InvokeCalc(resolveSymbol(t, pkg.Scope, calc), nil, pkg.Scope)
-		if !errors.Is(err, ErrExtentUnavailable) || !strings.Contains(err.Error(), want) {
-			t.Errorf("%s = %v, want %v naming %q", calc, err, ErrExtentUnavailable, want)
+		if !errors.Is(err, errExtentUnavailable) || !strings.Contains(err.Error(), want) {
+			t.Errorf("%s = %v, want %v naming %q", calc, err, errExtentUnavailable, want)
 		}
 	}
 	got, err := ctx.InvokeCalc(resolveSymbol(t, pkg.Scope, "seatCount"), nil, pkg.Scope)
@@ -5517,7 +5517,7 @@ func testExtentThroughAValueRecursingAndNot(t *testing.T) {
 	pkg := resolveSymbol(t, root, "P")
 	ctx := NewContext(typedModel(model, resolver), 100000)
 	_, err := ctx.InvokeCalc(resolveSymbol(t, pkg.Scope, "wheelCount"), nil, pkg.Scope)
-	if !errors.Is(err, ErrExtentUnavailable) || !strings.Contains(err.Error(), "mixed") || !strings.Contains(err.Error(), "Fork") {
+	if !errors.Is(err, errExtentUnavailable) || !strings.Contains(err.Error(), "mixed") || !strings.Contains(err.Error(), "Fork") {
 		t.Fatalf("size(all Wheel) = %v, want ErrExtentUnavailable naming mixed and Fork", err)
 	}
 	if fv := ctx.instances[1].FeatureValues["mixed"]; fv != nil && fv.Materialized {
@@ -5547,7 +5547,7 @@ func testCastUndecidedByTheValue(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an undecidable cast to fail")
 	}
-	if !errors.Is(err, ErrUndecidedClassification) {
+	if !errors.Is(err, errUndecidedClassification) {
 		t.Fatalf("expected ErrUndecidedClassification, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "Even") {
@@ -5643,7 +5643,7 @@ func testCastOfAQuantityToAConstrainedSubtype(t *testing.T) {
 			attribute def RoomLength :> ISQBase::LengthValue;
 			calc narrow { return : RoomLength = 5 [m] as RoomLength; }
 		}`, "narrow", nil, 1000)
-	if !errors.Is(err, ErrUndecidedClassification) {
+	if !errors.Is(err, errUndecidedClassification) {
 		t.Fatalf("expected ErrUndecidedClassification, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "RoomLength") {
@@ -5674,7 +5674,7 @@ func testSendAddressedToAnUnreachableTarget(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error: alpha.leaf.count is no port of any object")
 	}
-	if !errors.Is(err, ErrUnroutableSend) {
+	if !errors.Is(err, errUnroutableSend) {
 		t.Errorf("expected ErrUnroutableSend, got: %v", err)
 	}
 }
@@ -5698,7 +5698,7 @@ func testSendAddressedThroughSeveralOccurrences(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error: nodes names three occurrences, not one addressee")
 	}
-	if !errors.Is(err, ErrUnroutableSend) {
+	if !errors.Is(err, errUnroutableSend) {
 		t.Errorf("expected ErrUnroutableSend, got: %v", err)
 	}
 }
@@ -5782,7 +5782,7 @@ func testSendAddressedToAnObjectThatCannotBeBuilt(t *testing.T) {
 	if !errors.Is(err, ErrStepLimitExceeded) {
 		t.Errorf("budget exhausted while building alpha: %v, want ErrStepLimitExceeded", err)
 	}
-	if errors.Is(err, ErrUnroutableSend) {
+	if errors.Is(err, errUnroutableSend) {
 		t.Errorf("an exhausted budget was reported as a bad address: %v", err)
 	}
 
@@ -5793,7 +5793,7 @@ func testSendAddressedToAnObjectThatCannotBeBuilt(t *testing.T) {
 	if !errors.Is(err, ErrCyclicFeatureValue) {
 		t.Errorf("walking through a cyclic derived feature value: %v, want ErrCyclicFeatureValue", err)
 	}
-	if errors.Is(err, ErrUnroutableSend) {
+	if errors.Is(err, errUnroutableSend) {
 		t.Errorf("an unreadable feature value was reported as a bad address: %v", err)
 	}
 	if len(ctx.PendingMessages()) != 0 {
@@ -5997,7 +5997,7 @@ func testTimeTriggerOfTheTypeValidationRefuses(t *testing.T) {
 			}
 
 			_, err := ctx.ExecuteState(sym)
-			if !errors.Is(err, ErrTimeTriggerType) {
+			if !errors.Is(err, errTimeTriggerType) {
 				t.Fatalf("err = %v; want ErrTimeTriggerType", err)
 			}
 			if !strings.Contains(err.Error(), "`"+tc.trigger+"`") {
@@ -6048,7 +6048,7 @@ func testActionReturnParameterValidationRefuses(t *testing.T) {
 			}
 
 			_, err := ctx.ExecuteAction(sym)
-			if !errors.Is(err, ErrActionResultParameter) {
+			if !errors.Is(err, errActionResultParameter) {
 				t.Fatalf("err = %v; want ErrActionResultParameter", err)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
@@ -6671,7 +6671,7 @@ func testForkWithoutASuccessor(t *testing.T) {
 		t.Fatalf("create action executor: %v", err)
 	}
 	err = exec.RunToCompletion()
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("error = %v, want ErrInvalidActionFlow", err)
 	}
 }
@@ -6741,7 +6741,7 @@ func testMergeWithoutASuccessor(t *testing.T) {
 		t.Fatalf("create action executor: %v", err)
 	}
 	err = exec.RunToCompletion()
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("error = %v, want ErrInvalidActionFlow", err)
 	}
 }
@@ -7093,7 +7093,7 @@ func testDecisionNoSatisfiedGuard(t *testing.T) {
 		t.Fatalf("create action executor: %v", err)
 	}
 	err = exec.RunToCompletion()
-	if !errors.Is(err, ErrNoEnabledSuccession) {
+	if !errors.Is(err, errNoEnabledSuccession) {
 		t.Fatalf("error = %v, want ErrNoEnabledSuccession", err)
 	}
 }
@@ -7135,7 +7135,7 @@ func testDecisionAllGuardsFalse(t *testing.T) {
 		t.Fatalf("create action executor: %v", err)
 	}
 	err = exec.RunToCompletion()
-	if !errors.Is(err, ErrNoEnabledSuccession) {
+	if !errors.Is(err, errNoEnabledSuccession) {
 		t.Fatalf("error = %v, want ErrNoEnabledSuccession", err)
 	}
 	if !strings.Contains(err.Error(), "decision node choose has no true guard") {
@@ -7423,7 +7423,7 @@ func testStateDefSpecializingALibraryStateKeepsItsContent(t *testing.T) {
 	if err := exec.RunToQuiescence(); err != nil {
 		t.Fatalf("RunToQuiescence: %v", err)
 	}
-	if got := exec.FinalStateName(); got != "hot" {
+	if got := exec.finalStateName(); got != "hot" {
 		t.Fatalf("final state = %q, want hot", got)
 	}
 	seen, ok := exec.StateData()["burn.seen"]
@@ -7458,7 +7458,7 @@ func testExhibitedStateTypedByTheLibraryStateAction(t *testing.T) {
 			if errors.Is(err, lower.ErrRecursiveStateTyping) {
 				t.Fatalf("error = %v, want StateAction's content withheld rather than recursed into", err)
 			}
-			if !errors.Is(err, ErrNoInitialState) {
+			if !errors.Is(err, errNoInitialState) {
 				t.Fatalf("error = %v, want ErrNoInitialState", err)
 			}
 			for _, want := range []string{"phases", "Mission", "StateAction"} {
@@ -7534,7 +7534,7 @@ func testExhibitedStateTypedByAStateActionSpecialization(t *testing.T) {
 			}
 		}`
 		_, _, err := instantiateWithLibraries(t, src, "test::Mission")
-		if !errors.Is(err, ErrNoInitialState) {
+		if !errors.Is(err, errNoInitialState) {
 			t.Fatalf("error = %v, want ErrNoInitialState", err)
 		}
 		if !strings.Contains(err.Error(), "phases") || !strings.Contains(err.Error(), "Phase") {
@@ -7558,7 +7558,7 @@ func assertExhibitedMachineIn(t *testing.T, ctx *Context, inst *Instance, attr s
 	if !ok || machine.State == nil {
 		t.Fatal("the object exhibits no machine")
 	}
-	if got := machine.State.FinalStateName(); got != state {
+	if got := machine.State.finalStateName(); got != state {
 		t.Errorf("final state = %q, want %q", got, state)
 	}
 }
@@ -7940,7 +7940,7 @@ func testNoEntryTransitionGuardHolds(t *testing.T) {
 		}
 	`
 	_, _, err := instantiateWithLibraries(t, src, "test::Heater")
-	if !errors.Is(err, ErrNoEntryTransitionHolds) {
+	if !errors.Is(err, errNoEntryTransitionHolds) {
 		t.Fatalf("expected ErrNoEntryTransitionHolds, got %v", err)
 	}
 	want := "no entry transition holds: state machine control declares 2 transitions out of its entry action and the guard of none holds"
@@ -8219,7 +8219,7 @@ func testNestedRegionsIntoDoneWithoutCompletionTransitionStayActive(t *testing.T
 	if got := exec.StateData()["exits"]; got.Kind != ValConst || got.Const.Int != 0 {
 		t.Errorf("the machine's exit action ran %v times, want never", got)
 	}
-	exec.SendSignal("again", nil)
+	exec.sendSignal("again", nil)
 	if err := exec.ProcessNextEvent(); err != nil {
 		t.Fatalf("again: %v", err)
 	}
@@ -8256,7 +8256,7 @@ func testTransitionIntoNestedRegionsInDoneCompletes(t *testing.T) {
 		}
 	}`)
 	assertCurrentState(t, exec, "idle")
-	exec.SendSignal("go", nil)
+	exec.sendSignal("go", nil)
 	if err := exec.ProcessNextEvent(); err != nil {
 		t.Fatalf("go: %v", err)
 	}
@@ -8308,7 +8308,7 @@ func testRegionStartDescendsThroughEntryTransitions(t *testing.T) {
 	if active := activeNames(); !active["heating"] || !active["watching"] {
 		t.Fatalf("expected heating and watching active after initialize, got %v", active)
 	}
-	exec.SendSignal("warm", nil)
+	exec.sendSignal("warm", nil)
 	if err := exec.RunToCompletion(); err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -8404,7 +8404,7 @@ func testLeavingRegionsDescendsThroughEntryTransitions(t *testing.T) {
 	if err := exec.initialize(); err != nil {
 		t.Fatalf("initialize: %v", err)
 	}
-	exec.SendSignal("leave", nil)
+	exec.sendSignal("leave", nil)
 	if err := exec.ProcessNextEvent(); err != nil {
 		t.Fatalf("leave: %v", err)
 	}
@@ -8443,7 +8443,7 @@ func testCalcUnboundParameter(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected an unbound parameter error, calc returned %+v", result)
 	}
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Errorf("expected ErrUnboundParameter, got: %v", err)
 	}
 }
@@ -8461,7 +8461,7 @@ func testCalcThisDefaultRequiredParameterUnbound(t *testing.T) {
 		}
 	}`
 	err := invokeCalcExpecting(t, src, "test::Pair()")
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("error = %v, want ErrUnboundParameter for the required b", err)
 	}
 	if !strings.Contains(err.Error(), `"b"`) {
@@ -8574,7 +8574,7 @@ func testCalcUnboundKeywordNamedParameter(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected an unbound parameter error, calc returned %+v", result)
 	}
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Errorf("expected ErrUnboundParameter, got: %v", err)
 	}
 }
@@ -8602,7 +8602,7 @@ func testCalcTooManyArguments(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an arity error, the calc accepted a surplus argument")
 	}
-	if !errors.Is(err, ErrCalcArity) {
+	if !errors.Is(err, errCalcArity) {
 		t.Errorf("expected ErrCalcArity, got: %v", err)
 	}
 }
@@ -8626,11 +8626,11 @@ func testCalcUnknownNamedArgument(t *testing.T) {
 	}
 
 	arg := Value{Kind: ValConst, Const: semantics.Value{Kind: semantics.ValInt, Int: 3}}
-	_, err := ctx.InvokeCalcNamed(sym, map[string]Value{"factor": arg}, rootScope)
+	_, err := ctx.invokeCalcNamed(sym, map[string]Value{"factor": arg}, rootScope)
 	if err == nil {
 		t.Fatal("expected an unknown parameter error, the invocation succeeded")
 	}
-	if !errors.Is(err, ErrUnknownParameter) {
+	if !errors.Is(err, errUnknownParameter) {
 		t.Errorf("expected ErrUnknownParameter, got: %v", err)
 	}
 }
@@ -8651,7 +8651,7 @@ func testCalcParameterNamedTwice(t *testing.T) {
 		t.Fatal("twice calc not found")
 	}
 	_, err := ctx.InvokeCalc(sym, nil, rootScope)
-	if !errors.Is(err, ErrCalcArity) || !strings.Contains(err.Error(), `binds parameter "x" twice`) {
+	if !errors.Is(err, errCalcArity) || !strings.Contains(err.Error(), `binds parameter "x" twice`) {
 		t.Errorf("expected ErrCalcArity naming x, got: %v", err)
 	}
 }
@@ -8678,7 +8678,7 @@ func testCalcWithoutResult(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected a missing-result error, the calc returned a value")
 	}
-	if !errors.Is(err, ErrNoResultExpression) {
+	if !errors.Is(err, errNoResultExpression) {
 		t.Errorf("expected ErrNoResultExpression, got: %v", err)
 	}
 }
@@ -8706,7 +8706,7 @@ func testCalcStatesSecondResult(t *testing.T) {
 
 	arg := Value{Kind: ValConst, Const: semantics.Value{Kind: semantics.ValInt, Int: 1}}
 	_, err := ctx.InvokeCalc(sym, []Value{arg}, rootScope)
-	if !errors.Is(err, ErrConflictingResultExpressions) {
+	if !errors.Is(err, errConflictingResultExpressions) {
 		t.Fatalf("expected ErrConflictingResultExpressions, got: %v", err)
 	}
 	for _, want := range []string{"test::Twice", "test::Plus"} {
@@ -8742,7 +8742,7 @@ func testCalcBodyStatesTwoResults(t *testing.T) {
 			t.Fatalf("%s calc not found", name)
 		}
 		_, err := ctx.InvokeCalc(sym, []Value{arg}, rootScope)
-		if !errors.Is(err, ErrConflictingResultExpressions) {
+		if !errors.Is(err, errConflictingResultExpressions) {
 			t.Fatalf("%s: expected ErrConflictingResultExpressions, got: %v", name, err)
 		}
 		if !strings.Contains(err.Error(), want) {
@@ -8886,7 +8886,7 @@ func testCalcRecursionSpendsStepBudget(t *testing.T) {
 	`
 	assertCalcRecursionBounded(t, src, "grow", ErrStepLimitExceeded, func(ctx *Context) {
 		// Room to recurse far deeper than the evaluations allow.
-		ctx.maxCalcDepth = MaxCalcDepthCeiling
+		ctx.maxCalcDepth = maxCalcDepthCeiling
 		ctx.maxSteps = 500
 	})
 }
@@ -8905,7 +8905,7 @@ func testCalcRecursionAtDepthCeiling(t *testing.T) {
 		}
 	`
 	assertCalcRecursionBounded(t, src, "deep", ErrCalcRecursionLimit, func(ctx *Context) {
-		ctx.maxCalcDepth = MaxCalcDepthCeiling
+		ctx.maxCalcDepth = maxCalcDepthCeiling
 	})
 }
 
@@ -9751,7 +9751,7 @@ func testNonTerminatingLoopPerformingAnAction(t *testing.T) {
 // rather than a collection is no collection in any order, so a `for` over it
 // fails with a typed error naming it.
 func testForOverAValueNoExpressionMakesIterable(t *testing.T) {
-	for _, value := range []Value{{Kind: ValExpr}, {Kind: ValInvalid}} {
+	for _, value := range []Value{{Kind: valExpr}, {Kind: ValInvalid}} {
 		elements, err := forElements(value)
 		if err == nil {
 			t.Errorf("forElements(%s) = %v, want a typed error", describeValue(value), elements)
@@ -10029,7 +10029,7 @@ func testActionAcceptTimeWaits(t *testing.T) {
 	})
 	t.Run("non-time dimension", func(t *testing.T) {
 		_, _, err := run(t, "accept after load")
-		if !errors.Is(err, ErrTimeTriggerType) {
+		if !errors.Is(err, errTimeTriggerType) {
 			t.Fatalf("err = %v; want ErrTimeTriggerType", err)
 		}
 		if !strings.Contains(err.Error(), "`after load` must be a ISQBase::DurationValue, found MassValue") {
@@ -10308,7 +10308,7 @@ func testClockAdvance(t *testing.T) {
 		if next, ok := exec.NextWait(); !ok || next != 6 {
 			t.Errorf("NextWait = %v, %v; want the performed action's wait at 6", next, ok)
 		}
-		if waits := exec.TimeWaits(); len(waits) != 1 || !strings.Contains(waits[0], "t=6.0") {
+		if waits := exec.describeTimeWaits(); len(waits) != 1 || !strings.Contains(waits[0], "t=6.0") {
 			t.Errorf("TimeWaits = %v; want the performed action's wait", waits)
 		}
 		if err := exec.Step(); !errors.Is(err, ErrNothingDue) || !strings.Contains(err.Error(), "t=6.0") {
@@ -10698,7 +10698,7 @@ func testClockAdvance(t *testing.T) {
 					}
 				}
 			}`, "test::Rig")
-		if !errors.Is(err, ErrNoInitialState) {
+		if !errors.Is(err, errNoInitialState) {
 			t.Fatalf("instantiate = %v; want ErrNoInitialState from the machine with no initial state", err)
 		}
 		if got := len(ctx.clock.waiters); got != 0 {
@@ -10853,7 +10853,7 @@ func testActionBodyUnresolvedUnit(t *testing.T) {
 	}
 
 	out, err := ctx.ExecuteAction(sym)
-	if !errors.Is(err, ErrNotAQuantity) {
+	if !errors.Is(err, errNotAQuantity) {
 		t.Fatalf("outputs = %v, err = %v; want ErrNotAQuantity", out, err)
 	}
 	if !strings.Contains(err.Error(), semantics.ErrNotAUnit.Error()) {
@@ -10914,7 +10914,7 @@ func testStateBodyUnresolvedUnit(t *testing.T) {
 	}
 
 	_, err := ctx.ExecuteState(sym)
-	if !errors.Is(err, ErrNotAQuantity) {
+	if !errors.Is(err, errNotAQuantity) {
 		t.Fatalf("err = %v; want ErrNotAQuantity", err)
 	}
 }
@@ -10961,7 +10961,7 @@ func testLibraryFunctionWrongArity(t *testing.T) {
 	_, _, ctx := buildRuntime(t, "<test>", parseAndBuild(t, "package test { }"))
 
 	arg := Value{Kind: ValConst, Const: semantics.Value{Kind: semantics.ValReal, Real: 1}}
-	if _, err := fn.invoke(ctx, calcArgs{positional: []Value{arg}}); !errors.Is(err, ErrCalcArity) {
+	if _, err := fn.invoke(ctx, calcArgs{positional: []Value{arg}}); !errors.Is(err, errCalcArity) {
 		t.Fatalf("max(1.0) error = %v, want ErrCalcArity", err)
 	}
 }
@@ -11024,7 +11024,7 @@ func testQuantityIncommensurableComparison(t *testing.T) {
 }
 
 // testQuantityIndexIsNotAUnit: a bracketed expression whose index names
-// something that is not a measurement unit reports ErrNotAQuantity rather than
+// something that is not a measurement unit reports errNotAQuantity rather than
 // evaluating to the bare magnitude.
 func testQuantityIndexIsNotAUnit(t *testing.T) {
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, `
@@ -11043,7 +11043,7 @@ func testQuantityIndexIsNotAUnit(t *testing.T) {
 	}
 
 	satisfied, err := ctx.EvaluateConstraint(sym, rootScope)
-	if !errors.Is(err, ErrNotAQuantity) {
+	if !errors.Is(err, errNotAQuantity) {
 		t.Fatalf("satisfied = %v, err = %v; want ErrNotAQuantity", satisfied, err)
 	}
 	if !strings.Contains(err.Error(), semantics.ErrNotAUnit.Error()) {
@@ -11071,7 +11071,7 @@ func testQuantityUnitShadowedBySibling(t *testing.T) {
 	}
 
 	satisfied, err := ctx.EvaluateConstraint(sym, sym.OwnerScope)
-	if !errors.Is(err, ErrNotAQuantity) {
+	if !errors.Is(err, errNotAQuantity) {
 		t.Fatalf("satisfied = %v, err = %v; want ErrNotAQuantity", satisfied, err)
 	}
 	if !errors.Is(err, semantics.ErrNotAUnit) {
@@ -11354,7 +11354,7 @@ func testCalcBodyNeverReturns(t *testing.T) {
 		}
 	`
 	err := invokeCalcInSource(t, src, "maybe", 5, 10000)
-	if !errors.Is(err, ErrCalcNoReturn) {
+	if !errors.Is(err, errCalcNoReturn) {
 		t.Errorf("expected ErrCalcNoReturn, got: %v", err)
 	}
 }
@@ -11373,7 +11373,7 @@ func testCalcSendIsRejected(t *testing.T) {
 		}
 	`
 	err := invokeCalcInSource(t, src, "noisy", 1, 10000)
-	if !errors.Is(err, ErrCalcSideEffect) {
+	if !errors.Is(err, errCalcSideEffect) {
 		t.Errorf("expected ErrCalcSideEffect, got: %v", err)
 	}
 }
@@ -11391,7 +11391,7 @@ func testCalcTerminateIsRejected(t *testing.T) {
 		}
 	`
 	err := invokeCalcInSource(t, src, "halting", 1, 10000)
-	if !errors.Is(err, ErrCalcSideEffect) {
+	if !errors.Is(err, errCalcSideEffect) {
 		t.Errorf("expected ErrCalcSideEffect, got: %v", err)
 	}
 }
@@ -11411,7 +11411,7 @@ func testCalcAssignmentOutsideTheCalc(t *testing.T) {
 		}
 	`
 	err := invokeCalcInSource(t, src, "leaky", 3, 10000)
-	if !errors.Is(err, ErrCalcExternalAssignment) {
+	if !errors.Is(err, errCalcExternalAssignment) {
 		t.Errorf("expected ErrCalcExternalAssignment, got: %v", err)
 	}
 }
@@ -11457,7 +11457,7 @@ func calcUsageOutputInSource(t *testing.T, src, usageName, output string, maxSte
 
 	done := make(chan error, 1)
 	go func() {
-		value, err := ctx.CalcUsageOutput(sym, output, sym.OwnerScope, nil)
+		value, err := ctx.calcUsageOutput(sym, output, sym.OwnerScope, nil)
 		if err == nil {
 			err = fmt.Errorf("output %s of %s answered %s, expected the read to fail",
 				output, usageName, FormatTraceValue(value))
@@ -11489,7 +11489,7 @@ func testCalcUsageUnboundInput(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "a", 10000)
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Errorf("expected ErrUnboundParameter, got: %v", err)
 	}
 }
@@ -11508,7 +11508,7 @@ func testCalcUsageUnknownOutput(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "nope", 10000)
-	if !errors.Is(err, ErrUnknownOutput) {
+	if !errors.Is(err, errUnknownOutput) {
 		t.Errorf("expected ErrUnknownOutput, got: %v", err)
 	}
 	if err != nil && !strings.Contains(err.Error(), "a, b") {
@@ -11531,7 +11531,7 @@ func testCalcUsageCyclicOutputs(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "a", 10000)
-	if !errors.Is(err, ErrCyclicOutput) {
+	if !errors.Is(err, errCyclicOutput) {
 		t.Errorf("expected ErrCyclicOutput, got: %v", err)
 	}
 }
@@ -11612,10 +11612,10 @@ func testCalcOutputNeverAssignedByTheBody(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "b", 10000)
-	if !errors.Is(err, ErrOutputNotAssigned) {
+	if !errors.Is(err, errOutputNotAssigned) {
 		t.Errorf("expected ErrOutputNotAssigned, got: %v", err)
 	}
-	if errors.Is(err, ErrNoResultExpression) {
+	if errors.Is(err, errNoResultExpression) {
 		t.Errorf("expected no result-expression blame, got: %v", err)
 	}
 }
@@ -11636,7 +11636,7 @@ func testCalcOutputAssignedInABranchNotTaken(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "a", 10000)
-	if !errors.Is(err, ErrOutputNotAssigned) {
+	if !errors.Is(err, errOutputNotAssigned) {
 		t.Errorf("expected ErrOutputNotAssigned, got: %v", err)
 	}
 }
@@ -11655,7 +11655,7 @@ func testCalcOutputValuedAndAssigned(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "a", 10000)
-	if !errors.Is(err, ErrConflictingOutput) {
+	if !errors.Is(err, errConflictingOutput) {
 		t.Errorf("expected ErrConflictingOutput, got: %v", err)
 	}
 }
@@ -11676,7 +11676,7 @@ func testCalcOutputBindingViolatesDeclaredType(t *testing.T) {
 	`
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, src))
 	usage := oneSymbol(t, idx, "test::c")
-	_, err := ctx.CalcUsageOutput(usage, "a", idx.DocumentRoot("<test>"), nil)
+	_, err := ctx.calcUsageOutput(usage, "a", idx.DocumentRoot("<test>"), nil)
 	if !errors.Is(err, ErrTypeMismatch) {
 		t.Fatalf("error = %v, want ErrTypeMismatch", err)
 	}
@@ -11707,7 +11707,7 @@ func testCalcOutputAssignedTwice(t *testing.T) {
 		t.Fatal("calc usage c not found")
 	}
 
-	value, err := ctx.CalcUsageOutput(sym, "a", sym.OwnerScope, nil)
+	value, err := ctx.calcUsageOutput(sym, "a", sym.OwnerScope, nil)
 	if err != nil {
 		t.Fatalf("reading output a of c: %v", err)
 	}
@@ -11742,7 +11742,7 @@ func testMultipleOutputsInvokedAsAnExpression(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected the invocation to be rejected, it answered %s", FormatTraceValue(result))
 	}
-	if !errors.Is(err, ErrAmbiguousResult) {
+	if !errors.Is(err, errAmbiguousResult) {
 		t.Errorf("expected ErrAmbiguousResult, got: %v", err)
 	}
 	// The diagnostic has to teach the spelling that does work.
@@ -11770,7 +11770,7 @@ func testNestedCalcUsageUnboundInput(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "d", 10000)
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Errorf("expected ErrUnboundParameter, got: %v", err)
 	}
 }
@@ -11794,7 +11794,7 @@ func testNestedCalcUsageUnknownOutput(t *testing.T) {
 		}
 	`
 	err := calcUsageOutputInSource(t, src, "c", "d", 10000)
-	if !errors.Is(err, ErrUnknownOutput) {
+	if !errors.Is(err, errUnknownOutput) {
 		t.Errorf("expected ErrUnknownOutput, got: %v", err)
 	}
 }
@@ -11952,12 +11952,12 @@ func testVariationReadThroughItsDeclaration(t *testing.T) {
 		{
 			"not_a_variant",
 			`part chosen :> family { attribute :>> cut = 250.0; attribute probe = cut; }`,
-			"test::chosen::probe", ErrNotAVariant,
+			"test::chosen::probe", errNotAVariant,
 		},
 		{
 			"two_variants",
 			`part chosen :> family { attribute :>> cut = (cut::cutIdeal, cut::cutShallow); attribute probe = cut; }`,
-			"test::chosen::probe", ErrMultipleVariants,
+			"test::chosen::probe", errMultipleVariants,
 		},
 		{
 			"unselected",
@@ -11968,7 +11968,7 @@ func testVariationReadThroughItsDeclaration(t *testing.T) {
 			"qualified_not_a_variant",
 			`part chosen :> family { attribute :>> cut = 250.0; }
 			 attribute probe = chosen::cut;`,
-			"test::probe", ErrNotAVariant,
+			"test::probe", errNotAVariant,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -12037,7 +12037,7 @@ func testVariationBoundToWhatIsNotAVariant(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := variationFeatureValueInSource(t, fmt.Sprintf(variationFamily, tt.selection), "test::chosen", "cut")
-			if !errors.Is(err, ErrNotAVariant) {
+			if !errors.Is(err, errNotAVariant) {
 				t.Errorf("cut = (%v, %v), want ErrNotAVariant", got, err)
 			}
 		})
@@ -12050,7 +12050,7 @@ func testVariationBoundToTwoVariants(t *testing.T) {
 	src := fmt.Sprintf(variationFamily,
 		`part chosen :> family { attribute :>> cut = (cut::cutIdeal, cut::cutShallow); }`)
 	got, err := variationFeatureValueInSource(t, src, "test::chosen", "cut")
-	if !errors.Is(err, ErrMultipleVariants) {
+	if !errors.Is(err, errMultipleVariants) {
 		t.Fatalf("cut = (%v, %v), want ErrMultipleVariants", got, err)
 	}
 	for _, name := range []string{"cutIdeal", "cutShallow"} {
@@ -12310,7 +12310,7 @@ func testOneFeatureValuedUnderTwoNames(t *testing.T) {
 			}
 		}`
 	got, err := variationFeatureValueInSource(t, src, "test::conflicted", "bandCost")
-	if !errors.Is(err, ErrConflictingRedefinition) {
+	if !errors.Is(err, errConflictingRedefinition) {
 		t.Fatalf("ringCost = %+v, err = %v, want ErrConflictingRedefinition", got, err)
 	}
 }
@@ -12328,7 +12328,7 @@ func testValuedFeatureRestatedInABody(t *testing.T) {
 			}
 		}`
 	got, err := variationFeatureValueInSource(t, src, "test::conflicted", "ringCost")
-	if !errors.Is(err, ErrValuedFeatureRestated) {
+	if !errors.Is(err, errValuedFeatureRestated) {
 		t.Fatalf("ringCost = %+v, err = %v, want ErrValuedFeatureRestated", got, err)
 	}
 }
@@ -12414,7 +12414,7 @@ func testF99BodyMemberWithoutValue(t *testing.T) {
 func testF99UnsupportedBodyMember(t *testing.T) {
 	_, err := evalCollectionExprBounded(t,
 		"xs->select { in i; private import ScalarValues::*; i > 0 }", 10000)
-	if !errors.Is(err, ErrUnsupportedBodyDeclaration) {
+	if !errors.Is(err, errUnsupportedBodyDeclaration) {
 		t.Fatalf("error = %v, want ErrUnsupportedBodyDeclaration", err)
 	}
 	if !strings.Contains(err.Error(), "Import") {
@@ -12555,7 +12555,7 @@ func testPerformedActionBindingNamesNothing(t *testing.T) {
 }
 
 // testBindingEndOfADestroyedObject: a binding end naming a destroyed object's
-// feature is ErrOccurrenceDestroyed, never a stale read of it or a write into it.
+// feature is errOccurrenceDestroyed, never a stale read of it or a write into it.
 func testBindingEndOfADestroyedObject(t *testing.T) {
 	instantiate, invoke, ctx := lifetimeFixture(t, `
 		package test {
@@ -12584,8 +12584,8 @@ func testBindingEndOfADestroyedObject(t *testing.T) {
 	}
 	for _, name := range []string{"shown", "knob"} {
 		_, err := rig.GetFeatureValue(ctx, name)
-		if !errors.Is(err, ErrOccurrenceDestroyed) || !errors.Is(err, ErrBindingEnd) {
-			t.Errorf("%s bound to a destroyed end: %v; want %v naming the binding end", name, err, ErrOccurrenceDestroyed)
+		if !errors.Is(err, errOccurrenceDestroyed) || !errors.Is(err, errBindingEnd) {
+			t.Errorf("%s bound to a destroyed end: %v; want %v naming the binding end", name, err, errOccurrenceDestroyed)
 		}
 	}
 	if m := w.FeatureValues["m"]; m.Materialized {
@@ -12594,7 +12594,7 @@ func testBindingEndOfADestroyedObject(t *testing.T) {
 }
 
 // testOperationOfADestroyedObject: an operation invoked on a destroyed object is
-// ErrOccurrenceDestroyed before it runs, even one reading no feature of it.
+// errOccurrenceDestroyed before it runs, even one reading no feature of it.
 func testOperationOfADestroyedObject(t *testing.T) {
 	instantiate, invoke, ctx := lifetimeFixture(t, `
 		package test {
@@ -12608,8 +12608,8 @@ func testOperationOfADestroyedObject(t *testing.T) {
 	if _, err := invoke("DestroyBeacon", objectValue(beacon)); err != nil {
 		t.Fatalf("destroy(beacon): %v", err)
 	}
-	if _, err := ctx.InvokeOperation(beacon, "ping", nil); !errors.Is(err, ErrOccurrenceDestroyed) {
-		t.Errorf("invoke ping on a destroyed object = %v; want %v", err, ErrOccurrenceDestroyed)
+	if _, err := ctx.invokeOperation(beacon, "ping", nil); !errors.Is(err, errOccurrenceDestroyed) {
+		t.Errorf("invoke ping on a destroyed object = %v; want %v", err, errOccurrenceDestroyed)
 	}
 	if sent := len(ctx.PendingMessages()); sent != 0 {
 		t.Errorf("a destroyed object sent %d message(s); want none", sent)
@@ -12623,8 +12623,8 @@ func testNoFlowPerformedActionChecksItsInputs(t *testing.T) {
 		binding string
 		want    error
 	}{
-		"output":  {"in r = 5;", ErrOutputActionInput},
-		"unknown": {"in bogus = 5;", ErrUnknownActionInput},
+		"output":  {"in r = 5;", errOutputActionInput},
+		"unknown": {"in bogus = 5;", errUnknownActionInput},
 	} {
 		src := `
 			package test {
@@ -12653,7 +12653,7 @@ func testNoFlowPerformedActionRefusesReturnParameter(t *testing.T) {
 	`
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, src))
 	_, err := ctx.Instantiate(idx.LookupQualified("test::Camera")[0])
-	if !errors.Is(err, ErrActionResultParameter) {
+	if !errors.Is(err, errActionResultParameter) {
 		t.Fatalf("Instantiate(Camera) = %v; want ErrActionResultParameter", err)
 	}
 	if !strings.Contains(err.Error(), "declares `return r`; write `out r`") {
@@ -12715,7 +12715,7 @@ func testEnumerationNameThatIsNotALiteral(t *testing.T) {
 		part def Car { attribute c : Color = Color::purple; }
 	}`
 	got, err := variationFeatureValueInSource(t, src, "test::Car", "c")
-	if !errors.Is(err, ErrNotALiteral) {
+	if !errors.Is(err, errNotALiteral) {
 		t.Fatalf("c = (%v, %v), want ErrNotALiteral", got, err)
 	}
 	for _, name := range []string{"purple", "red", "green", "blue"} {
@@ -12833,7 +12833,7 @@ func testObjectExhibitedMachineAttributeWriteViolatesMultiplicity(t *testing.T) 
 		}
 	}`
 	_, _, err := instantiateInSource(t, src, "test::Controller")
-	if !errors.Is(err, ErrStatePerformanceOccurrence) {
+	if !errors.Is(err, errStatePerformanceOccurrence) {
 		t.Fatalf("error = %v, want ErrStatePerformanceOccurrence", err)
 	}
 	if !errors.Is(err, ErrMultiplicityViolation) {
@@ -12858,7 +12858,7 @@ func testObjectPerformedActionAttributeWriteViolatesMultiplicity(t *testing.T) {
 		}
 	}`
 	_, _, err := instantiateInSource(t, src, "test::Logger")
-	if !errors.Is(err, ErrActionPerformanceOccurrence) {
+	if !errors.Is(err, errActionPerformanceOccurrence) {
 		t.Fatalf("error = %v, want ErrActionPerformanceOccurrence", err)
 	}
 	if !errors.Is(err, ErrMultiplicityViolation) {
@@ -12895,7 +12895,7 @@ func testObjectPerformedActionOccurrenceHoldsANonObject(t *testing.T) {
 	fv.Materialized = true
 
 	err = ctx.startClassifierBehaviors(inst, 0)
-	if !errors.Is(err, ErrActionPerformanceOccurrence) {
+	if !errors.Is(err, errActionPerformanceOccurrence) {
 		t.Fatalf("error = %v, want ErrActionPerformanceOccurrence", err)
 	}
 	if !strings.Contains(err.Error(), "not an occurrence") {
@@ -12922,17 +12922,17 @@ func testOperationInvokedWithUnboundParameters(t *testing.T) {
 		t.Fatalf("instantiate: %v", err)
 	}
 
-	if _, err := ctx.InvokeOperation(inst, "add", nil); !errors.Is(err, ErrUnboundParameter) {
+	if _, err := ctx.invokeOperation(inst, "add", nil); !errors.Is(err, errUnboundParameter) {
 		t.Errorf("invoke without an argument = %v, want ErrUnboundParameter", err)
 	}
 	args := map[string]Value{"addend": integerValue(1), "extra": integerValue(2)}
-	if _, err := ctx.InvokeOperation(inst, "add", args); !errors.Is(err, ErrUnboundParameter) {
+	if _, err := ctx.invokeOperation(inst, "add", args); !errors.Is(err, errUnboundParameter) {
 		t.Errorf("invoke with an unknown argument = %v, want ErrUnboundParameter", err)
 	}
-	if _, err := ctx.InvokeOperation(inst, "missing", nil); !errors.Is(err, ErrNoSuchBehavior) {
+	if _, err := ctx.invokeOperation(inst, "missing", nil); !errors.Is(err, errNoSuchBehavior) {
 		t.Errorf("invoke of an unknown operation = %v, want ErrNoSuchBehavior", err)
 	}
-	if _, err := ctx.InvokeOperation(inst, "total", nil); !errors.Is(err, ErrNotABehavior) {
+	if _, err := ctx.invokeOperation(inst, "total", nil); !errors.Is(err, errNotABehavior) {
 		t.Errorf("invoke of an attribute = %v, want ErrNotABehavior", err)
 	}
 }
@@ -12950,7 +12950,7 @@ func testOperationConstraintBodyCannotBeEvaluated(t *testing.T) {
 	if err != nil {
 		t.Fatalf("instantiate: %v", err)
 	}
-	_, err = ctx.InvokeOperation(inst, "broken", nil)
+	_, err = ctx.invokeOperation(inst, "broken", nil)
 	if err == nil {
 		t.Fatal("expected an error for an unevaluable constraint body")
 	}
@@ -13322,7 +13322,7 @@ func testStandaloneActionWritingAPerformerFeature(t *testing.T) {
 		}
 	}`
 	_, _, err := instantiateWithLibraries(t, src, "test::Host")
-	if !errors.Is(err, ErrPerformerFeatureNotInScope) {
+	if !errors.Is(err, errPerformerFeatureNotInScope) {
 		t.Fatalf("error = %v, want ErrPerformerFeatureNotInScope", err)
 	}
 	if !strings.Contains(err.Error(), "touched") {
@@ -13504,7 +13504,7 @@ func testNestedFlowWithoutAnInitialNode(t *testing.T) {
 		t.Fatalf("newActionExecutor: %v", err)
 	}
 	err = exec.initialize()
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("error = %v, want ErrInvalidActionFlow", err)
 	}
 	if !strings.Contains(err.Error(), "leg") {
@@ -13537,7 +13537,7 @@ func testNestedFlowWithADanglingSuccession(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newActionExecutor: %v", err)
 	}
-	if err := exec.initialize(); !errors.Is(err, ErrInvalidActionFlow) {
+	if err := exec.initialize(); !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("error = %v, want ErrInvalidActionFlow", err)
 	}
 }
@@ -13651,7 +13651,7 @@ func testNodePinOfANodeNotYetPerformed(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodeNotPerformed) {
+	if !errors.Is(err, errNodeNotPerformed) {
 		t.Fatalf("error = %v, want ErrNodeNotPerformed", err)
 	}
 	if !strings.Contains(err.Error(), "late") {
@@ -13683,7 +13683,7 @@ func testNodeOutputBoundToANestedNodeThatNeverRuns(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingEnd) {
+	if !errors.Is(err, errBindingEnd) {
 		t.Fatalf("error = %v, want ErrBindingEnd", err)
 	}
 	if !strings.Contains(err.Error(), "leg.inner.v") {
@@ -13706,7 +13706,7 @@ func testNodePinTheNodeDoesNotDeclare(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 	if !strings.Contains(err.Error(), "p") || !strings.Contains(err.Error(), "w") {
@@ -13734,7 +13734,7 @@ func testBlockNodePinOfANodeNotYetPerformed(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodeNotPerformed) {
+	if !errors.Is(err, errNodeNotPerformed) {
 		t.Fatalf("error = %v, want ErrNodeNotPerformed", err)
 	}
 	if !strings.Contains(err.Error(), "late") {
@@ -13761,7 +13761,7 @@ func testBlockNodePinTheNodeDoesNotDeclare(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 	if !strings.Contains(err.Error(), "p") || !strings.Contains(err.Error(), "w") {
@@ -13792,7 +13792,7 @@ func testElseBranchNodeReadBeforeItPerforms(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodeNotPerformed) {
+	if !errors.Is(err, errNodeNotPerformed) {
 		t.Fatalf("error = %v, want ErrNodeNotPerformed", err)
 	}
 	if !strings.Contains(err.Error(), "p") {
@@ -13822,7 +13822,7 @@ func testTypedNodePinOfANodeTheCalleeDoesNotDeclare(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 	if !strings.Contains(err.Error(), "call") || !strings.Contains(err.Error(), "other") {
@@ -13845,7 +13845,7 @@ func testNodeReadAsAValueWithoutAResult(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 	if !strings.Contains(err.Error(), "result") {
@@ -13882,7 +13882,7 @@ func testSettledNodeReadAsAValueByAnotherCandidatesResult(t *testing.T) {
 		t.Fatal("action outer not found")
 	}
 	_, err := ctx.ExecuteAction(outer)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 	if !strings.Contains(err.Error(), "call") || !strings.Contains(err.Error(), "result") {
@@ -13958,7 +13958,7 @@ func testNodeInvocationTooManyArguments(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrActionArity) {
+	if !errors.Is(err, errActionArity) {
 		t.Fatalf("error = %v, want ErrActionArity", err)
 	}
 }
@@ -13977,7 +13977,7 @@ func testNodeInvocationTooFewArguments(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("error = %v, want ErrUnboundParameter", err)
 	}
 	if !strings.Contains(err.Error(), "b") {
@@ -14024,7 +14024,7 @@ func testNodeInvocationUnknownNamedArgument(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrUnknownParameter) {
+	if !errors.Is(err, errUnknownParameter) {
 		t.Fatalf("error = %v, want ErrUnknownParameter", err)
 	}
 }
@@ -14042,7 +14042,7 @@ func testNodeInvocationRepeatedNamedArgument(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrDuplicateArgument) {
+	if !errors.Is(err, errDuplicateArgument) {
 		t.Fatalf("error = %v, want ErrDuplicateArgument", err)
 	}
 	if !strings.Contains(err.Error(), `"a"`) {
@@ -14078,7 +14078,7 @@ func testPerformedActionInputBoundByNothing(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("error = %v, want ErrUnboundParameter", err)
 	}
 	if !strings.Contains(err.Error(), "adder") || !strings.Contains(err.Error(), "b") {
@@ -14103,7 +14103,7 @@ func testStateEntryActionInputBoundByNothing(t *testing.T) {
 		}
 	}`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("error = %v, want ErrUnboundParameter", err)
 	}
 	if !strings.Contains(err.Error(), "b") {
@@ -14135,7 +14135,7 @@ func testStateBlockTypedNodeInputBoundByNothing(t *testing.T) {
 		}
 	}`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("error = %v, want ErrUnboundParameter", err)
 	}
 	if !strings.Contains(err.Error(), "b") {
@@ -14147,7 +14147,7 @@ func testStateBlockTypedNodeInputBoundByNothing(t *testing.T) {
 }
 
 // testStateBlockNodePinReadBeforePerformed: a state body's node has a frame of its
-// own, so a sibling reading its pin before it performs is ErrNodeNotPerformed.
+// own, so a sibling reading its pin before it performs is errNodeNotPerformed.
 func testStateBlockNodePinReadBeforePerformed(t *testing.T) {
 	exec := stateExecutorForSource(t, "Machine", `package test {
 		private import ScalarValues::*;
@@ -14168,7 +14168,7 @@ func testStateBlockNodePinReadBeforePerformed(t *testing.T) {
 		}
 	}`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrNodeNotPerformed) {
+	if !errors.Is(err, errNodeNotPerformed) {
 		t.Fatalf("error = %v, want ErrNodeNotPerformed", err)
 	}
 	if !strings.Contains(err.Error(), "late") {
@@ -14177,7 +14177,7 @@ func testStateBlockNodePinReadBeforePerformed(t *testing.T) {
 }
 
 // testStateBlockNodeBoundAtNoPin: a binding in a state body at a pin the node does
-// not declare is ErrBindingEnd, as it is in an action's flow.
+// not declare is errBindingEnd, as it is in an action's flow.
 func testStateBlockNodeBoundAtNoPin(t *testing.T) {
 	exec := stateExecutorForSource(t, "Machine", `package test {`+adderActionDef+`
 		state Machine {
@@ -14198,7 +14198,7 @@ func testStateBlockNodeBoundAtNoPin(t *testing.T) {
 		}
 	}`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrBindingEnd) {
+	if !errors.Is(err, errBindingEnd) {
 		t.Fatalf("error = %v, want ErrBindingEnd", err)
 	}
 	if !strings.Contains(err.Error(), "c") {
@@ -14270,7 +14270,7 @@ func testStateDoBodyDanglingSuccession(t *testing.T) {
 		succession a then missing;
 	`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrStatementNotExecutable) {
+	if !errors.Is(err, errStatementNotExecutable) {
 		t.Fatalf("expected ErrStatementNotExecutable, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "state behavior ops") || !strings.Contains(err.Error(), `"missing"`) {
@@ -14289,7 +14289,7 @@ func testStateDoBodyFirstThenUndefined(t *testing.T) {
 		first a then b;
 	`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrStatementNotExecutable) {
+	if !errors.Is(err, errStatementNotExecutable) {
 		t.Fatalf("expected ErrStatementNotExecutable, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), `"b"`) {
@@ -14310,7 +14310,7 @@ func testStateDoBodyFlowWithoutStart(t *testing.T) {
 		succession first b then a;
 	`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("expected ErrInvalidActionFlow, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "no node starts the flow") {
@@ -14366,7 +14366,7 @@ func testActionFlowCycleWithoutStart(t *testing.T) {
 			succession first b then a;
 		}
 	}`)
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("expected ErrInvalidActionFlow, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "cycle") {
@@ -14389,7 +14389,7 @@ func testStateDoBodyNestedNodeDanglingSuccession(t *testing.T) {
 		then done;
 	`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("expected ErrInvalidActionFlow, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "action node step") || !strings.Contains(err.Error(), `"missing"`) {
@@ -14460,7 +14460,7 @@ func testStateEntryBodyDanglingSuccession(t *testing.T) {
 		}
 	}`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrStatementNotExecutable) {
+	if !errors.Is(err, errStatementNotExecutable) {
 		t.Fatalf("expected ErrStatementNotExecutable, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "state behavior prep") || !strings.Contains(err.Error(), `"missing"`) {
@@ -15245,7 +15245,7 @@ func testStateDoBodyNodeReturnParameter(t *testing.T) {
 		then done;
 	`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrActionResultParameter) {
+	if !errors.Is(err, errActionResultParameter) {
 		t.Fatalf("expected ErrActionResultParameter, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "state behavior ops") || !strings.Contains(err.Error(), "action node b") {
@@ -15266,7 +15266,7 @@ func testStateDoBodyReturnParameter(t *testing.T) {
 		then done;
 	`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrActionResultParameter) {
+	if !errors.Is(err, errActionResultParameter) {
 		t.Fatalf("expected ErrActionResultParameter, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "action ops declares `return r`") {
@@ -15404,7 +15404,7 @@ func testNodeBindingToANonParameter(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingEnd) {
+	if !errors.Is(err, errBindingEnd) {
 		t.Fatalf("error = %v, want ErrBindingEnd", err)
 	}
 	if !strings.Contains(err.Error(), "nope") {
@@ -15427,7 +15427,7 @@ func testNodeUndirectedBindingCarriedToANonParameter(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 	if !strings.Contains(err.Error(), "nope") {
@@ -15454,7 +15454,7 @@ func testBlockNodeBindingToANonParameter(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingEnd) {
+	if !errors.Is(err, errBindingEnd) {
 		t.Fatalf("error = %v, want ErrBindingEnd", err)
 	}
 	if !strings.Contains(err.Error(), "nope") {
@@ -15540,7 +15540,7 @@ func testBlockNodeOwnFlowMalformed(t *testing.T) {
 		t.Fatal("action outer not found")
 	}
 	_, err := ctx.CreateActionExecutor(sym)
-	if !errors.Is(err, ErrInvalidActionFlow) {
+	if !errors.Is(err, errInvalidActionFlow) {
 		t.Fatalf("expected ErrInvalidActionFlow for step's dangling succession, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "action node step") || !strings.Contains(err.Error(), "missing") {
@@ -15656,7 +15656,7 @@ func testInheritedBindingDoesNotReachThroughAReplacedOtherEnd(t *testing.T) {
 	if err == nil {
 		t.Fatal("the inherited node's pin took the replacement node's value")
 	}
-	if !errors.Is(err, ErrUnboundParameter) || !strings.Contains(err.Error(), "parameter a") {
+	if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "parameter a") {
 		t.Errorf("error %v, want ErrUnboundParameter for a", err)
 	}
 	if v, ok := exec.Results()["add.sum"]; ok {
@@ -15749,7 +15749,7 @@ func testNodePinBoundToUnequalValues(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingConflict) {
+	if !errors.Is(err, errBindingConflict) {
 		t.Fatalf("error = %v, want ErrBindingConflict", err)
 	}
 	if got, want := err.Error(), "binding conflict at add.a: x = 1, y = 2"; got != want {
@@ -15809,7 +15809,7 @@ func testNestedPinBindingAtAnUndeclaredPin(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingEnd) {
+	if !errors.Is(err, errBindingEnd) {
 		t.Fatalf("error = %v, want ErrBindingEnd", err)
 	}
 	if !strings.Contains(err.Error(), "leg.inner.nope names no parameter or attribute of") {
@@ -15861,7 +15861,7 @@ func testNodeBindingOutputToAnUnknownFeature(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingEnd) {
+	if !errors.Is(err, errBindingEnd) {
 		t.Fatalf("error = %v, want ErrBindingEnd", err)
 	}
 }
@@ -15881,7 +15881,7 @@ func testNodeBindingOutputThroughAScalarChain(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrBindingEnd) || !errors.Is(err, ErrTypeMismatch) {
+	if !errors.Is(err, errBindingEnd) || !errors.Is(err, ErrTypeMismatch) {
 		t.Fatalf("error = %v, want ErrBindingEnd wrapping ErrTypeMismatch", err)
 	}
 	if !strings.Contains(err.Error(), "x.value") {
@@ -15915,7 +15915,7 @@ func testNodeBindingOutputThroughAChainViolatesTargetType(t *testing.T) {
 		t.Fatalf("create action executor: %v", err)
 	}
 	err = exec.RunToCompletion()
-	if !errors.Is(err, ErrBindingEnd) || !errors.Is(err, ErrTypeMismatch) {
+	if !errors.Is(err, errBindingEnd) || !errors.Is(err, ErrTypeMismatch) {
 		t.Fatalf("error = %v, want ErrBindingEnd wrapping ErrTypeMismatch", err)
 	}
 }
@@ -15935,7 +15935,7 @@ func testNodeFlowIntoAPinTheTargetDoesNotDeclare(t *testing.T) {
 		}
 	`
 	err := runOuterAction(t, src)
-	if !errors.Is(err, ErrNodePin) {
+	if !errors.Is(err, errNodePin) {
 		t.Fatalf("error = %v, want ErrNodePin", err)
 	}
 }
@@ -15978,7 +15978,7 @@ func invokeCalcExpecting(t *testing.T, src, expr string) error {
 // is declared is refused when it is bound, before the body calls it.
 func testFunctionValueCallOfANonFunction(t *testing.T) {
 	err := invokeCalcExpecting(t, `package test {`+functionValueFixture+`}`, "test::Fn(3.0, 3.0)")
-	if !errors.Is(err, ErrNotAFunction) || !strings.Contains(err.Error(), `parameter "f"`) {
+	if !errors.Is(err, errNotAFunction) || !strings.Contains(err.Error(), `parameter "f"`) {
 		t.Fatalf("error = %v, want ErrNotAFunction naming f", err)
 	}
 }
@@ -15991,7 +15991,7 @@ func testFunctionValueBoundToANonFunction(t *testing.T) {
 		part box : Box;
 	}`
 	err := invokeCalcExpecting(t, src, "test::Fn(a = 3.0, f = test::box)")
-	if !errors.Is(err, ErrNotAFunction) {
+	if !errors.Is(err, errNotAFunction) {
 		t.Fatalf("error = %v, want ErrNotAFunction", err)
 	}
 }
@@ -16003,7 +16003,7 @@ func testFunctionValueArityMismatch(t *testing.T) {
 		calc def Two { in calc f { in v : Real; return : Real; } return : Real = f(1.0, 2.0); }
 	}`
 	err := invokeCalcExpecting(t, src, "test::Two(test::Sq)")
-	if !errors.Is(err, ErrCalcArity) || !strings.Contains(err.Error(), "test::Sq") {
+	if !errors.Is(err, errCalcArity) || !strings.Contains(err.Error(), "test::Sq") {
 		t.Fatalf("error = %v, want ErrCalcArity for test::Sq", err)
 	}
 }
@@ -16015,7 +16015,7 @@ func testFunctionValueUnknownNamedArgument(t *testing.T) {
 		calc def Named { in calc f { in v : Real; return : Real; } return : Real = f(w = 1.0); }
 	}`
 	err := invokeCalcExpecting(t, src, "test::Named(test::Sq)")
-	if !errors.Is(err, ErrUnknownParameter) || !strings.Contains(err.Error(), "test::Sq") {
+	if !errors.Is(err, errUnknownParameter) || !strings.Contains(err.Error(), "test::Sq") {
 		t.Fatalf("error = %v, want ErrUnknownParameter for test::Sq", err)
 	}
 }
@@ -16028,11 +16028,11 @@ func testFunctionValueUnboundCalcParameter(t *testing.T) {
 		calc def Partial { in calc f { in x : Real; in y : Real[1]; return : Real; } return : Real = f(1.0); }
 	}`
 	err := invokeCalcExpecting(t, src, "test::Fn(a = 3.0)")
-	if !errors.Is(err, ErrUnboundParameter) || !strings.Contains(err.Error(), `parameter "f"`) {
+	if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), `parameter "f"`) {
 		t.Fatalf("error = %v, want ErrUnboundParameter naming f", err)
 	}
 	err = invokeCalcExpecting(t, src, "test::Partial(test::Add)")
-	if !errors.Is(err, ErrUnboundParameter) || !strings.Contains(err.Error(), `parameter "y"`) {
+	if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), `parameter "y"`) {
 		t.Fatalf("error = %v, want ErrUnboundParameter naming y", err)
 	}
 }
@@ -16057,7 +16057,7 @@ func testFunctionValueOfABuiltIn(t *testing.T) {
 		calc def PassIf { return : Real = Fn(ControlFunctions::'if', 3.0); }
 	}`
 	err := invokeCalcExpecting(t, src, "test::PassIf()")
-	if !errors.Is(err, ErrNotAFunction) {
+	if !errors.Is(err, errNotAFunction) {
 		t.Fatalf("error = %v, want ErrNotAFunction", err)
 	}
 }
@@ -16165,7 +16165,7 @@ func testVerificationBodyThatCannotRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunVerification error = %v, want an error verdict", err)
 	}
-	if result.Verdict.Kind != VerdictError {
+	if result.Verdict.Kind != verdictError {
 		t.Fatalf("verdict = %q, want error", result.Verdict.Kind)
 	}
 	if !strings.Contains(result.Verdict.Detail, "sensor") {
@@ -16182,7 +16182,7 @@ func testVerificationBodyStepThatFails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunVerification error = %v, want an error verdict", err)
 	}
-	if result.Verdict.Kind != VerdictError {
+	if result.Verdict.Kind != verdictError {
 		t.Fatalf("verdict = %q (%s), want error", result.Verdict.Kind, result.Verdict.Detail)
 	}
 	if !strings.Contains(result.Verdict.Detail, "adder") {
@@ -16200,7 +16200,7 @@ func testVerificationSubcaseThatCannotRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunVerification error = %v, want an error verdict", err)
 	}
-	if result.Verdict.Kind != VerdictError {
+	if result.Verdict.Kind != verdictError {
 		t.Fatalf("verdict = %q (%s), want error", result.Verdict.Kind, result.Verdict.Detail)
 	}
 	for _, want := range []string{"sub", "threshold"} {
@@ -16219,7 +16219,7 @@ func testVerificationOfASymbolThatIsNotACase(t *testing.T) {
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, verificationRobustnessModel))
 	scope := idx.DocumentRoot("<test>")
 	_, err := ctx.RunVerification(lookupOne(t, idx, "test::Sensor"), AnalysisArgs{}, scope, nil)
-	if !errors.Is(err, ErrNotAVerification) {
+	if !errors.Is(err, errNotAVerification) {
 		t.Fatalf("error = %v, want ErrNotAVerification", err)
 	}
 }
@@ -16231,7 +16231,7 @@ func testVerificationWithAnArgumentTheCaseDoesNotTake(t *testing.T) {
 	scope := idx.DocumentRoot("<test>")
 	args := AnalysisArgs{Named: map[string]Value{"nope": integerValue(1)}}
 	_, err := ctx.RunVerification(lookupOne(t, idx, "test::stepping"), args, scope, nil)
-	if !errors.Is(err, ErrUnknownParameter) {
+	if !errors.Is(err, errUnknownParameter) {
 		t.Fatalf("error = %v, want ErrUnknownParameter", err)
 	}
 }
@@ -16299,7 +16299,7 @@ func testVerificationObjectiveSubjectLeftUnbound(t *testing.T) {
 	scope := idx.DocumentRoot("<test>")
 	sym := lookupOne(t, idx, "test::checkNothing")
 	_, err := ctx.RunAnalysis(sym, AnalysisArgs{}, scope, nil)
-	var unbound *UnboundSubjectError
+	var unbound *subjectUnboundError
 	if !errors.As(err, &unbound) {
 		t.Fatalf("RunAnalysis error = %v, want an UnboundSubjectError", err)
 	}
@@ -16310,7 +16310,7 @@ func testVerificationObjectiveSubjectLeftUnbound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunVerification error = %v, want an error verdict", err)
 	}
-	if result.Verdict.Kind != VerdictError || result.Verdict.Detail != unbound.Error() {
+	if result.Verdict.Kind != verdictError || result.Verdict.Detail != unbound.Error() {
 		t.Errorf("verdict = %q (%s), want error carrying %q", result.Verdict.Kind, result.Verdict.Detail, unbound.Error())
 	}
 }
@@ -16473,7 +16473,7 @@ func undecidedObjective(t *testing.T, result AnalysisResult) string {
 // is fabricated.
 func testTradeStudyWithAnAbstractEvaluationFunction(t *testing.T) {
 	result, err := runTradeStudyExpecting(t, "test::abstractEval")
-	if !errors.Is(err, ErrNoResultExpression) || !strings.Contains(err.Error(), "test::abstractEval::evaluationFunction") {
+	if !errors.Is(err, errNoResultExpression) || !strings.Contains(err.Error(), "test::abstractEval::evaluationFunction") {
 		t.Fatalf("error = %v, want ErrNoResultExpression naming the evaluation function", err)
 	}
 	undecidedObjective(t, result)
@@ -16737,7 +16737,7 @@ func testMetadataWithoutTheReflectiveLibrary(t *testing.T) {
 	probe = resolveSymbol(t, probe, "probe").Scope
 	valueOf := func(name string) (Value, error) {
 		decl := resolveSymbol(t, probe, name).Decl.(*ast.Usage)
-		return NewEvalContext(ctx, probe).Eval(decl.Value)
+		return newEvalContext(ctx, probe).Eval(decl.Value)
 	}
 	for range 2 {
 		got, err := valueOf("all")
@@ -16787,7 +16787,7 @@ func testStateDoTypedActionInputUnbound(t *testing.T) {
 		}
 	}`)
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("expected ErrUnboundParameter, got: %v", err)
 	}
 	for _, want := range []string{"do action in state active", "action Poll", "input parameter n"} {
@@ -16877,7 +16877,7 @@ func testStateEntryBodyWaitsForTheClock(t *testing.T) {
 		}
 	}`)
 	err := exec.initialize()
-	if !errors.Is(err, ErrStateBehaviorWaits) {
+	if !errors.Is(err, errStateBehaviorWaits) {
 		t.Fatalf("expected ErrStateBehaviorWaits, got: %v", err)
 	}
 	for _, want := range []string{"enter state active", "entry action", "t=1.0"} {
@@ -16915,7 +16915,7 @@ func testStateExitBodyWaitsForTheClock(t *testing.T) {
 		t.Fatalf("initialize: %v", err)
 	}
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrStateBehaviorWaits) {
+	if !errors.Is(err, errStateBehaviorWaits) {
 		t.Fatalf("expected ErrStateBehaviorWaits, got: %v", err)
 	}
 	for _, want := range []string{"exit state", "exit action", "t=1.0"} {
@@ -16951,7 +16951,7 @@ func testTransitionEffectBodyWaitsForTheClock(t *testing.T) {
 		t.Fatalf("initialize: %v", err)
 	}
 	err := exec.RunToCompletion()
-	if !errors.Is(err, ErrStateBehaviorWaits) {
+	if !errors.Is(err, errStateBehaviorWaits) {
 		t.Fatalf("expected ErrStateBehaviorWaits, got: %v", err)
 	}
 	for _, want := range []string{"transition effect", "t=1.0"} {
@@ -17098,7 +17098,7 @@ func testWeightedDecisionWhoseReadWeightIsNoProbability(t *testing.T) {
 				first select `+tc.slowGuard+` then slow { @Probability { p = w; } }
 				action fast { assign taken := 1; } then done;
 				action slow { assign taken := 2; } then done;`, 3)
-			if !errors.Is(err, ErrBranchWeights) {
+			if !errors.Is(err, errBranchWeights) {
 				t.Fatalf("error = %v, want ErrBranchWeights", err)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
@@ -17114,7 +17114,7 @@ func testRandomDrawWithoutASeed(t *testing.T) {
 	err := weightedActionError(t, `
 		attribute d : Real = uniform(0.0, 1.0);
 		first start; then done;`)
-	var unseeded *UnseededDrawError
+	var unseeded *unseededDrawError
 	if !errors.Is(err, ErrUnseededDraw) || !errors.As(err, &unseeded) {
 		t.Fatalf("error = %v, want ErrUnseededDraw", err)
 	}
@@ -17128,7 +17128,7 @@ func testRandomDrawWithoutASeed(t *testing.T) {
 func testRandomBoundsReversed(t *testing.T) {
 	for _, call := range []string{"uniform(1.0, 0.0)", "uniformInteger(6, 1)", "triangular(1.0, 0.5, 0.0)", "normal(0.0, -1.0)"} {
 		err := weightedActionError(t, "attribute d = "+call+";\n first start; then done;", 3)
-		if !errors.Is(err, ErrRandomDomain) {
+		if !errors.Is(err, errRandomDomain) {
 			t.Errorf("%s: error = %v, want ErrRandomDomain", call, err)
 		}
 	}

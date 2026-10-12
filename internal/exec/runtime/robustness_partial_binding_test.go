@@ -35,14 +35,14 @@ func rigScope(t *testing.T, rig string) (*Context, *symbols.Scope) {
 }
 
 // `binding [1]` links one value of each end, so the end whose feature must hold
-// two is undetermined rather than bound whole: reading it is ErrBindingEnd.
+// two is undetermined rather than bound whole: reading it is errBindingEnd.
 func testPartialBindingUnderdeterminedEnd(t *testing.T) {
 	ctx, scope := rigScope(t, `part def Rig {
 		part a { part xs : Thing [1]; }
 		part ys : Thing [2];
 		binding [1] bind [0..*] a.xs = [0..*] ys;
 	}`)
-	if _, err := evalIn(t, ctx, scope, "rig.ys"); !errors.Is(err, ErrBindingEnd) {
+	if _, err := evalIn(t, ctx, scope, "rig.ys"); !errors.Is(err, errBindingEnd) {
 		t.Fatalf("rig.ys = %v, want ErrBindingEnd", err)
 	}
 }
@@ -57,7 +57,7 @@ func testPartialBindingLowerBoundAboveLinks(t *testing.T) {
 		binding [1] bind [0..*] a.xs = [0..*] ys3;
 	}`)
 	for _, expr := range []string{"rig.ys3", "rig.a.xs"} {
-		if _, err := evalIn(t, ctx, scope, expr); !errors.Is(err, ErrBindingEnd) {
+		if _, err := evalIn(t, ctx, scope, expr); !errors.Is(err, errBindingEnd) {
 			t.Fatalf("%s = %v, want ErrBindingEnd", expr, err)
 		}
 	}
@@ -73,7 +73,7 @@ func testPartialBindingMutual(t *testing.T) {
 		binding [1] bind [0..*] zs = [0..*] ys;
 	}`)
 	_, err := evalIn(t, ctx, scope, "rig.ys")
-	if !errors.Is(err, ErrBindingEnd) && !errors.Is(err, ErrBindingCycle) {
+	if !errors.Is(err, errBindingEnd) && !errors.Is(err, errBindingCycle) {
 		t.Fatalf("rig.ys = %v, want ErrBindingEnd or ErrBindingCycle", err)
 	}
 }
@@ -86,7 +86,7 @@ func testPartialBindingReadThrough(t *testing.T) {
 		part ys : Thing [2];
 		binding [1] bind [0..*] a.xs = [0..*] ys;
 	}`)
-	if _, err := evalIn(t, ctx, scope, "rig.ys.mass"); !errors.Is(err, ErrBindingEnd) {
+	if _, err := evalIn(t, ctx, scope, "rig.ys.mass"); !errors.Is(err, errBindingEnd) {
 		t.Fatalf("rig.ys.mass = %v, want ErrBindingEnd", err)
 	}
 }
@@ -121,7 +121,7 @@ func testPartialBindingInstantiatesClean(t *testing.T) {
 	if v, err := evalIn(t, ctx, scope, "rig.a.xs"); err != nil || v.Sequence() == nil || len(v.Sequence().Elements()) != 2 {
 		t.Fatalf("rig.a.xs = %v, %v; want two objects", v, err)
 	}
-	if _, err := evalIn(t, ctx, scope, "rig.shared"); !errors.Is(err, ErrBindingEnd) {
+	if _, err := evalIn(t, ctx, scope, "rig.shared"); !errors.Is(err, errBindingEnd) {
 		t.Fatalf("rig.shared = %v, want ErrBindingEnd", err)
 	}
 }

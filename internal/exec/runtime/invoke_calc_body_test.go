@@ -148,7 +148,7 @@ func TestCalcStatementBodyFromEveryEntryPoint(t *testing.T) {
 		t.Fatalf("InvokeCalc(6) = %s, want 720", FormatTraceValue(positional))
 	}
 
-	named, err := ctx.InvokeCalcNamed(factorial, map[string]Value{"n": constInt(6)}, scope)
+	named, err := ctx.invokeCalcNamed(factorial, map[string]Value{"n": constInt(6)}, scope)
 	if err != nil {
 		t.Fatalf("InvokeCalcNamed: %v", err)
 	}
@@ -434,7 +434,7 @@ func TestUnboundResultParameterHint(t *testing.T) {
 		if err == nil {
 			t.Fatalf("InvokeCalc(%s) succeeded, want %q", tc.calc, tc.want)
 		}
-		if !errors.Is(err, ErrNoResultExpression) {
+		if !errors.Is(err, errNoResultExpression) {
 			t.Errorf("InvokeCalc(%s) = %v, want ErrNoResultExpression", tc.calc, err)
 		}
 		if err.Error() != tc.want {
@@ -480,7 +480,7 @@ func TestUnevaluableResultIsNotReportedAsMissing(t *testing.T) {
 		if err == nil {
 			t.Fatalf("InvokeCalc(%s) succeeded, want the evaluator to report the expression", name)
 		}
-		if errors.Is(err, ErrNoResultExpression) {
+		if errors.Is(err, errNoResultExpression) {
 			t.Fatalf("InvokeCalc(%s) = %v, want the unevaluable expression reported, not a missing result", name, err)
 		}
 	}

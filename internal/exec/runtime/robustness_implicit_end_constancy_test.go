@@ -80,7 +80,7 @@ func TestRuntimeRobustnessImplicitEndConstancy(t *testing.T) {
 	}
 	requireRefused := func(t *testing.T, err error, wants ...string) {
 		t.Helper()
-		if !errors.Is(err, ErrReadOnlyFeature) {
+		if !errors.Is(err, errReadOnlyFeature) {
 			t.Fatalf("err = %v, want ErrReadOnlyFeature", err)
 		}
 		for _, want := range wants {

@@ -407,7 +407,7 @@ func TestRuntimeRobustnessActionStepMultiplicity(t *testing.T) {
 				}
 				return
 			}
-			if !errors.Is(err, ErrActionStepMultiplicity) {
+			if !errors.Is(err, errActionStepMultiplicity) {
 				t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
 			}
 			var stepErr *lower.StepMultiplicityError
@@ -658,7 +658,7 @@ func TestRuntimeRobustnessActionStepMultiplicityOutcomes(t *testing.T) {
 		}
 		err = exploration.Outcomes[0].Outcome.Err
 		assertActionStepMultiplicityErrorIsNotSetup(t, err)
-		if !errors.Is(err, ErrIntegerUnaddressable) {
+		if !errors.Is(err, errIntegerUnaddressable) {
 			t.Errorf("outcome error = %v, want ErrIntegerUnaddressable", err)
 		}
 		if !strings.Contains(err.Error(), "1180591620717411303424") {
@@ -684,7 +684,7 @@ func TestRuntimeRobustnessActionStepMultiplicityOutcomes(t *testing.T) {
 		}
 		err = exploration.Outcomes[0].Outcome.Err
 		assertActionStepMultiplicityErrorIsNotSetup(t, err)
-		if !errors.Is(err, ErrIntegerUnaddressable) {
+		if !errors.Is(err, errIntegerUnaddressable) {
 			t.Errorf("outcome error = %v, want ErrIntegerUnaddressable", err)
 		}
 		if !strings.Contains(err.Error(), "1180591620717411303424") {
@@ -750,7 +750,7 @@ func TestRuntimeRobustnessActionStepMultiplicityOutcomes(t *testing.T) {
 			t.Fatal("Check returned neither an error nor a report")
 		}
 		for _, violation := range report.Violations {
-			if violation.Kind == ViolationFailure && errors.Is(violation.Err, ErrActionStepMultiplicity) {
+			if violation.Kind == ViolationFailure && errors.Is(violation.Err, errActionStepMultiplicity) {
 				assertActionStepMultiplicityErrorIsNotSetup(t, violation.Err)
 				return
 			}
@@ -772,7 +772,7 @@ func assertActionStepMultiplicityExploreOutcome(t *testing.T, exploration *Explo
 
 func assertActionStepMultiplicityErrorIsNotSetup(t *testing.T, err error) {
 	t.Helper()
-	if !errors.Is(err, ErrActionStepMultiplicity) {
+	if !errors.Is(err, errActionStepMultiplicity) {
 		t.Fatalf("error = %v, want ErrActionStepMultiplicity", err)
 	}
 	var setup *SetupError

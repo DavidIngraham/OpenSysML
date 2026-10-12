@@ -143,7 +143,7 @@ func TestTimeTriggerRefusesTheTypeValidationRefuses(t *testing.T) {
 			if err == nil {
 				t.Fatalf("accept %s scheduled", tc.trigger)
 			}
-			if !errors.Is(err, ErrTimeTriggerType) {
+			if !errors.Is(err, errTimeTriggerType) {
 				t.Errorf("err = %v, want it to wrap ErrTimeTriggerType", err)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
@@ -199,7 +199,7 @@ func TestTimeTriggerRejectsNonTimeDimension(t *testing.T) {
 	if want := "`after 5 [kg]` must be a ISQBase::DurationValue, found a quantity in kilogram"; !strings.Contains(err.Error(), want) {
 		t.Errorf("err = %v, want it to contain %q", err, want)
 	}
-	if !errors.Is(err, ErrTimeTriggerType) {
+	if !errors.Is(err, errTimeTriggerType) {
 		t.Errorf("err = %v, want it to wrap ErrTimeTriggerType", err)
 	}
 	if errors.Is(err, ErrIncommensurableUnits) {

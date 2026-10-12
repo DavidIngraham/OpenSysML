@@ -33,7 +33,7 @@ func testPerformReferenceNamesNoAction(t *testing.T) {
 	ctx := NewContext(typedModel(model, resolver), 10000)
 
 	_, err := ctx.Instantiate(resolveSymbol(t, root, "P"))
-	if !errors.Is(err, ErrUnresolvedClassifierBehavior) {
+	if !errors.Is(err, errUnresolvedClassifierBehavior) {
 		t.Fatalf("error = %v, want ErrUnresolvedClassifierBehavior", err)
 	}
 	if !strings.Contains(err.Error(), "go") {
@@ -55,7 +55,7 @@ func testPerformSubsettingNamesNothing(t *testing.T) {
 	ctx := NewContext(typedModel(model, resolver), 10000)
 
 	_, err := ctx.Instantiate(resolveSymbol(t, root, "P"))
-	if !errors.Is(err, ErrUnresolvedClassifierBehavior) {
+	if !errors.Is(err, errUnresolvedClassifierBehavior) {
 		t.Fatalf("error = %v, want ErrUnresolvedClassifierBehavior", err)
 	}
 }
@@ -73,7 +73,7 @@ func testPerformTypingNamesNothing(t *testing.T) {
 	ctx := NewContext(typedModel(model, resolver), 10000)
 
 	_, err := ctx.Instantiate(resolveSymbol(t, root, "P"))
-	if !errors.Is(err, ErrUnresolvedClassifierBehavior) {
+	if !errors.Is(err, errUnresolvedClassifierBehavior) {
 		t.Fatalf("error = %v, want ErrUnresolvedClassifierBehavior", err)
 	}
 }

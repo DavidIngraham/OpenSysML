@@ -158,7 +158,7 @@ func TestNestedRedefinitionOverridesAnAliasedLeaf(t *testing.T) {
 		}`)
 		top := instantiateQualified(t, ctx, idx, "test::top")
 		mid := readInstance(t, ctx, top, "mid")
-		if _, err := mid.GetFeatureValue(ctx, "leaf"); !errors.Is(err, ErrConflictingRedefinition) {
+		if _, err := mid.GetFeatureValue(ctx, "leaf"); !errors.Is(err, errConflictingRedefinition) {
 			t.Fatalf("GetFeatureValue(leaf) = %v, want ErrConflictingRedefinition", err)
 		}
 	})

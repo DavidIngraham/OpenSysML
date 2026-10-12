@@ -48,7 +48,7 @@ func testPositionalInvokeSurplus(t *testing.T) {
 	_, err := ctx.InvokeOperationWith(inst, "add", OperationArguments{
 		Positional: []Value{intArgument(1), intArgument(2), intArgument(3)},
 	})
-	if !errors.Is(err, ErrOperationArity) {
+	if !errors.Is(err, errOperationArity) {
 		t.Fatalf("add(1, 2, 3): %v, want ErrOperationArity", err)
 	}
 }
@@ -60,7 +60,7 @@ func testPositionalInvokeSurplusOverOut(t *testing.T) {
 	_, err := ctx.InvokeOperationWith(inst, "moveTo", OperationArguments{
 		Positional: []Value{intArgument(1), intArgument(2), intArgument(3)},
 	})
-	if !errors.Is(err, ErrOperationArity) {
+	if !errors.Is(err, errOperationArity) {
 		t.Fatalf("moveTo(1, 2, 3): %v, want ErrOperationArity", err)
 	}
 }
@@ -88,7 +88,7 @@ func testPositionalInvokeTooFew(t *testing.T) {
 	_, err := ctx.InvokeOperationWith(inst, "moveTo", OperationArguments{
 		Positional: []Value{intArgument(1)},
 	})
-	if !errors.Is(err, ErrUnboundParameter) {
+	if !errors.Is(err, errUnboundParameter) {
 		t.Fatalf("moveTo(1): %v, want ErrUnboundParameter", err)
 	}
 }
@@ -100,7 +100,7 @@ func testPositionalInvokeNoOverload(t *testing.T) {
 	_, err := ctx.InvokeOperationWith(inst, "scaled", OperationArguments{
 		Positional: []Value{intArgument(1), intArgument(2), intArgument(3)},
 	})
-	if !errors.Is(err, ErrOperationArity) {
+	if !errors.Is(err, errOperationArity) {
 		t.Fatalf("scaled(1, 2, 3): %v, want ErrOperationArity", err)
 	}
 }

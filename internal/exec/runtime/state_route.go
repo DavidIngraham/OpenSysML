@@ -225,7 +225,7 @@ func (e *StateExecutor) routeAvailable(trans *lower.Transition, event *Event) (b
 		_, routeErr = e.followOut(hist, route{})
 	})
 	if routeErr != nil && e.ctx.scheduling().ordersStatements() {
-		if errors.Is(routeErr, ErrOrderDependentPreview) || errors.Is(routeErr, ErrOrderDependentGuardEffect) {
+		if errors.Is(routeErr, errOrderDependentPreview) || errors.Is(routeErr, errOrderDependentGuardEffect) {
 			return false, routeErr
 		}
 	}
@@ -300,7 +300,7 @@ func (e *StateExecutor) resolveChoice(r route) (route, error) {
 	}
 	e.noteAll(notes)
 	if len(enabled) == 0 {
-		return route{}, fmt.Errorf("%w: choice %s: no guard evaluated to true", ErrChoiceWithoutBranch, choice.Name)
+		return route{}, fmt.Errorf("%w: choice %s: no guard evaluated to true", errChoiceWithoutBranch, choice.Name)
 	}
 	pick, err := e.pickBranch(choice, outgoing, enabled, e.ctx.note)
 	if err != nil {
@@ -403,7 +403,7 @@ func (e *StateExecutor) probeBranch(ps *ast.PseudostateNode, outgoing []*lower.T
 	var err error
 	e.preview(func() { pass, err = e.passesGuard(outgoing[i]) })
 	if err != nil {
-		if errors.Is(err, ErrOrderDependentPreview) || errors.Is(err, ErrOrderDependentGuardEffect) {
+		if errors.Is(err, errOrderDependentPreview) || errors.Is(err, errOrderDependentGuardEffect) {
 			return false, nil, err
 		}
 		file, _ := e.transitionLocation(ps, outgoing[i])
@@ -679,7 +679,7 @@ func (e *StateExecutor) enterAhead(chain []*ast.StateNode) error {
 			continue
 		}
 		if e.entryIsUnit(state) {
-			if _, err := e.unit(ChoiceEntryOrder, e.entryHead(state, false)); err != nil {
+			if _, err := e.unit(choiceEntryOrder, e.entryHead(state, false)); err != nil {
 				return err
 			}
 		}

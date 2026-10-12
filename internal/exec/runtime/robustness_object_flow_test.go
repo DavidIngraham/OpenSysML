@@ -89,7 +89,7 @@ func TestRuntimeRobustnessObjectFlow(t *testing.T) {
 				succession flow of Integer from m.outputObject1 to keep.v;
 			}
 		}`)
-		if !errors.Is(err, ErrAmbiguousMergeInput) {
+		if !errors.Is(err, errAmbiguousMergeInput) {
 			t.Fatalf("run error = %v, want ErrAmbiguousMergeInput", err)
 		}
 	})
@@ -118,7 +118,7 @@ func TestRuntimeRobustnessObjectFlow(t *testing.T) {
 				succession flow of Integer from m.outputObject1 to keep.v;
 			}
 		}`)
-		if !errors.Is(err, ErrAmbiguousMergeInput) {
+		if !errors.Is(err, errAmbiguousMergeInput) {
 			t.Fatalf("run error = %v, want ErrAmbiguousMergeInput", err)
 		}
 	})

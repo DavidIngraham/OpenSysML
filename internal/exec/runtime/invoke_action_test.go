@@ -250,7 +250,7 @@ package caller {
 }`
 	ctx, outer := loadAction(t, doublerModel+caller, "Outer")
 	_, err := ctx.ExecuteAction(outer)
-	if !errors.Is(err, ErrUnboundParameter) || !strings.Contains(err.Error(), "input parameter v") {
+	if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "input parameter v") {
 		t.Fatalf("ExecuteAction with a required input unbound: err = %v, want ErrUnboundParameter for v", err)
 	}
 

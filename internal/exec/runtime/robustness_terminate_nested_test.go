@@ -80,7 +80,7 @@ func testTerminateInALoopBodyOfItsOwnEndedPerformance(t *testing.T) {
 					terminate slow;
 				}
 				assign later := later + 1;`))
-	if !errors.Is(err, ErrPerformanceEnded) {
+	if !errors.Is(err, errPerformanceEnded) {
 		t.Fatalf("error = %v, want ErrPerformanceEnded", err)
 	}
 	if !strings.Contains(err.Error(), "slow") {
@@ -128,7 +128,7 @@ func testTerminateInALoopBodyBeforeItsNodeBegan(t *testing.T) {
 			then done;
 		}
 	}`)
-	if !errors.Is(err, ErrTerminateTarget) {
+	if !errors.Is(err, errTerminateTarget) {
 		t.Fatalf("error = %v, want ErrTerminateTarget", err)
 	}
 }

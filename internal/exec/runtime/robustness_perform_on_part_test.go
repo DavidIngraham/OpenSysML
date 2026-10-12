@@ -53,7 +53,7 @@ func testPerformOnPartHoldingNoObject(t *testing.T) {
 		"part tel : Telescope[0..1];",
 		performing("perform action pt ::> context.tel.point;"),
 	), "test::Station")
-	if !errors.Is(err, ErrPerformerNotObject) || !strings.Contains(err.Error(), "tel.point is performed by [], which is no one object") {
+	if !errors.Is(err, errPerformerNotObject) || !strings.Contains(err.Error(), "tel.point is performed by [], which is no one object") {
 		t.Fatalf("error = %v, want ErrPerformerNotObject over an empty tel", err)
 	}
 }
@@ -65,7 +65,7 @@ func testPerformOnPartHoldingSeveralObjects(t *testing.T) {
 		"part tels : Telescope[2];",
 		performing("perform action pt ::> context.tels.point;"),
 	), "test::Station")
-	if !errors.Is(err, ErrPerformerNotObject) || !strings.Contains(err.Error(), "tels.point is performed by [instance(") {
+	if !errors.Is(err, errPerformerNotObject) || !strings.Contains(err.Error(), "tels.point is performed by [instance(") {
 		t.Fatalf("error = %v, want ErrPerformerNotObject over two telescopes", err)
 	}
 }
@@ -81,7 +81,7 @@ func testPerformOnPartDestroyed(t *testing.T) {
 		perform action pt ::> context.tel.point;
 		first pt then done;`,
 	), "test::Station")
-	if !errors.Is(err, ErrOccurrenceDestroyed) || !strings.Contains(err.Error(), "(Telescope) was destroyed at") {
+	if !errors.Is(err, errOccurrenceDestroyed) || !strings.Contains(err.Error(), "(Telescope) was destroyed at") {
 		t.Fatalf("error = %v, want ErrOccurrenceDestroyed over the destroyed telescope", err)
 	}
 }

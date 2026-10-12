@@ -38,7 +38,7 @@ const endedMachineModel = `package test {
 // state, so a reader enumerating them sees nothing rather than a stale state.
 func testTerminatedMachineNoActiveState(t *testing.T) {
 	ctx, sym := loadState(t, endedMachineModel, "TerminatingMachine")
-	exec, err := ctx.PerformState(sym, nil, []QueuedEvent{{Signal: "Abort"}})
+	exec, err := ctx.performStateWithEvents(sym, nil, []QueuedEvent{{Signal: "Abort"}})
 	if err != nil {
 		t.Fatalf("PerformState: %v", err)
 	}
@@ -56,7 +56,7 @@ func testTerminatedMachineNoActiveState(t *testing.T) {
 // A machine that reached `done` keeps it as the active configuration.
 func testCompletedMachineFinalState(t *testing.T) {
 	ctx, sym := loadState(t, endedMachineModel, "FinishingMachine")
-	exec, err := ctx.PerformState(sym, nil, []QueuedEvent{{Signal: "Abort"}})
+	exec, err := ctx.performStateWithEvents(sym, nil, []QueuedEvent{{Signal: "Abort"}})
 	if err != nil {
 		t.Fatalf("PerformState: %v", err)
 	}

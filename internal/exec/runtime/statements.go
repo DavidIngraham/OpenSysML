@@ -808,7 +808,7 @@ func (e *stmtEngine) pickStatement(stmts []lower.Statement, next []int) int {
 		alts[k] = fmt.Sprintf("%d %s", i+1, stmtLabel(stmts[i]))
 	}
 	choice := ChoicePoint{
-		Kind:         ChoiceStatementOrder,
+		Kind:         choiceStatementOrder,
 		Step:         e.host.orderStep(),
 		Where:        statementsWherePrefix + e.host.describe(),
 		Alternatives: alts,
@@ -831,7 +831,7 @@ func (e *stmtEngine) pickStatement(stmts []lower.Statement, next []int) int {
 func (e *stmtEngine) statement(stmt lower.Statement, f *stmtListFrame, resumed bool) (stmtFlow, error) {
 	if !resumed {
 		if tr := e.ctx.trace; tr != nil {
-			tr.RecordStatement(stmtLabel(stmt))
+			tr.recordStatement(stmtLabel(stmt))
 		}
 		// A statement's collections live no longer than the statement, so the one after
 		// it starts from the elements held before it.
@@ -843,7 +843,7 @@ func (e *stmtEngine) statement(stmt lower.Statement, f *stmtListFrame, resumed b
 	}
 	f.run.elements = f.elements
 	if tr := e.ctx.trace; tr != nil {
-		tr.EndStatement()
+		tr.endStatement()
 	}
 	return flow, err
 }
@@ -1028,7 +1028,7 @@ func (e *stmtEngine) execute(stmt lower.Statement) (stmtFlow, error) {
 	case lower.Assert:
 		return flowNext, e.assert(s)
 	case lower.Unsupported:
-		return flowNext, fmt.Errorf("%w: %s: %s in a body is not executable", ErrStatementNotExecutable, e.host.describe(), s.Description)
+		return flowNext, fmt.Errorf("%w: %s: %s in a body is not executable", errStatementNotExecutable, e.host.describe(), s.Description)
 	default:
 		return flowNext, fmt.Errorf("%s: unsupported statement %T", e.host.describe(), stmt)
 	}
@@ -1057,7 +1057,7 @@ func (e *stmtEngine) assert(s lower.Assert) error {
 // this execution of the body reads starts here, so an evaluation of the same
 // usage from before the declaration was reached is discarded.
 func (e *stmtEngine) declareUsage(stmt lower.DeclareUsage) error {
-	// Known limitation: the `=` pins of a body-local calc usage are evaluated once per declaration and do not track later writes.
+	// knownValues limitation: the `=` pins of a body-local calc usage are evaluated once per declaration and do not track later writes.
 	sym, err := e.ctx.bodyUsageSymbol(stmt)
 	if err != nil {
 		return fmt.Errorf("%s: %w", e.host.describe(), err)
@@ -1227,7 +1227,7 @@ func (e *stmtEngine) blockFlow(block lower.Block) (stmtFlow, error) {
 				return flowNext, err
 			}
 			if count > 1 {
-				e.ctx.noteCoverage(ReasonBlockBodyRepetition)
+				e.ctx.noteCoverage(reasonBlockBodyRepetition)
 			}
 			f.reps = count
 		}
@@ -1260,7 +1260,7 @@ func (e *stmtEngine) blockStepCount(graph *lower.ActionGraph, node ast.Node) (in
 		err = graph.CheckStep(node, e.ctx.Semantics())
 	}
 	if err != nil {
-		return 0, fmt.Errorf("%w: %w", ErrActionStepMultiplicity, err)
+		return 0, fmt.Errorf("%w: %w", errActionStepMultiplicity, err)
 	}
 	return count, nil
 }
@@ -1289,7 +1289,7 @@ func (e *stmtEngine) blockNode(graph *lower.ActionGraph, node ast.Node, resumed 
 	if tr := e.ctx.trace; tr != nil {
 		if name := ActionNodeName(node); name != "" {
 			if !resumed {
-				tr.RecordStatement("node " + name)
+				tr.recordStatement("node " + name)
 			}
 			traced = true
 		}
@@ -1302,7 +1302,7 @@ func (e *stmtEngine) blockNode(graph *lower.ActionGraph, node ast.Node, resumed 
 		flow, err = e.run(graph.Bodies[node])
 	}
 	if traced && !paused(err) {
-		e.ctx.trace.EndStatement()
+		e.ctx.trace.endStatement()
 	}
 	return flow, err
 }
@@ -1384,7 +1384,7 @@ func (e *stmtEngine) beginIteration(f *loopFrame, resumed bool) {
 	if !resumed {
 		f.iteration++
 		if tr := e.ctx.trace; tr != nil {
-			tr.RecordLoopIteration(f.iteration)
+			tr.recordLoopIteration(f.iteration)
 		}
 		f.activation = e.ctx.newActivation()
 	}
@@ -1399,7 +1399,7 @@ func (e *stmtEngine) endIteration(f *loopFrame, err error) {
 	e.ctx.endActivation(f.activation)
 	e.activation = f.outer
 	if tr := e.ctx.trace; tr != nil {
-		tr.EndStatement()
+		tr.endStatement()
 	}
 }
 

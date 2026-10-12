@@ -532,10 +532,10 @@ func testUnattachableConnectorEnd(t *testing.T) {
 		}
 	`)
 	_, err := inst.GetFeatureValue(ctx, "link")
-	if !errors.Is(err, ErrConnectorEnd) {
+	if !errors.Is(err, errConnectorEnd) {
 		t.Fatalf("expected ErrConnectorEnd, got: %v", err)
 	}
-	var endErr *ConnectorEndError
+	var endErr *connectorEndError
 	if !errors.As(err, &endErr) {
 		t.Fatalf("expected a *ConnectorEndError, got %T", err)
 	}
@@ -571,7 +571,7 @@ func testUnattachableConnectorLeavesNoBehavior(t *testing.T) {
 			}
 		}
 	`)
-	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, ErrConnectorEnd) {
+	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, errConnectorEnd) {
 		t.Fatalf("expected ErrConnectorEnd, got: %v", err)
 	}
 	if got := len(ctx.objectBehaviors); got != 0 {
@@ -620,7 +620,7 @@ func testUnattachableConnectorAbandonsWhatItsEndsMaterialized(t *testing.T) {
 	if _, held := ctx.occurrences[resolveSymbol(t, pkg.Scope, "ticker")]; held {
 		t.Fatal("ticker was materialized with Sys: the end naming it materializes it")
 	}
-	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, ErrConnectorEnd) {
+	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, errConnectorEnd) {
 		t.Fatalf("expected ErrConnectorEnd, got: %v", err)
 	}
 	if got := len(ctx.InstanceIDs()); got != before {
@@ -681,7 +681,7 @@ func testUnattachableConnectorTouchesNoOtherObject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Instantiate Sys: %v", err)
 	}
-	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, ErrConnectorEnd) {
+	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, errConnectorEnd) {
 		t.Fatalf("expected ErrConnectorEnd, got: %v", err)
 	}
 	assertCurrentState(t, machineOf(t, good, "listening").State, "waiting")
@@ -936,7 +936,7 @@ func testUnattachableConnectorEndsRunNothingEarly(t *testing.T) {
 	if _, held := ctx.occurrences[resolveSymbol(t, pkg.Scope, "pinger")]; held {
 		t.Fatal("pinger was materialized with Sys: the end naming it materializes it")
 	}
-	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, ErrConnectorEnd) {
+	if _, err := inst.GetFeatureValue(ctx, "link"); !errors.Is(err, errConnectorEnd) {
 		t.Fatalf("expected ErrConnectorEnd, got: %v", err)
 	}
 	if got := len(ctx.InstanceIDs()); got != before {
@@ -982,10 +982,10 @@ func testMultiplicityOnAConnector(t *testing.T) {
 		}
 	`)
 	_, err := inst.GetFeatureValue(ctx, "links")
-	if !errors.Is(err, ErrConnectorEnd) {
+	if !errors.Is(err, errConnectorEnd) {
 		t.Fatalf("expected ErrConnectorEnd, got: %v", err)
 	}
-	var endErr *ConnectorEndError
+	var endErr *connectorEndError
 	if !errors.As(err, &endErr) {
 		t.Fatalf("expected a *ConnectorEndError, got %T", err)
 	}

@@ -5,17 +5,17 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 )
 
-// VerificationsOf returns the verification cases declared in scope, and in the
+// verificationsOf returns the verification cases declared in scope, and in the
 // scopes nested within it, whose objective verifies req (SysML v2 §8.3.24), in
 // declaration order. A nil requirement matches every verification case.
-func (ctx *Context) VerificationsOf(scope *symbols.Scope, req *symbols.Symbol) []*symbols.Symbol {
+func (ctx *Context) verificationsOf(scope *symbols.Scope, req *symbols.Symbol) []*symbols.Symbol {
 	var out []*symbols.Symbol
 	seen := make(map[*symbols.Symbol]bool)
 	for _, sym := range ctx.model.verificationCasesIn(scope) {
 		if seen[sym] {
 			continue
 		}
-		if req == nil || verifies(ctx.VerifiedRequirements(sym), req) {
+		if req == nil || verifies(ctx.verifiedRequirements(sym), req) {
 			seen[sym] = true
 			out = append(out, sym)
 		}
@@ -65,11 +65,11 @@ func verifies(verified []*symbols.Symbol, req *symbols.Symbol) bool {
 	return false
 }
 
-// VerifiedRequirements returns the requirements the objectives of a verification
+// verifiedRequirements returns the requirements the objectives of a verification
 // case verify, in declaration order. The objectives are the ones the case states
 // as it runs them, so an objective a case redeclares verifies what the
 // redeclaration says and not also what the inherited one said.
-func (ctx *Context) VerifiedRequirements(sym *symbols.Symbol) []*symbols.Symbol {
+func (ctx *Context) verifiedRequirements(sym *symbols.Symbol) []*symbols.Symbol {
 	if sym == nil {
 		return nil
 	}
@@ -126,25 +126,25 @@ func (ctx *Context) VerificationVerdictsIn(scopes []*symbols.Scope, req *symbols
 	var out []VerificationVerdict
 	ran := make(map[*symbols.Symbol]bool)
 	for _, scope := range scopes {
-		for _, sym := range ctx.VerificationsOf(scope, req) {
+		for _, sym := range ctx.verificationsOf(scope, req) {
 			if ran[sym] || !isVerificationUsage(sym) || nestedInCase(sym) {
 				continue
 			}
 			ran[sym] = true
-			out = append(out, ctx.VerificationVerdicts(sym)...)
+			out = append(out, ctx.verificationVerdicts(sym)...)
 		}
 	}
 	return out
 }
 
-// VerificationVerdicts runs one verification case and reports its body verdict
+// verificationVerdicts runs one verification case and reports its body verdict
 // followed by the verdict of each subcase it performs.
-func (ctx *Context) VerificationVerdicts(sym *symbols.Symbol) []VerificationVerdict {
+func (ctx *Context) verificationVerdicts(sym *symbols.Symbol) []VerificationVerdict {
 	scope := sym.OwnerScope
 	result, err := ctx.RunVerification(sym, AnalysisArgs{}, scope, nil)
 	if err != nil {
 		return []VerificationVerdict{{
-			Case: ctx.qualifiedSymbolName(sym), Symbol: sym, Kind: VerdictError, Detail: err.Error(),
+			Case: ctx.qualifiedSymbolName(sym), Symbol: sym, Kind: verdictError, Detail: err.Error(),
 		}}
 	}
 	return append([]VerificationVerdict{result.Verdict}, result.Subcases...)
@@ -171,28 +171,4 @@ func nestedInCase(sym *symbols.Symbol) bool {
 		}
 	}
 	return false
-}
-
-// VerifyingCase returns the verification case whose objective states a
-// `verify requirement` assertion, and nil for an assertion stated elsewhere:
-// a `satisfy`, or a `verify` outside an objective.
-func (ctx *Context) VerifyingCase(a *SatisfyAssertion) *symbols.Symbol {
-	if a == nil || a.Symbol == nil {
-		return nil
-	}
-	usage, ok := a.Symbol.Decl.(*ast.Usage)
-	if !ok || !usage.IsVerifiedRequirement() || a.Symbol.OwnerScope == nil {
-		return nil
-	}
-	objective := a.Symbol.OwnerScope.Owner()
-	if objective == nil || objective.OwnerScope == nil {
-		return nil
-	}
-	if owner, ok := objective.Decl.(*ast.Usage); !ok || owner.Kind != ast.UsageObjective {
-		return nil
-	}
-	if owner := objective.OwnerScope.Owner(); IsVerificationCaseSymbol(owner) {
-		return owner
-	}
-	return nil
 }

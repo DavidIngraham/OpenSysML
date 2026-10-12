@@ -63,7 +63,7 @@ func (q *exploreQueue) explore(stop context.Context, fresh func(job int) (*Conte
 	if q.depthHit {
 		q.result.BudgetsHit = append(q.result.BudgetsHit, "depth")
 	}
-	if q.result.Weighted() {
+	if q.result.weighted {
 		setOutcomeProbabilities(q.probabilities, q.result.Outcomes)
 	}
 	sortOutcomes(q.result.Outcomes)
@@ -313,9 +313,9 @@ func (q *exploreQueue) fold() {
 			}
 		}
 		slices.Sort(q.result.Notes)
-		if errors.Is(p.outcome.Err, ErrStatementOrderSweepLimit) &&
-			!slices.Contains(q.result.BudgetsHit, BoundStatementOrders) {
-			q.result.BudgetsHit = append(q.result.BudgetsHit, BoundStatementOrders)
+		if errors.Is(p.outcome.Err, errStatementOrderSweepLimit) &&
+			!slices.Contains(q.result.BudgetsHit, boundStatementOrders) {
+			q.result.BudgetsHit = append(q.result.BudgetsHit, boundStatementOrders)
 		}
 		q.result.Scope = scopeWith(q.result.Scope, p.outcome.Scope)
 		if i, seen := q.reached[p.identity]; !seen {

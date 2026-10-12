@@ -95,7 +95,7 @@ func testCaseClockWaitUnderHeldClock(t *testing.T) {
 		}
 	}`
 	ctx, _, err := instantiateWithLibraries(t, src, "test::Station")
-	if !errors.Is(err, ErrStateBehaviorWaits) {
+	if !errors.Is(err, errStateBehaviorWaits) {
 		t.Fatalf("error = %v, want ErrStateBehaviorWaits", err)
 	}
 	if !strings.Contains(err.Error(), "test::Station::pause") || !strings.Contains(err.Error(), "t=60.0") {
@@ -234,7 +234,7 @@ func testCaseClockWaitRefusedUnderRead(t *testing.T) {
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, caseReadModel))
 	waiters := len(ctx.clock.waiters)
 	_, err := ctx.ExecuteAction(oneSymbol(t, idx, "test::Read"))
-	if !errors.Is(err, ErrCaseReadWaits) {
+	if !errors.Is(err, errCaseReadWaits) {
 		t.Fatalf("error = %v, want ErrCaseReadWaits", err)
 	}
 	for _, want := range []string{"test::Station::voyage", "t=60.0"} {

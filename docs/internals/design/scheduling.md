@@ -29,16 +29,16 @@ unordered and took one by its scheduling rule. `ChoiceKind` names the twelve:
 |------|-------------------|---------------------------|
 | `ChoiceTokenOrder` | `ActionExecutor.noteTokenOrder` | the tokens that could act in the step, by ID; the one stepped first is taken |
 | `ChoiceDecisionBranch` | `ActionExecutor.noteDecisionBranches` | the successions whose guards hold, by declaration position |
-| `ChoiceWriteOrder` | `stepWriteLedger.noteChoices` | the tokens that wrote one feature in one step; the write that stood is taken |
+| `choiceWriteOrder` | `stepWriteLedger.noteChoices` | the tokens that wrote one feature in one step; the write that stood is taken |
 | `ChoiceTransition` | `StateExecutor.chooseTransition`; `pickBranch` (`state_route.go`) | the transitions one event enables out of one state, by declaration position; or the branches of a `choice` or `junction` pseudostate enabled when its guards are read, labelled `choice <name>` or `junction <name>` |
 | `ChoiceRegionOrder` | `dispatchInOrder`, drawn on the front of `state_unit_front.go` (`on <event>`); `chooseDoAction` (`do round at t=…`); `fireJoinIncoming` (`join <name>`) | the next unit — a source's exit, a segment's effect, a target's entry — of each firing one occurrence selected across regions, by source in declaration order; the one performed first is taken, and the entries and exits a firing nests are drawn on its front — likewise the states whose do behaviors are due in one round, and the sources of the transitions into a join that fires |
-| `ChoiceEntryOrder` | `enterRegionsInto` (`entering <state>`), `enterForkBranches` (`fork <name>`), a history's restore | the next entry unit of each region, branch or restored region of a composite state, in declaration order; the one performed first is taken. A unit performing no behavior rides with the performing unit beside it |
-| `ChoiceEntryStep` | `StateExecutor.entryStep` (`entry at t=…`) | a free dispatch due at the instant, followed by the held entry cascades that can resume; the free dispatch is listed first and the selected alternative is taken |
-| `ChoiceExitOrder` | `exitState` (`exiting <state>`) | the next exit unit of each region a state leaves, innermost first within a region, in declaration order; the one performed first is taken |
-| `ChoiceStepOrder` | `StateExecutor.chooseStepOrder` | the move of a due do behavior and a dispatch due beside it; the one that goes first is taken |
-| `ChoiceStatementOrder` | `stmtEngine.pickStatement` (`statements in <body>`) | the statements of one body that no succession or control structure orders and that may run next (`lower.StatementOrder`), by declaration position; the one run first is taken |
+| `choiceEntryOrder` | `enterRegionsInto` (`entering <state>`), `enterForkBranches` (`fork <name>`), a history's restore | the next entry unit of each region, branch or restored region of a composite state, in declaration order; the one performed first is taken. A unit performing no behavior rides with the performing unit beside it |
+| `choiceEntryStep` | `StateExecutor.entryStep` (`entry at t=…`) | a free dispatch due at the instant, followed by the held entry cascades that can resume; the free dispatch is listed first and the selected alternative is taken |
+| `choiceExitOrder` | `exitState` (`exiting <state>`) | the next exit unit of each region a state leaves, innermost first within a region, in declaration order; the one performed first is taken |
+| `choiceStepOrder` | `StateExecutor.chooseStepOrder` | the move of a due do behavior and a dispatch due beside it; the one that goes first is taken |
+| `choiceStatementOrder` | `stmtEngine.pickStatement` (`statements in <body>`) | the statements of one body that no succession or control structure orders and that may run next (`lower.StatementOrder`), by declaration position; the one run first is taken |
 | `ChoiceDueOrder` | `Context.runDue` (`advance.go`); the checker's run, one executor holding the turn until it has no move at the instant | the executors due at one instant, in creation order; the one run first is taken |
-| `ChoiceDispatchOrder` | `StateExecutor.nextEvent`, when the queue leaves several events unordered at its head | the events due at one instant the library does not order — time triggers with each other, a time trigger with a pool event of the same timestamp — labelled as the queue labels them; the one dispatched first is taken. A completion event goes before any of them and pool events keep their arrival order (`earlierFirstIncomingTransferSort`), so neither is a choice |
+| `choiceDispatchOrder` | `StateExecutor.nextEvent`, when the queue leaves several events unordered at its head | the events due at one instant the library does not order — time triggers with each other, a time trigger with a pool event of the same timestamp — labelled as the queue labels them; the one dispatched first is taken. A completion event goes before any of them and pool events keep their arrival order (`earlierFirstIncomingTransferSort`), so neither is a choice |
 
 Two rules hold at every site:
 
@@ -55,8 +55,8 @@ Two rules hold at every site:
 `Context.note` appends a note to the run's `runState.notes` and, when tracing, writes its
 `String()` to the trace at the point it was made (`choice …`, `unevaluable guard …`). A probe —
 a preview of what a run would do, bracketed by `beginProbe` — notes nothing, since it is not a
-run. `Context.Notes`, `Choices` and `UnevaluableGuards` read them back; the executors' `Notes` and
-`NoteCount` let a caller driving a run call by call see what one call noted, which is how the REPL
+run. `Context.Notes`, `Choices` and `unevaluableGuards` read them back; the executors' `Notes` and
+`noteCount` let a caller driving a run call by call see what one call noted, which is how the REPL
 ends `%step`, `%continue` and `%advance` with a count; `NotesSince` reads the notes past such a
 mark without copying the ones before it.
 
@@ -181,7 +181,7 @@ per statement, an `assign` writing when it ends. Another performance may run bet
   `lower.StatementOrder` lists, before each statement runs, those that may run next: a statement
   `then` links waits for the one before it, a local declaration, `return` or `perform` keeps its
   place, and two orders that only swap adjacent independent statements (by the reduction's
-  footprints) are one. Two or more candidates are a `ChoiceStatementOrder`
+  footprints) are one. Two or more candidates are a `choiceStatementOrder`
   (`stmtEngine.pickStatement`); a compound statement already started yields at its inner
   boundaries so a dependent sibling may run between them. `declared` and `reverse` run
   a nested body's statements first to last as before, and an action definition's own statements

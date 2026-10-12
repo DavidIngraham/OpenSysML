@@ -32,7 +32,7 @@ func TestEnqueueRejectsMalformedEvents(t *testing.T) {
 		"value beside call":   {Call: "op", Value: &payload},
 		"value without event": {Value: &payload},
 	} {
-		if err := exec.Enqueue(event); !errors.Is(err, ErrMalformedEvent) {
+		if err := exec.Enqueue(event); !errors.Is(err, errMalformedEvent) {
 			t.Errorf("%s: Enqueue = %v, want ErrMalformedEvent", name, err)
 		}
 	}
@@ -47,13 +47,13 @@ func TestPerformStateReleasesOnError(t *testing.T) {
 	m := parseExploreModel(t, performModel)
 	ctx, _ := m.fresh()
 	sym := m.state(t, "Machine")
-	if _, err := ctx.PerformState(sym, nil, []QueuedEvent{{}}); !errors.Is(err, ErrMalformedEvent) {
+	if _, err := ctx.performStateWithEvents(sym, nil, []QueuedEvent{{}}); !errors.Is(err, errMalformedEvent) {
 		t.Fatalf("PerformState = %v, want ErrMalformedEvent", err)
 	}
 	if n := len(ctx.clock.waiters); n != 0 {
 		t.Fatalf("%d executors left on the clock after a failed performance, want none", n)
 	}
-	exec, err := ctx.PerformState(sym, nil, []QueuedEvent{{Signal: "go"}})
+	exec, err := ctx.performStateWithEvents(sym, nil, []QueuedEvent{{Signal: "go"}})
 	if err != nil {
 		t.Fatal(err)
 	}

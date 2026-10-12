@@ -44,7 +44,7 @@ func (e *ActionExecutor) stepMultiplicity(graph *lower.ActionGraph, node ast.Nod
 		err = graph.CheckStep(node, e.ctx.Semantics())
 	}
 	if err != nil {
-		err = fmt.Errorf("%w: %w", ErrActionStepMultiplicity, err)
+		err = fmt.Errorf("%w: %w", errActionStepMultiplicity, err)
 	}
 	e.stepCounts[key] = stepMultiplicityResult{count: count, err: err}
 	return count, err
@@ -61,7 +61,7 @@ func (e *ActionExecutor) splitRepeatedStep(tokenIdx int, count int64, node ast.N
 	if frame.body {
 		// A stated body flow runs its whole flow within the body's move, so the
 		// split's siblings never interleave with a step outside it.
-		e.ctx.noteCoverage(ReasonBlockBodyRepetition)
+		e.ctx.noteCoverage(reasonBlockBodyRepetition)
 	}
 	if e.nextRepetitionID == 0 {
 		e.nextRepetitionID = 1

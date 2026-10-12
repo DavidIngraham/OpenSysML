@@ -66,12 +66,12 @@ func (ec *EvalContext) evalIndexExpr(n *ast.IndexExpr) (Value, error) {
 		return Value{}, err
 	}
 	if magnitude.Kind != ValVector && (magnitude.Kind != ValConst || !magnitude.Const.IsNumeric()) {
-		return Value{}, fmt.Errorf("%w: magnitude of a quantity is %s, want a number or a vector", ErrNotAQuantity, magnitude.Kind)
+		return Value{}, fmt.Errorf("%w: magnitude of a quantity is %s, want a number or a vector", errNotAQuantity, magnitude.Kind)
 	}
 
 	product, err := ec.ctx.model.semantics.UnitProductOfExpr(ec.scope, n.Index)
 	if err != nil {
-		return Value{}, fmt.Errorf("%w: %w", ErrNotAQuantity, err)
+		return Value{}, fmt.Errorf("%w: %w", errNotAQuantity, err)
 	}
 	unit := Unit{Text: semantics.UnitExprText(n.Index), Product: product, Term: term}
 	if magnitude.Kind == ValVector {
@@ -89,7 +89,7 @@ func (ec *EvalContext) evalIndexExpr(n *ast.IndexExpr) (Value, error) {
 // notAQuantityError reports a bracket whose index is no unit; over an operand
 // declared a collection it adds that `#(…)` indexes. The operand is not evaluated.
 func (ec *EvalContext) notAQuantityError(n *ast.IndexExpr, cause error) error {
-	err := fmt.Errorf("%w: %w", ErrNotAQuantity, cause)
+	err := fmt.Errorf("%w: %w", errNotAQuantity, cause)
 	if what, ok := ec.declaredCollection(n.Operand); ok {
 		return fmt.Errorf("%w; `[…]` is the quantity notation `num [unit]`, index %s with `#(…)`", err, what)
 	}
@@ -196,7 +196,7 @@ func (ctx *Context) sqrtQuantity(q *Quantity) (Value, error) {
 	for _, f := range q.Unit.Term.Factors {
 		if math.Mod(f.Exponent, 2) != 0 {
 			return Value{}, fmt.Errorf("%w: %s (%s) raises %s to the odd power %g",
-				ErrUnitRoot, q.Unit, q.Unit.Term, f.Unit.Name, f.Exponent)
+				errUnitRoot, q.Unit, q.Unit.Term, f.Unit.Name, f.Exponent)
 		}
 	}
 	magnitude, term := toReal(q.Num), q.Unit.Term
@@ -208,7 +208,7 @@ func (ctx *Context) sqrtQuantity(q *Quantity) (Value, error) {
 		for _, f := range q.Unit.Product.Powers {
 			if f.DimensionOne && math.Mod(f.Exponent, 2) != 0 {
 				return Value{}, fmt.Errorf("%w: %s raises the dimension-one unit %s to the odd power %g",
-					ErrUnitRoot, q.Unit, f.Name, f.Exponent)
+					errUnitRoot, q.Unit, f.Name, f.Exponent)
 			}
 		}
 		magnitude = q.BaseMagnitude()
