@@ -49,7 +49,9 @@ package Tables {
                     other = DocumentQueries::Except(
                         source = DocumentQueries::Except(
                             source = DocumentQueries::WhereType(source = candidates, type = ("Usage")),
-                            exclude = DocumentQueries::WhereType(source = candidates, type = ("ConnectionUsage"))),
+                            exclude = DocumentQueries::Union(
+                                source = DocumentQueries::WhereType(source = candidates, type = ("ConnectionUsage")),
+                                other = DocumentQueries::WhereType(source = candidates, type = ("MetadataUsage")))),
                         exclude = DocumentQueries::Descendants(
                             source = DocumentQueries::WhereType(
                                 source = DocumentQueries::Union(
