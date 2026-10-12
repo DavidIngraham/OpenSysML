@@ -257,3 +257,36 @@ func TestDOTLeavesInteriorMembersWhereRoutesPlaceThem(t *testing.T) {
 		}
 	}
 }
+
+// Two symbols from above, together wider than the top side leaves beyond the
+// symbol from the left, run from that symbol past the far corner rather than
+// back over it.
+func TestDOTRunsCrowdedCornerSymbolsPastTheFarCorner(t *testing.T) {
+	rendering, boxes, _, ends, technician, administrator := symbolBoxes(t, "BoundaryParameters::crowdedCorner", "BoundaryParameters::'Load Sample'", "technician", "administrator")
+	operator := child(t, rendering, "BoundaryParameters::'Load Sample'", "operator")
+	op, tech, admin := boxes[operator.ID], boxes[technician.ID], boxes[administrator.ID]
+	for _, pair := range [][2]nodeBox{{op, tech}, {op, admin}, {tech, admin}} {
+		if pair[0].overlaps(pair[1]) {
+			t.Errorf("symbols overlap: %v and %v", pair[0], pair[1])
+		}
+	}
+	if math.Abs(op.low.X-320) > 0.5 {
+		t.Errorf("operator does not touch the left border x=320: %v", op)
+	}
+	for name, box := range map[string]nodeBox{"technician": tech, "administrator": admin} {
+		if math.Abs(box.low.Y-120) > 0.5 {
+			t.Errorf("%s does not touch the top border y=120: %v", name, box)
+		}
+		if box.low.X < op.high.X+dotBoundaryGap-0.5 {
+			t.Errorf("%s %v is not clear of the operator %v", name, box, op)
+		}
+	}
+	if tech.centre().X >= admin.centre().X {
+		t.Errorf("technician, whose route comes from the left of the administrator's, is drawn right of it: %v, %v", tech, admin)
+	}
+	for name, node := range map[string]*Node{"operator": operator, "technician": technician, "administrator": administrator} {
+		if routeEnds := ends[node.ID]; len(routeEnds) != 1 || !boxes[node.ID].onBorder(routeEnds[0]) {
+			t.Errorf("%s: route ends at %v, off its symbol %v", name, routeEnds, boxes[node.ID])
+		}
+	}
+}

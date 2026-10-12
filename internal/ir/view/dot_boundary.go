@@ -261,20 +261,28 @@ func (w *dotWriter) spreadAlong(box nodeBox, side boundarySide, symbols []bounda
 }
 
 // centre is where the run is centred along side, within the range rng: on its
-// ideal, moved within the range when it fits, else the range's middle. A single
-// symbol stays where the routes place it, moved only off a cut-off corner.
+// ideal, moved within the range when it fits; when it does not, it starts at a
+// cut-off corner and runs past the far end, clear of the corner's symbol, or
+// sits at the middle of an uncut side. A single symbol stays where the routes
+// place it, moved only off a cut-off corner.
 func (r symbolRun) centre(side boundarySide, rng sideRange) float64 {
 	if len(r.symbols) < 2 {
 		c := side.along(r.symbols[0].box.centre())
-		if rng.lowCut {
-			c = math.Max(c, rng.low+r.length/2)
-		}
 		if rng.highCut {
 			c = math.Min(c, rng.high-r.length/2)
+		}
+		if rng.lowCut {
+			c = math.Max(c, rng.low+r.length/2)
 		}
 		return c
 	}
 	if r.length > rng.high-rng.low {
+		switch {
+		case rng.lowCut:
+			return rng.low + r.length/2
+		case rng.highCut:
+			return rng.high - r.length/2
+		}
 		return (rng.low + rng.high) / 2
 	}
 	return math.Max(rng.low+r.length/2, math.Min(r.ideal, rng.high-r.length/2))
