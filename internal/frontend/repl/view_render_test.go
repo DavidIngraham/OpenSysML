@@ -15,7 +15,7 @@ import (
 
 // A view stating no rendering renders as a containment tree, of what it exposes.
 func TestRenderDefaultsToATree(t *testing.T) {
-	out, _, err := viewSession(t).RunMeta("%render Demo::summary text show=typings")
+	out, _, err := viewSession(t).RunMeta("%render Demo::summary text show=typings,qualifiers")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +379,7 @@ func TestPseudoViewsRenderThroughTheSession(t *testing.T) {
 		form view.Form
 		want string
 	}{
-		{"#tree", view.KindTree, view.FormText, "part def Direct::Network"},
+		{"#tree", view.KindTree, view.FormText, "part def Network"},
 		{"#state:Direct::Machine", view.KindState, view.FormMermaid, "stateDiagram-v2"},
 		{"#action:Flow", view.KindAction, view.FormMermaid, "flowchart TD"},
 		{"#interconnection:Direct::Network", view.KindInterconnection, view.FormMermaid, "flowchart LR"},
@@ -475,7 +475,10 @@ func TestTargetlessPseudoViewSpansLoadedDocuments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	text := rendering.Text()
+	text, err := rendering.WriteWith(view.FormText, view.Options{Show: view.Shown{view.ElementQualifiers: true}})
+	if err != nil {
+		t.Fatal(err)
+	}
 	at := -1
 	for _, want := range []string{"Second::TwoA", "Second::TwoB", "First::OneA", "First::OneB"} {
 		next := strings.Index(text, want)
@@ -761,7 +764,7 @@ func TestRenderDrawsAGeneralViewCaseRoute(t *testing.T) {
 	s := exampleSession(t, "use-cases.sysml")
 	wants(t, run(t, s, "%render UseCaseViews::useCaseView mermaid"),
 		"case rendering (view def GeneralView, filter @UseCaseUsage)", "flowchart LR", "«include»")
-	wants(t, run(t, s, "%render UseCaseViews::caseDefinitionView text"), "use case def VehicleUseCases::'Add Fuel'")
+	wants(t, run(t, s, "%render UseCaseViews::caseDefinitionView text show=qualifiers"), "use case def VehicleUseCases::'Add Fuel'")
 	wants(t, run(t, s, "%render UseCaseViews::useCaseView text verdicts"), "a case rendering draws no verdicts overlay")
 }
 

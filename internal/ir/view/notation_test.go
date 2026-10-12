@@ -245,6 +245,80 @@ func TestTextLeavesQualifiersOutUnlessShown(t *testing.T) {
 	}
 }
 
+// A tree lists a case's actor as a member, which no element makes optional:
+// it stays when parameter symbols are not shown.
+func TestTreesKeepCaseActorsAsMembers(t *testing.T) {
+	rendering := renderSource(t, "Model::v", `package Model {
+	use case Configure {
+		actor operator;
+		subject instrument;
+	}
+	view v {
+		expose Configure;
+	}
+}`)
+	shown := rendering.showing(nil)
+	if names := nodeNames(shown.Roots); !names["operator"] || !names["instrument"] {
+		t.Errorf("tree node names %v, want operator and instrument kept", slices.Sorted(maps.Keys(names)))
+	}
+	if out := rendering.Text(); !strings.Contains(out, "  actor operator\n") {
+		t.Errorf("text leaves the actor out:\n%s", out)
+	}
+}
+
+// A run's drawing is no view notation: a run sequence that states no Shown
+// keeps its participants' types and its messages' labels in every form.
+func TestRunsDrawEverythingWithoutAShown(t *testing.T) {
+	rendering := &Rendering{
+		Kind: KindSequence,
+		Run:  true,
+		Roots: []*Node{
+			{ID: "n0", Kind: "object", Name: "Run::mission.controller", Type: "Controller"},
+			{ID: "n1", Kind: "object", Name: "Run::mission.instrument", Type: "Instrument"},
+		},
+		Edges: []Edge{{From: "n0", To: "n1", Kind: EdgeFlow, Label: "start"}},
+	}
+	if shown := rendering.showing(nil); shown != rendering {
+		t.Error("a run is narrowed")
+	}
+	if out := rendering.Mermaid(); !strings.Contains(out, "participant n0 as Run::mission.controller : Controller") ||
+		!strings.Contains(out, "start") {
+		t.Errorf("run Mermaid lost notation:\n%s", out)
+	}
+	puml, err := rendering.PlantUML()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(puml, `participant "Run::mission.controller : Controller" as n0`) || !strings.Contains(puml, "start") {
+		t.Errorf("run PlantUML lost notation:\n%s", puml)
+	}
+}
+
+// A flow's name is an edge label however a form writes it: at a pin, where a
+// form writes the name alone, it is left out with the label when edge labels are.
+func TestHiddenEdgeLabelsTakeTheNameAtPinsWithThem(t *testing.T) {
+	rendering := render(t, "gated-flow.sysml", "GatedViews::passView")
+	named := func(r *Rendering) (names []string) {
+		for _, edge := range r.Edges {
+			if edge.Kind == EdgeFlow && (edge.Name != "" || edge.Label != "") {
+				names = append(names, edge.Name+"/"+edge.Label)
+			}
+		}
+		return names
+	}
+	if got := named(rendering.showing(Shown{ElementEdgeLabels: true})); len(got) == 0 {
+		t.Fatalf("the flow has no name to show: %+v", rendering.Edges)
+	}
+	if got := named(rendering.showing(nil)); len(got) != 0 {
+		t.Errorf("flows keep names with edge labels left out: %v", got)
+	}
+	for _, out := range []string{rendering.Text(), rendering.TextWidth(WidthUnbounded)} {
+		if strings.Contains(out, ": f\n") || strings.Contains(out, ": f ") {
+			t.Errorf("text writes the flow's name:\n%s", out)
+		}
+	}
+}
+
 // A rendering turning the parameter symbols off again under one turning them
 // on leaves them out: the nearest declaration decides.
 func TestTheNearestRenderingDecidesAnElement(t *testing.T) {
