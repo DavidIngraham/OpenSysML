@@ -11,6 +11,8 @@ package 'Use Cases' {
     use case 'Park Car' {
         doc /* A driver parks a car in the garage. */
         subject garage : Context::Garage;
+        actor driver :> Context::Driver;
+        actor attendant [0..1] :> Context::Attendant;
         include 'Pay Fee';
         /* not migrated: ExtensionPoint 'garage full' — v2 has no extension points; an extending use case is written as a connection to the extended one */
         action def 'Park Flow' {
@@ -23,11 +25,12 @@ package 'Use Cases' {
             metadata MigrationMetadata::SynthesizedName about final;
         }
         perform action 'park Flow' : 'Park Flow';
-        metadata MigrationMetadata::SynthesizedName about garage;
+        metadata MigrationMetadata::SynthesizedName about garage, attendant;
     }
     use case 'Pay Fee' {
         subject garage : Context::Garage;
         ref part ticket : Context::Ticket;
+        actor bank :> Context::Bank;
         include 'Authorise Payment';
         attribute amount : Real;
         metadata MigrationMetadata::SynthesizedName about garage, ticket;
@@ -51,11 +54,12 @@ package 'Use Cases' {
         end 'pay Fee' :> 'Pay Fee';
         metadata MigrationMetadata::SynthesizedName about 'pay Fee';
     }
-    connection def unnamed {
+    connection def ParkCarToWaitForSpace {
         end 'park Car' :> 'Park Car';
         end 'wait For Space' :> 'Wait For Space';
         metadata MigrationMetadata::SynthesizedName about 'park Car', 'wait For Space';
     }
+    connection 'Park Car to Wait For Space' : ParkCarToWaitForSpace connect 'Park Car' to 'Wait For Space';
     connection 'Park Car includes Pay Fee' connect 'Park Car' to 'Pay Fee';
     connection authorise connect 'Pay Fee' to 'Authorise Payment' {
         doc /* Pay Fee includes Authorise Payment */
@@ -63,9 +67,9 @@ package 'Use Cases' {
     connection 'Wait For Space extends Park Car' connect 'Wait For Space' to 'Park Car' {
         doc /* extends at extension point(s) 'garage full' when {English} no bay is free */
     }
-    metadata MigrationMetadata::SynthesizedName about unnamed;
+    metadata MigrationMetadata::SynthesizedName about ParkCarToWaitForSpace;
 }
 attribute def Real;
-connection 'Driver to Park Car' connect Context::Driver to 'Use Cases'::'Park Car';
-connection 'Attendant to Park Car' connect Context::Attendant to 'Use Cases'::'Park Car';
+connection 'Driver to Park Car' connect Context::Driver to 'Use Cases'::'Park Car'.driver;
+connection 'Attendant to Park Car' connect Context::Attendant to 'Use Cases'::'Park Car'.attendant;
 connection settlement : 'Use Cases'::Settlement connect Context::Bank to 'Use Cases'::'Pay Fee';
