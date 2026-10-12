@@ -2124,9 +2124,8 @@ func TestClassifyAppliesNestedRedefinitions(t *testing.T) {
 	}
 }
 
-// assertClassifyChainRadius classifies test::car by test::Sport and checks
-// the radius its wheel then reads, for a wheel materialized before the
-// classification and one materialized after it.
+// assertClassifyChainRadius classifies test::car by test::Sport and checks the
+// radius a wheel reads, whether materialized before or after the classification.
 func assertClassifyChainRadius(t *testing.T, model string, want float64, label, wantDesc string) {
 	t.Helper()
 	for _, sub := range []struct {
