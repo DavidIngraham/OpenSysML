@@ -129,8 +129,8 @@ func (b nodeBox) sideToward(at, dir Point) boundarySide {
 }
 
 // spreadBoundaries spreads apart, along the side their routes come to, the port members of
-// every boxed cluster at or under node that the routes place over one another; an unsized
-// cluster's box is its members' with the margin, so its border is judged inside that.
+// every boxed cluster at or under node that the routes place over one another; the box of a
+// cluster with no stated size is its members' with the margin, so its border is judged inside that.
 func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
 	for _, child := range node.Children {
 		w.spreadBoundaries(child, ends)
@@ -140,7 +140,7 @@ func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
 		return
 	}
 	inner := box
-	if node.Geometry != nil && !node.Geometry.HasSize {
+	if node.Geometry == nil || !node.Geometry.HasSize {
 		inner = nodeBox{low: Point{X: box.low.X + dotClusterMargin, Y: box.low.Y + dotClusterMargin},
 			high: Point{X: box.high.X - dotClusterMargin, Y: box.high.Y - dotClusterMargin}}
 	}
