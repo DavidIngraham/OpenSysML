@@ -99,6 +99,9 @@ func TestOtherLanguageKeywordReadsAsName(t *testing.T) {
 	}{
 		{"a.sysml", "step s;", true},
 		{"a.sysml", "step <s> step;", true},
+		{"a.sysml", "step <s>;", true},
+		{"a.sysml", "part def D { calc c { step < upperBound > lowerBound } }", false},
+		{"a.sysml", "part def D { calc c { (step < upperBound) == (step > lowerBound) } }", false},
 		{"a.sysml", "step #M s;", true},
 		{"a.sysml", "feature redefines x;", true},
 		{"a.sysml", "part def D { inv { x > 0 } }", true},

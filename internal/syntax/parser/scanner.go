@@ -87,8 +87,16 @@ func (s *Scanner) readsAsName(word string) bool {
 		// `step and ready`, `c ? step else other` continue an expression.
 		return wordBinaryOpKeywords[next.KeywordID] || next.KeywordID == "else"
 	case lexer.Lt:
-		// `step <s> x` opens a short name; `step < bound` compares.
-		return !(spellsName(s.ahead(1)) && s.ahead(2).Kind == lexer.Gt)
+		// `step <s> x;` opens a short name; `step < bound` and the chained
+		// `step < a > b }` compare.
+		if !spellsName(s.ahead(1)) || s.ahead(2).Kind != lexer.Gt {
+			return true
+		}
+		after := s.ahead(3)
+		if spellsName(after) {
+			after = s.ahead(4)
+		}
+		return !continuesDeclaration(after)
 	case lexer.Hash:
 		// `step #M s` is prefix metadata; `step#(1)` indexes.
 		return s.ahead(1).Kind == lexer.LParen
@@ -109,6 +117,17 @@ func declaresKind(word string) bool {
 	_, usage := usageKindKeywords[word]
 	_, definition := definitionKindKeywords[word]
 	return usage || definition
+}
+
+// continuesDeclaration reports whether t can follow a declaration's name: its
+// end, a type, a multiplicity, a body, a value, a specialization or a keyword.
+func continuesDeclaration(t lexer.Token) bool {
+	switch t.Kind {
+	case lexer.Semicolon, lexer.Colon, lexer.LBracket, lexer.LBrace, lexer.Eq,
+		lexer.ColonGt, lexer.ColonGtGt, lexer.ColonColonGt, lexer.EqGt, lexer.Keyword:
+		return true
+	}
+	return false
 }
 
 // spellsName reports whether t can spell a declared name, a keyword included.
