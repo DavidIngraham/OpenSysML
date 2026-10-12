@@ -1229,7 +1229,8 @@ drawn; a name none of them has is refused with `INVALID_ARGUMENT` naming the
 elements there are. It is advertised by `render_view`, and a service without
 that capability refuses the request with `UNIMPLEMENTED`.
 Python exposes this as `model.render_view(view_name, ports="minimal", show=None)`,
-returning a typed `RenderedView` whose `shown` lists the elements drawn.
+returning a typed `RenderedView` whose `shown` lists the elements drawn; Rust as
+`Model::render_view_showing(name, ports, &["edge-labels"])`.
 
 `ExportGraphs` answers the lowered graph of an action or state machine — the
 subject's `ActionGraph`/`StateGraph` IR and that of every behavior it performs —
