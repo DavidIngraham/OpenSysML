@@ -266,9 +266,9 @@ func TestRescanKeepsSourcesUnderADirectoryItCannotList(t *testing.T) {
 		t.Fatalf("rescan did not index %q", nested)
 	}
 
-	// The directory can be traversed and its file read, but not listed: the
-	// walk cannot say what it holds, so what was indexed there stays.
-	if err := os.Chmod(sub, 0o111); err != nil {
+	// The directory can be traversed and written and its file read, but not
+	// listed: the walk cannot say what it holds, so what was indexed there stays.
+	if err := os.Chmod(sub, 0o311); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
 	t.Cleanup(func() { _ = os.Chmod(sub, 0o750) })
