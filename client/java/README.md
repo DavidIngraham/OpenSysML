@@ -366,8 +366,8 @@ than part of the client.
 `org.openmbee.opensysml.proto` is not committed: the Maven build generates it
 from `api/proto/sysml.proto` into `target/generated-sources/protobuf`, with the
 `protoc` release pinned to the `protobuf-java` version in `client/java/pom.xml`
-(`protobuf-maven-plugin` fetches the binary for the build's platform from Maven
-Central). The schema declares no Java file options, so the build appends
+(`protobuf-maven-plugin`, which needs Maven 3.9.6 or later, fetches the binary
+for the build's platform from Maven Central). The schema declares no Java file options, so the build appends
 `java_package` and `java_multiple_files` to a copy of it under `target/`, the
 same two options `api/proto/buf.gen.yaml` sets for the committed Go stubs.
 Only the message classes are generated: the Connect protocol needs no service
