@@ -10,6 +10,11 @@ trap 'rm -rf "$work"' EXIT
 git -C "$work" init -q
 git -C "$work" config user.email ci@example.com
 git -C "$work" config user.name CI
+# Git's auto maintenance detaches into the background after a commit and
+# writes under .git while the trap removes it; a throwaway repository needs
+# no maintenance at all.
+git -C "$work" config maintenance.auto false
+git -C "$work" config gc.auto 0
 mkdir -p "$work/scripts"
 cp "$script" "$work/scripts/"
 git -C "$work" add scripts
