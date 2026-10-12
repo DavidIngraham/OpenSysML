@@ -261,7 +261,11 @@ func (lx *Lexer) scanQuoted(start int, quote byte, kind Kind) Token {
 			// escape: consume backslash + next char if present
 			lx.pos++
 			if lx.pos < len(lx.src) {
-				if !source.IsEscapeChar(lx.src[lx.pos]) {
+				next := lx.src[lx.pos]
+				if lineEnd < 0 && (next == '\n' || next == '\r') {
+					lineEnd, badEscapeOnLine = lx.pos, badEscape
+				}
+				if !source.IsEscapeChar(next) {
 					badEscape = true
 				}
 				lx.pos++

@@ -315,6 +315,9 @@ func TestUnterminatedString(t *testing.T) {
 		{"\"open\n    attribute t = 1;", []Kind{String, Whitespace, Keyword, Whitespace, Identifier, Whitespace, Eq, Whitespace, Decimal, Semicolon, EOF}, 5},
 		{"\"open\r\n}", []Kind{String, Whitespace, RBrace, EOF}, 5},
 		{"\"a \\q\n\\z", []Kind{String, Whitespace, Error, Identifier, EOF}, 5},
+		// A backslash before the line break escapes nothing: the cut still falls there.
+		{"\"open\\\n}", []Kind{String, Whitespace, RBrace, EOF}, 6},
+		{"\"open\\\r\n}", []Kind{String, Whitespace, RBrace, EOF}, 6},
 	} {
 		toks := lex(t, tt.in)
 		if !eq(kinds(toks), tt.want) {
@@ -330,6 +333,9 @@ func TestUnterminatedString(t *testing.T) {
 	}
 	if toks := lex(t, "\"a\n\\z"); toks[0].BadEscape {
 		t.Fatalf("token = %+v, want no BadEscape for an escape after the cut", toks[0])
+	}
+	if toks := lex(t, "\"open\\\n}"); toks[0].BadEscape {
+		t.Fatalf("token = %+v, want no BadEscape for the backslash the cut leaves bare", toks[0])
 	}
 }
 
