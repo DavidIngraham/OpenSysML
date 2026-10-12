@@ -367,6 +367,12 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 	if c := m.connOf(el); f.useCases && c != nil {
 		return m.connRefs(c.of, scope)[:1], ""
 	}
+	if m.associationDef(el) {
+		if !f.drawsEdge("connection def") || !m.associationLine(el) {
+			return nil, routeNotDrawn
+		}
+		return []string{m.exposure(el, scope)}, ""
+	}
 	if nameableEdge(el) {
 		em, ok := m.edgeMembers[el]
 		switch {
@@ -389,31 +395,44 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 	return nil, routeNoMember
 }
 
-// endEdge is a classifier-owned end an anonymous association is written as: ref
-// names it from inside the view's body, owner is the node its edge is drawn from.
-type endEdge struct {
-	ref   string
-	owner *sysmlv1.Element
+// associationDef reports whether e is an association written as a connection
+// def, which a tree draws as a line between its end types' boxes.
+func (m *migration) associationDef(e *sysmlv1.Element) bool {
+	return e != nil && (e.Type == "Association" || e.Type == "AssociationClass") && m.written(e) && m.associationAsConnectionDef(e)
 }
 
-// endEdges is the ends an anonymous association is written as, when a
-// tree rendering draws each as the composition or reference edge from its owner
-// that a Route about the usage shapes; nil for an association written as a
-// connection def, an actor's link, or a diagram of another form.
-func (m *migration) endEdges(e, scope *sysmlv1.Element, f viewForm) []endEdge {
-	if e.Type != "Association" || f.rendering != treeRendering || m.actors[e] != nil || m.associationAsConnectionDef(e) {
-		return nil
+// associationLine reports whether a tree draws the connection def written for
+// association e as a line rather than a box, as the renderer decides it: the
+// def is binary, its ends are typed by written definitions, it specializes
+// nothing and holds no member but its ends, and no end keeps a qualifier of
+// its own. The diagram shows both end types when it draws the association.
+func (m *migration) associationLine(e *sysmlv1.Element) bool {
+	ends := m.model.Refs(e, "memberEnd")
+	if len(ends) != 2 || len(m.extras[e]) > 0 || len(m.hosted[e]) > 0 || len(m.annotated(e)) > 0 {
+		return false
 	}
-	var ends []endEdge
-	for _, end := range m.model.Refs(e, "memberEnd") {
-		if end == nil || end.Parent == e || !m.written(end) {
-			continue
-		}
-		if ref := m.exposure(end, scope); ref != "" {
-			ends = append(ends, endEdge{ref: ref, owner: end.Parent})
+	if gens, _ := m.generals(e, catConnectionDef); gens != "" {
+		return false
+	}
+	for _, c := range e.Children {
+		if c.Role != "ownedEnd" && c.Role != "ownedComment" && m.written(c) {
+			return false
 		}
 	}
-	return ends
+	for _, end := range ends {
+		t := m.model.Ref(end, "type")
+		if t == nil || t == e {
+			return false
+		}
+		typ, _ := m.typeRef(t, e)
+		if typ == "" || strings.TrimSpace(m.typing(t)) != ":" {
+			return false
+		}
+		if opp, _ := m.crossedProperty(e, end, typ); opp == nil && len(end.Owned("qualifier")) > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // viewForm is how a diagram's view is drawn: its Views rendering, the standard view
@@ -516,7 +535,13 @@ func (f viewForm) drawsEdge(keyword string) bool {
 	case "StateTransitionView":
 		return keyword == "transition"
 	}
-	return f.rendering == interconnectionRendering && (keyword == "connection" || keyword == "binding")
+	switch f.rendering {
+	case interconnectionRendering:
+		return keyword == "connection" || keyword == "binding"
+	case treeRendering:
+		return keyword == "connection def"
+	}
+	return false
 }
 
 // drawsPictures reports whether the form's rendering draws the Pictures its

@@ -4,10 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -240,7 +242,7 @@ func TestGoldenEdgeLayout(t *testing.T) {
 	if l == nil {
 		t.Fatal("no layout summary")
 	}
-	if l.Routes != 22 || l.RoutesWritten != 11 || l.RoutesUnexposed != 10 || l.RoutesDangling != 1 {
+	if l.Routes != 24 || l.RoutesWritten != 12 || l.RoutesUnexposed != 11 || l.RoutesDangling != 1 {
 		t.Errorf("routes: %+v", l)
 	}
 	// An edge of the graph the activity's rendering does not draw is exposed, not swallowed.
@@ -278,6 +280,8 @@ func TestGoldenEdgeLayout(t *testing.T) {
 		t.Errorf("placements: %+v", l)
 	}
 	wantKinds := []migrate.RouteKind{
+		{Kind: "Association", Reason: "written", Count: 1},
+		{Kind: "AssociationClass", Reason: "not drawn", Count: 1},
 		{Kind: "BindingConnector", Reason: "written", Count: 1},
 		{Kind: "Connector", Reason: "unnamed", Count: 1},
 		{Kind: "Connector", Reason: "written", Count: 3},
@@ -725,7 +729,7 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 		"metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }",
 		"metadata DiagramLayout::Layout about Engine { x = 40; y = 160; width = 120; height = 90; }",
 		"metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }",
-		"metadata DiagramLayout::Route about Blocks::Vehicle::engine { points = (100, 70, 100, 160); }",
+		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 70, 100, 160); }",
 		"3 of 6 shown elements positioned (3 lying on connections)",
 	} {
 		if !strings.Contains(notation, want) && !strings.Contains(report.String(), want) {
@@ -777,10 +781,10 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 	}
 }
 
-// An anonymous association whose two ends are both classifier-owned is two
-// edges, each drawn from its owner: the line's points pin the end whose owner
-// is at the line's first end as read, the other end reversed; an end the view
-// does not expose is skipped without losing the other's route.
+// An anonymous association whose two ends are both classifier-owned is one
+// connection def drawn as a line between its end types: each diagram's line
+// pins it once, with the points as that diagram's stream reads them, and the
+// end symbols lie on the line rather than becoming 10x10 nodes.
 func TestGoldenAssociationEndPairRoutesEachEnd(t *testing.T) {
 	r := migrateStream(t, "association_end_pair")
 	l := r.Report.Layout
@@ -799,18 +803,17 @@ func TestGoldenAssociationEndPairRoutesEachEnd(t *testing.T) {
 	notation := string(r.Notation)
 	wantInOrder(t, "pair view", notation,
 		"view 'Pair BDD' {",
-		"metadata DiagramLayout::Route about Blocks::Controller::sensors { points = (100, 70, 100, 130, 100, 200); }",
-		"metadata DiagramLayout::Route about Blocks::Sensor::controller { points = (100, 200, 100, 130, 100, 70); }",
+		"metadata DiagramLayout::Route about SensorToController { points = (100, 70, 100, 130, 100, 200); }",
 		"view 'Sensor BDD' {",
-		"metadata DiagramLayout::Route about Blocks::Sensor::controller { points = (160, 225, 300, 225, 300, 70); }",
+		"metadata DiagramLayout::Route about SensorToController { points = (300, 70, 300, 225, 160, 225); }",
 	)
 	if strings.Contains(notation, "width = 10;") {
 		t.Errorf("a Layout the size of an end symbol was written:\n%s", notation)
 	}
 	s := session(t, r)
 	for name, want := range map[string][]string{
-		"Blocks::'Pair BDD'":   {"Blocks::Controller composition Blocks::Sensor: sensors", "Blocks::Sensor reference Blocks::Controller: controller"},
-		"Blocks::'Sensor BDD'": {"Blocks::Controller composition Blocks::Sensor: sensors", "Blocks::Sensor reference Blocks::Controller: controller"},
+		"Blocks::'Pair BDD'":   {"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+		"Blocks::'Sensor BDD'": {"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
 	} {
 		rendering, err := s.ViewRendering(name)
 		if err != nil {
@@ -866,17 +869,17 @@ func TestExportPlacementOfAnEndSymbolStaysOnTheEdge(t *testing.T) {
 	wantInOrder(t, "joined view", notation,
 		"metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }",
 		"metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }",
-		"metadata DiagramLayout::Route about Blocks::Vehicle::engine { points = (100, 70, 100, 160); }",
+		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 70, 100, 160); }",
 	)
 	if strings.Contains(notation, "width = 10;") {
 		t.Errorf("a Layout the size of an end symbol was written:\n%s", notation)
 	}
 }
 
-// An export's route of an association wins over the stream's, but which
-// element is at which end of the line is the stream's to say: the end owned by
-// the element at the line's second end is still routed in reverse.
-func TestExportRouteOfAnAssociationReadsItsEndsFromTheStream(t *testing.T) {
+// An export's route of an association wins over the stream's and pins the
+// connection def once, with the points as the export draws them, whichever
+// way the line runs.
+func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
 	for name, points := range map[string][]float64{
 		"drawn the stream's way":     {110, 70, 110, 200},
 		"drawn against the stream's": {110, 200, 110, 70},
@@ -899,11 +902,76 @@ func TestExportRouteOfAnAssociationReadsItsEndsFromTheStream(t *testing.T) {
 			if l == nil || l.DiagramsJoined != 1 || l.Routes != 2 || l.RoutesWritten != 2 {
 				t.Fatalf("layout summary: %+v", l)
 			}
+			var want []string
+			for _, p := range points {
+				want = append(want, strconv.FormatFloat(p, 'f', -1, 64))
+			}
 			wantInOrder(t, "joined pair view", string(r.Notation),
 				"view 'Pair BDD' {",
-				"metadata DiagramLayout::Route about Blocks::Controller::sensors { points = (110, 70, 110, 200); }",
-				"metadata DiagramLayout::Route about Blocks::Sensor::controller { points = (110, 200, 110, 70); }",
+				"metadata DiagramLayout::Route about SensorToController { points = ("+strings.Join(want, ", ")+"); }",
 			)
 		})
+	}
+}
+
+// A view exposes a definition and a same-named usage, and each expose imports
+// its name into the view: inside it the simple name denotes neither, so the
+// writer qualifies both, the def keeps its own position and the association
+// to it is drawn as the composition edge the tree renders.
+func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
+	r := migrateLaidOut(t, "layout_same_named_usage")
+	if l := r.Report.Layout; l == nil || l.DiagramsJoined != 1 || l.PlacementsWritten != 5 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	checkGolden(t, "testdata/xmi/layout_same_named_usage.layout.golden.sysml", r.Notation)
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	checkGolden(t, "testdata/xmi/layout_same_named_usage.layout.golden.report.txt", report.Bytes())
+	for _, d := range errors(t, "layout_same_named_usage.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	notation := string(r.Notation)
+	for _, want := range []string{
+		"expose UI::GUI;",
+		"expose UI::Console::GUI;",
+		"expose Panel;",
+		"metadata DiagramLayout::Layout about UI::GUI { x = 20; y = 200;",
+		"metadata DiagramLayout::Layout about UI::Console::GUI { x = 110; y = 90;",
+		"metadata DiagramLayout::Layout about Panel { x = 250; y = 200;",
+	} {
+		if !strings.Contains(notation, want) {
+			t.Errorf("layout output does not contain %q:\n%s", want, notation)
+		}
+	}
+	s := session(t, r)
+	rendering, err := s.ViewRendering("UI::'Console BDD'")
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+	nodes, names := map[string]*view.Node{}, map[string]string{}
+	var visit func([]*view.Node)
+	visit = func(list []*view.Node) {
+		for _, node := range list {
+			nodes[node.Name], names[node.ID] = node, node.Name
+			visit(node.Children)
+		}
+	}
+	visit(rendering.Roots)
+	gui := nodes["UI::GUI"]
+	if gui == nil || gui.Geometry == nil || *gui.Geometry != (view.Geometry{X: 20, Y: 200, Width: 80, Height: 37, HasSize: true}) {
+		t.Fatalf("GUI def node = %+v, want one at its own position; drawn: %v", gui, slices.Sorted(maps.Keys(nodes)))
+	}
+	var edges []string
+	for _, edge := range rendering.Edges {
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+	}
+	want := []string{"UI::Console composition UI::GUI: GUI", "UI::Console composition UI::Panel: panel"}
+	if !reflect.DeepEqual(edges, want) {
+		t.Errorf("edges = %q, want %q", edges, want)
 	}
 }
