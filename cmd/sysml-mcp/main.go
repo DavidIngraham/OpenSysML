@@ -107,6 +107,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		printUsage(stderr, fs)
 		return exitUnservable
 	}
+	if opts.cacheSize < 1 {
+		fmt.Fprintf(stderr, "%s-cache-size %d: the runtime tools need room for at least one model\n", commandPrefix, opts.cacheSize)
+		printUsage(stderr, fs)
+		return exitUnservable
+	}
 	level, err := parseLogLevel(opts.logLevel)
 	if err != nil {
 		fmt.Fprintf(stderr, "%s-log-level: %v\n", commandPrefix, err)

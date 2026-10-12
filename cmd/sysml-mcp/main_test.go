@@ -52,6 +52,11 @@ func TestCommandLine(t *testing.T) {
 		status: exitUnservable,
 		stderr: []string{`sysml-mcp: -root "main.go" is not a directory`, "Usage: sysml-mcp [options]"},
 	}, {
+		name:   "a cache size with no room is reported with the usage",
+		args:   []string{"-cache-size", "0"},
+		status: exitUnservable,
+		stderr: []string{"sysml-mcp: -cache-size 0: the runtime tools need room for at least one model", "Usage: sysml-mcp [options]"},
+	}, {
 		name:   "an unknown log level is reported with the usage",
 		args:   []string{"-log-level", "loud"},
 		status: exitUnservable,
