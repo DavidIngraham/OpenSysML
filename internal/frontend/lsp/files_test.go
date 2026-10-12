@@ -247,6 +247,37 @@ func TestRescanReconcilesTheFoldersWithDisk(t *testing.T) {
 	}
 }
 
+func TestRescanKeepsSourcesUnderADirectoryItCannotList(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root lists every directory")
+	}
+	s, _, dir, _, _ := multiFileWorkspace(t)
+	ctx := context.Background()
+	sub := filepath.Join(dir, "models")
+	nested := filepath.Join(sub, "nested.sysml")
+	if err := os.Mkdir(sub, 0o750); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(nested, []byte("package Nested;\n"), 0o600); err != nil {
+		t.Fatalf("write nested: %v", err)
+	}
+	s.Rescan(ctx)
+	if s.ws.Document(nested) == nil {
+		t.Fatalf("rescan did not index %q", nested)
+	}
+
+	// The directory can be traversed and its file read, but not listed: the
+	// walk cannot say what it holds, so what was indexed there stays.
+	if err := os.Chmod(sub, 0o111); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(sub, 0o750) })
+	s.Rescan(ctx)
+	if s.ws.Document(nested) == nil {
+		t.Errorf("rescan dropped %q under a directory it could not list", nested)
+	}
+}
+
 func TestWatchedFileDeleteUnindexesClosedDocument(t *testing.T) {
 	s, fc, _, lib, main := multiFileWorkspace(t)
 	ctx := context.Background()

@@ -127,20 +127,22 @@ func (s *Server) loadFolder(folder string) { s.scanFolder(folder, -1) }
 // The sources found are indexed as one batch, not one at a time: each document
 // added alone would re-derive the imports of every package that reads it.
 func (s *Server) scanFolder(folder string, budget int) {
-	s.loadFilesFromDisk(walkFolder(folder, budget))
+	paths, _ := walkFolder(folder, budget)
+	s.loadFilesFromDisk(paths)
 }
 
 // walkFolder lists the model sources under folder, visiting at most budget
 // directories (every directory when budget is negative) and skipping hidden and
-// vendored directories, unreadable entries and files too large to serve.
-func walkFolder(folder string, budget int) []string {
+// vendored directories, unreadable entries and files too large to serve. It also
+// lists the directories it could not enumerate, whose sources it cannot vouch for.
+func walkFolder(folder string, budget int) (paths, unlisted []string) {
 	if folder == "" {
-		return nil
+		return nil, nil
 	}
-	var paths []string
 	_ = filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			if d != nil && d.IsDir() {
+				unlisted = append(unlisted, path)
 				return fs.SkipDir
 			}
 			return nil
@@ -164,7 +166,7 @@ func walkFolder(folder string, budget int) []string {
 		paths = append(paths, path)
 		return nil
 	})
-	return paths
+	return paths, unlisted
 }
 
 // Rescan reconciles the workspace with the session's folders as they are on
@@ -180,9 +182,11 @@ func (s *Server) Rescan(ctx context.Context) {
 	}
 	s.debugEdit(ctx, "", func() {
 		onDisk := map[string]bool{}
-		var changed []string
+		var changed, unlisted []string
 		for _, folder := range folders {
-			for _, path := range walkFolder(folder, -1) {
+			paths, failed := walkFolder(folder, -1)
+			unlisted = append(unlisted, failed...)
+			for _, path := range paths {
 				onDisk[path] = true
 				if s.changedOnDisk(path) {
 					changed = append(changed, path)
@@ -192,6 +196,11 @@ func (s *Server) Rescan(ctx context.Context) {
 		s.loadFilesFromDisk(changed)
 		for _, name := range s.ws.DocumentNames() {
 			if onDisk[name] || s.ws.IsLibraryDocument(name) || s.ws.IsOpen(name) || !underFolders(name, folders) {
+				continue
+			}
+			// A directory that could not be listed may still hold the source;
+			// what the walk cannot vouch for is kept as it was.
+			if underFolders(name, unlisted) {
 				continue
 			}
 			// Not walked: gone, grown past the size limit, or moved under a
