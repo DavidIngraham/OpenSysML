@@ -24,7 +24,7 @@ package Blocks {
         metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }
         metadata DiagramLayout::Layout about Engine { x = 40; y = 160; width = 120; height = 90; }
         metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }
-        metadata DiagramLayout::Route about EngineToVehicle { points = (100, 70, 100, 160); }
+        metadata DiagramLayout::Route about EngineToVehicle { points = (100, 160, 100, 70); }
         render Views::asTreeDiagram;
     }
     metadata MigrationMetadata::SynthesizedName about EngineToVehicle;

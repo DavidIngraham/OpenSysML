@@ -1069,7 +1069,7 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 				why = routeNotExposed
 			}
 			refs = []string{strings.Join(refs, ", ")}
-			points = [][]float64{c.Points}
+			points = [][]float64{m.linePoints(el, c)}
 		}
 		ref := strings.Join(refs, ", ")
 		if why == "" && pinned[ref] {
@@ -1112,6 +1112,35 @@ func (p *layoutPlan) route(ref string, points []float64) string {
 	}
 	b.WriteString("); }")
 	return b.String()
+}
+
+// linePoints is the line's points as the Route of el lists them: a connection
+// def's run from its first end's type to its second's, as a tree reads them.
+func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	if !m.associationDef(el) {
+		return c.Points
+	}
+	ends := m.model.Refs(el, "memberEnd")
+	if len(ends) != 2 {
+		return c.Points
+	}
+	first, second := m.model.Ref(ends[0], "type"), m.model.Ref(ends[1], "type")
+	if first == nil || second == nil || first == second {
+		return c.Points
+	}
+	if c.Ends[0] == second.ID || c.Ends[1] == first.ID {
+		return reversePoints(c.Points)
+	}
+	return c.Points
+}
+
+// reversePoints is the flattened point list read from its last point to its first.
+func reversePoints(points []float64) []float64 {
+	out := make([]float64, 0, len(points))
+	for i := len(points) - 2; i >= 0; i -= 2 {
+		out = append(out, points[i], points[i+1])
+	}
+	return out
 }
 
 // drawnRef names the element id as the view of form f exposing x draws it, as a

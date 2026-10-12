@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -729,7 +728,7 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 		"metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }",
 		"metadata DiagramLayout::Layout about Engine { x = 40; y = 160; width = 120; height = 90; }",
 		"metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }",
-		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 70, 100, 160); }",
+		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 160, 100, 70); }",
 		"3 of 6 shown elements positioned (3 lying on connections)",
 	} {
 		if !strings.Contains(notation, want) && !strings.Contains(report.String(), want) {
@@ -779,13 +778,18 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 	if !slices.Equal(edges, wantEdges) {
 		t.Errorf("edges = %q, want %q", edges, wantEdges)
 	}
+	if want := []view.Point{{X: 100, Y: 70}, {X: 100, Y: 160}}; len(rendering.Edges) != 1 || !slices.Equal(rendering.Edges[0].Route, want) {
+		t.Errorf("composition route = %v, want %v, from Vehicle's box to Engine's", rendering.Edges[0].Route, want)
+	}
 }
 
 // An anonymous association whose two ends are both classifier-owned is one
 // connection def drawn as a line between its end types: each diagram's line
-// pins it once, with the points as that diagram's stream reads them, and the
-// end symbols lie on the line rather than becoming 10x10 nodes.
-func TestGoldenAssociationEndPairRoutesEachEnd(t *testing.T) {
+// pins it once, with the points run from the def's first end's type to its
+// second's however the stream drew the line, so the composition edge the tree
+// draws from the owning block follows the line from that block's box, and
+// the end symbols lie on the line rather than becoming 10x10 nodes.
+func TestGoldenAssociationEndPairPinsItsConnectionDef(t *testing.T) {
 	r := migrateStream(t, "association_end_pair")
 	l := r.Report.Layout
 	if l == nil || l.StreamDiagrams != 2 || l.Placements != 7 || l.PlacementsWritten != 4 || l.PlacementsOnEdges != 3 || l.Routes != 2 || l.RoutesWritten != 2 || l.RoutesUnexposed != 0 {
@@ -803,17 +807,26 @@ func TestGoldenAssociationEndPairRoutesEachEnd(t *testing.T) {
 	notation := string(r.Notation)
 	wantInOrder(t, "pair view", notation,
 		"view 'Pair BDD' {",
-		"metadata DiagramLayout::Route about SensorToController { points = (100, 70, 100, 130, 100, 200); }",
+		"metadata DiagramLayout::Route about SensorToController { points = (100, 200, 100, 130, 100, 70); }",
 		"view 'Sensor BDD' {",
-		"metadata DiagramLayout::Route about SensorToController { points = (300, 70, 300, 225, 160, 225); }",
+		"metadata DiagramLayout::Route about SensorToController { points = (160, 225, 300, 225, 300, 70); }",
 	)
 	if strings.Contains(notation, "width = 10;") {
 		t.Errorf("a Layout the size of an end symbol was written:\n%s", notation)
 	}
 	s := session(t, r)
-	for name, want := range map[string][]string{
-		"Blocks::'Pair BDD'":   {"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
-		"Blocks::'Sensor BDD'": {"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+	for name, want := range map[string]struct {
+		edges []string
+		route []view.Point
+	}{
+		"Blocks::'Pair BDD'": {
+			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			route: []view.Point{{X: 100, Y: 70}, {X: 100, Y: 130}, {X: 100, Y: 200}},
+		},
+		"Blocks::'Sensor BDD'": {
+			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			route: []view.Point{{X: 300, Y: 70}, {X: 300, Y: 225}, {X: 160, Y: 225}},
+		},
 	} {
 		rendering, err := s.ViewRendering(name)
 		if err != nil {
@@ -838,8 +851,11 @@ func TestGoldenAssociationEndPairRoutesEachEnd(t *testing.T) {
 		for _, edge := range rendering.Edges {
 			edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
 		}
-		if !slices.Equal(edges, want) {
-			t.Errorf("%s: edges = %q, want %q", name, edges, want)
+		if !slices.Equal(edges, want.edges) {
+			t.Errorf("%s: edges = %q, want %q", name, edges, want.edges)
+		}
+		if len(rendering.Edges) != 1 || !slices.Equal(rendering.Edges[0].Route, want.route) {
+			t.Errorf("%s: composition route = %v, want %v, from Controller's box to Sensor's", name, rendering.Edges[0].Route, want.route)
 		}
 	}
 }
@@ -869,7 +885,7 @@ func TestExportPlacementOfAnEndSymbolStaysOnTheEdge(t *testing.T) {
 	wantInOrder(t, "joined view", notation,
 		"metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }",
 		"metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }",
-		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 70, 100, 160); }",
+		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 160, 100, 70); }",
 	)
 	if strings.Contains(notation, "width = 10;") {
 		t.Errorf("a Layout the size of an end symbol was written:\n%s", notation)
@@ -877,8 +893,9 @@ func TestExportPlacementOfAnEndSymbolStaysOnTheEdge(t *testing.T) {
 }
 
 // An export's route of an association wins over the stream's and pins the
-// connection def once, with the points as the export draws them, whichever
-// way the line runs.
+// connection def once; which element is at which end of the exported line is
+// read from the stream, so the points run from the def's first end's type to
+// its second's whichever way the export lists them.
 func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
 	for name, points := range map[string][]float64{
 		"drawn the stream's way":     {110, 70, 110, 200},
@@ -902,13 +919,9 @@ func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
 			if l == nil || l.DiagramsJoined != 1 || l.Routes != 2 || l.RoutesWritten != 2 {
 				t.Fatalf("layout summary: %+v", l)
 			}
-			var want []string
-			for _, p := range points {
-				want = append(want, strconv.FormatFloat(p, 'f', -1, 64))
-			}
 			wantInOrder(t, "joined pair view", string(r.Notation),
 				"view 'Pair BDD' {",
-				"metadata DiagramLayout::Route about SensorToController { points = ("+strings.Join(want, ", ")+"); }",
+				"metadata DiagramLayout::Route about SensorToController { points = (110, 200, 110, 70); }",
 			)
 		})
 	}

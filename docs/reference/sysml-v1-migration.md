@@ -514,12 +514,12 @@ not a box of its own: its placement is counted as lying on a connection on every
 no `Layout` is written for the end property, since the line's `Route` carries where the end is
 drawn and a tree rendering labels the edge with it; a `Layout` of the property would make the
 rendering draw the usage a second time, as a nested node under its definition. The line of an
-anonymous association, which is written as its member-end properties and not as a connection def,
-is routed on a tree rendering as one `Route` per classifier-owned end the view exposes — the
-part usage the rendering draws as the composition or reference edge from its owner to its type —
-with the line's points read from the owner's end, so when both ends are owned the second `Route`
-lists them reversed; an end the view does not expose is skipped without losing the other's route,
-and an association no exposed end is written for is counted under `no v2 member`. A property drawn
+association is pinned to the connection def it is written as, with its points run from the def's
+first end's type to its second's, which is how a tree rendering reads a connection def's `Route`:
+the stream names the element at each end of the line, so a line Cameo drew from the second end's
+block is written reversed, and the composition edge the tree draws from the owning block then
+follows the line from that block's box. The points stay as drawn when the stream names no end
+of the line or both ends are typed by one definition. A property drawn
 as its own box in a block's compartment, or as a part on an internal block diagram, is not nested
 in a path and keeps its `Layout`; when an MTIP export places an element the diagram's own stream
 shows only on a path, the export's bounds win but the end stays on the line, and an exported line
