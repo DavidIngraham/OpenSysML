@@ -613,26 +613,37 @@ func (r *Resolver) admits(filters []symbols.ElementFilter, cand *symbols.Symbol)
 	return admitted
 }
 
-// ImportedBeside reports the element another import of the namespace sym is
-// imported into, along scope's lookup path, brings under name: sym read as name
-// there would be hidden with it (KerML 7.2.5.4). Nothing where sym is not imported.
+// ImportedBeside reports an element another import of the namespace sym is
+// imported into, along scope's lookup path, brings under name and that sym
+// read as name would be indistinguishable from: both would be hidden there
+// (KerML 7.2.5.4). Nothing where sym is not imported, where the namespace owns
+// the name, or where every other is sym itself (an alias of it) or another metaclass.
 func (r *Resolver) ImportedBeside(scope *symbols.Scope, name string, sym *symbols.Symbol) (*symbols.Symbol, bool) {
 	for s := scope; s != nil; s = s.Parent() {
 		var brought bool
-		var other *symbols.Symbol
+		var others []*symbols.Symbol
 		for _, imp := range r.scopeImports(s) {
 			for _, m := range r.importedMembersInto(s, s, imp, false) {
-				switch {
-				case symbols.SameElement(m, sym):
+				if m.Name == "" || r.idx.Library(m) || !contributesName(m) || !r.BindsName(m) {
+					continue
+				}
+				if symbols.SameElement(m, sym) {
 					brought = true
-				case other == nil && (m.Name == name || m.ShortName == name):
-					other = m
+				} else if slices.Contains(memberNames(m), name) {
+					others = append(others, m)
 				}
 			}
 		}
-		if brought {
-			return other, other != nil
+		if !brought {
+			continue
 		}
+		if slices.Contains(r.ownedNames(s), name) {
+			return nil, false
+		}
+		if dup := r.duplicatesOf(sym, others); len(dup) > 0 {
+			return dup[0], true
+		}
+		return nil, false
 	}
 	return nil, false
 }

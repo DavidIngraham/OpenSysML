@@ -186,17 +186,24 @@ func (r *Resolver) collisionsSettled() bool {
 	return r.inCondition == 0 && len(r.resolvingImports) == 0 && len(r.colliding) == 0
 }
 
+// ownedNames lists the names and short names of scope's own distinguishable members.
+func (r *Resolver) ownedNames(scope *symbols.Scope) []string {
+	var names []string
+	members, aliases := r.DistinguishableMembers(scope)
+	for _, sym := range append(members, aliases...) {
+		names = append(names, memberNames(sym)...)
+	}
+	return names
+}
+
 // collectImported gathers what imports bring into scope and decides the
 // collisions among them; complete is false when an import's target could not
 // be settled yet.
 func (r *Resolver) collectImported(scope *symbols.Scope, imports []*ast.Import) (*importCollisions, bool) {
 	complete := r.inCondition == 0
 	owned := map[string]bool{}
-	members, aliases := r.DistinguishableMembers(scope)
-	for _, sym := range append(members, aliases...) {
-		for _, name := range memberNames(sym) {
-			owned[name] = true
-		}
+	for _, name := range r.ownedNames(scope) {
+		owned[name] = true
 	}
 	c := &importCollisions{
 		byName:   map[string][]importedMember{},
@@ -800,11 +807,8 @@ func (r *Resolver) hiddenImports(scope *symbols.Scope, inherited map[string][]*s
 		return nil
 	}
 	owned := map[string]bool{}
-	members, aliases := r.DistinguishableMembers(scope)
-	for _, sym := range append(members, aliases...) {
-		for _, name := range memberNames(sym) {
-			owned[name] = true
-		}
+	for _, name := range r.ownedNames(scope) {
+		owned[name] = true
 	}
 	hidden := map[*symbols.Symbol]bool{}
 	for _, imp := range imports {

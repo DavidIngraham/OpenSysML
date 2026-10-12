@@ -297,6 +297,20 @@ func TestRenameSelectsAmongOverloadsOfRenamedCall(t *testing.T) {
 		t.Fatalf("short: rename to the target's own short name refused: %v", err)
 	}
 
+	// Another import bringing a part def g is another metaclass, not a collision
+	// (KerML 8.3.2.4.5 isDistinguishableFrom), so the renamed call still reads f.
+	distinct := loadContent(t, "overload-distinct.sysml", "package Lib {\n\tpart def g;\n}\n"+realF+call(both, "1.5"))
+	requireClean(t, distinct)
+	if _, err := Apply(distinct, []Operation{Rename("P::f", "g")}); err != nil {
+		t.Fatalf("rename beside an imported part def g refused: %v", err)
+	}
+	// An imported alias g for the target is the same element, so nothing is hidden;
+	// the call would be read through the alias, which is the usual alias capture.
+	e := refusedRename(t, "overload-alias-self.sysml", "package Lib {\n\talias g for P::f;\n}\n"+realF+call(both, "1.5"), "P::f", "g")
+	if !strings.Contains(e.Message, "would read Lib::g instead") || strings.Contains(e.Message, "hidden") {
+		t.Fatalf("alias of the target: refusal %q, want alias capture, not hiding", e.Message)
+	}
+
 	// Renaming onto a name another import brings leaves the call reading a hidden
 	// name (KerML 7.2.5.4): `g(1.5)` would be unresolved in R, so the rename is refused
 	// even though the arguments would tell the Real one from Lib's Integer one.
