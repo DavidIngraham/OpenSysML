@@ -853,3 +853,44 @@ func TestATokenlessCallSendsNoProgress(t *testing.T) {
 		t.Errorf("progress notifications without a token: %v", h.progress)
 	}
 }
+
+// Every capability the service can report is served by a registered tool, so
+// server_info never advertises what no tool acts on; a capability the service
+// withholds is refused by that tool (TestAWithheldCapabilityIsUnimplemented).
+func TestEveryCapabilityIsServedByATool(t *testing.T) {
+	h := attach(t, newService(t))
+	res, err := h.client.ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registered := map[string]bool{}
+	for _, tool := range res.Tools {
+		registered[tool.Name] = true
+	}
+	for _, capability := range sysmlgrpc.Capabilities() {
+		tool, mapped := CapabilityTools[capability]
+		if !mapped {
+			t.Errorf("capability %q is served by no tool", capability)
+			continue
+		}
+		if !registered[tool] {
+			t.Errorf("capability %q names tool %q, which is not registered", capability, tool)
+		}
+	}
+	for capability := range CapabilityTools {
+		if !slices.Contains(sysmlgrpc.Capabilities(), capability) {
+			t.Errorf("CapabilityTools names %q, which the service does not report", capability)
+		}
+	}
+	var info pb.ServerInfoResponse
+	resp := h.call("server_info", map[string]any{})
+	raw, _ := json.Marshal(resp.StructuredContent)
+	if err := protojson.Unmarshal(raw, &info); err != nil {
+		t.Fatal(err)
+	}
+	for _, capability := range info.GetCapabilities() {
+		if !registered[CapabilityTools[capability]] {
+			t.Errorf("server_info advertises %q without a tool behind it", capability)
+		}
+	}
+}

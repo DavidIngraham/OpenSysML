@@ -8,6 +8,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	pb "github.com/Open-MBEE/OpenSysML/api/proto"
+	sysmlgrpc "github.com/Open-MBEE/OpenSysML/internal/frontend/grpc"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/mcp/toolkit"
 )
 
@@ -18,6 +19,76 @@ type ServerInfoInput struct{}
 type ServerInfo struct {
 	Version      string   `json:"version" jsonschema:"build version of the server, informational only"`
 	Capabilities []string `json:"capabilities" jsonschema:"named capabilities this build supports; each is a stable string a caller can require"`
+}
+
+// CapabilityTools names, for every capability the service reports, the tool
+// that serves it, so a capability server_info advertises is one an agent can
+// act on and a capability the service withholds is refused by that tool.
+var CapabilityTools = map[string]string{
+	sysmlgrpc.CapabilityParseSources:                   "parse",
+	sysmlgrpc.CapabilityParseSourcesAffected:           "parse",
+	sysmlgrpc.CapabilityInlineLanguage:                 "parse",
+	sysmlgrpc.CapabilityStrictConformance:              "parse",
+	sysmlgrpc.CapabilityDiagnosticCodes:                "parse",
+	sysmlgrpc.CapabilityTypeFacts:                      "symbol",
+	sysmlgrpc.CapabilitySymbolAttributes:               "symbol",
+	sysmlgrpc.CapabilityEvaluateSubject:                "evaluate",
+	sysmlgrpc.CapabilityEnumValues:                     "evaluate",
+	sysmlgrpc.CapabilityUnsetValue:                     "evaluate",
+	sysmlgrpc.CapabilityComplexValues:                  "evaluate",
+	sysmlgrpc.CapabilityStructuredValues:               "evaluate",
+	sysmlgrpc.CapabilityMeasurementRefs:                "evaluate",
+	sysmlgrpc.CapabilityFunctionValues:                 "evaluate",
+	sysmlgrpc.CapabilitySetValues:                      "evaluate",
+	sysmlgrpc.CapabilityTensorValues:                   "evaluate",
+	sysmlgrpc.CapabilityInfinityValue:                  "evaluate",
+	sysmlgrpc.CapabilityMetaobjectValues:               "evaluate",
+	sysmlgrpc.CapabilityUndeterminedValue:              "evaluate",
+	sysmlgrpc.CapabilityBigIntValues:                   "evaluate",
+	sysmlgrpc.CapabilityRationalValues:                 "evaluate",
+	sysmlgrpc.CapabilityFeatureValues:                  "instantiate",
+	sysmlgrpc.CapabilitySchedule:                       "execute_action",
+	sysmlgrpc.CapabilityScheduleExplore:                "execute_action",
+	sysmlgrpc.CapabilityFinalTime:                      "execute_action",
+	sysmlgrpc.CapabilityPerformer:                      "execute_action",
+	sysmlgrpc.CapabilityStateTrace:                     "execute_state",
+	sysmlgrpc.CapabilityVerification:                   "verify_constraint",
+	sysmlgrpc.CapabilityVerificationQuestions:          "verify_constraint",
+	sysmlgrpc.CapabilityVerificationArguments:          "verify_constraint",
+	sysmlgrpc.CapabilityVerificationVerdicts:           "verify_requirement",
+	sysmlgrpc.CapabilityCaseEvaluations:                "run_analysis",
+	sysmlgrpc.CapabilityEngines:                        "list_engines",
+	sysmlgrpc.CapabilityEnginesExternal:                "list_engines",
+	sysmlgrpc.CapabilityQuery:                          "query",
+	sysmlgrpc.CapabilityOSLCQuery:                      "query",
+	sysmlgrpc.CapabilityDocumentQuery:                  "run_document_query",
+	sysmlgrpc.CapabilityRenderDocument:                 "render_document",
+	sysmlgrpc.CapabilityRenderDocumentHTML:             "render_document",
+	sysmlgrpc.CapabilityRenderView:                     "render_view",
+	sysmlgrpc.CapabilityExportGraphs:                   "export_graphs",
+	sysmlgrpc.CapabilityConvert:                        "convert",
+	sysmlgrpc.CapabilityConvertDocuments:               "convert",
+	sysmlgrpc.CapabilityConvertCompact:                 "convert",
+	sysmlgrpc.CapabilityMigrate:                        "migrate",
+	sysmlgrpc.CapabilityApplyEdits:                     "apply_edits",
+	sysmlgrpc.CapabilityEditDocuments:                  "apply_edits",
+	sysmlgrpc.CapabilityAuthoring:                      "apply_edits",
+	sysmlgrpc.CapabilityConnectionAuthoring:            "apply_edits",
+	sysmlgrpc.CapabilitySatisfyAuthoring:               "apply_edits",
+	sysmlgrpc.CapabilityRequirementConstraintAuthoring: "apply_edits",
+	sysmlgrpc.CapabilityMemberModifiers:                "apply_edits",
+	sysmlgrpc.CapabilityTransitionAuthoring:            "apply_edits",
+	sysmlgrpc.CapabilityVerificationObjectiveAuthoring: "apply_edits",
+	sysmlgrpc.CapabilityMetadataAuthoring:              "apply_edits",
+	sysmlgrpc.CapabilityMetadataPrefixAuthoring:        "apply_edits",
+	sysmlgrpc.CapabilityImplicitParameters:             "apply_edits",
+	sysmlgrpc.CapabilitySequenceAuthoring:              "apply_edits",
+	sysmlgrpc.CapabilityActionBodyStatementAuthoring:   "apply_edits",
+	sysmlgrpc.CapabilityConstraintBodyAuthoring:        "apply_edits",
+	sysmlgrpc.CapabilityStateActionAuthoring:           "apply_edits",
+	sysmlgrpc.CapabilityImportAuthoring:                "apply_edits",
+	sysmlgrpc.CapabilityDocumentationAuthoring:         "apply_edits",
+	sysmlgrpc.CapabilityCommentAuthoring:               "apply_edits",
 }
 
 // ListEnginesInput takes no arguments.

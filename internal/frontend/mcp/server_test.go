@@ -90,7 +90,7 @@ func TestTheServerRegistersTheGroupsAskedFor(t *testing.T) {
 		{[]Group{GroupLSP}, []string{"workspace_info"}},
 		{[]Group{GroupRuntime}, []string{"apply_edits", "convert", "evaluate", "evaluate_calc", "execute_action", "execute_state", "export_graphs", "instantiate", "list_engines", "migrate", "parse", "query", "render_document", "render_view", "run_analysis", "run_document_query", "run_sweep", "server_info", "symbol", "validate_instance", "verify_constraint", "verify_requirement", "verify_satisfaction"}},
 		{[]Group{GroupSession}, []string{"session_close", "session_list", "session_open"}},
-		{[]Group{GroupSession, GroupRuntime, GroupSession}, []string{"server_info", "session_close", "session_list", "session_open"}},
+		{[]Group{GroupSession, GroupRuntime, GroupSession}, []string{"apply_edits", "convert", "evaluate", "evaluate_calc", "execute_action", "execute_state", "export_graphs", "instantiate", "list_engines", "migrate", "parse", "query", "render_document", "render_view", "run_analysis", "run_document_query", "run_sweep", "server_info", "session_close", "session_list", "session_open", "symbol", "validate_instance", "verify_constraint", "verify_requirement", "verify_satisfaction"}},
 	}
 	for _, tc := range cases {
 		cs := connect(t, Config{Root: root, Groups: tc.groups, Version: "test"})
