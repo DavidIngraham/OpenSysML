@@ -1142,13 +1142,13 @@ attribute a rendering in the model chooses it by:
 | Element | Attribute | What it draws | Optional by |
 | --- | --- | --- | --- |
 | `parameter-symbols` | `showParameterSymbols` | A case's `actor`, `subject` and `stakeholder` parameters and an action's parameter pins as squares on the node's boundary. Without them a connection that ended at a parameter ends at the node that declares it: one line per connection, one node per actor. | §7.26.5; §8.2.3 `distinguished-parameter`, `distinguished-parameter-link` |
-| `port-symbols` | `showPortSymbols` | A part's ports on its boundary. Without them a connection that ended at a port ends at the part. Default. | §7.26.5; §8.2.3 `port-node` |
+| `port-symbols` | `showPortSymbols` | A part's ports as pins on its boundary. Without them a connection that ended at a port ends at the part; a port drawn as a nested member of a tree is model structure and stays. Default. | §7.26.5; §8.2.3 `port-node` |
 | `compartments` | `showCompartments` | The lists of nested features inside a node. Default. | §7.26.5; §8.2.3 `compartment` |
-| `edge-labels` | `showEdgeLabels` | The names of connections, flows, bindings and the other edges along their lines. Without them no label box is left. | §8.2.3 `edge-label` |
+| `edge-labels` | `showEdgeLabels` | The names of connections, flows, bindings and allocations along their lines. Without them no label box is left. A sequence diagram's message lines keep their labels: the label is the message. | §8.2.3 `edge-label` |
 | `keywords` | `showKeywords` | The `«keyword»` over each name. | §8.2.3 `keyword-list` |
 | `multiplicities` | `showMultiplicities` | A feature's `[m..n]` after its name and at a composition's part end. | §8.2.3 `multiplicity` |
 | `typings` | `showTypings` | The `: Type` and `:> general` text after a name. | §8.2.3 `feature-typing-text` |
-| `qualifiers` | `showQualifiers` | The qualified-name prefix of each name. | §8.2.3 `qualified-name` |
+| `qualifiers` | `showQualifiers` | The qualified-name prefix of each name, in the text form as in the diagram forms; without it a name is the shortest suffix of its qualified name that is its own in the rendering. | §8.2.3 `qualified-name` |
 
 In the model, a view chooses them by rendering a usage or definition that specializes a standard
 `Views` rendering and declares the attributes, each `true` to show the element and `false` to

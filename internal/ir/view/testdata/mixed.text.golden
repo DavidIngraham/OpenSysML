@@ -1,25 +1,25 @@
 MixedExamples::mixedDiagram - mixed rendering (render asMixedDiagram)
 
 package MixedExamples
-  port def MixedExamples::FluidPort
-  part def MixedExamples::BaseUnit
-  part def MixedExamples::Pump
+  port def FluidPort
+  part def BaseUnit
+  part def Pump
     port outlet
-  part def MixedExamples::Tank
+  part def Tank
     port inlet
-  part def MixedExamples::Plant
+  part def Plant
     part pump
       port outlet
     part tank
       port inlet
-  connection def MixedExamples::Connection
+  connection def Connection
     part a
     part b
-  state def MixedExamples::Ready (declares no states)
-  state def MixedExamples::Modes
+  state def Ready (declares no states)
+  state def Modes
     start
     state ready (initial)
-  action def MixedExamples::Operate
+  action def Operate
     initial start
     action 'step'
     final done
@@ -27,32 +27,32 @@ package MixedExamples
   actor operator
   subject plant
   objective (Inspect the plant and report its operating state.)
-  perform action MixedExamples::Inspection::run (declares no nodes)
-  exhibit state MixedExamples::Inspection::mode
+  perform action run (declares no nodes)
+  exhibit state mode
     start
     state ready (initial)
-  part def MixedExamples::Person
+  part def Person
   view mixedDiagram
   view mixedLayout
 
 relationships:
-  start of MixedExamples::Modes -> ready
+  start of Modes -> ready
   start -> 'step'
   'step' -> done
   operator -- Inspection
   Inspection -- plant: «subject»
   Inspection .. objective n12
-  start of MixedExamples::Inspection::mode -> ready
+  start of mode -> ready
   pump.outlet -- tank.inlet
-  ready ..> MixedExamples::Ready
-  operator ..> MixedExamples::Person
-  plant ..> MixedExamples::Plant
-  MixedExamples::Inspection::run ..> MixedExamples::Operate: «perform»
-  MixedExamples::Inspection::mode ..> MixedExamples::Modes: «exhibit»
-  MixedExamples::Pump --|> MixedExamples::BaseUnit: «specializes»
-  outlet ..> MixedExamples::FluidPort
-  MixedExamples::Tank --|> MixedExamples::BaseUnit: «specializes»
-  inlet ..> MixedExamples::FluidPort
-  MixedExamples::Plant --|> MixedExamples::BaseUnit: «specializes»
-  pump ..> MixedExamples::Pump
-  tank ..> MixedExamples::Tank
+  ready ..> Ready
+  operator ..> Person
+  plant ..> Plant
+  run ..> Operate: «perform»
+  mode ..> Modes: «exhibit»
+  Pump --|> BaseUnit: «specializes»
+  outlet ..> FluidPort
+  Tank --|> BaseUnit: «specializes»
+  inlet ..> FluidPort
+  Plant --|> BaseUnit: «specializes»
+  pump ..> Pump
+  tank ..> Tank

@@ -43,7 +43,7 @@ hide stereotype
 participant "**producer**" as n0 <<part>> <<usage>>
 participant "**server**" as n1 <<part>> <<usage>>
 participant "**consumer**" as n2 <<part>> <<usage>>
-n2 -> n1
-n0 -> n1
-n1 -> n2
+n2 -> n1 : subscribe_message
+n0 -> n1 : publish_message
+n1 -> n2 : deliver_message
 @enduml

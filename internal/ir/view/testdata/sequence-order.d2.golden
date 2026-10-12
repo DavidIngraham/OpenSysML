@@ -7,6 +7,6 @@ sequence: "" {
   shape: sequence_diagram
   n0: "left" { class: usage }
   n1: "right" { class: usage }
-  n0 -> n1: { class: flow }
-  n0 -> n1: { class: flow }
+  n0 -> n1: "early" { class: flow }
+  n0 -> n1: "late" { class: flow }
 }

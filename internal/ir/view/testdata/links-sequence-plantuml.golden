@@ -43,7 +43,7 @@ hide stereotype
 participant "**producer**" as n0 <<part>> <<usage>> [[https://example.test/src/sequence.sysml#L26]]
 participant "**server**" as n1 <<part>> <<usage>> [[https://example.test/src/sequence.sysml#L32]]
 participant "**consumer**" as n2 <<part>> <<usage>> [[https://example.test/src/sequence.sysml#L41]]
-n2 -> n1 [[https://example.test/src/sequence.sysml#L38]]
-n0 -> n1 [[https://example.test/src/sequence.sysml#L30]]
-n1 -> n2 [[https://example.test/src/sequence.sysml#L39]]
+n2 -> n1 : [[https://example.test/src/sequence.sysml#L38]] subscribe_message
+n0 -> n1 : [[https://example.test/src/sequence.sysml#L30]] publish_message
+n1 -> n2 : [[https://example.test/src/sequence.sysml#L39]] deliver_message
 @enduml

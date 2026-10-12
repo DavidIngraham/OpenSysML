@@ -62,9 +62,13 @@ func (r *Rendering) textWith(options Options) string {
 		b.WriteString(canvasText(c) + "\n\n")
 	}
 	labels := map[string]string{}
+	names := map[*Node]string{}
+	if !r.Shown.Has(ElementQualifiers) {
+		names = simpleNames(r.Roots, nil)
+	}
 	ports := r.portView(options.Ports)
 	for _, root := range r.Roots {
-		writeNodeText(&b, root, 0, labels, ports, r.Shown)
+		writeNodeText(&b, root, 0, labels, names, ports, r.Shown)
 	}
 	if len(r.Edges) > 0 {
 		fmt.Fprintf(&b, "\n%s:\n", edgeSectionName(r.Kind))
@@ -180,11 +184,15 @@ func endLabel(labels map[string]string, node, port string) string {
 // under it,
 // each a line of its own, and recorded as `node.port`; elsewhere they are left
 // to the edges' labels, which an action's flows name their pins in.
-func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]string, ports portView, shown Shown) {
-	labels[node.ID] = nodeLabel(node)
+func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]string, names map[*Node]string, ports portView, shown Shown) {
+	name, ok := names[node]
+	if !ok {
+		name = node.Name
+	}
+	labels[node.ID] = nodeLabel(node, name)
 	line := strings.Repeat("  ", depth) + node.Kind
-	if node.Name != "" {
-		line += " " + node.Name
+	if name != "" {
+		line += " " + name
 	}
 	if node.Type != "" {
 		line += " : " + node.Type
@@ -209,7 +217,7 @@ func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]
 		}
 	}
 	for _, child := range node.Children {
-		writeNodeText(b, child, depth+1, labels, ports, shown)
+		writeNodeText(b, child, depth+1, labels, names, ports, shown)
 		if child.Kind == startKind {
 			labels[child.ID] = "start of " + labels[node.ID]
 		}
@@ -397,9 +405,9 @@ func labelOr(labels map[string]string, id string) string {
 
 // nodeLabel names a node where an edge refers to it: its name, else its kind
 // with the identity the rendering gave it.
-func nodeLabel(node *Node) string {
-	if node.Name != "" {
-		return node.Name
+func nodeLabel(node *Node, name string) string {
+	if name != "" {
+		return name
 	}
 	return fmt.Sprintf("%s %s", node.Kind, node.ID)
 }

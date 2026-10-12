@@ -1,6 +1,6 @@
 FlowViews::driveView - action rendering (render asInterconnectionDiagram, view def ActionFlowView)
 
-action def Flows::Drive
+action def Drive
   initial start
   action provide
   action monitor (own flow)

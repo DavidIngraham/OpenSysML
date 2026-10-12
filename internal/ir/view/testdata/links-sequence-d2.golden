@@ -8,7 +8,7 @@ sequence: "" {
   n0: "producer" { class: usage; link: "https://example.test/src/sequence.sysml#L26" }
   n1: "server" { class: usage; link: "https://example.test/src/sequence.sysml#L32" }
   n2: "consumer" { class: usage; link: "https://example.test/src/sequence.sysml#L41" }
-  n2 -> n1: { class: flow; link: "https://example.test/src/sequence.sysml#L38" }
-  n0 -> n1: { class: flow; link: "https://example.test/src/sequence.sysml#L30" }
-  n1 -> n2: { class: flow; link: "https://example.test/src/sequence.sysml#L39" }
+  n2 -> n1: "subscribe_message" { class: flow; link: "https://example.test/src/sequence.sysml#L38" }
+  n0 -> n1: "publish_message" { class: flow; link: "https://example.test/src/sequence.sysml#L30" }
+  n1 -> n2: "deliver_message" { class: flow; link: "https://example.test/src/sequence.sysml#L39" }
 }

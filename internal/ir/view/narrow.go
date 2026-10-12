@@ -83,15 +83,11 @@ func (n *narrowing) nodes(nodes []*Node, parent *Node) []*Node {
 	return kept
 }
 
-// leftOut reports whether node, nested in parent, is a symbol the set leaves out.
+// leftOut reports whether node, nested in parent, is a parameter symbol the set
+// leaves out. Port symbols are a node's pins, narrow's concern: a port drawn as
+// a nested member is model structure, not a boundary symbol, and stays.
 func (n *narrowing) leftOut(parent, node *Node) bool {
-	if parent == nil {
-		return false
-	}
-	if !n.shown.Has(ElementParameterSymbols) && parameterSymbol(parent, node) {
-		return true
-	}
-	return !n.shown.Has(ElementPortSymbols) && node.Kind == "port"
+	return parent != nil && !n.shown.Has(ElementParameterSymbols) && parameterSymbol(parent, node)
 }
 
 // remove maps node and everything nested in it to parent, the node now
@@ -135,10 +131,12 @@ func (n *narrowing) narrow(node *Node) {
 // edge moves an edge's ends off what was left out: an end at a removed port
 // or node is at the node standing for it, and a connector's label is left
 // out when edge labels are, a usage's multiplicity when multiplicities are.
+// A sequence diagram's message line is labelled by the message it is, which
+// no element makes optional.
 func (n *narrowing) edge(edge *Edge) {
 	edge.From, edge.FromPort = n.end(edge.From, edge.FromPort)
 	edge.To, edge.ToPort = n.end(edge.To, edge.ToPort)
-	if !n.shown.Has(ElementEdgeLabels) && connectorEdge(edge.Kind) {
+	if !n.shown.Has(ElementEdgeLabels) && connectorEdge(edge.Kind) && n.kind != KindSequence {
 		edge.Label = ""
 	}
 	if !n.shown.Has(ElementMultiplicities) && (edge.Kind == EdgeComposition || edge.Kind == EdgeReference) {

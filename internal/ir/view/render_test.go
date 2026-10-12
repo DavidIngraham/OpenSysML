@@ -905,3 +905,13 @@ func TestActionRenderingDrawsTheSuccessionGatingAFlow(t *testing.T) {
 		t.Errorf("edges: %d gated successions, %d flows; want one of each:\n%s", gated, flows, rendering.Text())
 	}
 }
+
+// textWithQualifiers is a rendering's text form naming each node by its qualified name.
+func textWithQualifiers(t *testing.T, rendering *Rendering) string {
+	t.Helper()
+	out, err := rendering.WriteWith(FormText, Options{Show: Shown{ElementQualifiers: true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
+}

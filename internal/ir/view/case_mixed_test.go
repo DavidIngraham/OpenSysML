@@ -577,7 +577,7 @@ func TestMixedInheritedReferencesFollowQualifiedCases(t *testing.T) {
 	}
 	checkEdges(data.Nodes, dataEdges)
 
-	text := rendering.Text()
+	text := textWithQualifiers(t, rendering)
 	wantTextEdges := map[string]int{}
 	for _, edge := range rendering.Edges {
 		if edge.Kind != EdgeReference {

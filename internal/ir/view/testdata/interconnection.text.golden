@@ -1,6 +1,6 @@
 PlantViews::loopView - interconnection rendering (render asInterconnectionDiagram)
 
-part def Plant::Loop
+part def Loop
   part pump
     port outlet
   part tank

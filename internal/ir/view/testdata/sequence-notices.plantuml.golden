@@ -46,6 +46,6 @@ skinparam wrapWidth 300
 hide stereotype
 participant "**caller**" as n0 <<part>> <<usage>>
 participant "**callee**" as n1 <<part>> <<usage>>
-n0 -> n0
-n0 -> n1
+n0 -> n0 : echo
+n0 -> n1 : of Ping
 @enduml

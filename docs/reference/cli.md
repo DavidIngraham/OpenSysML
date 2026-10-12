@@ -973,7 +973,8 @@ symbols and compartments and leaves the rest out; each name adds one: `parameter
 node's boundary (without them a connection that ended at a parameter ends at the node itself, one
 line per connection); `port-symbols`, a part's ports on its boundary (without them a connection
 ends at the part); `compartments`, the lists of nested features inside a node; `edge-labels`, the
-names of connections, flows and bindings along their lines; `keywords`, the `«keyword»` over each
+names of connections, flows and bindings along their lines (a sequence diagram's messages keep
+theirs); `keywords`, the `«keyword»` over each
 name; `multiplicities`; `typings`, the `: Type` after a name; `qualifiers`, the qualified-name
 prefix of each name; `all`, every one of them. A view's rendering chooses its own in the model, by
 a rendering specializing a standard one with Boolean `showParameterSymbols`, `showEdgeLabels`, …

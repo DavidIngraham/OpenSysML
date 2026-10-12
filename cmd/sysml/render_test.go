@@ -585,7 +585,7 @@ func TestRenderSeveralFiles(t *testing.T) {
 		}
 	}
 
-	got = runFiles(t, binary, []string{types, diagrams}, "-render", "#tree", "-render-form", "text")
+	got = runFiles(t, binary, []string{types, diagrams}, "-render", "#tree", "-render-form", "text", "-render-show", "qualifiers")
 	if got.status != exitHolds {
 		t.Fatalf("exit status = %d, want %d\n%s", got.status, exitHolds, got.output())
 	}

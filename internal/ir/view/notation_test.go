@@ -2,10 +2,54 @@ package view
 
 import (
 	"errors"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
+
+// A rendering names an element the way the notation declares it: several
+// spellings share one kind, and a KerML classifier takes no `def`.
+func TestRenderingsNameElementsAsWritten(t *testing.T) {
+	_, idx := loadFixture(t, "notation.sysml")
+	want := map[string]string{
+		"Notation::M":           "metaclass",
+		"Notation::T":           "datatype",
+		"Notation::f":           "feature",
+		"Notation::C":           "class",
+		"Notation::BD":          "behavior def",
+		"Notation::Wheel":       "part def",
+		"Notation::my wheel":    "part",
+		"Notation::Run::moving": "assert constraint",
+		"Notation::Run::drive":  "perform action",
+	}
+	for fqn, kind := range want {
+		if got := declKind(lookup(t, idx, fqn)); got != kind {
+			t.Errorf("%s renders as %q, want %q", fqn, got, kind)
+		}
+	}
+}
+
+// A name holding `::` is one name, quoted whole, in every place a rendering
+// writes one: a root's qualified name, a nested node's own name, a connector's
+// label, a state and a table row.
+func TestNamesHoldingTheSeparatorAreQuotedWhole(t *testing.T) {
+	tree := render(t, "separators.sysml", "SepViews::partView")
+	if names := nodeNames(tree.Roots); !names["'Sep::Pkg'::'x::y'"] || !names["'fuel::out'"] || names["out"] {
+		t.Errorf("tree node names %v, want 'Sep::Pkg'::'x::y' and 'fuel::out', not out", slices.Sorted(maps.Keys(names)))
+	}
+	if got := edgeLabels(render(t, "separators.sysml", "SepViews::lineView")); !got["'fuel::line'"] {
+		t.Errorf("connection labels %v lack 'fuel::line'", slices.Sorted(maps.Keys(got)))
+	}
+	if names := nodeNames(render(t, "separators.sysml", "SepViews::modeView").Roots); !names["'idle::state'"] {
+		t.Errorf("state node names %v lack 'idle::state'", slices.Sorted(maps.Keys(names)))
+	}
+	table := render(t, "separators.sysml", "SepViews::tableView")
+	if got := table.Text(); !strings.Contains(got, "'fuel::out'") || strings.Contains(got, "| 'out'") {
+		t.Errorf("table names the port wrong:\n%s", got)
+	}
+}
 
 // The optional notation elements are named, "all" names every one, and a name
 // none has is refused on every form by an error naming the elements there are.
@@ -156,6 +200,48 @@ func TestParameterSymbolsAreShownWhenAsked(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A sequence diagram's message line is labelled by the message it is, which no
+// element makes optional: the labels stay when edge labels are not shown.
+func TestSequenceMessagesKeepTheirLabels(t *testing.T) {
+	rendering := render(t, "sequence.sysml", "SequenceViews::pubSubView")
+	rendering.Shown = Shown{}
+	shown := rendering.showing(nil)
+	if len(shown.Edges) == 0 {
+		t.Fatal("no messages")
+	}
+	for _, label := range messageLabels(shown) {
+		if label == "" {
+			t.Errorf("a message lost its label: %v", messageLabels(shown))
+		}
+	}
+	if out := rendering.Text(); !strings.Contains(out, ": publish") {
+		t.Errorf("text leaves the message out:\n%s", out)
+	}
+}
+
+// Port symbols are a node's boundary pins: a port drawn as a member of a tree
+// is model structure and stays when port symbols are not shown.
+func TestPortMembersStayWithoutPortSymbols(t *testing.T) {
+	rendering := render(t, "separators.sysml", "SepViews::partView")
+	rendering.Shown = Shown{}
+	shown := rendering.showing(nil)
+	if names := nodeNames(shown.Roots); !names["'fuel::out'"] || !names["sink"] {
+		t.Errorf("tree node names %v, want the ports 'fuel::out' and sink kept", slices.Sorted(maps.Keys(names)))
+	}
+}
+
+// The text form names a node as the diagram forms do: by the shortest suffix of
+// its qualified name that is its own, with the qualifier when qualifiers are shown.
+func TestTextLeavesQualifiersOutUnlessShown(t *testing.T) {
+	rendering := render(t, "tree.sysml", "VehicleViews::vehicleView")
+	if out := rendering.Text(); !strings.Contains(out, "part def Vehicle\n") || strings.Contains(out, "Vehicles::Vehicle") {
+		t.Errorf("text with qualifiers left out:\n%s", out)
+	}
+	if out := textWithQualifiers(t, rendering); !strings.Contains(out, "part def Vehicles::Vehicle\n") {
+		t.Errorf("text with qualifiers shown:\n%s", out)
 	}
 }
 

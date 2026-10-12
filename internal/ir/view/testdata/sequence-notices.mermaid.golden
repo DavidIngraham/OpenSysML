@@ -38,5 +38,5 @@ config:
 sequenceDiagram
   participant n0 as caller
   participant n1 as callee
-  n0->>n0:
-  n0->>n1:
+  n0->>n0: echo
+  n0->>n1: of Ping

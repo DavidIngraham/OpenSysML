@@ -1,6 +1,6 @@
 ToasterViews::toasterView - interconnection rendering (render asInterconnectionDiagram)
 
-part def ToasterDemo::Toaster
+part def Toaster
   part heating
     port durationIn
   part control
