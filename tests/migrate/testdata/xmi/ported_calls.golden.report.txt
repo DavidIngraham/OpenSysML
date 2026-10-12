@@ -3,8 +3,8 @@
 
 ## approximated (4)
 ReadStructuralFeatureAction	Drive::Run::read motor	_readMotor	-> 'read motor'	(several edges leave the node, which a fork fork carries)
-CallOperationAction	Drive::Stray::spin over loose	_callLoose	-> 'spin over loose'	(the call runs in the caller's context: no connector of Drive joins its port loose to a part; spin is an action of Motor, performed on an object of it; the caller is a Drive, which is no Motor and has 2 parts that are one, so no one of them is chosen, so an empty step stands for the call)
-CallOperationAction	Drive::Stray::spin over split	_callSplit	-> 'spin over split'	(the call runs in the caller's context: the port split of Drive connects to several parts whose types have the operation spin (motor, spare), and the call names no one of them; spin is an action of Motor, performed on an object of it; the caller is a Drive, which is no Motor and has 2 parts that are one, so no one of them is chosen, so an empty step stands for the call)
+CallOperationAction	Drive::Stray::spin over loose	_callLoose	-> 'spin over loose'	(no object receives the call: no connector of Drive joins its port loose to a part; spin is an action of Motor, performed on an object of it; the caller is a Drive, which is no Motor and has 2 parts that are one, so no one of them is chosen, so an empty step stands for the call)
+CallOperationAction	Drive::Stray::spin over split	_callSplit	-> 'spin over split'	(no object receives the call: the port split of Drive connects to several parts whose types have the operation spin (motor, spare), and the call names no one of them; spin is an action of Motor, performed on an object of it; the caller is a Drive, which is no Motor and has 2 parts that are one, so no one of them is chosen, so an empty step stands for the call)
 Interface	MotorCmd	_cmdIf	-> MotorCmd	(a UML interface is written as a port def)
 
 ## mapped (49)
