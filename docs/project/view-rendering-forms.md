@@ -836,8 +836,10 @@ digraph "PlantViews::placedView" {
   one waypoint draws no line; it is left out and noticed as `// not represented:`. The edge's
   texts are placed too (`labelPlacer` in `edge_labels.go`): its own label as `lp` beside the
   midpoint of the route's longest segment, an end's name as `head_lp`/`tail_lp` beside the last
-  segment before that end, clear of the arrowhead there; each label is centred clear of its line
-  by its half-extent and a 4 px gap, and takes the first of its candidate spots — the nearest,
+  segment before that end, clear of the arrowhead there, or beside the middle of that segment
+  when the route is too short to hold the name beside any; each label is measured at the font
+  size it is drawn in (its `Style`'s when that sets one, else the skin's), centred clear of its
+  line by its half-extent and a 4 px gap, and takes the first of its candidate spots — the nearest,
   the other side of the line, then a step farther along — that covers no drawn box, note or
   routed line, stays on the canvas and overlaps no label placed before it, else the least
   covered; an end name leaves its last segment for the ones before only when every spot beside

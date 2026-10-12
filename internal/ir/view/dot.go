@@ -1877,13 +1877,13 @@ func (w *dotWriter) dotEdgeAttributes(edge Edge) []string {
 		route := w.pinnedRoute(edge)
 		attrs = append(attrs, "pos="+dotQuote(w.dotSpline(route, dotArrowtailed(attrs), dotArrowheaded(attrs))))
 		if label != "" {
-			attrs = append(attrs, "lp="+dotQuote(w.dotPoint(w.placeLabel(route, label, labelMid))))
+			attrs = append(attrs, "lp="+dotQuote(w.dotPoint(w.placeLabel(route, label, w.edgePts(edge), labelMid))))
 		}
 		if from != "" {
-			attrs = append(attrs, "tail_lp="+dotQuote(w.dotPoint(w.placeLabel(route, from, labelFrom))))
+			attrs = append(attrs, "tail_lp="+dotQuote(w.dotPoint(w.placeLabel(route, from, w.edgePts(edge), labelFrom))))
 		}
 		if to != "" {
-			attrs = append(attrs, "head_lp="+dotQuote(w.dotPoint(w.placeLabel(route, to, labelTo))))
+			attrs = append(attrs, "head_lp="+dotQuote(w.dotPoint(w.placeLabel(route, to, w.edgePts(edge), labelTo))))
 		}
 	}
 	attrs = append(attrs, w.dotLinkAttributes(edge.Origin)...)
@@ -1957,14 +1957,14 @@ func dotArrowBase(route []Point) Point {
 	return Point{X: halfPixel(tip.X - (tip.X-from.X)/d*back), Y: halfPixel(tip.Y - (tip.Y-from.Y)/d*back)}
 }
 
-// placeLabel is where a routed edge's text is centred, at the end it names,
-// clear of its route and every other, the drawn boxes and notes, the canvas's
-// edge and the labels placed before it (labelPlacer); the drawing's labels are
-// placed in the order its edges are written.
-func (w *dotWriter) placeLabel(route []Point, text string, end labelEnd) Point {
+// placeLabel is where a routed edge's text, drawn at pts points, is centred,
+// at the end it names, clear of its route and every other, the drawn boxes and
+// notes, the canvas's edge and the labels placed before it (labelPlacer); the
+// drawing's labels are placed in the order its edges are written.
+func (w *dotWriter) placeLabel(route []Point, text string, pts float64, end labelEnd) Point {
 	if w.placer == nil {
 		w.placer = &labelPlacer{
-			extent: func(text string) (width, height float64) { return dotTextExtent([]string{text}, w.skin.edgePts) },
+			extent: func(text string, pts float64) (width, height float64) { return dotTextExtent([]string{text}, pts) },
 			cover:  w.labelCover,
 		}
 		for _, edge := range w.edges {
@@ -1977,7 +1977,16 @@ func (w *dotWriter) placeLabel(route []Point, text string, end labelEnd) Point {
 			}
 		}
 	}
-	return w.placer.place(route, text, end)
+	return w.placer.place(route, text, pts, end)
+}
+
+// edgePts is the font size an edge's text is drawn in: its Style's when that
+// sets one, as dotStyleAttributes emits it, else the skin's edge text size.
+func (w *dotWriter) edgePts(edge Edge) float64 {
+	if edge.Style != nil && edge.Style.FontSize > 0 {
+		return edge.Style.FontSize
+	}
+	return w.skin.edgePts
 }
 
 // labelCover is how much of a label's box lies on a node's box, a note or off

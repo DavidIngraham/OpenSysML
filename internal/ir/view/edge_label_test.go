@@ -189,12 +189,12 @@ func TestDOTLabelPointClearsTheRoute(t *testing.T) {
 	}
 	for _, c := range cases {
 		w.placer = nil
-		if got := w.placeLabel(c.route, "go", labelMid); got != c.want {
+		if got := w.placeLabel(c.route, "go", w.skin.edgePts, labelMid); got != c.want {
 			t.Errorf("%s: label at %v, want %v", c.name, got, c.want)
 		}
 	}
 	w.placer = nil
-	diagonal := w.placeLabel([]Point{{X: 0, Y: 0}, {X: 100, Y: 100}}, "go", labelMid)
+	diagonal := w.placeLabel([]Point{{X: 0, Y: 0}, {X: 100, Y: 100}}, "go", w.skin.edgePts, labelMid)
 	if !(diagonal.X > 50 && diagonal.Y < 50) {
 		t.Errorf("diagonal: label at %v, want it above-right of the line's midpoint (50,50)", diagonal)
 	}

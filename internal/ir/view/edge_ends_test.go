@@ -177,9 +177,9 @@ func TestLabelPlacerKeepsLabelsApart(t *testing.T) {
 	w := &dotWriter{skin: skinOf(StylePilot)}
 	route := []Point{{X: 100, Y: 0}, {X: 100, Y: 300}}
 	width, height := dotTextExtent([]string{"label"}, w.skin.edgePts)
-	first := w.placeLabel(route, "label", labelTo)
-	second := w.placeLabel(route, "label", labelTo)
-	third := w.placeLabel(route, "label", labelTo)
+	first := w.placeLabel(route, "label", w.skin.edgePts, labelTo)
+	second := w.placeLabel(route, "label", w.skin.edgePts, labelTo)
+	third := w.placeLabel(route, "label", w.skin.edgePts, labelTo)
 	if first.X <= 100 || second.X >= 100 {
 		t.Errorf("first at %v, second at %v; want them on either side of the line", first, second)
 	}
@@ -198,7 +198,7 @@ func TestLabelPlacerKeepsLabelsApart(t *testing.T) {
 		}
 	}
 	w.placer = nil
-	if again := w.placeLabel(route, "label", labelTo); again != first {
+	if again := w.placeLabel(route, "label", w.skin.edgePts, labelTo); again != first {
 		t.Errorf("placed again at %v, want %v", again, first)
 	}
 }
@@ -214,13 +214,13 @@ func TestEndNamesLeaveAHemmedInLastSegment(t *testing.T) {
 		"left":  {low: Point{X: 200 - width - 20, Y: 10}, high: Point{X: 196, Y: 100}},
 		"right": {low: Point{X: 204, Y: 10}, high: Point{X: 200 + width + 20, Y: 100}},
 	}
-	at := w.placeLabel(route, "hemmed", labelTo)
+	at := w.placeLabel(route, "hemmed", w.skin.edgePts, labelTo)
 	if at.Y > 0 || at.X >= 200 {
 		t.Errorf("hemmed-in end name at %v, want it beside the segment before the last", at)
 	}
 	w.placer, w.boxes = nil, map[string]nodeBox{}
 	w.edges = []Edge{{Route: []Point{{X: 220, Y: 50}, {X: 300, Y: 50}}}}
-	at = w.placeLabel(route, "crossed", labelTo)
+	at = w.placeLabel(route, "crossed", w.skin.edgePts, labelTo)
 	if at.X <= 200 || at.Y < 50 {
 		t.Errorf("end name at %v, want it beside the last segment though a line crosses it", at)
 	}
@@ -235,11 +235,56 @@ func TestLabelPlacerPrefersClearOfBoxesOverClearOfLines(t *testing.T) {
 	// A box touches the right-hand spot by a sliver; lines cross the left-hand one.
 	w.boxes = map[string]nodeBox{"sliver": {low: Point{X: 100 + labelGap + width - 1, Y: 0}, high: Point{X: 300, Y: 100}}}
 	w.edges = []Edge{{Route: []Point{{X: 0, Y: 50}, {X: 96, Y: 50}}}, {Route: []Point{{X: 0, Y: 55}, {X: 96, Y: 55}}}}
-	at := w.placeLabel(route, "label", labelMid)
+	at := w.placeLabel(route, "label", w.skin.edgePts, labelMid)
 	if at.X >= 100 {
 		t.Errorf("label at %v sits on the box; want it left of the line, across the lines", at)
 	}
 	if box := labelBox(at, width, height); box.overlap(w.boxes["sliver"]) > 0 {
 		t.Errorf("label box %v overlaps the sliver", box)
+	}
+}
+
+// An end name on a route too short to hold it beside any segment sits beside
+// the middle of the last segment, overhanging its ends, rather than nowhere.
+func TestEndNamesOnAShortRouteStayBesideIt(t *testing.T) {
+	w := &dotWriter{skin: skinOf(StylePilot)}
+	route := []Point{{X: 100, Y: 100}, {X: 120, Y: 100}}
+	width, height := dotTextExtent([]string{"wheels[4]"}, w.skin.edgePts)
+	if width <= 20 {
+		t.Fatalf("label width %v fits the %v-long route; the test needs one that does not", width, 20.0)
+	}
+	for _, end := range []labelEnd{labelTo, labelFrom} {
+		w.placer = nil
+		at := w.placeLabel(route, "wheels[4]", w.skin.edgePts, end)
+		if off := math.Abs(at.Y - 100); at.X != 110 || math.Abs(off-(height/2+labelGap)) > 0.5 {
+			t.Errorf("end %d name at %v, want it centred on x=110 and %v off the line", end, at, height/2+labelGap)
+		}
+	}
+}
+
+// An end name drawn at a Style's font size is measured at that size when it is
+// placed, so the box kept clear for it is the box Graphviz draws.
+func TestEndNamesAreMeasuredAtTheirStyledSize(t *testing.T) {
+	w := &dotWriter{skin: skinOf(StylePilot), clusters: map[string]bool{}}
+	route := []Point{{X: 100, Y: 300}, {X: 100, Y: 0}}
+	plain := Edge{From: "a", To: "b", ToLabel: "name", Route: route}
+	styled := Edge{From: "a", To: "b", ToLabel: "name", Route: route, Style: &Style{FontSize: 3 * w.skin.edgePts}}
+	headLP := func(edge Edge) Point {
+		w.placer = nil
+		attrs := strings.Join(w.dotEdgeAttributes(edge), " ")
+		m := dotHeadLP.FindStringSubmatch(attrs)
+		if m == nil {
+			t.Fatalf("no head_lp in %q", attrs)
+		}
+		x, _ := strconv.ParseFloat(m[1], 64)
+		y, _ := strconv.ParseFloat(m[2], 64)
+		return Point{X: x, Y: y}
+	}
+	small, large := headLP(plain), headLP(styled)
+	if math.Abs(large.X-100) <= math.Abs(small.X-100) {
+		t.Errorf("styled name at %v is no farther from the line than the plain one at %v", large, small)
+	}
+	if got := w.edgePts(styled); got != 3*w.skin.edgePts {
+		t.Errorf("edgePts(styled) = %v, want %v", got, 3*w.skin.edgePts)
 	}
 }
