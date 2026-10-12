@@ -215,9 +215,9 @@ part def Child :> Gen { private import A::*; part y :> x; }`)
 	}
 }
 
-// A called name denotes an overload set: every behavior imported under it is
-// a candidate, hidden or not, while the same name as an ordinary reference
-// resolves to nothing.
+// A called name is hidden as any other (KerML 7.2.5.4): two imports bringing
+// distinct calcs of one name leave no candidate for the call, which is unresolved
+// with the hint, as the same name used as an ordinary reference is.
 func TestHiddenImportedMembershipsOverloadSet(t *testing.T) {
 	r, root, scope := resolvedDoc(t, `package A { calc def pick { in x; return r = x; } }
 package B { calc def pick { in s; in t; return r = s; } }
@@ -233,15 +233,17 @@ package Use { private import A::*; private import B::*; calc c = pick(1); attrib
 	for _, c := range cands {
 		names = append(names, symbols.FQNOf(c))
 	}
-	if strings.Join(names, ",") != "A::pick,B::pick" {
-		t.Errorf("invocation candidates = %v, want A::pick and B::pick", names)
+	if len(names) != 0 {
+		t.Errorf("invocation candidates = %v, want none", names)
 	}
 	if sym, ok := r.LookupName(useScope, "pick"); ok {
 		t.Errorf("pick as an ordinary name resolves to %v, want nothing", sym)
 	}
 	_, errors := diagnosticsOf(r)
-	if len(errors) != 1 || !strings.HasPrefix(errors[0], "unresolved reference: pick") {
-		t.Errorf("errors = %v, want the typing `: pick` unresolved only", errors)
+	const want = "unresolved reference: pick — did you mean A::pick or B::pick? The name is hidden here: " +
+		"import A::* and import B::* bring distinct elements named 'pick', so none is a member; qualify the one meant: A::pick or B::pick."
+	if len(errors) != 2 || errors[0] != want || errors[1] != want {
+		t.Errorf("errors = %v, want the call and the typing `: pick` unresolved with the hint", errors)
 	}
 }
 

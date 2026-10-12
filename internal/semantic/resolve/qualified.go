@@ -45,20 +45,16 @@ func (r *Resolver) walkQualified(scope *symbols.Scope, qn *ast.QualifiedName, hi
 	// segment via wildcard imports (e.g., import Def1::*).
 	first := qn.Parts[0].Text
 	var cur *symbols.Symbol
-	// A qualifier is an ordinary reference, whatever the name it qualifies is
-	// looked up as: only the called name itself denotes an overload set.
-	r.ordinary(func() {
-		if qn.Global {
-			cur = r.lookupInRoot(scope, first)
-		} else {
-			// Use import-aware lookup for first segment of multi-part names
-			res := r.walkUnqualifiedHiding(scope, first, hide.forLeadingSegment())
-			cur = res.sym
-		}
-		if cur == nil {
-			cur = r.lookupGlobalTop(scope, first)
-		}
-	})
+	if qn.Global {
+		cur = r.lookupInRoot(scope, first)
+	} else {
+		// Use import-aware lookup for first segment of multi-part names
+		res := r.walkUnqualifiedHiding(scope, first, hide.forLeadingSegment())
+		cur = res.sym
+	}
+	if cur == nil {
+		cur = r.lookupGlobalTop(scope, first)
+	}
 	if cur == nil {
 		r.unresolvedNamespace(scope, qn, first)
 		return resolution{nil, false}
@@ -77,11 +73,7 @@ func (r *Resolver) walkQualifiedTail(scope *symbols.Scope, qn *ast.QualifiedName
 	for i := start; i <= last; i++ {
 		var all []*symbols.Symbol
 		var ok bool
-		if i < last {
-			r.ordinary(func() { all, ok = r.qualifiedSegment(scope, qn, cur, i, hide) })
-		} else {
-			all, ok = r.qualifiedSegment(scope, qn, cur, i, hide)
-		}
+		all, ok = r.qualifiedSegment(scope, qn, cur, i, hide)
 		if !ok {
 			return resolution{nil, false}
 		}

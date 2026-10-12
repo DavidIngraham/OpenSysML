@@ -592,8 +592,8 @@ func (r *Resolver) importTargetOf(scope *symbols.Scope, imp *ast.Import) (*symbo
 	var target *symbols.Symbol
 	var ok bool
 	r.resolvingImports[imp] = true
-	// The target is an ordinary reference, whatever lookup needs it.
-	r.ordinary(func() { r.aside(func() { target, ok = r.resolveImportTarget(scope, imp) }) })
+	// The target is read on its own, apart from the lookup that needs it.
+	r.aside(func() { target, ok = r.resolveImportTarget(scope, imp) })
 	delete(r.resolvingImports, imp)
 	if ok && remember {
 		journalNew(r, r.importTargets, imp, imp)

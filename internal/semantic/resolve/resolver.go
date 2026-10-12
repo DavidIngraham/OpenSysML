@@ -203,9 +203,6 @@ type Resolver struct {
 	// collisionCut is set when a collision computation met one in progress,
 	// so what it computed is not memoized.
 	collisionCut bool
-	// overloading counts the invocation-name lookups under way: a called name
-	// denotes an overload set, which hiding does not thin (see hiddenImport).
-	overloading int
 	// redefined memoizes the features a declaration redefines, explicitly or as
 	// an end: see (*Resolver).redefinedFeatures.
 	redefined map[*symbols.Symbol][]*symbols.Symbol

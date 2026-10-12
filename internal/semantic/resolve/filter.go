@@ -445,7 +445,7 @@ func (r *Resolver) indexedNameOf(target *symbols.Symbol) string {
 // withoutHiddenMembers drops the imported memberships scope hides (KerML
 // 7.2.5.4): they are no members of it, so no import of it re-exports them.
 func (r *Resolver) withoutHiddenMembers(scope *symbols.Scope, syms []*symbols.Symbol) []*symbols.Symbol {
-	if scope == nil || r.overloading > 0 || len(r.importedCollisions(scope).hidden) == 0 {
+	if scope == nil || len(r.importedCollisions(scope).hidden) == 0 {
 		return syms
 	}
 	out := syms[:0:0]
@@ -611,4 +611,28 @@ func (r *Resolver) admits(filters []symbols.ElementFilter, cand *symbols.Symbol)
 		}
 	})
 	return admitted
+}
+
+// ImportedBeside reports the element another import of the namespace sym is
+// imported into, along scope's lookup path, brings under name: sym read as name
+// there would be hidden with it (KerML 7.2.5.4). Nothing where sym is not imported.
+func (r *Resolver) ImportedBeside(scope *symbols.Scope, name string, sym *symbols.Symbol) (*symbols.Symbol, bool) {
+	for s := scope; s != nil; s = s.Parent() {
+		var brought bool
+		var other *symbols.Symbol
+		for _, imp := range r.scopeImports(s) {
+			for _, m := range r.importedMembersInto(s, s, imp, false) {
+				switch {
+				case symbols.SameElement(m, sym):
+					brought = true
+				case other == nil && (m.Name == name || m.ShortName == name):
+					other = m
+				}
+			}
+		}
+		if brought {
+			return other, other != nil
+		}
+	}
+	return nil, false
 }

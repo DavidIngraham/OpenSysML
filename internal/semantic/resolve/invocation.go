@@ -7,14 +7,14 @@ import (
 
 // ResolveInvocationName resolves a called name as ResolveQualified does, except that several
 // declarations under a qualified name denote the first: overload selection picks the one run.
+// Hiding is in force as for any name (KerML 7.2.5.4): a name two imports bring as distinct
+// functions is no member, so the call is unresolved there.
 func (r *Resolver) ResolveInvocationName(scope *symbols.Scope, qn *ast.QualifiedName) (*symbols.Symbol, bool) {
 	if qn == nil {
 		return nil, false
 	}
 	journalNew(r, r.invocationNames, qn, qn)
 	r.invocationNames[qn] = true
-	r.overloading++
-	defer func() { r.overloading-- }()
 	return r.resolveQualified(scope, qn, nil)
 }
 
@@ -27,8 +27,6 @@ func (r *Resolver) InvocationCandidates(scope *symbols.Scope, qn *ast.QualifiedN
 	}
 	journalNew(r, r.invocationNames, qn, qn)
 	r.invocationNames[qn] = true
-	r.overloading++
-	defer func() { r.overloading-- }()
 	if len(qn.Parts) != 1 || qn.Global || scope == nil {
 		var out []*symbols.Symbol
 		r.aside(func() { out = r.qualifiedCandidates(scope, qn) })
@@ -37,15 +35,6 @@ func (r *Resolver) InvocationCandidates(scope *symbols.Scope, qn *ast.QualifiedN
 	var out []*symbols.Symbol
 	r.aside(func() { out = r.unqualifiedCandidates(scope, qn.Parts[0].Text) })
 	return out
-}
-
-// ordinary runs f with hiding in force: the names f looks up are ordinary
-// references, not called names, whatever lookup is under way.
-func (r *Resolver) ordinary(f func()) {
-	overloading := r.overloading
-	r.overloading = 0
-	f()
-	r.overloading = overloading
 }
 
 // qualifiedCandidates resolves qn as an invocation name and widens the last

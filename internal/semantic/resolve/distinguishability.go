@@ -262,12 +262,9 @@ func (r *Resolver) collectImported(scope *symbols.Scope, imports []*ast.Import) 
 }
 
 // hiddenImport reports whether sym, reached under name through an import of
-// scope, is a membership scope hides (KerML 7.2.5.4). An invocation name is
-// looked up as an overload set, every membership imported under it a
-// candidate, so nothing is hidden from it (docs/project/spec-compliance.md,
-// "Invocation overload selection").
+// scope, is a membership scope hides (KerML 7.2.5.4), a called name's as any.
 func (r *Resolver) hiddenImport(scope *symbols.Scope, name string, sym *symbols.Symbol) bool {
-	if sym == nil || r.overloading > 0 {
+	if sym == nil {
 		return false
 	}
 	c := r.importedCollisions(scope)
@@ -276,7 +273,7 @@ func (r *Resolver) hiddenImport(scope *symbols.Scope, name string, sym *symbols.
 
 // hiddenImportMember is hiddenImport under any name sym binds.
 func (r *Resolver) hiddenImportMember(scope *symbols.Scope, sym *symbols.Symbol) bool {
-	if sym == nil || r.overloading > 0 {
+	if sym == nil {
 		return false
 	}
 	c := r.importedCollisions(scope)
@@ -297,7 +294,7 @@ func (r *Resolver) hiddenImportMember(scope *symbols.Scope, sym *symbols.Symbol)
 // hidden there is no member of that namespace, so no import brings it on from
 // there, though another import of scope may still bring the element itself.
 func (r *Resolver) withoutHiddenImports(scope *symbols.Scope, name string, syms []*symbols.Symbol) []*symbols.Symbol {
-	if scope == nil || r.overloading > 0 || len(syms) == 0 {
+	if scope == nil || len(syms) == 0 {
 		return syms
 	}
 	// A route read through a cycle of imports still being computed is undecided
@@ -396,7 +393,7 @@ func (r *Resolver) withoutHiddenReexports(scope *symbols.Scope, prefix, name str
 // namespace, reaches scope only through a namespace that hides it, under any
 // name sym binds (see withoutHiddenImports).
 func (r *Resolver) hiddenOnRoute(scope *symbols.Scope, sym *symbols.Symbol) bool {
-	if scope == nil || sym == nil || r.overloading > 0 {
+	if scope == nil || sym == nil {
 		return false
 	}
 	for _, name := range memberNames(sym) {
