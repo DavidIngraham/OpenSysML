@@ -4,15 +4,13 @@ import (
 	"cmp"
 	"math"
 	"slices"
-	"strings"
 )
 
-// dotBoundaryGap is the space, in pixels, between the boundary symbols of a
-// node spread along one of its sides.
+// dotBoundaryGap is the space, in pixels, between the pins of a node spread
+// along one of its sides.
 const dotBoundaryGap = 6
 
-// boundarySide is a side of a boxed node, where the members of it that routes
-// place sit as its boundary symbols.
+// boundarySide is a side of a boxed node, where the pins its routes place sit.
 type boundarySide int
 
 const (
@@ -22,12 +20,12 @@ const (
 	bottomSide
 )
 
-// across reports whether the side runs across the page, so that the symbols on
-// it spread along x rather than y.
+// across reports whether the side runs across the page, so that the pins on it
+// spread along x rather than y.
 func (s boundarySide) across() bool { return s == topSide || s == bottomSide }
 
-// boundarySymbol is a member of a boxed node that its routes place: the box the
-// routes gave it, where they meet it and the mean of where they come from.
+// boundarySymbol is a pin of a boxed node that its routes place: the box the
+// routes gave it, where they meet the node and the mean of where they come from.
 type boundarySymbol struct {
 	id       string
 	box      nodeBox
@@ -42,7 +40,7 @@ func (s boundarySide) along(p Point) float64 {
 	return p.Y
 }
 
-// through is the coordinate of p through side, from the border inward.
+// through is the coordinate of p through side, from the border outward.
 func (s boundarySide) through(p Point) float64 {
 	if s.across() {
 		return p.Y
@@ -66,36 +64,36 @@ func (s boundarySide) depth(b nodeBox) float64 {
 	return width
 }
 
-// isBoundaryKind reports whether a kind is drawn as a boundary symbol of the
-// node declaring it: a port usage, or a case's actor, subject or stakeholder
-// parameter (SysML v2 §7.26.5, §8.2.3.21).
-func isBoundaryKind(kind string) bool {
-	if isPortKind(kind) {
-		return true
+// pinSide is the side of b a pin sits on for a route ending at end on its way from next: the side
+// end lies off — past a corner, the side it lies farther off — and for an end on or inside the
+// border the nearest side, the one facing next when two are as near.
+func (b nodeBox) pinSide(end, next Point) boundarySide {
+	dx := end.X - math.Min(math.Max(end.X, b.low.X), b.high.X)
+	dy := end.Y - math.Min(math.Max(end.Y, b.low.Y), b.high.Y)
+	switch {
+	case dx == 0 && dy == 0:
+		return b.nearestSide(end, Point{X: next.X - end.X, Y: next.Y - end.Y})
+	case math.Abs(dx) >= math.Abs(dy) && dx < 0:
+		return leftSide
+	case math.Abs(dx) >= math.Abs(dy):
+		return rightSide
+	case dy < 0:
+		return topSide
 	}
-	for _, word := range strings.Fields(kind) {
-		switch word {
-		case "actor", "subject", "stakeholder":
-			return !isDefinitionKind(kind)
-		}
-	}
-	return false
+	return bottomSide
 }
 
-// sideToward is the side of b a route reaching it at `at` from the direction
-// dir comes to: the side nearest the point it reaches, the one facing most
-// squarely where the route comes from when the point is as near to two.
-func (b nodeBox) sideToward(at, dir Point) boundarySide {
-	nearness := [4]float64{leftSide: -math.Abs(at.X - b.low.X), rightSide: -math.Abs(b.high.X - at.X),
-		topSide: -math.Abs(at.Y - b.low.Y), bottomSide: -math.Abs(b.high.Y - at.Y)}
+// nearestSide is the side of b nearest p; of two as near, the one facing dir most squarely.
+func (b nodeBox) nearestSide(p, dir Point) boundarySide {
+	distances := [4]float64{leftSide: p.X - b.low.X, rightSide: b.high.X - p.X, topSide: p.Y - b.low.Y, bottomSide: b.high.Y - p.Y}
 	facing := [4]float64{leftSide: -dir.X, rightSide: dir.X, topSide: -dir.Y, bottomSide: dir.Y}
-	best := leftSide
+	nearest := leftSide
 	for side := rightSide; side <= bottomSide; side++ {
-		if nearness[side] > nearness[best] || nearness[side] == nearness[best] && facing[side] > facing[best] {
-			best = side
+		if distances[side] < distances[nearest] || distances[side] == distances[nearest] && facing[side] > facing[nearest] {
+			nearest = side
 		}
 	}
-	return best
+	return nearest
 }
 
 // toward is the point of the box's border on the way from its centre toward p;
@@ -110,84 +108,40 @@ func (b nodeBox) toward(p Point) Point {
 	return Point{X: halfPixel(c.X + dx*t), Y: halfPixel(c.Y + dy*t)}
 }
 
-// spreadBoundaries moves apart, under every boxed cluster at or under node, the
-// boundary symbols the routes place over one another: those a side's routes
-// meet are spread along that side, touching its border, in the order the routes
-// come from, and a side's symbols keep out of a corner the symbols of the sides
-// before it hold. A symbol overlapping none keeps the place its routes give it.
-func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
-	for _, child := range node.Children {
-		w.spreadBoundaries(child, ends)
-	}
-	box, ok := w.boxes[node.ID]
-	if !ok || len(node.Children) == 0 || w.tree {
-		return
-	}
-	var sides [4][]boundarySymbol
-	for _, child := range node.Children {
-		symbol, ok := w.boundarySymbol(child, ends)
-		if !ok {
-			continue
-		}
-		side := box.sideToward(symbol.at, Point{X: symbol.from.X - symbol.at.X, Y: symbol.from.Y - symbol.at.Y})
-		sides[side] = append(sides[side], symbol)
-	}
+// spreadPins moves apart, along the side they sit on, the pins of a node the routes place over
+// one another, a side's pins keeping out of a corner the pins of the sides before it hold.
+func (w *dotWriter) spreadPins(box nodeBox, sides [4][]boundarySymbol) {
 	var placed []nodeBox
 	for side := leftSide; side <= bottomSide; side++ {
 		if len(sides[side]) == 0 {
 			continue
 		}
-		w.spreadAlong(box, side, sides[side], placed)
+		for id, pin := range spreadAlong(box, side, sides[side], placed) {
+			w.pins[id] = pin
+		}
 		for _, symbol := range sides[side] {
-			placed = append(placed, w.boxes[symbol.id])
+			placed = append(placed, w.pins[symbol.id])
 		}
 	}
 }
 
-// boundarySymbol is the member node as a boundary symbol of its cluster when
-// the routes of its edges place it: a node of a boundary kind with no Layout, no
-// members and no neighbour-derived place that a route reaches or stops short of.
-func (w *dotWriter) boundarySymbol(node *Node, ends map[string][]routeEnd) (boundarySymbol, bool) {
-	box, ok := w.boxes[node.ID]
-	if !ok || !isBoundaryKind(node.Kind) || node.Geometry != nil || len(node.Children) > 0 || w.placement.derived[node.ID] {
-		return boundarySymbol{}, false
-	}
-	reaching := reachingEnds(ends[node.ID])
-	if len(reaching) == 0 {
-		return boundarySymbol{}, false
-	}
-	symbol := boundarySymbol{id: node.ID, box: box}
-	for _, end := range reaching {
-		symbol.at.X += end.at.X
-		symbol.at.Y += end.at.Y
-		symbol.from.X += end.next.X
-		symbol.from.Y += end.next.Y
-	}
-	n := float64(len(reaching))
-	symbol.at = Point{X: symbol.at.X / n, Y: symbol.at.Y / n}
-	symbol.from = Point{X: symbol.from.X / n, Y: symbol.from.Y / n}
-	return symbol, true
-}
-
-// symbolRun is a run of boundary symbols laid end to end along a side, a gap
-// apart, centred on the mean of where their routes meet the side; a run of one
-// symbol lies where the routes place it.
+// symbolRun is a run of pins laid a gap apart along a side, centred on the mean of where
+// their routes meet it; a run of one pin lies where the routes place it.
 type symbolRun struct {
 	symbols []boundarySymbol
 	length  float64
 	ideal   float64
 }
 
-// sideRange is the stretch of a side its symbols may take: the side, less the
-// corners symbols of the sides spread before it reach into.
+// sideRange is the stretch of a side its pins may take: the side, less the
+// corners pins of the sides spread before it reach into.
 type sideRange struct {
 	low, high       float64
 	lowCut, highCut bool
 }
 
-// freeRange is the range along side left to symbols of the given depth by the
-// obstacles reaching into the lane such symbols occupy inside the border: an
-// obstacle nearer the side's start cuts the range there, else at its end.
+// freeRange is the range along side left to pins of the given depth by the obstacles in
+// their lane: an obstacle nearer the side's start cuts the range there, else at its end.
 func (b nodeBox) freeRange(side boundarySide, depth float64, obstacles []nodeBox) sideRange {
 	r := sideRange{low: side.along(b.low), high: side.along(b.high)}
 	middle := (r.low + r.high) / 2
@@ -206,29 +160,25 @@ func (b nodeBox) freeRange(side boundarySide, depth float64, obstacles []nodeBox
 	return r
 }
 
-// lane is the band through side, from its border inward by depth, that symbols
+// lane is the band outside side, from its border outward by depth, that pins
 // of that depth touching the border occupy.
 func (b nodeBox) lane(side boundarySide, depth float64) (low, high float64) {
 	switch side {
 	case leftSide:
-		return b.low.X, b.low.X + depth
+		return b.low.X - depth, b.low.X
 	case rightSide:
-		return b.high.X - depth, b.high.X
+		return b.high.X, b.high.X + depth
 	case topSide:
-		return b.low.Y, b.low.Y + depth
+		return b.low.Y - depth, b.low.Y
 	default:
-		return b.high.Y - depth, b.high.Y
+		return b.high.Y, b.high.Y + depth
 	}
 }
 
-// spreadAlong spreads the symbols on side of box that overlap one another along
-// it: symbols sorted along the side, by where their routes meet it and then by
-// where the routes come from, are pooled into runs that merge while
-// neighbouring runs overlap, each run centred on the mean place of its symbols
-// and kept within the side's free range when it fits, at the range's middle when
-// it does not. A symbol in a run of its own is left as the routes place it
-// unless an obstacle cuts it off the range.
-func (w *dotWriter) spreadAlong(box nodeBox, side boundarySide, symbols []boundarySymbol, obstacles []nodeBox) {
+// spreadAlong pools the pins on side of box into runs that merge while they overlap, each run
+// centred on its pins' mean place and kept within the side's free range when it fits; it
+// returns the box of every pin moved, by ID.
+func spreadAlong(box nodeBox, side boundarySide, symbols []boundarySymbol, obstacles []nodeBox) map[string]nodeBox {
 	slices.SortStableFunc(symbols, func(a, b boundarySymbol) int {
 		if c := cmp.Compare(side.along(a.at), side.along(b.at)); c != 0 {
 			return c
@@ -247,6 +197,7 @@ func (w *dotWriter) spreadAlong(box nodeBox, side boundarySide, symbols []bounda
 			runs = append(runs[:n-2], runs[n-2].merge(runs[n-1]))
 		}
 	}
+	moved := map[string]nodeBox{}
 	for _, run := range runs {
 		if len(run.symbols) < 2 && run.centre(side, rng) == side.along(run.symbols[0].box.centre()) {
 			continue
@@ -254,20 +205,15 @@ func (w *dotWriter) spreadAlong(box nodeBox, side boundarySide, symbols []bounda
 		at := run.start(side, rng)
 		for _, symbol := range run.symbols {
 			length := side.length(symbol.box)
-			w.boxes[symbol.id] = box.boundaryBox(side, symbol.box, at+length/2)
-			w.spread[symbol.id] = true
+			moved[symbol.id] = box.pinOn(side, symbol.box, at+length/2)
 			at += length + dotBoundaryGap
 		}
 	}
+	return moved
 }
 
-// centre is where the run is centred along side, within the range rng: on its
-// ideal, moved within the range when it fits. When it does not fit, a run cut
-// off one corner starts at that corner and runs past the side's far end, clear
-// of the corner's symbol; one cut off both corners, or none, sits at the
-// range's middle, as nothing clears both and the overlap is split between
-// them. A single symbol stays where the routes place it, moved only off a
-// cut-off corner.
+// centre is where the run is centred along side: on its ideal within rng when it fits; else from
+// a cut-off corner past the far end, or at rng's middle when both corners or none are cut off.
 func (r symbolRun) centre(side boundarySide, rng sideRange) float64 {
 	if r.length > rng.high-rng.low && (len(r.symbols) > 1 || rng.lowCut && rng.highCut) {
 		switch {
@@ -307,20 +253,21 @@ func (r symbolRun) merge(next symbolRun) symbolRun {
 		ideal: (r.ideal*n + next.ideal*m) / (n + m)}
 }
 
-// boundaryBox is the box of a symbol of the given box's size on side of the
-// cluster's box, touching the border from inside, centred at `at` along it.
-func (b nodeBox) boundaryBox(side boundarySide, symbol nodeBox, at float64) nodeBox {
-	width, height := symbol.size()
+// pinOn is the box of a pin of the given box's size on side of b, touching the
+// border from outside, centred at `at` along it, to the half pixel.
+func (b nodeBox) pinOn(side boundarySide, pin nodeBox, at float64) nodeBox {
+	width, height := pin.size()
 	var c Point
 	switch side {
 	case leftSide:
-		c = Point{X: b.low.X + width/2, Y: at}
+		c = Point{X: b.low.X - width/2, Y: at}
 	case rightSide:
-		c = Point{X: b.high.X - width/2, Y: at}
+		c = Point{X: b.high.X + width/2, Y: at}
 	case topSide:
-		c = Point{X: at, Y: b.low.Y + height/2}
+		c = Point{X: at, Y: b.low.Y - height/2}
 	case bottomSide:
-		c = Point{X: at, Y: b.high.Y - height/2}
+		c = Point{X: at, Y: b.high.Y + height/2}
 	}
-	return nodeBox{low: Point{X: c.X - width/2, Y: c.Y - height/2}, high: Point{X: c.X + width/2, Y: c.Y + height/2}}
+	c = Point{X: halfPixel(c.X), Y: halfPixel(c.Y)}
+	return nodeBox{low: Point{X: c.X - width/2, Y: c.Y - height/2}, high: Point{X: c.X + width/2, Y: c.Y + height/2}, stated: true}
 }

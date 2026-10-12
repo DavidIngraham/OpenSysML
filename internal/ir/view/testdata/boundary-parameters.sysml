@@ -1,14 +1,10 @@
-// Use cases whose actor parameters are boundary symbols of a positioned node:
-// two on one side meet at one route end, two meet at a corner from different
-// sides, two meet on a node with no stated size; a part's nested parts, no
-// boundary symbols, meet inside it; and a migration made up one connection's
-// name.
+// Use cases whose actor parameters are pins of a positioned node, meeting at one route end,
+// at a corner and crowded at the corners; and a migration made up one connection's name.
 package BoundaryParameters {
     part Operator;
     part Administrator;
     part 'Service Technician';
     part Supervisor;
-    part Rack;
 
     use case 'Load Sample' {
         subject;
@@ -17,16 +13,10 @@ package BoundaryParameters {
         actor administrator :> Administrator;
         actor supervisor :> Supervisor;
     }
-    part Instrument {
-        part detector;
-        part filament;
-    }
     connection 'Operator to Load Sample' connect Operator to 'Load Sample'.operator;
     connection 'Service Technician to Load Sample' connect 'Service Technician' to 'Load Sample'.technician;
     connection 'Administrator to Load Sample' connect Administrator to 'Load Sample'.administrator;
     connection 'Supervisor to Load Sample' connect Supervisor to 'Load Sample'.supervisor;
-    connection 'Rack to Detector' connect Rack to Instrument.detector;
-    connection 'Rack to Filament' connect Rack to Instrument.filament;
 
     use case 'Acquire Image' {
         subject;
@@ -96,9 +86,8 @@ package BoundaryParameters {
         metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
     }
 
-    // Two routes from above and one from the left meet near the top-left
-    // corner; the two symbols from above are together wider than the top side
-    // leaves beyond the one from the left.
+    // Two routes from above and one from the left meet near the top-left corner; the two
+    // symbols from above are together wider than the top side leaves beyond the left one.
     view crowdedCorner {
         expose Operator;
         expose Administrator;
@@ -112,10 +101,10 @@ package BoundaryParameters {
         metadata DiagramLayout::Layout about Operator { x = 40; y = 98; width = 80; height = 44; }
         metadata DiagramLayout::Layout about 'Service Technician' { x = 280; y = 20; width = 80; height = 44; }
         metadata DiagramLayout::Layout about Administrator { x = 360; y = 20; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 160; height = 50; }
+        metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 30; height = 50; }
         metadata DiagramLayout::Route about 'Operator to Load Sample' { points = (120, 120, 320, 120); }
         metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
-        metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (400, 64, 400, 120); }
+        metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (340, 64, 340, 120); }
     }
 
     // As crowdedCorner, with a fourth route from the right meeting the top-right
@@ -136,42 +125,11 @@ package BoundaryParameters {
         metadata DiagramLayout::Layout about 'Service Technician' { x = 280; y = 20; width = 80; height = 44; }
         metadata DiagramLayout::Layout about Administrator { x = 360; y = 20; width = 80; height = 44; }
         metadata DiagramLayout::Layout about Supervisor { x = 520; y = 98; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 160; height = 50; }
+        metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 30; height = 50; }
         metadata DiagramLayout::Route about 'Operator to Load Sample' { points = (120, 120, 320, 120); }
         metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
-        metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (400, 64, 400, 120); }
-        metadata DiagramLayout::Route about 'Supervisor to Load Sample' { points = (520, 120, 480, 120); }
-    }
-
-    // The use case has a position but no size, so its box is fitted round its
-    // parameters.
-    view unsized {
-        expose Operator;
-        expose Administrator;
-        expose 'Configure Instrument';
-        expose 'Operator to Configure Instrument';
-        expose 'Administrator to Configure Instrument';
-        render Views::asInterconnectionDiagram;
-
-        metadata DiagramLayout::Layout about Operator { x = 40; y = 60; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about Administrator { x = 40; y = 220; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about 'Configure Instrument' { x = 320; y = 120; }
-        metadata DiagramLayout::Route about 'Operator to Configure Instrument' { points = (120, 82, 320, 145); }
-        metadata DiagramLayout::Route about 'Administrator to Configure Instrument' { points = (120, 242, 320, 145); }
-    }
-
-    // The routes to the instrument's nested parts end at one point inside it.
-    view interior {
-        expose Rack;
-        expose Instrument;
-        expose 'Rack to Detector';
-        expose 'Rack to Filament';
-        render Views::asInterconnectionDiagram;
-
-        metadata DiagramLayout::Layout about Rack { x = 40; y = 60; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about Instrument { x = 320; y = 120; width = 160; height = 100; }
-        metadata DiagramLayout::Route about 'Rack to Detector' { points = (120, 82, 370, 170); }
-        metadata DiagramLayout::Route about 'Rack to Filament' { points = (120, 82, 370, 170); }
+        metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (340, 64, 340, 120); }
+        metadata DiagramLayout::Route about 'Supervisor to Load Sample' { points = (520, 120, 350, 120); }
     }
 
     metadata MigrationMetadata::SynthesizedName about 'Operator to Acquire Image';
