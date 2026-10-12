@@ -2478,13 +2478,13 @@ func (a *activity) receiverOf(t, op *sysmlv1.Element) (receiver, note string, ok
 	obj, typ, ok := a.objectOf(t)
 	switch {
 	case !ok && len(a.sources[t]) == 0:
-		return "", "the call runs in the caller's context: no flow feeds its target pin", false
+		return "", noReceiver + "no flow feeds its target pin", false
 	case !ok:
-		return "", "the call runs in the caller's context: the target the flow into its pin names is not an object read from this", false
+		return "", noReceiver + "the target the flow into its pin names is not an object read from this", false
 	case typ == nil:
-		return "", "the call runs in the caller's context: the target " + obj + " has no known type to hold the operation", false
+		return "", noReceiver + "the target " + obj + " has no known type to hold the operation", false
 	case !a.m.hasFeature(typ, op):
-		return "", "the call runs in the caller's context: the target " + obj + " is a " + qualifiedName(typ) + ", which has no operation " + a.m.nameOf(op), false
+		return "", noReceiver + "the target " + obj + " is a " + qualifiedName(typ) + ", which has no operation " + a.m.nameOf(op), false
 	}
 	usage := writeName(a.m.operationUsage(op))
 	if obj == a.self() {

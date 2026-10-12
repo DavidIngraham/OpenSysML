@@ -381,7 +381,7 @@ func TestUnfedTargetPinDoesNotPickAPart(t *testing.T) {
 	r := migrateDocument(t, unfedTargetCall, unfedTargetCallApplications)
 	wantLine(t, r.Notation, "action spin;")
 	wantNoLine(t, r.Notation, "::> motor.spin")
-	wantNote(t, r, "_call", migrate.Approximated, "the call runs in the caller's context: no flow feeds its target pin; spin is an action of Motor, performed on an object of it, and the target pin names none read from this, so an empty step stands for the call")
+	wantNote(t, r, "_call", migrate.Approximated, "no object receives the call: no flow feeds its target pin; spin is an action of Motor, performed on an object of it, and the target pin names none read from this, so an empty step stands for the call")
 	wantNote(t, r, "_callTgt", migrate.Approximated, "the target pin is not written: it names no object read from this")
 	wantClean(t, "t.sysml", r)
 }
