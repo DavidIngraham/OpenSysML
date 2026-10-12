@@ -123,7 +123,7 @@ func declaresKind(word string) bool {
 // end, a type, a multiplicity, a body, a value, a specialization or a keyword.
 func continuesDeclaration(t lexer.Token) bool {
 	switch t.Kind {
-	case lexer.Semicolon, lexer.Colon, lexer.LBracket, lexer.LBrace, lexer.Eq,
+	case lexer.Semicolon, lexer.Colon, lexer.LBracket, lexer.LBrace, lexer.Eq, lexer.ColonEq,
 		lexer.ColonGt, lexer.ColonGtGt, lexer.ColonColonGt, lexer.EqGt, lexer.Keyword:
 		return true
 	}
