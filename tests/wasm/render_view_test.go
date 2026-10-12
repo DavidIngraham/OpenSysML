@@ -112,7 +112,7 @@ func TestEngineRenderView(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Workspace.RenderView(%q): %v", viewName, err)
 			}
-			data := rendering.DataFor(view.Ports(display))
+			data := rendering.DataWith(view.Options{Ports: view.Ports(display)})
 			got := engineRenderView(t, eng, parsed.ModelHash, viewName, display)
 			assertRenderDataParity(t, got, data)
 		}

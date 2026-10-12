@@ -42,7 +42,7 @@ func (s *Service) RenderView(ctx context.Context, req *pb.RenderViewRequest) (*p
 		}
 		return nil, statusError(connect.CodeInvalidArgument, err.Error())
 	}
-	return renderViewData(cached, rendering.DataFor(ports)), nil
+	return renderViewData(cached, rendering.DataWith(view.Options{Ports: ports})), nil
 }
 
 type renderViewOrigins struct {

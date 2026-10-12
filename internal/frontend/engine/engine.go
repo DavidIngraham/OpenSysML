@@ -332,7 +332,7 @@ func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
 		}
 		return nil, statusError(codeInvalidArgument, err.Error())
 	}
-	return marshalRenderView(rendering.DataFor(ports))
+	return marshalRenderView(rendering.DataWith(view.Options{Ports: ports}))
 }
 
 func marshalRenderView(data view.Data) ([]byte, error) {

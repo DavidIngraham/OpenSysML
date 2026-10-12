@@ -124,8 +124,8 @@ func TestDataForFiltersPortsByDisplay(t *testing.T) {
 		}
 		return nodes
 	}
-	minimal := byName(rendering.DataFor(PortsMinimal))
-	full := byName(rendering.DataFor(PortsFull))
+	minimal := byName(rendering.DataWith(Options{Ports: PortsMinimal}))
+	full := byName(rendering.DataWith(Options{Ports: PortsFull}))
 	if got := minimal["primary"].Ports; len(got) != 0 {
 		t.Errorf("minimal primary ports = %+v, want no unconnected port", got)
 	}
@@ -149,7 +149,7 @@ func TestDataForFiltersPortsByDisplay(t *testing.T) {
 	tree := &Rendering{Kind: KindTree, Roots: []*Node{{
 		ID: "n0", Name: "root", Ports: []Port{{ID: "n0.0", Name: "first"}, {ID: "n0.1", Name: "second"}},
 	}}}
-	if got := tree.DataFor(PortsMinimal).Nodes[0].Ports; len(got) != 2 {
+	if got := tree.DataWith(Options{Ports: PortsMinimal}).Nodes[0].Ports; len(got) != 2 {
 		t.Errorf("tree ports = %+v, want all ports for a non-interconnection kind", got)
 	}
 }
@@ -220,8 +220,8 @@ func TestMixedActionPinsKeepTheirFormBehavior(t *testing.T) {
 		}
 		return NodeData{}, false
 	}
-	minimalData := rendering.DataFor(PortsMinimal)
-	fullData := rendering.DataFor(PortsFull)
+	minimalData := rendering.DataWith(Options{Ports: PortsMinimal})
+	fullData := rendering.DataWith(Options{Ports: PortsFull})
 	for name, want := range map[string]string{"source": "output", "sink": "input", "Check": "request"} {
 		minimalNode, ok := nodeNamed(minimalData, name)
 		if !ok {

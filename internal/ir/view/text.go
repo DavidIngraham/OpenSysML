@@ -24,6 +24,7 @@ func (r *Rendering) TextWidth(width int) string { return r.textWith(Options{Widt
 // of an interconnection or mixed rendering the ports options' Ports display
 // draws.
 func (r *Rendering) textWith(options Options) string {
+	r = r.showing(options.Show)
 	width := options.Width
 	pictureNotices := refusedPictureNotices(r.Pictures, r.pictureRefusals())
 	var b strings.Builder
@@ -63,7 +64,7 @@ func (r *Rendering) textWith(options Options) string {
 	labels := map[string]string{}
 	ports := r.portView(options.Ports)
 	for _, root := range r.Roots {
-		writeNodeText(&b, root, 0, labels, ports)
+		writeNodeText(&b, root, 0, labels, ports, r.Shown)
 	}
 	if len(r.Edges) > 0 {
 		fmt.Fprintf(&b, "\n%s:\n", edgeSectionName(r.Kind))
@@ -179,7 +180,7 @@ func endLabel(labels map[string]string, node, port string) string {
 // under it,
 // each a line of its own, and recorded as `node.port`; elsewhere they are left
 // to the edges' labels, which an action's flows name their pins in.
-func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]string, ports portView) {
+func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]string, ports portView, shown Shown) {
 	labels[node.ID] = nodeLabel(node)
 	line := strings.Repeat("  ", depth) + node.Kind
 	if node.Name != "" {
@@ -188,7 +189,7 @@ func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]
 	if node.Type != "" {
 		line += " : " + node.Type
 	}
-	if node.Detail != "" {
+	if node.Detail != "" && shown.Has(ElementCompartments) {
 		line += " (" + node.Detail + ")"
 	}
 	if g := node.Geometry; g != nil {
@@ -208,7 +209,7 @@ func writeNodeText(b *strings.Builder, node *Node, depth int, labels map[string]
 		}
 	}
 	for _, child := range node.Children {
-		writeNodeText(b, child, depth+1, labels, ports)
+		writeNodeText(b, child, depth+1, labels, ports, shown)
 		if child.Kind == startKind {
 			labels[child.ID] = "start of " + labels[node.ID]
 		}

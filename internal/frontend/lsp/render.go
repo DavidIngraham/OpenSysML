@@ -397,7 +397,7 @@ func (s *Server) Render(params *renderParams) (*renderResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := rendering.DataFor(ports)
+	data := rendering.DataWith(view.Options{Ports: ports})
 	out := &renderResult{
 		View:     data.View,
 		Kind:     string(data.Kind),

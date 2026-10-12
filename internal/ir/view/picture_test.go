@@ -196,7 +196,7 @@ func TestUnsafePicturesAreOmittedInEveryViewForm(t *testing.T) {
 			}
 		}
 	}
-	if got := rendering.DataFor(PortsMinimal).Notices; len(got) != 2 || got[0] != activeNotice || got[1] != remoteNotice {
+	if got := rendering.DataWith(Options{Ports: PortsMinimal}).Notices; len(got) != 2 || got[0] != activeNotice || got[1] != remoteNotice {
 		t.Errorf("DataFor notices = %q, want [%q %q]", got, activeNotice, remoteNotice)
 	}
 }
