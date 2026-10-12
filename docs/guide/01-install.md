@@ -43,7 +43,7 @@ environment variable for unattended installs:
 | Choice | `install.sh` | `install.ps1` | Environment |
 |---|---|---|---|
 | Release: a tag, `latest` or `nightly` | `--version v0.9.1` | `-Version v0.9.1` | `OPENSYSML_VERSION` |
-| Tools: `sysml`, `sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel` or `all` | `--tools sysml` | `-Tools sysml` | `OPENSYSML_TOOLS` |
+| Tools: `sysml`, `sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel`, or `all` for every tool the chosen release published | `--tools sysml` | `-Tools sysml` | `OPENSYSML_TOOLS` |
 | Where to install | `--prefix ~/opt` or `--bin-dir ~/bin` | `-InstallDir D:\Tools\OpenSysML` | `OPENSYSML_PREFIX`, `OPENSYSML_BIN_DIR`, `OPENSYSML_INSTALL_DIR` |
 | A mirror of the GitHub release tree | `--base-url URL` | `-BaseUrl URL` | `OPENSYSML_DOWNLOAD_BASE` |
 | Show the choice, install nothing | `--dry-run` | `-DryRun` | |
@@ -60,6 +60,11 @@ curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools all --verify-sign
 # the REPL alone, pinned to a release
 & ([scriptblock]::Create((irm https://opensysml.org/install.ps1))) -Tools sysml -Version v0.9.1
 ```
+
+`all` is resolved against the chosen release's `SHA256SUMS.txt`: it installs the tools that
+release published for this platform, and says which of the four it lacks (`sysml-grpc` is
+published from v0.9.0, `sysml-jupyter-kernel` from v0.10.0). Naming such a tool explicitly on
+an older release fails instead.
 
 `--verify-signature` checks `SHA256SUMS.txt` against the signature the release pipeline
 publishes beside it (see [the signed checksum manifest](../project/releasing.md#the-signed-checksum-manifest)); it needs

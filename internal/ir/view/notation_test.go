@@ -109,8 +109,8 @@ func TestParameterSymbolsAreLeftOutByDefault(t *testing.T) {
 }
 
 // Shown — by a rendering declared in the model with showParameterSymbols true,
-// or by Options adding the element — the actor parameters are symbols on the
-// use case's boundary, and each connection ends at its parameter.
+// or by Options adding the element — the subject and actor parameters are
+// symbols on the use case's boundary, and each connection ends at its parameter.
 func TestParameterSymbolsAreShownWhenAsked(t *testing.T) {
 	cases := map[string]struct {
 		view    string
@@ -126,23 +126,24 @@ func TestParameterSymbolsAreShownWhenAsked(t *testing.T) {
 			rendering := render(t, "use-cases.sysml", tc.view)
 			shown := rendering.showing(tc.options.Show)
 			useCase := nodesByName(shown)["LabUseCases::'Configure Instrument'"]
-			if useCase == nil || len(useCase.Children) != 3 {
+			if useCase == nil || len(useCase.Ports) != 3 || len(useCase.Children) != 0 {
 				t.Fatalf("use case = %+v, want one with its subject and two actors as parameter symbols", useCase)
 			}
 			byActor := map[string]string{}
-			for _, child := range useCase.Children {
-				if child.Kind == "actor" {
-					byActor[child.Name] = child.ID
+			for _, pin := range useCase.Ports {
+				if !pin.Parameter {
+					t.Errorf("pin %+v is not a parameter symbol", pin)
 				}
+				byActor[pin.Name] = pin.ID
 			}
-			if len(byActor) != 2 {
-				t.Fatalf("actors = %v, want operator and administrator", byActor)
+			if byActor["operator"] == "" || byActor["administrator"] == "" {
+				t.Fatalf("parameters = %v, want operator and administrator", byActor)
 			}
 			ends := useCaseEnds(t, shown)
-			if got := ends["LabUseCases::Operator"]; got != [2]string{byActor["operator"], ""} {
+			if got := ends["LabUseCases::Operator"]; got != [2]string{useCase.ID, byActor["operator"]} {
 				t.Errorf("the operator's connection ends at %v, want the operator parameter %s", got, byActor["operator"])
 			}
-			if got := ends["LabUseCases::Administrator"]; got != [2]string{byActor["administrator"], ""} {
+			if got := ends["LabUseCases::Administrator"]; got != [2]string{useCase.ID, byActor["administrator"]} {
 				t.Errorf("the administrator's connection ends at %v, want the administrator parameter %s", got, byActor["administrator"])
 			}
 			for _, form := range []Form{FormText, FormDot, FormMermaid, FormPlantUML, FormD2} {
