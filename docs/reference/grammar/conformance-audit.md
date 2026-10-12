@@ -231,10 +231,18 @@ and the other prefixes. The message names the SysML spelling where there is one:
 | `subclassifier` | `specializes` on the definition itself |
 | `interaction`, `multiplicity` | none — move the declaration to a `.kerml` file |
 
-The parser keeps accepting the keywords whatever the file kind, so the finding is
-the notation pass's (warning by default, error under `-strict`), the members of a
-reported declaration are not reported again, and there is no `-fix`: swapping the
-keyword changes what kind of element is declared. The pinned pilot rejects each of
+The parser keeps accepting the keywords whatever the file kind where a declaration
+follows them — a name, a short name, prefix metadata, a further declaration keyword
+(`feature redefines x`), or for a declaration kind the body or leading multiplicity
+of an anonymous one (`inv { x > 0 }`, `connector [1] a to b`) — so the finding is the notation pass's (warning by default, error
+under `-strict`), the members of a reported declaration are not reported again, and
+there is no `-fix`: swapping the keyword changes what kind of element is declared.
+Anywhere else the word is the name `SysML.xtext` makes it: with `attribute step :
+Real;` declared, `step <= upperBound` in a constraint, `step < upperBound`, `(step)`,
+`step + 1`, `Range::step`, `range.step`, `step#(1)` and a kindless `step : Real;` or
+`step = 1;` all read or declare the attribute, as the pilot reads them, and the same
+holds for every other word only `KerML.xtext` spells (`chains`, `type`,
+`multiplicity`, `member`, `composite`, …). The pinned pilot rejects each of
 these in a `.sysml` file (`no viable alternative at input …`, oracle case
 `tools/referee/reject/testdata/negative/extensions/x10-connector-in-sysml.sysml`).
 `binding`/`bind`, `succession`, `connection`/`connect`, `flow`, `interface` and
@@ -243,9 +251,14 @@ these in a `.sysml` file (`no viable alternative at input …`, oracle case
 ### Reserved by SysML only — a name in a `.kerml` file
 
 A word is reserved by the grammar of the file it is written in, so a literal that
-appears only in `SysML.xtext` is an ordinary name in KerML. These four are reserved
-or not depending on the file kind; they keep their SysML meanings in `.sysml`, where
-the literal exists.
+appears only in `SysML.xtext` is an ordinary name in KerML — every one of them
+(`action`, `part`, `attribute`, `snapshot`, `frame`, …), wherever a name stands:
+`feature action : Real;`, `inv { action <= part }`, `Range::action`. Where such a
+word heads a declaration of the SysML notation (`action a;`, `connect [1] a to b;`,
+`constraint { … }`), the declaration is still parsed and the notation pass refuses
+it as SysML notation. The four below
+are the words the OMG corpora witness; they keep their SysML meanings in `.sysml`,
+where the literal exists.
 
 | Word | `KerML.xtext` | `KerMLExpressions.xtext` | `SysML.xtext` | Corpus witness |
 |------|---------------|--------------------------|---------------|----------------|
