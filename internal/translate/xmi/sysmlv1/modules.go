@@ -176,6 +176,20 @@ func (m *Model) moduleDefinition(s *Stereotype) (moduleStereotype, bool) {
 	return found, any
 }
 
+// moduleGeneral finds the snapshot declaration a general of a document's
+// classifier names when it is a proxy whose href fragment is a snapshot id.
+func (m *Model) moduleGeneral(g *Element) (moduleStereotype, bool) {
+	if !g.IsProxy() {
+		return moduleStereotype{}, false
+	}
+	i := strings.LastIndexByte(g.Href, '#')
+	if i < 0 {
+		return moduleStereotype{}, false
+	}
+	decl, ok := m.moduleStereotypes[g.Href[i+1:]]
+	return decl, ok
+}
+
 // moduleAncestors lists the stereotypes a snapshot declaration specializes,
 // transitively, nearest first and each once: elements of the documents read
 // when they define one, elements standing for the snapshot's own, else the

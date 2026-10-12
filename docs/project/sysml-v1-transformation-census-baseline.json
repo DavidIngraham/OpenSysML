@@ -13657,9 +13657,10 @@
         "tests/migrate/reception_test.go:TestReceptionsAcceptAndPerformTheirMethod",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls",
         "tests/migrate/stereotype_metadata_test.go:TestDirectedOperationKeepsItsDirection",
-        "tests/migrate/call_target_test.go:TestCallOperationRunsOnTheObjectItsTargetPinHolds"
+        "tests/migrate/call_target_test.go:TestCallOperationRunsOnTheObjectItsTargetPinHolds",
+        "tests/migrate/operation_state_reference_test.go:TestOperationRunByAStateKeepsItsDef"
       ],
-      "reason": "OMG's `perform action <op>` on the block is one performance the object itself enacts (`Parts::Part::performedActions`, multiplicity 1), which a caller's `perform ::> target.op` joins instead of invoking afresh with its own arguments; so the operation is written as the block's composite `action <op>` usage holding its parameters, pre/postconditions as `assert constraint` and its method as body, with no `perform` keyword and no synthesized `action def`, and every call chains to it",
+      "reason": "OMG's `perform action <op>` on the block is one performance the object itself enacts (`Parts::Part::performedActions`, multiplicity 1), which a caller's `perform ::> target.op` joins instead of invoking afresh with its own arguments; so the operation is written as the block's composite `action <op>` usage holding its parameters, pre/postconditions as `assert constraint` and its method as body, with no `perform` keyword and no synthesized `action def`, and every call chains to it; an operation a state runs, or whose method acts on another block through its ports, keeps an `action def` with a context parameter, as a state def's member reaches no usage of the block",
       "scope": []
     },
     {
@@ -14264,9 +14265,10 @@
         "tests/migrate/reception_test.go:TestReceptionsAcceptAndPerformTheirMethod",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls",
         "tests/migrate/stereotype_metadata_test.go:TestDirectedOperationKeepsItsDirection",
-        "tests/migrate/call_target_test.go:TestCallOperationRunsOnTheObjectItsTargetPinHolds"
+        "tests/migrate/call_target_test.go:TestCallOperationRunsOnTheObjectItsTargetPinHolds",
+        "tests/migrate/operation_state_reference_test.go:TestOperationRunByAStateKeepsItsDef"
       ],
-      "reason": "OMG's `perform action <op>` on the block is one performance the object itself enacts (`Parts::Part::performedActions`, multiplicity 1), which a caller's `perform ::> target.op` joins instead of invoking afresh with its own arguments; so the operation is written as the block's composite `action <op>` usage holding its parameters, pre/postconditions as `assert constraint` and its method as body, with no `perform` keyword and no synthesized `action def`, and every call chains to it",
+      "reason": "OMG's `perform action <op>` on the block is one performance the object itself enacts (`Parts::Part::performedActions`, multiplicity 1), which a caller's `perform ::> target.op` joins instead of invoking afresh with its own arguments; so the operation is written as the block's composite `action <op>` usage holding its parameters, pre/postconditions as `assert constraint` and its method as body, with no `perform` keyword and no synthesized `action def`, and every call chains to it; an operation a state runs, or whose method acts on another block through its ports, keeps an `action def` with a context parameter, as a state def's member reaches no usage of the block",
       "scope": []
     },
     {

@@ -57,9 +57,31 @@ var omgSnapshot = strings.NewReplacer(
 	`general="_md_block"`, `general="http://www.omg.org/spec/SysML/20181001/SysML.xmi#Block"`,
 ).Replace(moduleSnapshot)
 
-// snapshotArchive zips the tool block stereotypes fixture with a snapshot of
-// the SysML module, the table's row type pointing into the module.
-func snapshotArchive(t *testing.T, snapshot string) []byte {
+// orgSnapshot is a snapshot of a user's own profile module: its «Structural»
+// specializes the SysML module's «Block» by an href across modules.
+const orgSnapshot = `<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:uml="http://www.nomagic.com/magicdraw/UML/2.5.1.1">
+  <uml:Package xmi:id="_org_root" ID="_org_root" name="Org Profile">
+    <packagedElement xsi:type="uml:Profile" xmi:id="_org" ID="_org" name="Org" URI="http://example.com/schemas/Org.xmi">
+      <packagedElement xsi:type="uml:Stereotype" xmi:id="_org_structural" ID="_org_structural" name="Structural">
+        <generalization xmi:id="_org_structural_gen" ID="_org_structural_gen">
+          <general xsi:type="uml:Stereotype" href="local:/PROJECT-44?resource=com.nomagic.magicdraw.uml_umodel.shared_umodel#_md_block"/>
+        </generalization>
+      </packagedElement>
+    </packagedElement>
+  </uml:Package>
+</xmi:XMI>`
+
+const orgHref = "local:/PROJECT-45?resource=com.nomagic.magicdraw.uml_umodel.shared_umodel#_org_structural"
+
+const (
+	sysmlSnapshotEntry = "proxy.local__PROJECT$h44_resource_com$dnomagic$dmagicdraw$duml_umodel$dshared_umodel$dsnapshot"
+	orgSnapshotEntry   = "proxy.local__PROJECT$h45_resource_com$dnomagic$dmagicdraw$duml_umodel$dshared_umodel$dsnapshot"
+)
+
+// fixtureModel is the tool block stereotypes fixture with its table's row type
+// pointing at rowType, and each pair of replacements applied once.
+func fixtureModel(t *testing.T, rowType string, replacements ...string) string {
 	t.Helper()
 	data, err := os.ReadFile("testdata/xmi/tool_block_stereotypes.xmi")
 	if err != nil {
@@ -67,17 +89,29 @@ func snapshotArchive(t *testing.T, snapshot string) []byte {
 	}
 	model := strings.Replace(string(data),
 		`<rowElementType href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML.Subsystem"/>`,
-		`<rowElementType href="`+moduleHref+`"/>`, 1)
+		`<rowElementType href="`+rowType+`"/>`, 1)
 	if model == string(data) {
 		t.Fatal("the fixture's table no longer names «Subsystem» by the OMG href")
 	}
+	for i := 0; i+1 < len(replacements); i += 2 {
+		if !strings.Contains(model, replacements[i]) {
+			t.Fatalf("the fixture no longer holds %q", replacements[i])
+		}
+		model = strings.Replace(model, replacements[i], replacements[i+1], 1)
+	}
+	return model
+}
+
+// moduleArchive zips a model with the module snapshots the archive bundles.
+func moduleArchive(t *testing.T, model string, snapshots [][2]string) []byte {
+	t.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	entries := [][2]string{
 		{"com.nomagic.ci.metamodel.project", `<?xml version="1.0"?><project/>`},
 		{"com.nomagic.magicdraw.uml_model.model", model},
-		{"proxy.local__PROJECT$h44_resource_com$dnomagic$dmagicdraw$duml_umodel$dshared_umodel$dsnapshot", snapshot},
 	}
+	entries = append(entries, snapshots...)
 	for _, entry := range entries {
 		w, err := zw.Create(entry[0])
 		if err != nil {
@@ -91,6 +125,13 @@ func snapshotArchive(t *testing.T, snapshot string) []byte {
 		t.Fatal(err)
 	}
 	return buf.Bytes()
+}
+
+// snapshotArchive zips the tool block stereotypes fixture with a snapshot of
+// the SysML module, the table's row type pointing into the module.
+func snapshotArchive(t *testing.T, snapshot string) []byte {
+	t.Helper()
+	return moduleArchive(t, fixtureModel(t, moduleHref), [][2]string{{sysmlSnapshotEntry, snapshot}})
 }
 
 // A class applying the tool's «Subsystem» is a part def whether the archive's
@@ -123,7 +164,7 @@ func TestModuleSnapshotBlockSpecializations(t *testing.T) {
 	if strings.Contains(report.String(), "tool's documented profile") {
 		t.Errorf("the generalization the snapshot declares was taken from the tool table:\n%s", report.String())
 	}
-	if !strings.Contains(report.String(), "«Subsystem» specializes «Block» in the tool's profile") {
+	if !strings.Contains(report.String(), "«Subsystem» specializes «Block» as the archive's module snapshot declares") {
 		t.Errorf("the table filtered by the module's «Subsystem» is not filtered as blocks:\n%s", report.String())
 	}
 	plain := migrateFixtureFile(t, "tool_block_stereotypes")
@@ -222,7 +263,83 @@ func TestModuleSnapshotGeneralizesIntoTheOMGProfile(t *testing.T) {
 	if err := r.Report.WriteText(&report); err != nil {
 		t.Fatal(err)
 	}
-	if text := report.String(); strings.Contains(text, "tool's documented profile") || strings.Contains(text, "no v2 metaclass stands for") || !strings.Contains(text, "«Subsystem» specializes «Block» in the tool's profile") {
+	if text := report.String(); strings.Contains(text, "tool's documented profile") || strings.Contains(text, "no v2 metaclass stands for") || !strings.Contains(text, "«Subsystem» specializes «Block» as the archive's module snapshot declares") {
 		t.Errorf("the OMG Block general was not followed for the table's rows:\n%s", text)
+	}
+}
+
+// A stereotype the document defines specializing a module's «Subsystem» by
+// href inherits the snapshot's generalization to «Block»: its class is a part
+// def carrying the document's own stereotype.
+func TestDocumentStereotypeSpecializesModuleStereotype(t *testing.T) {
+	model := fixtureModel(t, moduleHref,
+		`<packagedElement xmi:type="uml:Stereotype" xmi:id="_st_paper" name="Subsystem">`,
+		`<packagedElement xmi:type="uml:Stereotype" xmi:id="_st_instrument" name="Instrument">
+        <generalization xmi:id="_st_instrument_gen">
+          <general xmi:type="uml:Stereotype" href="`+moduleHref+`"/>
+        </generalization>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="_st_instrument_base" name="base_Class" association="_ext_instrument">
+          <type xmi:type="uml:Class" href="http://www.omg.org/spec/UML/20131001/UML.xmi#Class"/>
+        </ownedAttribute>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Extension" xmi:id="_ext_instrument" memberEnd="_st_instrument_base _ext_instrument_end">
+        <ownedEnd xmi:type="uml:ExtensionEnd" xmi:id="_ext_instrument_end" name="extension_Instrument" type="_st_instrument" aggregation="composite"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Stereotype" xmi:id="_st_paper" name="Subsystem">`,
+		`<sysml:Subsystem xmi:id="_app_sub_column" base_Class="_sub_column"/>`,
+		`<Tailoring:Instrument xmi:id="_app_sub_column" base_Class="_sub_column"/>`)
+	r, err := migrate.Migrate("tool_block_stereotypes.mdzip", moduleArchive(t, model, [][2]string{{sysmlSnapshotEntry, moduleSnapshot}}))
+	if err != nil {
+		t.Fatalf("Migrate(.mdzip): %v", err)
+	}
+	for _, d := range errors(t, "tool_block_stereotypes.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	out := string(r.Notation)
+	for _, want := range []string{"part def 'Beam Column' {", "@Tailoring::Instrument;", "occurrence def Paperwork {"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("migration lacks %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "occurrence def 'Beam Column'") {
+		t.Errorf("the class applying «Instrument» :> module «Subsystem» is no block:\n%s", out)
+	}
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(report.String(), "tool's documented profile") {
+		t.Errorf("the generalization the snapshot declares was taken from the tool table:\n%s", report.String())
+	}
+}
+
+// A user module's «Structural» :> «Block», declared by its snapshot under a
+// namespace of its own, classifies its class as a block and filters the rows
+// of a table typed by it as blocks.
+func TestUserModuleStereotypeFiltersTableRows(t *testing.T) {
+	model := fixtureModel(t, orgHref,
+		`xmlns:Tailoring="http://example.com/schemas/Tailoring.xmi"`,
+		`xmlns:Tailoring="http://example.com/schemas/Tailoring.xmi" xmlns:Org="http://example.com/schemas/Org.xmi"`,
+		`<sysml:Subsystem xmi:id="_app_sub_column" base_Class="_sub_column"/>`,
+		`<Org:Structural xmi:id="_app_sub_column" base_Class="_sub_column"/>`)
+	r, err := migrate.Migrate("tool_block_stereotypes.mdzip", moduleArchive(t, model, [][2]string{{sysmlSnapshotEntry, moduleSnapshot}, {orgSnapshotEntry, orgSnapshot}}))
+	if err != nil {
+		t.Fatalf("Migrate(.mdzip): %v", err)
+	}
+	for _, d := range errors(t, "tool_block_stereotypes.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	out := string(r.Notation)
+	for _, want := range []string{"part def 'Beam Column' {", `stereotype = "Structural";`, "occurrence def Paperwork {", `type = ("PartDefinition", "OccurrenceDefinition")`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("migration lacks %q:\n%s", want, out)
+		}
+	}
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	if text := report.String(); strings.Contains(text, "outside the document") || !strings.Contains(text, "«Structural» specializes «Block» as the archive's module snapshot declares") {
+		t.Errorf("the table typed by the user module's «Structural» is not filtered as blocks:\n%s", text)
 	}
 }

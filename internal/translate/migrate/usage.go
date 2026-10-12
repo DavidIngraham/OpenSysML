@@ -72,12 +72,35 @@ func (m *migration) usageName(b *sysmlv1.Element) string {
 // operationUsageOwner reports whether b is an operation a block owns, which is
 // written as the block's composite action usage whatever its body reads: a call
 // on an object performs the usage through a feature chain, so no def is needed.
+// It keeps a def when a state or transition runs it, from whose member no
+// usage of the block is reachable, or when its method acts on another block
+// through its ports, which a usage's this cannot stand for.
 func (m *migration) operationUsageOwner(b *sysmlv1.Element) bool {
 	if b.Type != "Operation" || !m.blockOwner(b.Parent) || !m.written(b) {
 		return false
 	}
-	c, _ := m.classify(b)
-	return c == catActionDef
+	if c, _ := m.classify(b); c != catActionDef {
+		return false
+	}
+	method := m.bodyMethod(b)
+	if method != nil && contextThroughPorts(m.contextOf(method)) {
+		return false
+	}
+	for _, e := range m.behaviorInvokers(b, method) {
+		if e.Type != "CallBehaviorAction" && e.Type != "CallOperationAction" && behaviorScope(e) {
+			return false
+		}
+	}
+	return true
+}
+
+// behaviorInvokers lists what invokes b or its method without owning it.
+func (m *migration) behaviorInvokers(b, method *sysmlv1.Element) []*sysmlv1.Element {
+	invokers := m.invokers[b]
+	if method != nil {
+		invokers = append(append([]*sysmlv1.Element{}, invokers...), m.invokers[method]...)
+	}
+	return invokers
 }
 
 // usageCandidate reports whether b is a behavior a block owns, written as the
@@ -104,11 +127,7 @@ func (m *migration) usageCandidate(b *sysmlv1.Element) bool {
 	default:
 		return false
 	}
-	invokers := m.invokers[b]
-	if method := m.bodyMethod(b); method != nil {
-		invokers = append(append([]*sysmlv1.Element{}, invokers...), m.invokers[method]...)
-	}
-	for _, e := range invokers {
+	for _, e := range m.behaviorInvokers(b, m.bodyMethod(b)) {
 		if !m.reachesUsage(e, b.Parent) {
 			return false
 		}
