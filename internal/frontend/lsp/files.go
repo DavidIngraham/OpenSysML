@@ -160,7 +160,10 @@ func walkFolder(folder string, budget int) (paths, unlisted []string) {
 		if !model.IsModelSource(path) {
 			return nil
 		}
-		if info, statErr := d.Info(); statErr != nil || info.Size() > maxScannedFileSize {
+		if d.Type()&fs.ModeSymlink != 0 && !linksWithin(path, folder) {
+			return nil
+		}
+		if info, statErr := os.Stat(path); statErr != nil || info.Size() > maxScannedFileSize {
 			return nil
 		}
 		paths = append(paths, path)
@@ -222,6 +225,21 @@ func (s *Server) changedOnDisk(path string) bool {
 	// #nosec G304 -- path comes from the folder the client asked to serve.
 	content, err := os.ReadFile(path)
 	return err != nil || !bytes.Equal(content, held)
+}
+
+// linksWithin reports whether the symlink at path resolves to a file under
+// folder: a link out of the workspace is not the workspace's to index, so a
+// query over the whole workspace shows nothing a path argument would refuse.
+func linksWithin(path, folder string) bool {
+	target, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return false
+	}
+	root, err := filepath.EvalSymlinks(folder)
+	if err != nil {
+		return false
+	}
+	return underFolders(target, []string{root})
 }
 
 // underFolders reports whether name lies in one of the folders.

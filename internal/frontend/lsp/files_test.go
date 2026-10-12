@@ -287,6 +287,30 @@ func TestRescanKeepsSourcesUnderADirectoryItCannotList(t *testing.T) {
 	}
 }
 
+func TestFolderScanFollowsSymlinksOnlyWithinTheFolder(t *testing.T) {
+	outside := t.TempDir()
+	away := filepath.Join(outside, "away.sysml")
+	if err := os.WriteFile(away, []byte("package Away;\n"), 0o600); err != nil {
+		t.Fatalf("write away: %v", err)
+	}
+	s, _, dir, lib, _ := multiFileWorkspace(t)
+	escape := filepath.Join(dir, "escape.sysml")
+	alias := filepath.Join(dir, "alias.sysml")
+	if err := os.Symlink(away, escape); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if err := os.Symlink(lib, alias); err != nil {
+		t.Fatalf("symlink alias: %v", err)
+	}
+	s.Rescan(context.Background())
+	if s.ws.Document(escape) != nil {
+		t.Errorf("indexed %q, a link out of the workspace", escape)
+	}
+	if s.ws.Document(alias) == nil {
+		t.Errorf("did not index %q, a link within the workspace", alias)
+	}
+}
+
 func TestWatchedFileDeleteUnindexesClosedDocument(t *testing.T) {
 	s, fc, _, lib, main := multiFileWorkspace(t)
 	ctx := context.Background()
