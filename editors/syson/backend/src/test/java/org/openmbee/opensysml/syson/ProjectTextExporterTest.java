@@ -273,8 +273,7 @@ class ProjectTextExporterTest {
         ElementSerializer serializer = (element, report) -> ElementSerializer.Serialization
                 .of("library package " + ((org.eclipse.syson.sysml.Element) element).getName() + " {}");
 
-        var result = new ProjectTextExporter(serializer, mock(IIdentityService.class),
-                "DocumentQueries"::equals).export(context);
+        var result = new ProjectTextExporter(serializer, mock(IIdentityService.class), DOCUMENT_QUERIES).export(context);
 
         assertThat(result.documents()).singleElement().satisfies(document -> {
             assertThat(document.name()).contains("model.sysml");
@@ -286,5 +285,33 @@ class ProjectTextExporterTest {
         });
         assertThat(result.index().byQualifiedName("DocumentQueries")).isEmpty();
         assertThat(result.index().byQualifiedName("Vocabulary")).isPresent();
+    }
+
+    private static final org.openmbee.opensysml.syson.export.BundledLibraries DOCUMENT_QUERIES = name ->
+            "DocumentQueries".equals(name) ? java.util.Optional.of(java.util.Set.of("Query", "Document", "Paragraph"))
+                    : java.util.Optional.empty();
+
+    @Test
+    void exportsALibraryCopyThatAddsMembersAndWarnsThatItShadows() {
+        ResourceSet set = new ResourceSetImpl();
+        FakeLibraryPackage copy = new FakeLibraryPackage("DocumentQueries");
+        copy.addChild(new FakeElement("DocumentQueries::Query"));
+        copy.addChild(new FakeElement("DocumentQueries::CustomFilter"));
+        Resource resource = new ResourceImpl(URI.createURI("sirius:///DocumentQueries.sysml"));
+        resource.getContents().add(copy);
+        set.getResources().add(resource);
+        IEMFEditingContext context = context(set);
+        ElementSerializer serializer = (element, report) -> ElementSerializer.Serialization
+                .of("library package DocumentQueries { calc def CustomFilter; }");
+
+        var result = new ProjectTextExporter(serializer, mock(IIdentityService.class), DOCUMENT_QUERIES).export(context);
+
+        assertThat(result.documents()).singleElement()
+                .satisfies(document -> assertThat(document.content().orElse("")).contains("CustomFilter"));
+        assertThat(result.messages()).singleElement().satisfies(message -> {
+            assertThat(message.level()).isEqualTo(org.eclipse.sirius.components.representations.MessageLevel.WARNING);
+            assertThat(message.message()).contains("shadows").contains("CustomFilter").doesNotContain("Query;");
+        });
+        assertThat(result.index().byQualifiedName("DocumentQueries::CustomFilter")).isPresent();
     }
 }

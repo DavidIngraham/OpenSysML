@@ -90,4 +90,23 @@ class DocumentBindingsTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("binding object = #1");
     }
+
+    @Test
+    void bindsQuotedQualifiedNames() {
+        Model model = mock(Model.class);
+        Element element = mock(Element.class);
+        String report = "Reports::'Mass Report'";
+        ExportedProject project = new ExportedProject(List.of(SourceDocument.inline("report.sysml", "")),
+                new ElementIndex(Map.of(report, new ElementIndex.IndexedElement(report, "eid", "sid", element))),
+                List.of(), List.of());
+        Symbol symbol = mock(Symbol.class);
+        when(symbol.id()).thenReturn("Library::'Odd Name'::item");
+        when(model.find("Library::'Odd Name'::item")).thenReturn(Optional.of(symbol));
+
+        assertThat(DocumentBindings.bind(model, project, Map.of("doc", report)).get("doc"))
+                .containsExactly(new DocumentValue.ElementRef(report, ""));
+        assertThat(DocumentBindings.bind(model, project, Map.of("item", "Library::'Odd Name'::item")).get("item"))
+                .containsExactly(new DocumentValue.ElementRef("Library::'Odd Name'::item", ""));
+        verify(model, never()).eval(org.mockito.ArgumentMatchers.anyString());
+    }
 }

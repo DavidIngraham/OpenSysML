@@ -675,17 +675,20 @@ Where the code departs from §3–§4, and why.
   `OpenSysMLValidationService`, which serves the last run per editing context.
 - **Documents render through the same export.** `RENDER_DOCUMENT` and `RUN_DOCUMENT_QUERY` reuse
   the exported project and `Model.renderDocument` / `Model.runDocumentQuery`; the result carries
-  the rendered Markdown or HTML (the two forms the service renders) with a file name taken from the
-  document, or the query's columns and rows mapped back to project elements. Bindings reuse the
+  the rendered Markdown or HTML (the two forms the service renders) with the file name a rendered
+  set gives the document (`RunDocument.fileName` mirrors the service's `DocumentFiles` stem, escape
+  and length rules, pinned by an integration test over linked documents), or the query's columns
+  and rows mapped back to project elements. Bindings reuse the
   dialog's name/expression inputs: a qualified name the export or the service resolves binds the
   element, anything else is evaluated and bound as a literal. The frontend shows HTML in a
   sandboxed `iframe` and downloads the content through an object URL; PDF stays CLI-only.
 - **A project's copy of a bundled library is not exported.** SysON resolves `DocumentQueries::*`
   only when the project holds the library's text, but exporting that copy would shadow the
   service's own and the document check (`part def :> DocumentQueries::Document`) compares against
-  the service's symbol. `ServiceLibraries` asks an empty model whether it already resolves a
-  `library package`'s name, and `ProjectTextExporter` drops such roots with an informational
-  message.
+  the service's symbol. `ServiceLibraries` asks a freshly parsed empty model whether it already
+  resolves a `library package`'s name and which members it has; `ProjectTextExporter` drops a copy
+  with no members beyond those with an informational message, and exports one that adds members
+  with a warning that it shadows the service's library.
 - **Diagnostic selection:** diagnostics naming a qualified name select that element; span-only
   diagnostics select the root element of the exported document containing the line. The
   serializer emits no source map.

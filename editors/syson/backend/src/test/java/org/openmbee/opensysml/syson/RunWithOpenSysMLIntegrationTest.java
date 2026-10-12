@@ -21,6 +21,8 @@ import org.openmbee.opensysml.syson.export.ExportedProject;
 import org.openmbee.opensysml.syson.export.ProjectExporter;
 import org.openmbee.opensysml.syson.identity.ElementIndex;
 import org.openmbee.opensysml.syson.export.ServiceLibraries;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.openmbee.opensysml.syson.run.RunDocument;
 import org.openmbee.opensysml.syson.run.RunDocumentForm;
 import org.openmbee.opensysml.syson.run.RunOperation;
 import org.openmbee.opensysml.syson.run.RunTableRow;
@@ -132,13 +134,13 @@ class RunWithOpenSysMLIntegrationTest {
                         List.of(), List.of(), null, null, null));
         assertThat(markdown.ok()).isTrue();
         assertThat(markdown.document().form()).isEqualTo(RunDocumentForm.MARKDOWN);
-        assertThat(markdown.document().fileName()).isEqualTo("MassReport.md");
+        assertThat(markdown.document().fileName()).isEqualTo("Observatory-MassReport.md");
         assertThat(markdown.document().content()).startsWith("# Telescope Mass Report").contains("| mount | 15 |");
         RunResult html = service(project("report.sysml", source, target)).run(context(), target,
                 new RunWithOpenSysMLInput(UUID.randomUUID(), "ctx", "target", RunOperation.RENDER_DOCUMENT, Map.of(),
                         List.of(), List.of(), null, null, RunDocumentForm.HTML));
         assertThat(html.ok()).isTrue();
-        assertThat(html.document().fileName()).isEqualTo("MassReport.html");
+        assertThat(html.document().fileName()).isEqualTo("Observatory-MassReport.html");
         assertThat(html.document().content()).startsWith("<!DOCTYPE html>").contains("<title>Telescope Mass Report</title>");
     }
 
@@ -187,10 +189,29 @@ class RunWithOpenSysMLIntegrationTest {
     @Test
     void recognizesTheLibrariesTheServiceBundles() {
         ServiceLibraries libraries = new ServiceLibraries(connection);
-        assertThat(libraries.bundles("DocumentQueries")).isTrue();
-        assertThat(libraries.bundles("ScalarValues")).isTrue();
-        assertThat(libraries.bundles("Observatory")).isFalse();
-        assertThat(libraries.bundles("")).isFalse();
+        assertThat(libraries.members("DocumentQueries")).isPresent().get(InstanceOfAssertFactories.collection(String.class))
+                .contains("Query", "Document", "Paragraph", "Section", "Table");
+        assertThat(libraries.members("ScalarValues")).isPresent();
+        assertThat(libraries.members("Observatory")).isEmpty();
+        assertThat(libraries.members("")).isEmpty();
+    }
+
+    @Test
+    void namesDownloadsAsTheServiceLinksThem() throws Exception {
+        String source = Files.readString(repository.resolve("editors/syson/backend/src/test/resources/models/linked.sysml"));
+        Element report = target("Observatory::SystemReport");
+        Element appendix = target("Observatory::'Mass Appendix'");
+        RunResult html = service(project("linked.sysml", source, report)).run(context(), report,
+                new RunWithOpenSysMLInput(UUID.randomUUID(), "ctx", "target", RunOperation.RENDER_DOCUMENT, Map.of(),
+                        List.of(), List.of(), null, null, RunDocumentForm.HTML));
+        RunResult markdown = service(project("linked.sysml", source, appendix)).run(context(), appendix,
+                input(RunOperation.RENDER_DOCUMENT, Map.of()));
+        assertThat(html.ok()).isTrue();
+        assertThat(markdown.ok()).isTrue();
+        assertThat(html.document().fileName()).isEqualTo("Observatory-SystemReport.html");
+        assertThat(markdown.document().fileName()).isEqualTo("Observatory-Mass.20Appendix.md");
+        assertThat(html.document().content()).contains("href=\"" + RunDocument.fileName("Observatory::'Mass Appendix'", ".html") + "\"");
+        assertThat(markdown.document().content()).contains("](" + html.document().fileName().replace(".html", ".md") + ")");
     }
 
     private RunWithOpenSysMLService service(ExportedProject project) {

@@ -12,10 +12,11 @@ import org.openmbee.opensysml.Value;
 import org.openmbee.opensysml.syson.export.ExportedProject;
 
 // Turns the dialog's name/expression inputs into document-query bindings: a qualified name the
-// export or the service knows binds that element, anything else is evaluated and bound as a literal.
+// export or the service knows binds that element (quoted segments included), anything else is
+// evaluated and bound as a literal.
 public final class DocumentBindings {
-    private static final Pattern QUALIFIED_NAME = Pattern
-            .compile("[\\p{L}_][\\p{L}\\p{N}_]*(::[\\p{L}_][\\p{L}\\p{N}_]*)*");
+    private static final String NAME = "(?:[\\p{L}_][\\p{L}\\p{N}_]*|'[^']+')";
+    private static final Pattern QUALIFIED_NAME = Pattern.compile(NAME + "(?:::" + NAME + ")*");
 
     private DocumentBindings() {}
 
@@ -28,10 +29,10 @@ public final class DocumentBindings {
 
     static List<DocumentValue> bind(Model model, ExportedProject project, String name, String expression) {
         String text = expression == null ? "" : expression.strip();
+        if (project.index().byQualifiedName(text).isPresent()) {
+            return List.of(new DocumentValue.ElementRef(text, ""));
+        }
         if (QUALIFIED_NAME.matcher(text).matches()) {
-            if (project.index().byQualifiedName(text).isPresent()) {
-                return List.of(new DocumentValue.ElementRef(text, ""));
-            }
             var symbol = model.find(text);
             if (symbol.isPresent()) {
                 return List.of(new DocumentValue.ElementRef(symbol.get().id(), ""));

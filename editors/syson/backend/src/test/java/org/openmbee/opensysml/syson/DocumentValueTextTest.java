@@ -29,12 +29,25 @@ class DocumentValueTextTest {
     }
 
     @Test
+    void namesTheDocumentFileAsTheServiceDoes() {
+        assertThat(org.openmbee.opensysml.syson.run.RunDocument.fileName("Observatory::'Mass Appendix'", ".html"))
+                .isEqualTo("Observatory-Mass.20Appendix.html");
+        assertThat(org.openmbee.opensysml.syson.run.RunDocument.fileName("Ünïcode::'a::b'", ".md"))
+                .isEqualTo(".C3.9Cn.C3.AFcode-a.3A.3Ab.md".replaceFirst("^", "_"));
+        assertThat(org.openmbee.opensysml.syson.run.RunDocument.fileName("CON", ".md")).isEqualTo(".43ON.md".replaceFirst("^", "_"));
+        String longName = "A".repeat(300);
+        String cut = org.openmbee.opensysml.syson.run.RunDocument.fileName(longName, ".md");
+        assertThat(cut).hasSize(255).endsWith(".md").contains("~");
+        assertThat(cut.substring(0, cut.indexOf('~'))).isEqualTo("A".repeat(255 - 3 - 17));
+    }
+
+    @Test
     void namesTheDocumentFileAfterTheDocument() {
         assertThat(org.openmbee.opensysml.syson.run.RunDocument.of(
                 org.openmbee.opensysml.syson.run.RunDocumentForm.MARKDOWN, "", "MassReport").fileName())
                 .isEqualTo("MassReport.md");
         assertThat(org.openmbee.opensysml.syson.run.RunDocument.of(
                 org.openmbee.opensysml.syson.run.RunDocumentForm.HTML, "", "Reports::'Mass Report'").fileName())
-                .isEqualTo("Mass Report.html");
+                .isEqualTo("Reports-Mass.20Report.html");
     }
 }

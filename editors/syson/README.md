@@ -106,18 +106,20 @@ rendering and document queries.
 Select a document definition (a `part def` specializing `DocumentQueries::Document`) and choose
 **Render document** to compile it, run its queries and render it as Markdown or HTML, the two forms
 the service renders; PDF needs the converters only the `sysml` CLI drives. The dialog previews the
-result (HTML in a sandboxed frame) and offers it as a file named after the document
-(`MassReport.md`, `MassReport.html`). Select a document query (a `calc def` specializing
+result (HTML in a sandboxed frame) and offers it as a file named the way a rendered set names it, so
+links between downloaded documents hold (`Observatory-MassReport.md`, `Observatory-Mass.20Appendix.html`).
+Select a document query (a `calc def` specializing
 `DocumentQueries::Query`) and choose **Run document query** to project its rows into a table; each
 binding names an entry parameter and gives its value, which is the qualified name of an element
 (`Observatory::telescope`) or an expression evaluated to a literal (`"10"`, `3`, `true`); a row whose
 element is in the project selects it when clicked.
 
 A SysON project declares documents against the `DocumentQueries` library, which the service bundles
-and SysON does not ship, so the project holds a copy of
-[`OpenSysML Libraries/DocumentQueries.sysml`](../../internal/workspace/libs/stdlib/OpenSysML%20Libraries/DocumentQueries.sysml).
-The exporter leaves out any `library package` the service already provides and says so in the run's
-messages, so the copy resolves names inside SysON without shadowing the service's own library.
+and SysON does not ship, so the project holds a copy of `OpenSysML Libraries/DocumentQueries.sysml`
+from `internal/workspace/libs/stdlib/`. The exporter leaves out any `library package` the service
+already provides and says so in the run's messages, so the copy resolves names inside SysON without
+shadowing the service's own library; a copy that adds members the service's library lacks is exported
+and shadows it, with a warning naming the additions.
 
 Unit tests cover exporting, identity mapping, diagnostic mapping, configuration, GraphQL payloads,
 document bindings and validation results. Real-service integration tests run the mutation against

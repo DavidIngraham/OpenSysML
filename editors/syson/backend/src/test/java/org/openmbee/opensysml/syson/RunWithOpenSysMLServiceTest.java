@@ -258,7 +258,7 @@ class RunWithOpenSysMLServiceTest {
         assertThat(result.ok()).isTrue();
         assertThat(result.document().form()).isEqualTo(org.openmbee.opensysml.syson.run.RunDocumentForm.HTML);
         assertThat(result.document().content()).startsWith("<!DOCTYPE html>");
-        assertThat(result.document().fileName()).isEqualTo("Mass Report.html");
+        assertThat(result.document().fileName()).isEqualTo("Reports-Mass.20Report.html");
         assertThat(result.table()).isNull();
         assertThat(store.latest("ctx")).contains(result);
         org.mockito.Mockito.verify(model, org.mockito.Mockito.never()).eval(org.mockito.ArgumentMatchers.anyString());
