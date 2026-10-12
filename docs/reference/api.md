@@ -79,6 +79,14 @@ satisfiable answer carries `Witness`, the free features' replayed values with th
 spellings; undecided names the reason and reports `ReasonUndecided`. A question other than evaluate
 needs the `verification_questions` capability, checked before anything is sent.
 
+`VerifyConstraint` and `VerifyRequirement` also take `VerifyArguments(values...)` and
+`VerifyArgument(name, value)`, binding the element's `in` parameters positionally in declaration
+order or by name, as `Arguments` and `Argument` bind a case's for `RunAnalysis`. A name no parameter
+has, more positional values than parameters, a parameter left without a value, default or same-named value on the checked object, or a value
+not of the parameter's type is an undecided `Verdict` naming it. Arguments need the
+`verification_arguments` capability, checked before anything is sent, and only the evaluate question
+takes them: `QuestionHolds` and `QuestionSatisfiable` leave the free features to the solver.
+
 ```go
 exploration, err := client.ExploreAction(ctx, model, "Demo::race", nil)
 for _, outcome := range exploration.Outcomes {
@@ -285,15 +293,15 @@ OpenSysML is organized into layer directories under `internal/`, with frontends 
 ```
 github.com/Open-MBEE/OpenSysML
 ├── internal/               # One directory per layer; a package imports only the layers below it
-│   ├── syntax/             # source, diag, lexer, parser, ast, pack, format
+│   ├── syntax/             # source, diag, lexer, parser, ast, pack, format, semtok
 │   ├── semantic/           # symbols, resolve, suggest, semantics, identity, highlight, query
-│   ├── ir/                 # lower, queryplan, docplan, view
+│   ├── ir/                 # lower, queryplan, docplan, view, imagefile
 │   ├── check/              # passes, edit
-│   ├── exec/               # runtime, solve, smt, analysis, engines, objref
-│   ├── translate/          # rdf, export, xmi, migrate, convert, codegen, interop
+│   ├── exec/               # runtime, solve, smt, analysis, engines, objref, fmi, hostcap, ingest, runtrace, simresults
+│   ├── translate/          # rdf, export, xmi, migrate, mtip, convert, codegen, interop, deferred, filename, fmi
 │   ├── doc/                # queryexec, docir, docrender, docpdf
-│   ├── workspace/          # model, libs, project, envvar
-│   └── frontend/           # protoconv, grpc, lsp, repl, stdiorpc, usage
+│   ├── workspace/          # model, libs, project, envvar, modeldoc, modelrt, notebook
+│   └── frontend/           # protoconv, grpc, lsp, repl, stdiorpc, jsonrpc, jupyter, core, combined, engine, syntax, symbolfacts, buildinfo, usage
 ```
 
 ---
@@ -1296,8 +1304,9 @@ it.
 
 Known limitations: the response carries no provenance for *successful* rows
 (only failures name their source), and the document IR is not exposed in a
-structured form — Markdown is the only document form served, as it is the only
-form the build writes.
+structured form — Markdown, and HTML under the `render_document_html`
+capability, are the document forms served; the PDF form `sysml -render-document
+-doc-form pdf` writes is not.
 
 ---
 

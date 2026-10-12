@@ -244,11 +244,12 @@ the same member-path parser as `Project` and `OrderBy`.
 | `--trace` | | Report each execution step: expression evaluation, calc invocation, action tokens, state transitions, each `choice` the executor made among alternatives the library leaves unordered, naming the alternatives and the one taken, and each `unevaluable guard` it read only to report one and could not evaluate ([Choice points](../guide/06-behavior.md)). Under `-schedule explore` the table is printed first, then the trace of one witness run per distinct outcome, each under a `trace of outcome <n>'s witness (run <r>):` heading ([Exploring every linearization](#exploring-every-linearization)) |
 | `--render-run <kind>=<path>` | | Repeatable; write a recorded run's `timeline` or `sequence` as text, Mermaid or PlantUML. The extension `.txt`, `.mmd`/`.mermaid` or `.puml`/`.plantuml` selects a form; use `-render-form` for another extension. `-render-link` links PlantUML timeline lanes and single-state spans and sequence object participants; Mermaid gantt and messages remain unlinked. DOT is refused. Requires `-state`, `-action` or `-advance` and cannot be combined with model/document rendering or schedule exploration |
 | `--convert <format>` | | Convert the model instead of running it: `sysml`, `kerml`, `ttl`, `turtle`, `rdf`, `api-json` or `json`. `ttl` writes the RDF graph in Turtle, `api-json` the same graph as the API's JSON element objects; both are [experimental](rdf-mapping.md#status-experimental) and every run that converts either says so on stderr (see [the RDF mapping](rdf-mapping.md)). The model argument may be a Flexo MMS project branch URL — `http(s)://host[:port][/base]/projects/{project}/branches/{branch}` or `flexo://{project}/{branch}` — both naming the endpoint `FLEXO_SYSMLV2_URL` configures — which is read as its head commit's RDF graph; see [Reading and pushing a repository branch](#reading-and-pushing-a-repository-branch) |
-| `--migrate <format>` | | Migrate a SysML v1 model — UML XMI, an Eclipse UML2 `.uml` file or a MagicDraw/Cameo `.mdzip` archive — to SysML v2 instead of running it, writing `sysml`, `kerml`, `ttl`, `turtle` or `rdf`. A migration is ledgered, not lossless: every v1 element is **mapped**, **approximated**, **unmapped** or **skipped**, and the run says so in a one-line summary, or element by element with `-migration-report`. The input is named by its `.xmi`, `.uml` or `.mdzip` extension or by `--from`; v2 input is refused with a pointer at `--convert`, and `--convert` on a v1 model is refused with a pointer here, since a migration is not a conversion (experimental; see [SysML v1 migration](sysml-v1-migration.md)) |
+| `--migrate <format>` | | Migrate a SysML v1 model — UML XMI, an Eclipse UML2 `.uml` file or a MagicDraw/Cameo `.mdzip` archive — to SysML v2 instead of running it, writing `sysml`, `kerml`, `ttl`, `turtle`, `rdf` or `api-json`. A migration is ledgered, not lossless: every v1 element is **mapped**, **approximated**, **unmapped** or **skipped**, and the run says so in a one-line summary, or element by element with `-migration-report`. The input is named by its `.xmi`, `.uml` or `.mdzip` extension or by `--from`; v2 input is refused with a pointer at `--convert`, and `--convert` on a v1 model is refused with a pointer here, since a migration is not a conversion (experimental; see [SysML v1 migration](sysml-v1-migration.md)) |
 | `--from <format>` | | Input format for `--convert` or `--migrate`: the `--convert` formats, `xmi`/`uml`/`mdzip` for a SysML v1 model to `--migrate`, or `fmu` for a Functional Mock-up Unit to import as a `calc def` evaluated through the `tool:fmi` engine (experimental; default: from the input's extension; `.xmi`, `.uml`, `.mdzip` and `.fmu` are recognized) — see [SysML v1 migration](sysml-v1-migration.md) and [FMI models (FMUs)](fmi.md) |
 | `--migration-report <file>` | | With `--migrate`: write the element-by-element migration report to this file, JSON when it ends in `.json`, text otherwise. Without it the one-line summary goes to stderr |
 | `--migration-results <file>` | | With `--migrate`: write the simulation tool's run configurations (`SimulationProfile:SimulationConfig`) and the result snapshots it stored for each of them to this JSON file — the sidecar `-compare-results` reads against the migrated model. See [Comparing a migrated configuration with the tool's results](#comparing-a-migrated-configuration-with-the-tools-results) |
 | `--image-base-url <url>` | | With `--migrate`: the absolute http(s) URL a comment's relative `<img src>` — a path the View Editor serves, such as `/projects/.../png` — is resolved against, so the migrated document's `Image` block points at the server instead of losing the image (see [SysML v1 migration](sysml-v1-migration.md)) |
+| `--portable` | | With `--migrate`: append the OpenSysML library packages the output refers to, so the one file loads in a tool that ships only the standard library; the report names them (see [Portable output with `--portable`](sysml-v1-migration.md#portable-output-with--portable)) |
 | `--render <view>` | | Render this view of the model (every file named, loaded as one) instead of running it, in the form its `render` member states (see [Rendering a view](#rendering-a-view)) |
 | `--render-all <dir>` | | Render every declared view into the directory, one artifact per view |
 | `--graphs <subject>` | | Write the lowered graph of this action or state machine, and of every behavior it performs, as the canonical `graphs:1` JSON an external analysis engine is sent ([the `graphs:1` model form](external-engines.md#the-graphs1-model-form)) to stdout, or to `--output`. The subject is a qualified name, definition or usage; a name that is no behavior, or that nothing declares, is refused with exit status 2. Cannot be combined with checks, rendering, `--convert`, `--migrate`, `--query` or `--eval` |
@@ -293,10 +294,10 @@ written in, so the verdicts are about that object:
 |------|--------|
 | `-validate` | Only that the model analyses cleanly and that the objects `-instantiate` asked for could be built; it says nothing about the model's constraints |
 | `-validate=<object>` | Every assertion about an object `-instantiate` created and the objects it holds, as `%validate` does: each `assert constraint` the carrier's type declares or inherits, each requirement usage it carries and each `satisfy` assertion whose subject is in the tree, one verdict per assertion per object, root first and then each held object as the walk reaches it (`Fleet::car.wheels[2]`), then one verdict about the object as a whole — valid only when every assertion holds and every held object was reached, so an assertion that could not be evaluated or a walk cut short by an object graph without end leaves it undecided rather than valid, as does an object no assertion is about (`states no assertion to validate`, exit status 2). The object is named as `%validate` names it: the usage's name, a feature path to a part it holds (`Fleet::car.engine`), or the id the report prints (`#2`). A constraint declared without `assert` is not swept; name it with `-constraint`. Repeatable; `-validate=false` asks for nothing and withdraws a bare `-validate` written before it, as `-satisfy=false` does |
-| `-constraint <name>` | One constraint, as `%constraint` does |
+| `-constraint "<name>[(<args>)] [object]"` | One constraint, as `%constraint` does. Arguments in parentheses bind the constraint's `in` parameters, positionally in declaration order or by name (`-constraint "Pkg::Between(3, high = 4)"`), evaluated as `-calc`'s are; an object `-instantiate` created after them is the subject the verdict is about (`-constraint "Pkg::Fits(3.0) Pkg::part"`). An unknown name, more positional arguments than parameters, a parameter left without an argument, default or same-named value on the checked object, or a value not of the parameter's type leaves the check undecided (exit status 2) |
 | `-self-check` | Applies the 50 constraints in the OpenSysML `SysMLValidation` library to each reflectively classified element in the workspace. A false result or evaluation error fails; a reflective feature not derived is counted as unevaluated, not as a failure. Runs only after the model analyses cleanly |
 | `-self-check-package <QualifiedName>` | Applies the `constraint def`s of the named package — nested packages included — together with the `SysMLValidation` ones in the same element walk; implies `-self-check`. Repeatable. See [Writing self-check rules](#writing-self-check-rules) |
-| `-requirement <name>` | One requirement, as `%requirement` does, with [the verdict of every verification case](#verification-case-verdicts) verifying it beside its own |
+| `-requirement "<name>[(<args>)] [object]"` | One requirement, as `%requirement` does, with [the verdict of every verification case](#verification-case-verdicts) verifying it beside its own. Arguments and a subject are written as for `-constraint` (`-requirement "Pkg::Under(limit = 5) Pkg::part"`) |
 | `-satisfy` | Every satisfaction assertion the model states, with [the verdict of every verification case](#verification-case-verdicts) verifying the requirement beside each |
 | `-satisfy=<name>` | Only the assertions the named element states (`-satisfy=false` asks for none) |
 | `-instantiate <name>` | Creates an object first, so the verdicts are about it; with `-run-query` or `-render-document`, so the query reads it ([Objects the session holds](../manual/query-cookbook.md#objects-the-session-holds)). Under `-schedule explore`, `-engine check`, `smt` or `all` each run creates an object of the declaration of its own before its behaviors start, one per `-instantiate` as the session holds one per `-instantiate`, which a `-state` or `-action` named alone attaches to and a path such as `Mission::mission.vehicle` walks into ([Objects an exploration runs on](#objects-an-exploration-runs-on)) |
@@ -1926,13 +1927,14 @@ status — `ready`, `ready (z3 at /usr/bin/z3)` for one whose process was found,
 
 ```bash
 $ sysml -engines
-engine   kind      protocol  authority  answers          status
-check    built-in  -         bounded    outcomes, holds  ready
-explore  built-in  -         proved     outcomes         ready
-run      built-in  -         observed   evaluate         ready
-smt      built-in  -         proved     holds            ready (z3 at /usr/bin/z3)
-solve    built-in  -         proved     satisfiable      ready (z3 at /usr/bin/z3)
-sweep    built-in  -         observed   sweep            ready
+engine    kind      protocol  authority  answers                     status
+check     built-in  -         bounded    outcomes, holds, sensitive  ready
+explore   built-in  -         proved     outcomes                    ready
+run       built-in  -         observed   evaluate                    ready
+smt       built-in  -         proved     holds, sensitive            ready (z3 at /usr/bin/z3)
+solve     built-in  -         proved     satisfiable, holds          ready (z3 at /usr/bin/z3)
+sweep     built-in  -         observed   sweep                       ready
+tool:fmi  tool      fmi/1     observed   compute                     unavailable: OPENSYSML_FMI_RUNNER is not set: the fmi engine runs an FMU's native code through the runner that variable names
 ```
 
 Every tool the manifest directory `OPENSYSML_TOOLS` names adds a `tool:<name>` engine, listed
@@ -1950,14 +1952,16 @@ for an engine, since no engine is admitted by this build. Nothing is started:
 
 ```bash
 $ OPENSYSML_ENGINES=/etc/opensysml/engines sysml -engines
-engine       kind      protocol  authority    answers          status
-check        built-in  -         bounded      outcomes, holds  ready
-explore      built-in  -         proved       outcomes         ready
-priority     policy    stdio/1   not covered                   unavailable: policy "priority" is not served in this build: scheduling policies are the strategies stage
-run          built-in  -         observed     evaluate         ready
-solve        built-in  -         proved       satisfiable      ready (z3 at /usr/bin/z3)
-spin-bridge  engine    stdio/1   bounded      holds, outcomes  ready (spin-bridge 1.4.0 at /opt/spin-bridge/bin/spin-bridge)
-sweep        built-in  -         observed   sweep            ready
+engine       kind      protocol  authority    answers                     status
+check        built-in  -         bounded      outcomes, holds, sensitive  ready
+explore      built-in  -         proved       outcomes                    ready
+priority     policy    stdio/1   not covered                              unavailable: policy "priority" is not served in this build: scheduling policies are the strategies stage
+run          built-in  -         observed     evaluate                    ready
+smt          built-in  -         proved       holds, sensitive            ready (z3 at /usr/bin/z3)
+solve        built-in  -         proved       satisfiable, holds          ready (z3 at /usr/bin/z3)
+spin-bridge  engine    stdio/1   bounded      holds, outcomes             ready (spin-bridge 1.4.0 at /opt/spin-bridge/bin/spin-bridge)
+sweep        built-in  -         observed     sweep                       ready
+tool:fmi     tool      fmi/1     observed     compute                     unavailable: OPENSYSML_FMI_RUNNER is not set: the fmi engine runs an FMU's native code through the runner that variable names
 priority 0.3: policy from /etc/opensysml/engines/priority.json, runs /opt/priority/bin/priority-policy
 spin-bridge 1.4.0: engine from /etc/opensysml/engines/spin-bridge.json, runs /opt/spin-bridge/bin/spin-bridge, not admitted
 ```
@@ -2008,7 +2012,7 @@ finished earned. A name no engine is registered under is refused before anything
 
 ```bash
 $ sysml -engine bogus -constraint Rover::MassBudget model.sysml
-invalid value "bogus" for flag -engine: analysis: no engine named "bogus"; the engines are check, explore, run, smt, solve, sweep, or auto, or all
+invalid value "bogus" for flag -engine: analysis: no engine named "bogus"; the engines are check, explore, run, smt, solve, sweep, tool:fmi, or auto, or all
 ```
 
 With `-json` each check carries how it was answered beside the fields it always carried. `plan`
@@ -2200,7 +2204,7 @@ inputs**, not for the one value each input was written with. A feature the model
 attribute with a default, a value the performing object holds, an argument the invocation
 passes — is pinned at that value, as `check` and `explore` run it; a feature the model leaves
 unbound, or one `-check-input` names, ranges over the domain of its declared type: `Boolean`;
-`Integer`, within the interpreter's 64-bit range; `Natural` as an integer that is not negative;
+`Integer`, unbounded, as the solver's integers; `Natural` as an integer that is not negative;
 `Real`, `Rational` and a quantity type over them as the solver's reals; an enumeration or a
 variation as its constructors. A declared type the encoding cannot narrow to a domain —
 `String`, a collection, an object-valued feature, a type with no translation — is reported *not
@@ -2398,10 +2402,7 @@ For file loads, declarations are summarized:
 
 ```bash
 $ sysml demo.sysml
-package Demo
-  part def Vehicle {
-    attribute speed : Real;
-  }
+✓ package Demo
 SysML v2 REPL — %help for commands, Ctrl-D to exit
 sysml> 
 ```
@@ -2491,14 +2492,13 @@ $ OPENSYSML_MAX_STEPS=abc sysml -e "1+1"; echo $?
 sysml: OPENSYSML_MAX_STEPS="abc" is not an integer: set it to a positive number of evaluation steps (default 10000000)
 2
 
-$ sysml examples/parser_features_demo_advanced_bodies.kerml -convert ttl; echo $?
-note: RDF conversion — Turtle and the API's JSON element form alike — is experimental: the mapping covers model structure and the behavior its bodies state, refuses what it cannot write back, and its vocabulary may change without a compatibility path; see docs/reference/rdf-mapping.md § Status
-sysml: cannot convert the operator expr at examples/parser_features_demo_advanced_bodies.kerml:87:9: save to .sysml or .kerml instead, which writes the source exactly; see docs/reference/rdf-mapping.md § Limitations
+$ sysml legacy.xmi -convert ttl; echo $?
+sysml: legacy.xmi is a SysML v1 model, which is migrated, not converted: every element is mapped, approximated or left unmapped and reported element by element; write `sysml legacy.xmi -migrate ttl -o legacy.ttl -migration-report legacy.report.txt`
 2
 
 $ sysml examples/state-machine-demo.sysml -convert ttl -o /tmp/state-machine.ttl; echo $?
 note: RDF conversion — Turtle and the API's JSON element form alike — is experimental: the mapping covers model structure and the behavior its bodies state, refuses what it cannot write back, and its vocabulary may change without a compatibility path; see docs/reference/rdf-mapping.md § Status
-wrote /tmp/state-machine.ttl (ttl, 8932 bytes)
+wrote /tmp/state-machine.ttl (ttl, 10216 bytes)
 0
 ```
 
@@ -2532,6 +2532,8 @@ $ sysml model.sysml -instantiate test::craft -validate; echo $?
   ID: 1
   Use %features test::craft to inspect
 error: feature value craft.volumes: multiplicity violation: 2 value(s) bound to a feature with multiplicity upper bound 1
+error: subsetting feature subparts of subitems: subsetting feature volumes of subparts: feature value craft.volumes: multiplicity violation: 2 value(s) bound to a feature with multiplicity upper bound 1
+error: subsetted feature subitems of subparts: subsetting feature subparts of subitems: subsetting feature volumes of subparts: feature value craft.volumes: multiplicity violation: 2 value(s) bound to a feature with multiplicity upper bound 1
 sysml: model.sysml did not materialize cleanly
 2
 
@@ -2540,10 +2542,23 @@ $ printf '%%instantiate test::craft\n%%features test::craft\n' | sysml model.sys
 Instance: test::craft (ID: 1)
 Features:
   left = Instance(ID: 2)
-    (no features)
+    ownedPorts = []
+    performedActions = []
+    ownedActions = []
+    exhibitedStates = []
+    ownedStates = []
+    shape = []
+    envelopingShapes = []
+    boundingShapes = []
+    voids = []
+    isSolid = true
+    subitems = []
+    subparts = []
+    checkedConstraints = []
   right = Instance(ID: 3)
-    (no features)
+    …
   volumes: <error: feature value craft.volumes: multiplicity violation: 2 value(s) bound to a feature with multiplicity upper bound 1>
+  …
 2
 ```
 
