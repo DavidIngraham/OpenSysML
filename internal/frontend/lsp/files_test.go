@@ -276,6 +276,15 @@ func TestRescanKeepsSourcesUnderADirectoryItCannotList(t *testing.T) {
 	if s.ws.Document(nested) == nil {
 		t.Errorf("rescan dropped %q under a directory it could not list", nested)
 	}
+
+	// Its path is still known, so its deletion is still seen.
+	if err := os.Remove(nested); err != nil {
+		t.Fatalf("remove nested: %v", err)
+	}
+	s.Rescan(ctx)
+	if s.ws.Document(nested) != nil {
+		t.Errorf("rescan kept the deleted %q because its directory could not be listed", nested)
+	}
 }
 
 func TestWatchedFileDeleteUnindexesClosedDocument(t *testing.T) {

@@ -198,16 +198,13 @@ func (s *Server) Rescan(ctx context.Context) {
 			if onDisk[name] || s.ws.IsLibraryDocument(name) || s.ws.IsOpen(name) || !underFolders(name, folders) {
 				continue
 			}
-			// A directory that could not be listed may still hold the source;
-			// what the walk cannot vouch for is kept as it was.
-			if underFolders(name, unlisted) {
-				continue
-			}
 			// Not walked: gone, grown past the size limit, or moved under a
 			// directory the walk skips. readFromDisk drops the first two as a
 			// watched change would; the third is dropped as the walk never
-			// indexed it. A file that cannot be read right now is kept.
-			if _, readable := s.readFromDisk(name); readable {
+			// indexed it, unless its directory could not be listed, when the
+			// source is still there as far as anyone can tell. A file that
+			// cannot be read right now is kept.
+			if _, readable := s.readFromDisk(name); readable && !underFolders(name, unlisted) {
 				s.ws.DeleteOnDisk(name)
 			}
 		}
