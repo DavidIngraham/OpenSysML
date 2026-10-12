@@ -50,7 +50,8 @@ const labelEndClearance = dotArrowLength
 // longest segment, each clear of the line by the label's half-extent and a
 // gap. The candidate spots are tried in a fixed order — the nearest first, the
 // other side of the line next, then farther along — and the first clear of
-// everything wins, else the least covered. An end name leaves its last segment
+// everything wins, else the one covering the least box, and of those the one
+// crossing the least line. An end name leaves its last segment
 // for the ones before only when every spot beside it lies on a box, a note, a
 // label or off the canvas: a line across it is borne rather than the name
 // straying from its end.
@@ -76,17 +77,17 @@ func (p *labelPlacer) place(route []Point, text string, end labelEnd) Point {
 		groups = endCandidates(route, width, height, end)
 	}
 	best := groups[0][0]
-	area, score := math.Inf(1), math.Inf(1)
+	area, lines := math.Inf(1), math.Inf(1)
 	for _, group := range groups {
 		for _, at := range group {
 			box := labelBox(at, width, height)
-			a, lines := p.cover(box)
+			a, l := p.cover(box)
 			for _, other := range p.placed {
 				a += box.overlap(other)
 			}
-			if a+lines < score {
-				best, area, score = at, a, a+lines
-				if score == 0 {
+			if a < area || a == area && l < lines {
+				best, area, lines = at, a, l
+				if area == 0 && lines == 0 {
 					break
 				}
 			}

@@ -225,3 +225,21 @@ func TestEndNamesLeaveAHemmedInLastSegment(t *testing.T) {
 		t.Errorf("end name at %v, want it beside the last segment though a line crosses it", at)
 	}
 }
+
+// A spot clear of every box beats one on a box however little, whatever lines
+// cross it; among spots clear of the boxes the one crossing the least line wins.
+func TestLabelPlacerPrefersClearOfBoxesOverClearOfLines(t *testing.T) {
+	w := &dotWriter{skin: skinOf(StylePilot), clusters: map[string]bool{}}
+	route := []Point{{X: 100, Y: 0}, {X: 100, Y: 100}}
+	width, height := dotTextExtent([]string{"label"}, w.skin.edgePts)
+	// A box touches the right-hand spot by a sliver; lines cross the left-hand one.
+	w.boxes = map[string]nodeBox{"sliver": {low: Point{X: 100 + labelGap + width - 1, Y: 0}, high: Point{X: 300, Y: 100}}}
+	w.edges = []Edge{{Route: []Point{{X: 0, Y: 50}, {X: 96, Y: 50}}}, {Route: []Point{{X: 0, Y: 55}, {X: 96, Y: 55}}}}
+	at := w.placeLabel(route, "label", labelMid)
+	if at.X >= 100 {
+		t.Errorf("label at %v sits on the box; want it left of the line, across the lines", at)
+	}
+	if box := labelBox(at, width, height); box.overlap(w.boxes["sliver"]) > 0 {
+		t.Errorf("label box %v overlaps the sliver", box)
+	}
+}
