@@ -248,6 +248,11 @@ func TestNegative(t *testing.T) {
 		{"keyword_named_parameter_no_type", "action a { in 'type' : ; }"},
 		{"parameter_default_no_value", "action a { in x default ; }"},
 		{"parameter_redefines_no_target", "action a { in redefines ; }"},
+		// A direction before a usage kind declares that usage (SysML.xtext
+		// RefPrefix), so its declaration is held to the same shape.
+		{"directed_concern_no_type", "action a { in concern c : ; }"},
+		{"directed_use_case_no_type", "action a { out use case u : ; }"},
+		{"directed_requirement_unclosed_body", "action a { out requirement r : R { }"},
 
 		// A member-attached `then` sequences the members either side of it, so
 		// a body with nothing on one side, or a member the notation does not
