@@ -155,16 +155,15 @@ known_tools="sysml sysml-lsp sysml-grpc sysml-jupyter-kernel"
 tool_list=$(printf '%s' "$tools" | tr ',' ' ')
 [ -n "$(printf '%s' "$tool_list" | tr -d ' ')" ] || fail "--tools names nothing to install"
 install_all=false
-[ "$(printf '%s' "$tool_list" | tr -d ' ')" != all ] || install_all=true
-if [ "$install_all" = false ]; then
-	for tool in $tool_list; do
-		case "$tool" in
-		sysml | sysml-lsp | sysml-grpc | sysml-jupyter-kernel) ;;
-		all) fail "'all' names every tool the release published and stands alone in --tools" ;;
-		*) fail "unknown tool '$tool'; the released tools are sysml, sysml-lsp, sysml-grpc and sysml-jupyter-kernel" ;;
-		esac
-	done
-fi
+for tool in $tool_list; do
+	case "$tool" in
+	sysml | sysml-lsp | sysml-grpc | sysml-jupyter-kernel) ;;
+	all) install_all=true ;;
+	*) fail "unknown tool '$tool'; the released tools are sysml, sysml-lsp, sysml-grpc and sysml-jupyter-kernel" ;;
+	esac
+done
+[ "$install_all" = false ] || [ "$(printf '%s\n' "$tool_list" | wc -w)" -eq 1 ] ||
+	fail "'all' names every tool the release published and stands alone in --tools"
 want() { # <tool>: whether it was asked for
 	case " $tool_list " in *" $1 "*) return 0 ;; *) return 1 ;; esac
 }

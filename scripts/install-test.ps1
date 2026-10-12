@@ -301,6 +301,7 @@ if (Test-Failure 'bad tool' "unknown tool 'sysml-repl'" -Tools sysml-repl) {
     Assert-Said 'the released tools are sysml, sysml-lsp, sysml-grpc and sysml-jupyter-kernel'
 }
 Test-Failure 'all beside a tool' "'all' names every tool the release published and stands alone in -Tools" -Tools 'all,sysml' | Out-Null
+Test-Failure 'all with a stray space' "unknown tool 'a ll'" -Tools 'a ll' | Out-Null
 
 Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
 if ($script:failures -ne 0) {

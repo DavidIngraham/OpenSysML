@@ -395,6 +395,7 @@ if fails "bad tool" "unknown tool 'sysml-repl'" --tools sysml-repl --prefix @P@;
 fi
 fails "no tool" "--tools names nothing to install" --tools , --prefix @P@
 fails "all beside a tool" "'all' names every tool the release published and stands alone in --tools" --tools all,sysml --prefix @P@
+fails "all with a stray space" "unknown tool 'a'" --tools 'a ll' --prefix @P@
 fails "bad os" "--os must be linux, darwin or windows" --os freebsd --prefix @P@
 fails "bad option" "unknown option '--prefix-dir'" --prefix-dir @P@
 fails "option without a value" "--prefix needs a value" --prefix
