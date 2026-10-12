@@ -31,6 +31,9 @@ package Bench {
         end carrier : Tripod;
         end carried : Telescope;
     }
+    part tripod : Tripod;
+    part telescope : Telescope;
+    connection carries : Carries connect tripod to telescope;
     view Segments {
         expose 'Segments Document';
         render Views::asElementTable;

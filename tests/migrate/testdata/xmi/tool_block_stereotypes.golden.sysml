@@ -35,6 +35,9 @@ package Plant {
         end fed : 'Beam Column';
         end feeder : Laboratory;
     }
+    part 'beam Column' : 'Beam Column';
+    part laboratory : Laboratory;
+    connection feeds : Feeds connect 'beam Column' to laboratory;
     view Subsystems {
         expose 'Subsystems Document';
         render Views::asElementTable;

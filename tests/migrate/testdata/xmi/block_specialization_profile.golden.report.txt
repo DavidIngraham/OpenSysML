@@ -7,7 +7,7 @@ Diagram	Bench::Segments	_diag_segments	-> Bench::Segments	(a Generic Table writt
 
 ## mapped (20)
 Package	Bench	_pkg_bench	-> Bench
-Association	Bench::Carries	_assoc_carries	-> Bench::Carries
+Association	Bench::Carries	_assoc_carries	-> Bench::Carries	(its one usage is the connection carries joining tripod and telescope)
 Property	Bench::Carries::carried	_carries_telescope	-> Bench::Carries::carried
 Property	Bench::Carries::carrier	_carries_tripod	-> Bench::Carries::carrier
 «Rule» Class	Bench::Focus Rule	_rule_focus	-> Bench::'Focus Rule'

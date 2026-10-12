@@ -6,7 +6,7 @@ protocol](https://connectrpc.com/docs/protocol) with protobuf bodies. No native
 addon, so an install is a plain registry fetch.
 
 For a task-oriented walkthrough, see the
-[Node client guide](https://redk.opensysml.org/clients/node/).
+[Node client guide](https://runtime.opensysml.org/clients/node/).
 
 ```bash
 npm install @openmbee/opensysml
@@ -15,7 +15,7 @@ npm install @openmbee/opensysml
 A development snapshot is published every night under the `nightly` dist-tag
 (`npm install @openmbee/opensysml@nightly`), with its platform packages carrying
 that night's `sysml-grpc`; `latest` stays the stable release. See [Nightly
-snapshots](https://redk.opensysml.org/project/nightly/).
+snapshots](https://runtime.opensysml.org/project/nightly/).
 
 ```ts
 import { loads, connect } from "@openmbee/opensysml";
@@ -518,7 +518,7 @@ verb, and `save` writes what it answers with its image files beside it:
 
 ```ts
 const migration = await connection.migrate("sysml", { path: "Model.mdzip" }, { report: true });
-console.log(migration.report.summary);            // migrated 93 element(s): 78 mapped, 12 approximated, …
+console.log(migration.report.summary);            // migrated 95 element(s): 76 mapped, 16 approximated, …
 for (const entry of migration.report.byVerdict("unmapped")) {
   console.log(`${entry.kind} ${entry.name}: ${entry.note}`);
 }
@@ -654,7 +654,7 @@ await using connection = await connect({
 A running service that reports another version is a `StaleServiceError`
 naming the required and reported versions — the remedy is to point at a service
 of the required version, or accept what is running by omitting `version`
-(`$OPENSYSML_VERSION` is the environment form). A service missing a required
+(`$OPENSYSML_GRPC_VERSION` is the environment form). A service missing a required
 capability is likewise refused at connect, rather than at the first gated call.
 
 ## Typed module generation
@@ -728,10 +728,10 @@ npm run conformance -- --allow-skips --report report.json
 
 | protocol | ran | passed | failed | skipped |
 | --- | --: | --: | --: | --: |
-| `grpc` | 158 | 155 | 0 | 3 |
-| `connect` | 158 | 155 | 0 | 3 |
-| `connect-json` | 158 | 155 | 0 | 3 |
-| **total** | **474** | **465** | **0** | **9** |
+| `grpc` | 166 | 163 | 0 | 3 |
+| `connect` | 166 | 163 | 0 | 3 |
+| `connect-json` | 166 | 163 | 0 | 3 |
+| **total** | **498** | **489** | **0** | **9** |
 
 The 3 skips per protocol are the requests the public API cannot express because
 it validates them before calling: a `ParseFile` naming no source (`load` and

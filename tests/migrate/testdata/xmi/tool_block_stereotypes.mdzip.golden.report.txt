@@ -13,7 +13,7 @@ Package	Plant	_pkg_plant	-> Plant
 Port	Plant::Beam Column::pwr in	_column_pwr	-> Plant::'Beam Column'::'pwr in'
 Property	Plant::Beam Column::source	_column_source	-> Plant::'Beam Column'::source
 «Block» Class	Plant::Electron Source	_blk_source	-> Plant::'Electron Source'
-Association	Plant::Feeds	_assoc_feeds	-> Plant::Feeds
+Association	Plant::Feeds	_assoc_feeds	-> Plant::Feeds	(its one usage is the connection feeds joining beam Column and laboratory)
 Property	Plant::Feeds::fed	_feeds_column	-> Plant::Feeds::fed
 Property	Plant::Feeds::feeder	_feeds_lab	-> Plant::Feeds::feeder
 «Domain» Class	Plant::Imaging	_dom_imaging	-> Plant::Imaging
