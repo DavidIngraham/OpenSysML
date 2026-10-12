@@ -90,6 +90,7 @@ func TestTheServerRegistersTheGroupsAskedFor(t *testing.T) {
 		{[]Group{GroupLSP}, []string{"workspace_info"}},
 		{[]Group{GroupRuntime}, []string{"apply_edits", "convert", "evaluate", "evaluate_calc", "execute_action", "execute_state", "export_graphs", "instantiate", "list_engines", "migrate", "parse", "query", "render_document", "render_view", "run_analysis", "run_document_query", "run_sweep", "server_info", "symbol", "validate_instance", "verify_constraint", "verify_requirement", "verify_satisfaction"}},
 		{[]Group{GroupSession}, []string{"session_close", "session_list", "session_open"}},
+		{[]Group{GroupSession, GroupRuntime, GroupSession}, []string{"server_info", "session_close", "session_list", "session_open"}},
 	}
 	for _, tc := range cases {
 		cs := connect(t, Config{Root: root, Groups: tc.groups, Version: "test"})
@@ -118,10 +119,21 @@ func TestWorkspaceInfoListsTheIndexedDocuments(t *testing.T) {
 	if info.Root != root {
 		t.Errorf("root = %q, want %q", info.Root, root)
 	}
-	slices.Sort(info.Documents)
 	want := []string{filepath.Join(root, "a.sysml"), filepath.Join(root, "b.kerml")}
 	if !slices.Equal(info.Documents, want) {
 		t.Errorf("documents = %v, want %v", info.Documents, want)
+	}
+
+	// Files the agent creates or deletes with its own tools, with no watcher to
+	// report them, show up on the next call.
+	writeModel(t, root, "c.sysml", "package C;\n")
+	if err := os.Remove(filepath.Join(root, "a.sysml")); err != nil {
+		t.Fatal(err)
+	}
+	call(t, cs, "workspace_info", map[string]any{}, &info)
+	want = []string{filepath.Join(root, "b.kerml"), filepath.Join(root, "c.sysml")}
+	if !slices.Equal(info.Documents, want) {
+		t.Errorf("documents after edits = %v, want %v", info.Documents, want)
 	}
 }
 
