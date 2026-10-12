@@ -30,7 +30,7 @@ import (
 // renderUsage is how %render is written: a view, the form to write it in, text
 // when none is named, then a palette, style and port display the form draws.
 const (
-	renderUsage    = "usage: %render <name> [text|mermaid|markdown|dot|plantuml|d2|csv|tsv [palette] [pilot|cameo] [minimal|full] [verdicts] [link=<template>]]"
+	renderUsage    = "usage: %render <name> [text|mermaid|markdown|dot|plantuml|d2|csv|tsv [palette] [pilot|cameo] [minimal|full] [verdicts] [show=<elements>] [link=<template>]]"
 	renderRunUsage = "usage: %render-run <timeline|sequence> [text|mermaid|plantuml|dot] [link=<template>]"
 )
 
@@ -554,6 +554,17 @@ func parseRenderArgs(args []string) (name string, form view.Form, opts view.Opti
 				return renderUsageOf(renderUsage)
 			}
 			overlay = o
+			continue
+		}
+		if strings.HasPrefix(word, "show=") {
+			if opts.Show != nil {
+				return renderUsageOf(renderUsage)
+			}
+			shown, err := view.ParseShown(strings.TrimPrefix(word, "show="))
+			if err != nil || shown == nil {
+				return renderUsageOf(fmt.Sprintf("show= names the optional notation elements to draw, %s or all; %s", view.ElementNames(), renderUsage))
+			}
+			opts.Show = shown
 			continue
 		}
 		if strings.HasPrefix(word, "link=") {

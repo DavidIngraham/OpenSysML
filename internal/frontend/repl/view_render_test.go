@@ -690,6 +690,24 @@ func TestRenderDotTakesAStyle(t *testing.T) {
 	}
 }
 
+// A word show=<elements> after the form names the optional notation elements
+// the rendering draws besides its own, once at most; a name none has is
+// refused with the names there are.
+func TestRenderTakesTheNotationElementsToShow(t *testing.T) {
+	s := viewSession(t)
+	for _, line := range []string{"%render Demo::summary dot show=all", "%render Demo::summary dot okabe-ito show=edge-labels,typings full", "%render Demo::summary text show=keywords"} {
+		out, _, err := s.RunMeta(line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		if text := strings.Join(out, "\n"); !strings.Contains(text, "Vehicle") || strings.Contains(text, "usage: %render") {
+			t.Errorf("%s did not render:\n%s", line, text)
+		}
+	}
+	wants(t, run(t, s, "%render Demo::summary dot show=all show=typings"), renderUsage)
+	wants(t, run(t, s, "%render Demo::summary dot show=boxes"), "show= names the optional notation elements to draw", "parameter-symbols", renderUsage)
+}
+
 // A word after the form names the port display an interconnection or mixed
 // view's parts are drawn with — minimal, the default, or full — one of them at
 // most; it completes beside the palettes and styles, and a name none has is refused

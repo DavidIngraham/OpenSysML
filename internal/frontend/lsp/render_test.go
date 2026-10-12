@@ -1347,6 +1347,72 @@ package StyledViews {
 	}
 }
 
+// A request's `show` names the optional notation elements the rendering draws
+// besides its own; the capability lists the names, the result the elements
+// drawn, and a name none has is refused with the names there are.
+func TestRenderShowsOptionalNotationElements(t *testing.T) {
+	const ported = `package Demo {
+    port def Signal;
+    part def Sender { port out1 : Signal; }
+    part def Receiver { port in1 : ~Signal; }
+    part def Link {
+        part sender : Sender;
+        part receiver : Receiver;
+        interface wire connect sender.out1 to receiver.in1;
+    }
+    view link { expose Demo::Link::*; render Views::asInterconnectionDiagram; }
+}
+`
+	s, docURI := renderServer(t, "ported.sysml", ported)
+	res, err := s.Initialize(context.Background(), &protocol.InitializeParams{})
+	if err != nil {
+		t.Fatalf("Initialize err = %v", err)
+	}
+	experimental := res.Capabilities.Experimental.(map[string]any)
+	wantNames := []string{"parameter-symbols", "port-symbols", "compartments", "edge-labels", "keywords", "multiplicities", "typings", "qualifiers", "all"}
+	if advertised, _ := experimental[RenderElementsCapability].([]string); !slices.Equal(advertised, wantNames) {
+		t.Fatalf("%s = %#v, want %v", RenderElementsCapability, experimental[RenderElementsCapability], wantNames)
+	}
+	render := func(t *testing.T, show []string) (*renderResult, error) {
+		t.Helper()
+		raw, err := call(t, s, MethodRender, &renderParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
+			View:         "Demo::link", Form: string(view.FormDot), Show: show,
+		})
+		if err != nil {
+			return nil, err
+		}
+		var out renderResult
+		if err := json.Unmarshal(raw, &out); err != nil {
+			t.Fatalf("decode render result: %v", err)
+		}
+		return &out, nil
+	}
+	plain, err := render(t, nil)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if !slices.Equal(plain.Shown, []string{"port-symbols", "compartments"}) {
+		t.Errorf("shown = %v, want the default, port-symbols then compartments", plain.Shown)
+	}
+	if strings.Contains(plain.Artifact, `label="wire"`) {
+		t.Errorf("the default drew an edge label:\n%s", plain.Artifact)
+	}
+	shown, err := render(t, []string{"edge-labels"})
+	if err != nil {
+		t.Fatalf("render show=edge-labels: %v", err)
+	}
+	if !slices.Equal(shown.Shown, []string{"port-symbols", "compartments", "edge-labels"}) {
+		t.Errorf("shown = %v, want the default and edge-labels", shown.Shown)
+	}
+	if !strings.Contains(shown.Artifact, `label="wire"`) {
+		t.Errorf("show=edge-labels drew no edge label:\n%s", shown.Artifact)
+	}
+	if _, err := render(t, []string{"edge-labels", "boxes"}); err == nil || !strings.Contains(err.Error(), `unknown notation element "boxes"; the elements are parameter-symbols, port-symbols, compartments, edge-labels, keywords, multiplicities, typings, qualifiers, all`) {
+		t.Errorf("an unknown element err = %v", err)
+	}
+}
+
 // A request's `ports` chooses how much of a part's ports an interconnection or
 // mixed view draws — minimal, the default, the ports a connector ends at, named
 // alone, or full, every port typed — the displays listed under the capability;

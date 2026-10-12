@@ -158,8 +158,14 @@ func (e *UnknownElementError) Unwrap() error { return ErrUnknownElement }
 // the set to show: nil for an empty list. A name none has is an
 // *UnknownElementError naming the elements there are.
 func ParseShown(text string) (Shown, error) {
+	return ShownOf(strings.Split(text, ","))
+}
+
+// ShownOf is the set to show the element names, or "all", name: nil for
+// none. A name none has is an *UnknownElementError naming the elements there are.
+func ShownOf(names []string) (Shown, error) {
 	var shown Shown
-	for _, name := range strings.Split(text, ",") {
+	for _, name := range names {
 		name = strings.TrimSpace(name)
 		switch {
 		case name == "":

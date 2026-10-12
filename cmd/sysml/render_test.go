@@ -1218,6 +1218,42 @@ func TestRenderPorts(t *testing.T) {
 	}
 }
 
+// -render-show names the optional notation elements a rendering draws besides
+// the port symbols and compartments it draws by default: an edge label is drawn
+// when asked for and not otherwise, a name none has is refused with the names
+// there are, and the option alone is refused.
+func TestRenderShow(t *testing.T) {
+	binary := buildCLI(t)
+
+	plain := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "dot")
+	if plain.status != exitHolds {
+		t.Fatalf("exit status = %d, want %d\n%s", plain.status, exitHolds, plain.output())
+	}
+	if strings.Contains(plain.stdout, `label="wire"`) || !strings.Contains(plain.stdout, `<font point-size="8">out1</font>`) {
+		t.Errorf("the default drew an edge label or no port symbol:\n%s", plain.stdout)
+	}
+
+	shown := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "dot", "-render-show", "edge-labels,typings")
+	if shown.status != exitHolds {
+		t.Fatalf("exit status = %d, want %d\n%s", shown.status, exitHolds, shown.output())
+	}
+	for _, want := range []string{`label="wire"`, `<font point-size="8">out1</font>`, "Sender"} {
+		if !strings.Contains(shown.stdout, want) {
+			t.Errorf("-render-show edge-labels,typings is missing %q:\n%s", want, shown.stdout)
+		}
+	}
+
+	unknown := runStreams(t, binary, portedModel, "-render", "Demo::link", "-render-form", "dot", "-render-show", "edge-labels,boxes")
+	if unknown.status != exitUnevaluable || !strings.Contains(unknown.stderr, `-render-show: unknown notation element "boxes"; the elements are parameter-symbols, port-symbols, compartments, edge-labels, keywords, multiplicities, typings, qualifiers, all`) || unknown.stdout != "" {
+		t.Errorf("an unknown element = %d\n%s", unknown.status, unknown.output())
+	}
+
+	alone := runStreams(t, binary, portedModel, "-render-show", "all")
+	if alone.status != 2 || !strings.Contains(alone.stderr, "-render-show is the optional notation elements a diagram draws") {
+		t.Errorf("-render-show alone = %d\n%s", alone.status, alone.output())
+	}
+}
+
 // A GeneralView filtered on a case metaclass renders as the case diagram, with
 // the standard library alone, and takes no verdicts overlay.
 func TestRenderGeneralViewCaseRoute(t *testing.T) {

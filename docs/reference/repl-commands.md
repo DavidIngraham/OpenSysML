@@ -571,6 +571,14 @@ the part's border named beside it; `full`, every port a part has, labelled `name
 (`%render Plant::loopView dot full`). It is accepted in any order with the palette and the
 style, once, and completes beside them.
 
+A word `show=<elements>` names the notation elements the SysML v2 notation makes optional that the
+rendering draws besides the ones its view's rendering shows, comma-separated: `parameter-symbols`,
+`port-symbols`, `compartments`, `edge-labels`, `keywords`, `multiplicities`, `typings`, `qualifiers`,
+or `all` (`%render Lab::useCases dot show=parameter-symbols,edge-labels`); port symbols and
+compartments are drawn without it. It is accepted once, in any order with the other words, and a
+name none of the elements has is refused with the names there are
+([the elements](../project/view-rendering-forms.md#optional-notation-elements)).
+
 A word after `dot` or `mermaid` names the drawing style: `pilot`, the look above and the default, or
 `cameo`, the look of Cameo Systems Modeler — a diagram frame with a `stm [State Machine] … [ … ]`
 header tab, 11 pt Arial, gradient fills in Cameo's colours, a state's `do / Activity` compartment
