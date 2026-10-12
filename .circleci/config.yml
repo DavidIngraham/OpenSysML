@@ -64,7 +64,7 @@ executors:
 commands:
   # In a rehearsal (the release_rehearsal pipeline parameter) CIRCLE_TAG is
   # unset; this stands in for the tag the release steps read, before any of
-  # them runs. sed rather than python: the go and cibuilds images may lack it.
+  # them runs.
   rehearsal-tag:
     steps:
       - when:
@@ -73,22 +73,26 @@ commands:
             - run:
                 name: "REHEARSAL: stand in for the release tag"
                 command: |
-                  version=$(sed -n 's/^VERSION *= *"\(.*\)" *$/\1/p' \
-                    client/python/opensysml/_version.py)
-                  # _version.py is PEP 440; the tag spells SemVer.
-                  case "$version" in
-                    *a[0-9]*) semver="${version%%a*}-alpha.${version##*a}" ;;
-                    *b[0-9]*) semver="${version%%b*}-beta.${version##*b}" ;;
-                    *rc[0-9]*) semver="${version%%rc*}-rc.${version##*rc}" ;;
-                    *) semver="$version" ;;
-                  esac
-                  if ! echo "$semver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$'; then
-                    echo "Error: VERSION '$version' is not a release or an a/b/rc"
-                    echo "pre-release; there is no SemVer tag spelling for it."
-                    exit 1
-                  fi
-                  echo "export CIRCLE_TAG=v${semver}" >> "$BASH_ENV"
-                  echo "REHEARSAL: standing in for tag v${semver} (no tag exists; nothing will be published)"
+                  tag=$(scripts/rehearsal-version.sh)
+                  echo "export CIRCLE_TAG=${tag}" >> "$BASH_ENV"
+                  echo "REHEARSAL: standing in for tag ${tag} (no tag exists; nothing will be published)"
+
+  # A tag pipeline checks out the tag, and the Go toolchain records a tag at
+  # HEAD as the main module's version in every binary it builds, so a test
+  # binary with no linker stamp reports the release version rather than dev.
+  # A rehearsal checks out a branch; this puts the tag it stands in for at
+  # HEAD, locally, so the suite builds exactly what the tag build will.
+  rehearsal-checkout-tag:
+    steps:
+      - when:
+          condition: << pipeline.parameters.release_rehearsal >>
+          steps:
+            - run:
+                name: "REHEARSAL: tag the checkout as the release"
+                command: |
+                  tag=$(scripts/rehearsal-version.sh)
+                  git tag --force "$tag" HEAD
+                  echo "REHEARSAL: tagged $(git rev-parse --short HEAD) as ${tag} locally"
 
   # Names the irreversible step a rehearsal leaves out.
   rehearsal-skip:
@@ -274,6 +278,7 @@ jobs:
     executor: go-executor
     steps:
       - checkout
+      - rehearsal-checkout-tag
       - go/load-cache
       - go/mod-download
       - go/save-cache
@@ -420,13 +425,14 @@ jobs:
               client/java/opensysml-client/src/main/java/org/openmbee/opensysml/proto
 
   # The race-enabled suite. It is the longest single step in the pipeline, so
-  # it gets the larger class and four executors, one named package shard each.
+  # it gets the larger class and five executors, one named package shard each.
   go-race-test:
     executor: go-executor
     resource_class: large
-    parallelism: 4
+    parallelism: 5
     steps:
       - checkout
+      - rehearsal-checkout-tag
       - go/load-cache
       - go/mod-download
       - go/save-cache
@@ -444,7 +450,7 @@ jobs:
           name: Run Go race tests
           command: |
             set -o pipefail
-            shards=(runtime model export rest)
+            shards=(runtime model export rest migrate)
             if [ "$CIRCLE_NODE_TOTAL" != "${#shards[@]}" ]; then
               echo "error: parallelism is $CIRCLE_NODE_TOTAL, but scripts/race-shard.sh has ${#shards[@]} shards" >&2
               exit 1
@@ -459,7 +465,10 @@ jobs:
               go test -v -race -pgo=off -timeout 30m ./tests/wasm
               go test -C tools -v -race -pgo=off -timeout 30m ./...
             else
-              go test -v -race -pgo=off -timeout 30m $pkgs
+              # tests/migrate alone runs 23-32 minutes under -race on this class, so its
+              # shard gets the Makefile's per-package timeout (see make test-shard).
+              timeout=30m; [ "$shard" = migrate ] && timeout=55m
+              go test -v -race -pgo=off -timeout "$timeout" $pkgs
             fi
           no_output_timeout: 30m
           environment:
@@ -483,13 +492,14 @@ jobs:
   # A second, race-free pass, because the profile the scan reads is written
   # with -coverpkg, which is too slow to instrument under -race. Serially the
   # instrumented suite overran the 60-minute job limit even on large, so it runs
-  # as the race test's four package shards, and go-coverage-merge joins them.
+  # as the race test's five package shards, and go-coverage-merge joins them.
   go-coverage:
     executor: go-executor
     resource_class: large
-    parallelism: 4
+    parallelism: 5
     steps:
       - checkout
+      - rehearsal-checkout-tag
       - go/load-cache
       - go/mod-download
       - go/save-cache
@@ -501,7 +511,7 @@ jobs:
       - run:
           name: Write this shard's coverage profile
           command: |
-            shards=(runtime model export rest)
+            shards=(runtime model export rest migrate)
             if [ "$CIRCLE_NODE_TOTAL" != "${#shards[@]}" ]; then
               echo "error: parallelism is $CIRCLE_NODE_TOTAL, but scripts/race-shard.sh has ${#shards[@]} shards" >&2
               exit 1
@@ -556,6 +566,7 @@ jobs:
     executor: go-executor
     steps:
       - checkout
+      - rehearsal-checkout-tag
       - go/load-cache
       - go/mod-download
       - go/save-cache
@@ -2799,6 +2810,16 @@ jobs:
                 exit 1
               fi
             done
+
+      # The suite's verification tests ask the service solver-backed questions;
+      # the solver is an external process the service finds on PATH, so without
+      # it those questions are undecided and the tests fail, as in node-test.
+      - run:
+          name: Install Z3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y z3
+            z3 --version
 
       - run:
           name: Build and test the package
