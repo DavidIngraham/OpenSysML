@@ -41,3 +41,33 @@ func TestActionGraphDirectedUsageKindsAreParameters(t *testing.T) {
 		}
 	}
 }
+
+// A directed analysis or verification usage is a parameter of the action, not a
+// case the action performs as a step: only the undirected one is a node.
+func TestDirectedCaseUsagesAreNotSteps(t *testing.T) {
+	graph := actionGraphFor(t, `
+		action a {
+			in analysis study : S;
+			out verification checks[*] : V;
+			verification inline : V;
+			action work;
+		}
+	`)
+	var nodes []string
+	for _, n := range graph.Nodes {
+		if u, ok := n.(*ast.Usage); ok {
+			nodes = append(nodes, u.Ident.Name)
+		}
+	}
+	if len(nodes) != 2 || nodes[0] != "inline" || nodes[1] != "work" {
+		t.Errorf("nodes = %v, want [inline work]", nodes)
+	}
+	if len(graph.Parameters) != 2 || graph.Parameters[0].Name != "study" || graph.Parameters[1].Name != "checks" {
+		t.Errorf("parameters = %+v, want study, checks", graph.Parameters)
+	}
+	for _, n := range graph.Nodes {
+		if u, ok := n.(*ast.Usage); ok && IsCaseNode(u) && u.Direction != ast.DirNone {
+			t.Errorf("directed case %s is a node", u.Ident.Name)
+		}
+	}
+}
