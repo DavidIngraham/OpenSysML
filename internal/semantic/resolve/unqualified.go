@@ -90,11 +90,13 @@ func (r *Resolver) enclosingLocal(scope *symbols.Scope, name string, hide *refFi
 
 // localBinding is lookupLocal less the members that bind no name of their own.
 func (r *Resolver) localBinding(scope *symbols.Scope, name string, hide *refFilter) (*symbols.Symbol, bool) {
-	sym, ok := hide.lookupLocal(scope, name)
-	if !ok || !r.BindsName(sym) {
-		return nil, false
+	if sym, ok := hide.lookupLocal(scope, name); ok && r.BindsName(sym) {
+		return sym, true
 	}
-	return sym, true
+	if short := r.shortNamedMembers(scope, name, hide); len(short) > 0 {
+		return short[0], true
+	}
+	return nil, false
 }
 
 // LocalBindings returns the members scope declares under name that bind it,
@@ -110,7 +112,59 @@ func (r *Resolver) LocalBindings(scope *symbols.Scope, name string) []*symbols.S
 			out = append(out, sym)
 		}
 	}
+	if len(out) == 0 {
+		out = append(out, r.shortNamedMembers(scope, name, nil)...)
+	}
 	return out
+}
+
+// shortNamedMembers returns the members of scope that answer to name as the
+// short name they take from their naming feature (KerML Element::shortName =
+// effectiveShortName()): `part :>> t;` redefining `part <tms> t;` is also
+// `tms`. A scope registers declared identifiers only, the naming feature being
+// known once its reference resolves, so the derived short name is asked for
+// here, and only where no declared identifier binds name.
+func (r *Resolver) shortNamedMembers(scope *symbols.Scope, name string, hide *refFilter) []*symbols.Symbol {
+	if scope == nil || name == "" {
+		return nil
+	}
+	model, ok := r.model.(shortNamer)
+	if !ok {
+		return nil
+	}
+	var out []*symbols.Symbol
+	for _, sym := range r.derivedNamedMembers(scope) {
+		if r.naming[sym] || hide.hides(sym) {
+			continue
+		}
+		r.naming[sym] = true
+		short := model.EffectiveShortNameOf(sym)
+		delete(r.naming, sym)
+		if short == name {
+			out = append(out, sym)
+		}
+	}
+	return out
+}
+
+// derivedNamedMembers returns the members of scope named after a naming feature
+// that declare no short name, collected once per scope like implicitParameters.
+func (r *Resolver) derivedNamedMembers(scope *symbols.Scope) []*symbols.Symbol {
+	r.EnterDoc(symbols.DocNameOf(scope))
+	defer r.LeaveDoc()
+	members, done := r.derivedNamed[scope]
+	if done {
+		return members
+	}
+	scope.ForEachMember(func(sym *symbols.Symbol) bool {
+		if sym.Naming != symbols.NamedByDeclaration && sym.ShortName == "" {
+			members = append(members, sym)
+		}
+		return true
+	})
+	journalNew(r, r.derivedNamed, scope, scope.Node())
+	r.derivedNamed[scope] = members
+	return members
 }
 
 // LocalBinding returns the first of LocalBindings.
