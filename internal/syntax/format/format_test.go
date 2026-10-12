@@ -93,6 +93,17 @@ func TestPreservesStringContents(t *testing.T) {
 	}
 }
 
+// A string literal or quoted name spanning lines is one token whose text is
+// the literal's value, so it is emitted as written — its own lines neither
+// re-indented nor trimmed — and the line after it is laid out from where it ends.
+func TestPreservesLiteralsSpanningLines(t *testing.T) {
+	src := "package P {\n  attribute a = \"line one\n\n      line two  \";\n  part def 'multi\nline';\n  part def Car;\n}\n"
+	want := "package P {\n    attribute a = \"line one\n\n      line two  \";\n    part def 'multi\nline';\n    part def Car;\n}\n"
+	if got := format(t, src); got != want {
+		t.Fatalf("format(%q):\ngot:  %q\nwant: %q", src, got, want)
+	}
+}
+
 func TestDoesNotInsertSpacesTheAuthorOmitted(t *testing.T) {
 	got := format(t, "package P { calc def c { return 1+2; } }\n")
 	if !strings.Contains(got, "1+2") {

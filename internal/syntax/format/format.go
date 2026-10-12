@@ -164,8 +164,8 @@ func (f *formatter) emit(tok lexer.Token) {
 		f.lastCode = tok.Kind
 	}
 	if i := strings.LastIndexByte(text, '\n'); i >= 0 {
-		// A multi-line note or block comment is emitted verbatim; the tokens
-		// after it start from wherever it ended.
+		// A multi-line note, block comment or string literal is emitted
+		// verbatim; the tokens after it start from wherever it ended.
 		f.atLineStart = strings.TrimSpace(text[i+1:]) == ""
 	}
 }
@@ -183,7 +183,7 @@ func (f *formatter) trailingNewlines() int {
 }
 
 // normalizeNewlines rewrites the line endings inside a token's own text — a
-// multi-line note, or a line comment carrying its terminator — to nl.
+// multi-line note or string literal, or a line comment carrying its terminator — to nl.
 func normalizeNewlines(text, nl string) string {
 	if !strings.Contains(text, "\n") {
 		return text

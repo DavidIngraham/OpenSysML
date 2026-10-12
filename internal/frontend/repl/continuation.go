@@ -5,15 +5,19 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 )
 
-// needsContinuation reports whether buf has unbalanced open brackets, i.e. the
-// REPL should keep reading on a secondary prompt. It counts {, (, [ against
-// their closers, clamping each counter at 0 so stray closers don't force
+// needsContinuation reports whether buf has unbalanced open brackets or ends
+// inside a string, quoted name, comment or note still open, i.e. the REPL
+// should keep reading on a secondary prompt. It counts {, (, [ against their
+// closers, clamping each counter at 0 so stray closers don't force
 // continuation. Trailing-operator heuristics (::, =) are deferred.
 func needsContinuation(buf string) bool {
 	lx := lexer.New(source.New("<repl-input>", []byte(buf)))
 	var brace, paren, bracket int
 	for {
 		tok := lx.Next()
+		if tok.Unterminated {
+			return true
+		}
 		switch tok.Kind {
 		case lexer.LBrace:
 			brace++
