@@ -220,7 +220,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | «Expose» whose supplier is outside the document or not written (a diagram no written element can hold included), or whose client is not a view | comment | **unmapped** |
 | «Conform» Generalization, Dependency | `satisfy <Viewpoint>;` in the view | mapped |
 | «Conform» whose client is not a view or whose supplier is not a viewpoint | comment | **unmapped** |
-| «Viewpoint» Class | package-level `viewpoint <Name>` usage: `purpose`, `language`, `method` and `presentation` tags in a `doc`; each `stakeholder` tag a `stakeholder x : <Stakeholder>` usage; each `concern` tag and each `concernList` comment a `frame concern { doc /* … */ }`; a stakeholder or concern id that is not in the document is named in the report | mapped / approximated |
+| «Viewpoint» Class | package-level `viewpoint <Name>` usage: `purpose`, `language`, `method` and `presentation` tags in a `doc`; each `stakeholder` tag a `stakeholder x : <Stakeholder>` usage; each `concern` tag and each `concernList` comment a `frame concern { doc /* … */ }`, or `frame <concern>;` where the comment is written as a concern usage elsewhere; such a frame takes the referenced concern's name as its own (KerML 8.3.3.3 `Feature::effectiveName`), so where two framed concerns share a name, or one is named like a stakeholder of the viewpoint, the frame is written in the grammar's named form `frame concern <name> ::> <concern>;` under a name fresh in the viewpoint, listed in its `SynthesizedName` marker, keeping the viewpoint's memberships distinguishable (KerML 8.3.2.4.5); a stakeholder or concern id that is not in the document is named in the report | mapped / approximated |
 | «Stakeholder» Class | `part def`; the OMG standard library bundled here defines no `Stakeholder` base definition, so nothing is specialized; the `concern` tag stays a comment | approximated |
 | Activity | `action def` (see [Behaviors](#behaviors)); a block's `classifierBehavior` is also performed by a `perform action` usage of the `part def` | mapped |
 | Activity a block owns whose body reads or writes a feature of the block — an attribute, port or part, a «Probability» property, a port a signal arrives at, an operation of a part it calls, or another such activity — where every call of it reaches a usage of the block | an `action` usage of the `part def` carrying the body, named as a usage (`Run` → `run`), so the body runs on the object and reaches its features, which a definition nested in the block cannot; the classifier behavior `perform action run { … }`; a call from another behavior of the block `perform action x ::> run;` (`::> part.run` from a swimlane's part), a reception's method `perform action run ::> 'apply Level' { in value = receive.setLevel.value; }`; the report names the usage (see [Behaviors](#behaviors)) | mapped |
@@ -352,8 +352,9 @@ quoted (`'Vehicle Design'`).
 
 ### Diagrams
 
-A diagram is a v2 `view`: what it shows is exposed, how it is drawn is not migrated (a layout
-has no v2 form). The view is named after the diagram and written in the body of the v2
+A diagram is a v2 `view`: what it shows is exposed; how it is drawn has no standard v2 form, and
+is carried only through the `DiagramLayout` library's metadata when the source supplies the
+geometry (see [Layout from an MTIP export](#layout-from-an-mtip-export)). The view is named after the diagram and written in the body of the v2
 element `ownerOfDiagram` names — a `package`, or the `part def`, `state def`, `action def`,
 `metadata def`… written for a classifier; for a behavior that is the method of an operation, the
 operation's definition, whose body the behavior is written as, so the behavior's members are
@@ -1989,9 +1990,9 @@ library packages — `StateMachines` for a pseudostate, `Stochastic` for a branc
 profile — which OpenSysML ships and a tool built on the standard library alone does not.
 `-portable` leaves the migration as it is and appends those packages to the output: every
 library package the notation refers to by qualified name, and every one those refer to in
-turn, follows the model under a comment saying so, written as the library ships it except
-that a `standard library package` becomes a `library package`, which is what a file of one's
-own may declare. A KerML library (`RandomFunctions`, `OpenSysMLMathFunctions`) is written in
+turn, follows the model under a comment saying so, written as the library ships it — a
+`library package`, not a `standard library package`, which is what a file of one's own may
+declare. A KerML library (`RandomFunctions`, `OpenSysMLMathFunctions`) is written in
 its SysML spelling, its functions as `calc def`s; one with no SysML spelling is left
 referenced, and the report says so. The report's summary names the packages inlined —
 `inlined 5 OpenSysML library package(s): DiagramLayout, DocumentQueries, MigrationMetadata,

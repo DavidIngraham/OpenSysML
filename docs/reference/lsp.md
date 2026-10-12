@@ -34,7 +34,7 @@ how a new client and an older server stay compatible.
 
 `openSysmlRenderForms` lists the values `opensysml/render` accepts as `form`, so
 a client offering a *save as* can show what the server it is connected to
-writes rather than a list of its own. A server without it accepts the seven named
+writes rather than a list of its own. A server without it accepts the eight named
 on this page.
 
 `openSysmlCrossDocumentLayout` is the one capability both sides advertise, the
@@ -50,7 +50,7 @@ the text it drew; from a server without it, a client reads every named node as
 the requested document's own, since that is all such a server named.
 
 None of these methods writes to a document. The rendering methods render what a
-document says, with the same renderer [`%view`](repl-commands.md) and `sysml -view`
+document says, with the same renderer [`%render`](repl-commands.md) and `sysml -render`
 use; `opensysml/applyModelEdit` computes the edits that would make a document say
 something else and hands them back for the client to apply, so the change lands
 in the editor's own buffer and undo history.
@@ -58,7 +58,8 @@ in the editor's own buffer and undo history.
 ## Strict conformance (setting)
 
 Whether the server judges a document as conforming SysML v2 (reporting notation
-only OpenSysML accepts as an error instead of a warning) is controlled by a boolean
+only OpenSysML accepts, and a namespace whose memberships are indistinguishable, as an
+error instead of a warning) is controlled by a boolean
 setting, `strictConformance`. It is read from `initialize`'s `initializationOptions`
 and from `workspace/didChangeConfiguration`, in any of the three shapes clients
 nest settings in:
