@@ -5,6 +5,12 @@
     "kind": "interconnection",
     "stated": "no view declared; rendering OpenSysMLStack::stack directly",
     "notices": [],
+    "shown": [
+      "port-symbols",
+      "compartments",
+      "edge-labels",
+      "typings"
+    ],
     "nodes": [
       {
         "id": "n0",

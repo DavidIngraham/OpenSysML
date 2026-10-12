@@ -3,6 +3,7 @@ package migrate_test
 import (
 	"archive/zip"
 	"bytes"
+	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
 	"os"
 	"reflect"
 	"strings"
@@ -398,6 +399,7 @@ func TestGoldenControlNodeLayout(t *testing.T) {
 func TestMigratedRoutesRenderPinned(t *testing.T) {
 	r := migrateLaidOut(t, "diagram_edges")
 	s := session(t, r)
+	everything := view.Options{Show: view.AllShown()}
 	for view, wants := range map[string][]string{
 		"Structure::Vehicle::Drive::Driving": {
 			`"n4" -> "n1" [pos="e,60,210 60,180 60,180 60,200 60,200"];`,
@@ -423,7 +425,7 @@ func TestMigratedRoutesRenderPinned(t *testing.T) {
 		if err != nil {
 			t.Fatalf("render %s: %v", view, err)
 		}
-		dot, err := rendering.DOT()
+		dot, err := rendering.DOTWith(everything)
 		if err != nil {
 			t.Fatalf("DOT of %s: %v", view, err)
 		}
