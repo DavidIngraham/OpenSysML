@@ -125,7 +125,7 @@ func parseVizArgs(args []string) (vizRequest, []string) {
 		case strings.HasPrefix(word, "show="):
 			shown, err := view.ParseShown(strings.TrimPrefix(word, "show="))
 			if err != nil {
-				return req, vizUsageOf(fmt.Sprintf("show= names the optional notation elements to draw, %s or all; %s", view.ElementNames(), err))
+				return req, vizUsageOf(fmt.Sprintf("show= names the optional notation elements to draw, %s; %s", view.ElementNames(), err))
 			}
 			req.opts.Show = req.opts.Show.Union(shown)
 		case slices.Contains(view.Forms(), view.Form(word)):

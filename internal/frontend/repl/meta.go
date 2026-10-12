@@ -583,7 +583,7 @@ func parseRenderArgs(args []string) (name string, form view.Form, opts view.Opti
 			}
 			shown, err := view.ParseShown(strings.TrimPrefix(word, "show="))
 			if err != nil || shown == nil {
-				return renderUsageOf(fmt.Sprintf("show= names the optional notation elements to draw, %s or all; %s", view.ElementNames(), renderUsage))
+				return renderUsageOf(fmt.Sprintf("show= names the optional notation elements to draw, %s; %s", view.ElementNames(), renderUsage))
 			}
 			opts.Show = shown
 			continue

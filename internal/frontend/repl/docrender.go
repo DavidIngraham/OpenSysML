@@ -264,7 +264,7 @@ func parseRenderDocumentArgs(invocation string) (name string, opts docrender.Mar
 		if strings.HasPrefix(word, "show=") {
 			shown, err := view.ParseShown(strings.TrimPrefix(word, "show="))
 			if err != nil || shown == nil || opts.Show != nil {
-				return "", opts, []string{errPrefix + "show= names the optional notation elements to draw, " + view.ElementNames() + " or all; " + renderDocumentUsage}
+				return "", opts, []string{errPrefix + "show= names the optional notation elements to draw, " + view.ElementNames() + "; " + renderDocumentUsage}
 			}
 			opts.Show = shown
 			continue
