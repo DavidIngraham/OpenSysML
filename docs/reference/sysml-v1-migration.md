@@ -100,8 +100,8 @@ model with the same help. See [wire-contract.md](wire-contract.md#migration-migr
   stereotype that specializes one (see [Profiles and stereotypes](#profiles-and-stereotypes)).
   Any other profile's «Block» or «Requirement» with no standard general — a user's own, a
   tool's customization layer over SysML, or another profile Papyrus hosts — carries no SysML
-  meaning: it is written as metadata when the document defines it, and preserved as an
-  applied-stereotype comment otherwise.
+  meaning: it is written as metadata when the document defines it, and preserved as a
+  `MigrationMetadata::AppliedStereotype` marker otherwise ([below](#stereotype-markers)).
 - A requirement's `id` and `text` tags are read in the profile's spelling and in the
   capitalized `Id`/`Text` some exporters write.
 - Multiplicity follows UML's defaults: an omitted bound is 1, and a bound element without a
@@ -131,7 +131,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | Model, Package | `package` | mapped |
 | «Block» Class | `part def` | mapped |
 | Plain UML Class | `occurrence def` | mapped |
-| Actor | `part` usage — a role a connection can join, which v2 writes as a usage rather than a definition; an association to it is a `connection` to the use case | mapped |
+| Actor | `part` usage — one element per actor, a role a connection can join, which v2 writes as a usage rather than a definition; each use case associated with it declares an `actor` parameter subsetting that one usage, and the association is a `connection` from the usage to the parameter | mapped |
 | «InterfaceBlock» | `port def` | mapped |
 | «ValueType» DataType, PrimitiveType | `attribute def` (`Real`/`Integer`/`Boolean`/`String` for the SysML primitives) | mapped |
 | Signal | `item def`; properties typed by it are `item` / `ref item` | mapped |
@@ -158,9 +158,8 @@ ties each of its mapping classes to the code that carries it out (or records why
 | Real literal on an `Integer`/`Natural` feature, numeric string on a scalar feature | converted to the feature's scalar | mapped |
 | Constraint whose specification is a literal, instance or opaque body yielding no Boolean (an integer, a real, a string spelling no `true`/`false`, an enumeration literal) | comment naming the value and the Boolean the constraint yields | **unmapped** — no v2 checker accepts a constraint body of another type; a string `"true"`/`"false"` is written as the Boolean it spells |
 | Constraint whose specification is a `uml:Expression` tree with no symbol at any node and, as leaves, only `InstanceValue`s naming no instance (a tool's presentation constraint on a document, a Cameo Collaborator marker) | nothing: the tree spells nothing | skipped — notation only; a tree with a symbol, or a leaf naming an instance, is translated or refused like any other expression |
-| Association with a name, «AssociationBlock» | `connection def`; an association to an Actor also has its one usage, `connection <name> : <Def> connect <actor> to <use case>;` between the actor's `part` usage and the `use case` usage, hosted by the nearest package holding both | mapped |
-| Anonymous association with a classifier-owned end | nothing: the end property carries it | mapped |
-| Anonymous association owning every end | a named `connection def` | approximated |
+| Association with a name, «AssociationBlock» | `connection def`; an association to an Actor also has its one usage, `connection <name> : <Def> connect <actor> to <use case>;` between the actor's `part` usage and the `use case` usage, hosted by the nearest package holding both — the connection joins the use case usage because the def's end subsets it (a connection end at the use case's actor parameter would inherit from both `Part` and `UseCase`); the use case still declares the `actor` parameter | mapped |
+| Anonymous association | a `connection def` named after its end types (`WheelToCar`, marked `MigrationMetadata::SynthesizedName`), plus its one usage, `connection 'wheel to car' : WheelToCar connect wheel to car;` between `part` usages of the two end types, hosted by the nearest package holding both and written only for this connection; an end a class owns crosses the property it is written as, `end wheels : Wheel crosses car.wheels;`, where that is sound — a `private` or `protected` property so crossed is written visible, as one a connector reaches is; an end the association owns carries its multiplicity as the cross multiplicity, `end [0..*] ref car : Car;` | approximated — the name is made up; the entry also says which end crosses nothing and why (the opposite end is untyped, the end's type is not written or is an actor written as a usage, the association is not binary, the property is not written in the opposite end's type), or why no connection joins the end types |
 | Value property | `attribute`, with multiplicity and default | mapped |
 | Composite part property | `part` | mapped |
 | Property with `isOrdered` / `isUnique="false"` | `ordered` / `nonunique` after the multiplicity — except `nonunique` on a usage that must be unique: one that implicitly subsets a unique library feature (a composite `part` or `item` in a part or item, `Items::Item::subparts`/`subitems`; a composite `action` in an action, `Actions::Action::subactions`, or in a part, `Parts::Part::ownedActions`; likewise `substates`, `subcalculations`, `subcases`, `ownedPorts`, `suboccurrences`…), or that redefines or subsets a feature written unique. The target is the one `ImplicitSubsettings` gives the written usage, its uniqueness read from the bundled library, so an `attribute` (`Base::dataValues`) and a `ref part` (no implicit subsetting) keep `nonunique`. The modifier is dropped and the entry notes which unique feature forbade it | mapped; approximated when `nonunique` is dropped ("nonunique is not written: …") |
@@ -173,7 +172,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | Port, «ProxyPort», «FullPort» typed by an InterfaceBlock / Block | `port`, `~` when conjugated | mapped |
 | «FlowPort» typed by a value type | `port` holding one `in`/`out`/`inout` attribute | approximated |
 | «FlowProperty» | directed `attribute`/`item` in the port def | mapped |
-| `private` feature reached from outside by a connector, a slot, a redefinition, a subset or an expression | visibility dropped so the reference resolves; the report names the reacher — a connector or slot that is itself left as a comment reaches nothing | approximated |
+| `private` feature reached from outside by a connector, a slot, a redefinition, a subset, an expression or the end of a connection def that crosses it | visibility dropped so the reference resolves; the report names the reacher — a connector or slot that is itself left as a comment reaches nothing | approximated |
 | `private`, `package` or `protected` packaged element (a block, value type, enumeration…) | visibility dropped: a v2 private member is out of reach of every other package, which v1 tools do not enforce, so an import brings it in | approximated |
 | Property or port sharing the name of an inherited feature without redefining it | `:>>` the inherited feature when both are the same kind of usage; otherwise the collision is reported and left | approximated |
 | Connector, nested ends | `connect a.b to c.d` | mapped |
@@ -186,7 +185,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | «Allocate» whose feature endpoint has no enclosing written definition, such as a package-owned feature paired with an endpoint from another body | `dependency a to b`, with a note naming the endpoint the allocation ends cannot type | approximated |
 | «Allocate», or another dependency, whose end is an activity node written only as a placeholder (a call that is not migrated) | the relationship is written to the placeholder; the pair ending there counts as failed when its end is not migrated, so the note gives the final tally of pairs written and names the end | approximated when another pair is written, **unmapped** when none is |
 | «Refine» | `connection '<Client> refines <Supplier>' connect <client> to <supplier>;` between usages of its ends (an actor's `part`, a `use case`, a `requirement`, or a `part`, `action`, `occurrence` or `item` usage written for the definition in its package), other metadata in its body — a line a diagram draws, named by its kind since the standard `Refinement` metadata annotates only a dependency and a comment would be a note. A «Refine» whose end is no such element stays a `dependency` carrying `@ModelingMetadata::Refinement` | approximated |
-| «Trace», «Copy», other stereotyped dependencies | plain `dependency` with the stereotype as a comment; named relationships keep their name | approximated |
+| «Trace», «Copy», other stereotyped dependencies | plain `dependency` named by its kind, `dependency 'A traces B' from A to B`, carrying `@MigrationMetadata::AppliedStereotype { stereotype = "Trace"; }` (default output only; under `-strict` the name alone carries the kind); a named relationship keeps its name ([below](#stereotype-markers)) | approximated |
 | A user stereotype specializing a standard one («Org Requirement» :> «Requirement», or one specializing «Block», «ValueType», «Satisfy», «Verify», «Refine», «Trace», «DeriveReqt», «Allocate», …) | the standard stereotype's v2 form above, its tags read as the standard ones (`Id`, `Text`, …), plus a `@Profile::'Org Requirement' { … }` usage holding the user-added tags | as the standard form |
 | Comment, Documentation | `doc` (first) / `comment`, HTML tags stripped and the cross-references in it read as plain text ([below](#cross-references-in-documentation)) | mapped (approximated when a reference is dangling or stale) |
 | User profile | `package` holding its stereotypes and the enumerations and value types they use | mapped |
@@ -208,7 +207,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | InterfaceRealization from a block | a `port` of the `part def` typed by the interface's `port def` — reused when the block already owns one so typed, otherwise added under the interface's name; a `part def` cannot specialize a `port def` | approximated |
 | InterfaceRealization from an «InterfaceBlock» | `port def :> <Interface>` | mapped |
 | InterfaceRealization whose interface is not written (outside the document, library content) or whose client becomes neither a part def nor a port def | comment naming why | **unmapped** |
-| UseCase (whatever incidental stereotype a tool applies to it) | `use case` usage — one element, as in v2 use case models, which a connection can join; its UML `subject` is a `subject` usage (v2 admits one per case: a second is a `ref part` with a note); an anonymous association to an Actor is a `connection '<Actor> to <Case>' connect <actor> to <case>;` in the nearest package holding both, which a use case diagram draws; an actor end the use case owns is its `actor`, subsetting the actor's `part`, with the association's multiplicity; a `classifierBehavior` is performed as in a block | mapped |
+| UseCase (whatever incidental stereotype a tool applies to it) | `use case` usage — one element, as in v2 use case models, which a connection can join; its UML `subject` is a `subject` usage, written first as v2 requires (`subject;` when the use case has actors but no subject; v2 admits one per case: a second is a `ref part` with a note); each association to an Actor is an `actor` parameter after the subject, `actor <end name or actor name> [<multiplicity>] :> <Actor>;` subsetting the actor's one `part` usage, with the end's multiplicity (made unique in the use case and marked `MigrationMetadata::SynthesizedName` when the end is unnamed), and a `connection '<Actor> to <Case>' connect <actor> to <case>.<parameter>;` in the nearest package holding both, which a use case diagram draws; an actor end the use case owns is that `actor` parameter itself, named after the actor when it is anonymous, which the connection joins by its name (a port the use case owns stays a port, and the use case gets a parameter besides); a `classifierBehavior` is performed as in a block | mapped |
 | Include | `include <Included>;` in the including case and `connection '<Including> includes <Included>' connect <including> to <included>;` between the two cases, which a diagram draws | mapped |
 | Extend, ExtensionPoint | `connection '<Extending> extends <Extended>' connect <extending> to <extended>;` between the two cases, the extension points and condition as the connection's `doc`; v2 has no `extend` | approximated / **unmapped** (extension point) |
 | Include, Extend whose other case is not in the document | comment | **unmapped** |
@@ -222,7 +221,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | «Conform» Generalization, Dependency | `satisfy <Viewpoint>;` in the view | mapped |
 | «Conform» whose client is not a view or whose supplier is not a viewpoint | comment | **unmapped** |
 | «Viewpoint» Class | package-level `viewpoint <Name>` usage: `purpose`, `language`, `method` and `presentation` tags in a `doc`; each `stakeholder` tag a `stakeholder x : <Stakeholder>` usage; each `concern` tag and each `concernList` comment a `frame concern { doc /* … */ }`; a stakeholder or concern id that is not in the document is named in the report | mapped / approximated |
-| «Stakeholder» Class | `part def`; the OMG standard library bundled here defines no `Stakeholder` base definition, so nothing is specialized; the `concern` tag stays a comment | approximated |
+| «Stakeholder» Class | `part def`; the OMG standard library bundled here defines no `Stakeholder` base definition, so nothing is specialized; the `concern` tag stays in an `AppliedStereotype` marker | approximated |
 | Activity | `action def` (see [Behaviors](#behaviors)); a block's `classifierBehavior` is also performed by a `perform action` usage of the `part def` | mapped |
 | Activity a block owns whose body reads or writes a feature of the block — an attribute, port or part, a «Probability» property, a port a signal arrives at, an operation of a part it calls, or another such activity — where every call of it reaches a usage of the block | an `action` usage of the `part def` carrying the body, named as a usage (`Run` → `run`), so the body runs on the object and reaches its features, which a definition nested in the block cannot; the classifier behavior `perform action run { … }`; a call from another behavior of the block `perform action x ::> run;` (`::> part.run` from a swimlane's part), a reception's method `perform action run ::> 'apply Level' { in value = receive.setLevel.value; }`; the report names the usage (see [Behaviors](#behaviors)) | mapped |
 | Parameter, ActivityParameterNode | `in`/`out`/`inout` parameter of the `action def`; a `return` parameter is `out`; the parameter node's flows bind the parameter | mapped (return: approximated) |
@@ -241,7 +240,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | «Probability» from a profile other than the OMG SysML profile (recognised by its namespace, as every standard stereotype is) | no weight is read from it: the edge is treated as one carrying no «Probability»; the note names the profile the stereotype comes from | approximated |
 | «SimulationConfig» (MagicDraw's SimulationProfile) | `action def` holding `@Simulation::Configuration { runs = …; draws = …; timeVariable = …; startTime = …; stepSize = …; timeUnit = …; parallelForks = …; }`, `part target : <the migrated executionTarget>;` and `perform action run ::> target.<its classifier behavior>;` (see [Run configurations](#run-configurations)); its remaining tags a comment | mapped |
 | «SimulationConfig» whose `executionTarget` is absent, several, outside the document, not migrated, or written as something no part can be typed by; whose target has no classifier behavior, or one that is a state machine | the `action def` with its metadata and, where the target is written, its `target` part, performing nothing; the note says why | approximated |
-| «SimulationConfig» `durationSimulationMode` that is none of `min`, `max`, `average`, `random` | kept among the tags in the comment | approximated |
+| «SimulationConfig» `durationSimulationMode` that is none of `min`, `max`, `average`, `random` | kept among the tags of the `AppliedStereotype` marker | approximated |
 | Result snapshots of a «SimulationConfig» (the instances under its `resultLocation` packages classified — by name or by their slots — by its target's classifiers, recording no other values of the features the target's slots set) | the individuals above, and one row per snapshot in the JSON `-migration-results` writes, its numeric slots by defining feature; a slot holding no one finite number a float64 spells exactly, and a feature two slots hold numbers for, are counted in the configuration's notes | mapped |
 | Generalization of MagicDraw's `MonteCarloAnalysis` (the analysis pattern of the SysML customization module, recognised by the module's provenance — a user's own block of that name is an ordinary block) | the block's `part def` without that general, and beside it `analysis def '<Block> Monte Carlo' :> Simulation::MonteCarlo` with the part def as `subject`, `perform action run ::> <subject>.<its classifier behavior>` and `attribute :>> observed = <subject>.<the value bound to Mean>` (see [Monte Carlo analyses](#monte-carlo-analyses)) | approximated: the block is split into a part def and an analysis def |
 | «BindingConnector» of a value property to `MonteCarloAnalysis::Mean`, `::Deviation`, `::N` or `::OutOfSpec` (the connector's owner inheriting the pattern) | the analysis def's `observed` (from the `Mean` binding) and one `return`/`out` per statistic — `return Mean : Real = mean;`, `out Deviation : Real[0..1] = deviation;`, `out N : Natural = runs;`, `out OutOfSpec : Natural = outOfSpec;` — `Real` for `Mean` and `Deviation`, the bound value's scalar for `N` and `OutOfSpec`; a note says when that is not the value's own type; a parametric diagram showing the connector exposes that member and routes the `Mean` binding along `observed` (see [Monte Carlo analyses](#monte-carlo-analyses)) | mapped / approximated |
@@ -353,8 +352,9 @@ quoted (`'Vehicle Design'`).
 
 ### Diagrams
 
-A diagram is a v2 `view`: what it shows is exposed, how it is drawn is not migrated (a layout
-has no v2 form). The view is named after the diagram and written in the body of the v2
+A diagram is a v2 `view`: what it shows is exposed; how it is drawn has no standard v2 form, and
+is carried only through the `DiagramLayout` library's metadata when the source supplies the
+geometry (see [Layout from an MTIP export](#layout-from-an-mtip-export)). The view is named after the diagram and written in the body of the v2
 element `ownerOfDiagram` names — a `package`, or the `part def`, `state def`, `action def`,
 `metadata def`… written for a classifier; for a behavior that is the method of an operation, the
 operation's definition, whose body the behavior is written as, so the behavior's members are
@@ -385,7 +385,7 @@ and `umlType` (`Class Diagram`) together — by the first family below a word of
 | internal block, parametric, composite structure and interconnection diagrams | `Views::asInterconnectionDiagram`; a parametric diagram of a block of the [Monte Carlo pattern](#monte-carlo-analyses) exposes the block's analysis def in place of the pattern's `Mean` symbol and the def's returns in place of its other statistics, the `Mean` binding routed along the def's `observed` |
 | block definition, class, package, object, component, deployment, profile and other structure diagrams | `Views::asTreeDiagram` |
 | an activity diagram whose owner is written as an `action def`, a state machine (or statechart) diagram whose owner is written as a `state def`, showing a node or edge of its graph | `view : StandardViewDefinitions::ActionFlowView` / `StateTransitionView`, rendered `Views::asInterconnectionDiagram` |
-| a use case diagram | `Views::asInterconnectionDiagram` over the actors' `part` usages, the `use case` and `requirement` usages and the connections written for the actor associations, includes, extends and «Refine»s it shows |
+| a use case diagram | `Views::asInterconnectionDiagram` over the actors' `part` usages, the `use case` and `requirement` usages and the connections written for the actor associations, includes, extends and «Refine»s it shows; the renderer draws a use case's subject and `actor` parameters as pins on its node, not as nested nodes, so an actor is one node and its association one line ending at the use case |
 | other behavior diagrams (sequence, an activity diagram of a package or one showing nothing of its activity's graph), requirement, content and free-form diagrams, a tool's own kinds, a diagram naming no kind | `Views::asTextualNotation` |
 
 The rendering is written `$::Views::…` where a member named `Views` would shadow the library, a
@@ -437,17 +437,30 @@ whole model is, so it names members declared after it. Naming an edge leaves it 
 the element is unchanged, and the report's target column now names the member.
 
 Edges with no v2 member of their own are not given one: a Generalization or InterfaceRealization
-is a `:>` clause or a port's conjugation, a Composition, Aggregation or Association between blocks
-is the `part`/`ref` end usage, a constraint or information flow edge nothing realizes is not
+is a `:>` clause or a port's conjugation, a Composition or Aggregation between blocks is the
+`part`/`ref` end usage, a constraint or information flow edge nothing realizes is not
 written, and a decision's `else` branch is a clause of the node it leaves, not a member. Their
 placements on a diagram expose the ends as before; their routes are reported (below), not
 attached to a member that is not an edge. The rendered view still draws them: a tree draws a
 specialization from each exposed element to the general it specializes, and a composition
 (filled diamond, labelled with the end usage's name and multiplicity) or reference (hollow
 diamond) from each to the definition typing a part or `ref` it owns, wherever both ends are
-drawn, so a migrated block definition diagram shows its generalization and association lines
-between the blocks it exposes; the lines are laid out by the drawing, since nothing in the
-model routes them. A region's initial transition is the bare entry
+drawn, and draws a `connection def` whose two ends are typed by drawn definitions as a line
+between them, labelled with its ends, rather than as a box of its own, so a migrated block
+definition diagram shows its generalization and association lines between the blocks it
+exposes; such a line wears the def's `Style` and `Route` and carries its `Note`s, and is laid
+out by the drawing where the model routes nothing. An end that crosses a `part` or `ref` the
+tree draws as a composition or reference from its owner takes that edge over, so a composite
+association is one line, with the composition's diamond, the part's name and multiplicity and
+the def's `Style` and `Route`, not a composition and a line. The line is plain, as a block
+definition diagram draws an association, not the heavy connector of an interconnection diagram.
+An association block, whose def carries members of its own, a def that inherits its ends or
+specializes another, and one whose end holds a qualifier stay boxes. Because the tree draws such a
+def as a line, a v1 association's diagram route is pinned to it (`Route about WheelToCar`); the
+route of one the tree keeps as a box, an association block with members say, stays `not drawn`.
+A shown
+end the association owns exposes the def rather than the end, so two defs with a same-named end
+shown on one diagram import no duplicate name. A region's initial transition is the bare entry
 `entry; then s;` until a diagram draws it; then it is a member of its own, `transition 'start
 then s' first start then s;` (under its v1 name when it has one, else that made-up name), so the
 view can route it from the region's `start` symbol, and its row names the member.
@@ -923,7 +936,7 @@ translated), UI prototyping mockups, or simulation-tool configuration other than
 «SimulationConfig» run configurations, which [migrate](#run-configurations). A classifier
 the tool also draws as a mockup but that is the model's — one with a standard stereotype, or
 one that is active, names a classifier behavior or owns a behavior — migrates as such, its
-tool marker an applied-stereotype comment. A host alone decides nothing: Cameo gives every locally defined profile a
+tool marker an `AppliedStereotype` marker. A host alone decides nothing: Cameo gives every locally defined profile a
 `http://www.magicdraw.com/schemas/<Name>.xmi` namespace, so a profile there that is not one of
 the known paths is a user profile.
 
@@ -965,10 +978,33 @@ two things:
   written and the report says so; the edge closing a generalization cycle is not written
   either, since v2 forbids the cycle, and the report names it.
 
+### Stereotype markers
+
+A stereotype the element's v2 form does not carry is never written as a comment next to the
+element: a modeling tool renders a package-owned comment as a note on every diagram. It is kept
+instead as a `MigrationMetadata::AppliedStereotype` metadata usage in the element's body —
+`stereotype` naming it, `profile` its namespace when the document does not define it, and `tags`
+the `tag = value` pairs no v2 feature holds — so tooling can still query it, and the `-portable`
+output inlines the library package as it does `SynthesizedName`. Three cases write one:
+
+- a stereotyped dependency the mapping keeps as a plain `dependency` (a «Trace», a «Copy», an
+  «Allocate» whose ends cannot type an allocation): the dependency is also *named by its kind*,
+  `dependency 'Speed Requirement traces Engine' from 'Speed Requirement' to Engine { @MigrationMetadata::AppliedStereotype { stereotype = "Trace"; } }`,
+  as a «Refine» or an include is named `'A refines B'` / `'A includes B'`, so the kind is on the
+  line a diagram draws; a relationship the author named keeps its name;
+- a classifying stereotype with tags no v2 feature holds (`«Block» isEncapsulated`, a
+  «ValueType»'s `unit`, a «Stakeholder»'s `concern`, a «SimulationConfig»'s tool settings);
+- an application from a profile the document does not define, or one with no v2 meaning.
+
+Under `-strict`, which names no OpenSysML library, the marker is a line comment
+(`// applied stereotype «Critical»: level = high`) — not a model element, so no tool draws it —
+and a plain dependency's name alone carries its kind. Documentation (`doc`, v1 Comments) and the
+`/* not migrated: … */` records of refused elements are comments as before.
+
 An application is written as metadata only when the document defines its stereotype: an
 application from a profile that lives in a used project the archive does not bundle, or from an
-unknown namespace, stays an applied-stereotype comment, and the report notes once per element
-that the profile is outside the document. Tag values are written by the tag's type — a string,
+unknown namespace, stays an `AppliedStereotype` marker naming the profile, and the report notes
+once per element that the profile is outside the document. Tag values are written by the tag's type — a string,
 integer, real or boolean literal, an enumeration literal by name, an element reference by the
 shortest name resolving where the usage sits — and a value that does not fit (an unknown
 literal, a reference to an element not written, a tag the stereotype does not define) is kept as
@@ -983,7 +1019,7 @@ whose declared multiplicity is `[1]` or absent writes `[0..*] ordered nonunique`
 writes `[n] ordered nonunique`, so the feature is the sequence the tool meant — `ordered`
 alone, with the drop noted, on a usage that must be unique (the `isUnique` row); `*` (and `&`)
 on a part or item property held by value writes it `ref`, a reference rather than a
-containment. A shape with no v2 form is kept as the applied-stereotype comment with the reason
+containment. A shape with no v2 form is kept in the `AppliedStereotype` marker with the reason
 in the report: `[][]`, `[n*m]` and other two-dimensional shapes (a multiplicity has one
 dimension), `[]` on a feature already declared a collection (a collection of collections has
 no multiplicity) or whose declared bounds are not natural numbers, `*` on an attribute or on
@@ -1722,7 +1758,7 @@ duration is `Real`), and the result parses with the v2 parser.
 
 A simulation tool's run configuration — MagicDraw's «SimulationConfig», recognised by the
 provenance of its profile (`magicdraw.com` or `nomagic.com`, at `/schemas/SimulationProfile.xmi` and no
-other path; a stereotype so named from any other profile is kept as a comment), not by its name — states which
+other path; a stereotype so named from any other profile is kept as an `AppliedStereotype` marker), not by its name — states which
 object a behavior ran on, how many times, and how the tool resolved its random durations. Each
 becomes an `action def` a user runs as any other:
 
@@ -1775,7 +1811,7 @@ action def 'Group 0' {
   configuration without `startTime` ran on the tool's real-time clock and records no step. A mode
   that is none of the four policies,
   and a run count beyond what a Monte Carlo can make (a 64-bit count), are kept among the
-  tool's other tags in the trailing comment, as are `animationSpeed`,
+  tool's other tags in an `AppliedStereotype` marker, as are `animationSpeed`,
   `silent` and every setting with no v2 meaning; `autostartActiveObjects` and
   `treatAllClassifiersAsActive` set to true state what every v2 object does anyway, so they are
   consumed, and set to false they are kept in the comment and reported as having no v2 form.
@@ -1990,9 +2026,9 @@ library packages — `StateMachines` for a pseudostate, `Stochastic` for a branc
 profile — which OpenSysML ships and a tool built on the standard library alone does not.
 `-portable` leaves the migration as it is and appends those packages to the output: every
 library package the notation refers to by qualified name, and every one those refer to in
-turn, follows the model under a comment saying so, written as the library ships it except
-that a `standard library package` becomes a `library package`, which is what a file of one's
-own may declare. A KerML library (`RandomFunctions`, `OpenSysMLMathFunctions`) is written in
+turn, follows the model under a comment saying so, written as the library ships it — a
+`library package`, not a `standard library package`, which is what a file of one's own may
+declare. A KerML library (`RandomFunctions`, `OpenSysMLMathFunctions`) is written in
 its SysML spelling, its functions as `calc def`s; one with no SysML spelling is left
 referenced, and the report says so. The report's summary names the packages inlined —
 `inlined 5 OpenSysML library package(s): DiagramLayout, DocumentQueries, MigrationMetadata,
@@ -2012,6 +2048,9 @@ with a report line:
 
 - the `MigrationMetadata::SynthesizedName`, `StandIn` and `LibraryNameAvoided` markers become
   comments (`// names the migration made up: a, b`), the report carrying the same information;
+- an `AppliedStereotype` marker becomes a line comment (`// applied stereotype «Critical»: level =
+  high`), and the one recording a plain dependency's kind is omitted: the dependency's name,
+  `'A traces B'`, carries it alone;
 - a `choice` or `junction` pseudostate, by default `#StateMachines::<kind> state x;`, is a plain
   `state x;` whose guarded transitions are the pseudostate's, reported approximated since a
   run no longer passes through it in one step; its `else` branch, which a plain state's
