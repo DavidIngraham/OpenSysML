@@ -368,7 +368,9 @@ operations keep an `action def <Op>` with a context parameter, as every other bl
 behavior a state runs does: one whose method a state's entry, do, exit or a transition's effect
 runs — a state def's member reaches no usage of the block, so the state writes
 `entry action : <Op> { in ref :>> context = <Machine>::context; }` — and one whose method acts
-on another block through its ports, which a usage's `this` cannot stand for.
+on another block through its ports, which a usage's `this` cannot stand for. The block's usage
+of such a def binds the context to the object, `action <op> : <Op> { in ref :>> context = this; }`,
+so a call chaining to it runs the method on that object.
 
 ### Diagrams
 

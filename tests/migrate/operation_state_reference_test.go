@@ -6,7 +6,8 @@ import (
 )
 
 // doorOpenedByItsState is a block whose state runs the method of one of its
-// operations as the state's entry.
+// operations as the state's entry, and whose activity Run calls the operation
+// on the object a ReadSelfAction feeds to the target pin.
 const doorOpenedByItsState = `
     <packagedElement xmi:type="uml:Class" xmi:id="_door" name="Door">
       <ownedAttribute xmi:type="uml:Property" xmi:id="_angle" name="angle">
@@ -27,6 +28,19 @@ const doorOpenedByItsState = `
         <edge xmi:type="uml:ControlFlow" xmi:id="_oe1" source="_oi" target="_ninety"/>
         <edge xmi:type="uml:ObjectFlow" xmi:id="_oof" source="_ninetyOut" target="_setAVal"/>
         <edge xmi:type="uml:ControlFlow" xmi:id="_oe2" source="_setA" target="_of"/>
+      </ownedBehavior>
+      <ownedBehavior xmi:type="uml:Activity" xmi:id="_run" name="Run">
+        <node xmi:type="uml:InitialNode" xmi:id="_ri"/>
+        <node xmi:type="uml:ReadSelfAction" xmi:id="_self" name="self">
+          <result xmi:type="uml:OutputPin" xmi:id="_selfOut" name="result"/>
+        </node>
+        <node xmi:type="uml:CallOperationAction" xmi:id="_callOpen" name="open it" operation="_open">
+          <target xmi:type="uml:InputPin" xmi:id="_callOpenT" name="target"/>
+        </node>
+        <node xmi:type="uml:ActivityFinalNode" xmi:id="_rf"/>
+        <edge xmi:type="uml:ControlFlow" xmi:id="_re1" source="_ri" target="_self"/>
+        <edge xmi:type="uml:ObjectFlow" xmi:id="_rof" source="_selfOut" target="_callOpenT"/>
+        <edge xmi:type="uml:ControlFlow" xmi:id="_re2" source="_callOpen" target="_rf"/>
       </ownedBehavior>
       <ownedBehavior xmi:type="uml:StateMachine" xmi:id="_doorLife" name="DoorLife">
         <region xmi:type="uml:Region" xmi:id="_dlr">
@@ -50,6 +64,8 @@ func TestOperationRunByAStateKeepsItsDef(t *testing.T) {
 		"in ref context : Door[1];",
 		"assign context.angle := value;",
 		"entry action : Open { in ref :>> context = DoorLife::context; }",
+		"action open : Open { in ref :>> context = this; }",
+		"perform action 'open it' ::> open;",
 	} {
 		wantLine(t, r.Notation, line)
 	}
@@ -62,5 +78,13 @@ func TestOperationRunByAStateKeepsItsDef(t *testing.T) {
 	meta(t, s, "%advance 0")
 	if out := meta(t, s, "%eval in #1 : angle"); !strings.Contains(out, "= 90") {
 		t.Errorf("the state's entry did not run the operation's method on the object: %s", out)
+	}
+
+	s = session(t, r)
+	meta(t, s, "%instantiate Door")
+	meta(t, s, "%action Door::run #1")
+	meta(t, s, "%continue")
+	if out := meta(t, s, "%eval in #1 : angle"); !strings.Contains(out, "= 90") {
+		t.Errorf("the call on the target pin's object did not run the operation on it: %s", out)
 	}
 }
