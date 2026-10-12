@@ -42,7 +42,7 @@ n12 -- n13: { class: edge }
 n14 -- n15: { class: edge }
 n0 <- n12: "chassis" { class: composition }
 n0 <- n16: "wheels" { class: composition }
-n0 <- n17: "driver[0..1]" { class: reference }
+n0 <- n17: "driver" { class: reference }
 n0 <- n18: "total" { class: reference }
 n9 -> n0: { class: specialization }
 n9 <- n14: "chassis" { class: composition }

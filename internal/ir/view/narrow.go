@@ -22,8 +22,9 @@ func requirementNodeKind(kind string) bool {
 	return kind == "requirement" || kind == "requirement def" || kind == "concern" || kind == "concern def"
 }
 
-// multiplicityText matches a multiplicity written after a name, `[4]` or `[0..*]`.
-var multiplicityText = regexp.MustCompile(`\[[^\]]*\]`)
+// multiplicityText matches a multiplicity written after a name, `[4]` or
+// `[0..*]`; a name holding brackets is quoted, so it ends in a quote instead.
+var multiplicityText = regexp.MustCompile(`\[[^\]']*\]$`)
 
 // showing is r drawn with the optional notation elements shown: its own Shown
 // with more added. What is left out is taken off the rendering itself, so every
@@ -140,7 +141,7 @@ func (n *narrowing) edge(edge *Edge) {
 	if !n.shown.Has(ElementEdgeLabels) && connectorEdge(edge.Kind) {
 		edge.Label = ""
 	}
-	if !n.shown.Has(ElementMultiplicities) && edge.Kind == EdgeComposition {
+	if !n.shown.Has(ElementMultiplicities) && (edge.Kind == EdgeComposition || edge.Kind == EdgeReference) {
 		edge.Label = multiplicityText.ReplaceAllString(edge.Label, "")
 	}
 }

@@ -39,7 +39,7 @@ digraph "FleetViews::structure" {
   "n19" [style="rounded,filled", label=<<b>fleetCar</b>>];
   "n0" -> "n12" [label="chassis", dir=back, arrowtail=diamond];
   "n0" -> "n16" [label="wheels", dir=back, arrowtail=diamond];
-  "n0" -> "n17" [label="driver[0..1]", dir=back, arrowtail=odiamond];
+  "n0" -> "n17" [label="driver", dir=back, arrowtail=odiamond];
   "n0" -> "n18" [label="total", dir=back, arrowtail=odiamond];
   "n9" -> "n0" [arrowhead=empty];
   "n9" -> "n14" [label="chassis", dir=back, arrowtail=diamond];

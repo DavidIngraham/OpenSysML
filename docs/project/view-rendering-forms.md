@@ -1152,17 +1152,20 @@ attribute a rendering in the model chooses it by:
 
 In the model, a view chooses them by rendering a usage or definition that specializes a standard
 `Views` rendering and declares the attributes, each `true` to show the element and `false` to
-leave it out; the renderer recognises the standard rendering through the specialization chain
-and reads the attributes from the chosen rendering and its generals, the nearest declaration of
-each deciding. An attribute left undeclared keeps the default, so a rendering need only name
-what it changes. The notation stays library-only: it uses `Boolean`, `rendering def`,
-`rendering` and the standard renderings, and the pilot validates it.
+leave it out; a switch is declared `default` so that a rendering specializing the one declaring it
+redefines it (`:>>`) to turn it again. The renderer recognises the standard rendering through the specialization chain and
+reads the attributes from the chosen rendering and its generals, the nearest declaration of each
+deciding. An attribute left undeclared keeps the default, so a rendering need only name what it
+changes. The notation stays library-only — `ScalarValues::Boolean`, `rendering def`, `rendering`
+and the standard renderings — and the pilot validates it.
 
 ```sysml
+private import ScalarValues::Boolean;
 rendering def PlainInterconnection :> Views::asInterconnectionDiagram {
-    attribute showParameterSymbols : Boolean = false;
-    attribute showEdgeLabels : Boolean = true;
+    attribute showParameterSymbols : Boolean default = false;
+    attribute showEdgeLabels : Boolean default = true;
 }
+rendering labelled :> PlainInterconnection { attribute :>> showParameterSymbols = true; }
 view useCases { expose Lab::*; render PlainInterconnection; }
 ```
 

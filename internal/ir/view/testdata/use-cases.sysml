@@ -1,4 +1,6 @@
 package LabUseCases {
+	private import ScalarValues::Boolean;
+
 	part Operator;
 	part Administrator;
 
@@ -16,13 +18,13 @@ package LabUseCases {
 	// A rendering drawing the actors as parameter symbols on the use case's
 	// boundary, with the connections ending at them.
 	rendering withParameterSymbols :> Views::asInterconnectionDiagram {
-		attribute showParameterSymbols : Boolean = true;
+		attribute showParameterSymbols : Boolean default = true;
 	}
 
-	// A rendering of the one above turning them off again, and a rendering
-	// of it leaving the switch alone: the specialized rendering decides.
+	// A rendering of the one above redefining the switch off again, and a
+	// rendering of it leaving the switch alone: the specialized rendering decides.
 	rendering withoutParameterSymbols :> withParameterSymbols {
-		attribute showParameterSymbols : Boolean = false;
+		attribute :>> showParameterSymbols = false;
 	}
 	rendering inheritingParameterSymbols :> withParameterSymbols;
 

@@ -24,7 +24,7 @@ part Fleet::fleetCar
 relationships:
   Fleet::Vehicle *-- Fleet::Chassis: chassis
   Fleet::Vehicle *-- Fleet::Wheel: wheels
-  Fleet::Vehicle o-- Fleet::Driver: driver[0..1]
+  Fleet::Vehicle o-- Fleet::Driver: driver
   Fleet::Vehicle o-- Fleet::Mass: total
   Fleet::SportsCar --|> Fleet::Vehicle
   Fleet::SportsCar *-- Fleet::LightChassis: chassis

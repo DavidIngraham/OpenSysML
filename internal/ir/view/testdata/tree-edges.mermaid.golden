@@ -57,7 +57,7 @@ flowchart TD
   n19("`**fleetCar**`")
   n0 ---|"◆ chassis"| n12
   n0 ---|"◆ wheels"| n16
-  n0 ---|"◇ driver[0..1]"| n17
+  n0 ---|"◇ driver"| n17
   n0 ---|"◇ total"| n18
   n9 -->|"specialization"| n0
   n9 ---|"◆ chassis"| n14
