@@ -897,17 +897,33 @@ func TestExportPlacementOfAnEndSymbolStaysOnTheEdge(t *testing.T) {
 // read from the stream, so the points run from the def's first end's type to
 // its second's whichever way the export lists them.
 func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
-	for name, points := range map[string][]float64{
-		"drawn the stream's way":     {110, 70, 110, 200},
-		"drawn against the stream's": {110, 200, 110, 70},
+	above := []mtip.Placement{
+		{ID: "_blk_controller", Type: "Class", X: 50, Y: 20, Width: 120, Height: 50},
+		{ID: "_blk_sensor", Type: "Class", X: 50, Y: 200, Width: 120, Height: 50},
+	}
+	// The export has moved the sensor above the controller, across the stream's ends.
+	below := []mtip.Placement{
+		{ID: "_blk_controller", Type: "Class", X: 50, Y: 250, Width: 120, Height: 50},
+		{ID: "_blk_sensor", Type: "Class", X: 50, Y: 20, Width: 120, Height: 50},
+	}
+	for name, c := range map[string]struct {
+		boxes  []mtip.Placement
+		points []float64
+		want   string
+	}{
+		"drawn the stream's way":     {above, []float64{110, 70, 110, 200}, "(110, 200, 110, 70)"},
+		"drawn against the stream's": {above, []float64{110, 200, 110, 70}, "(110, 200, 110, 70)"},
+		"drawn between moved boxes":  {below, []float64{110, 250, 110, 70}, "(110, 70, 110, 250)"},
+		"drawn without boxes":        {nil, []float64{110, 70, 110, 200}, "(110, 70, 110, 200)"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			layout := &mtip.Export{Diagrams: []mtip.Diagram{{
-				ID:   "_diag_pair",
-				Name: "Pair BDD",
-				Type: "sysml.BlockDefinitionDiagram",
+				ID:         "_diag_pair",
+				Name:       "Pair BDD",
+				Type:       "sysml.BlockDefinitionDiagram",
+				Placements: c.boxes,
 				Connectors: []mtip.Connector{
-					{ID: "_assoc_pair", Type: "Association", Points: points},
+					{ID: "_assoc_pair", Type: "Association", Points: c.points},
 				},
 				Unsupported: map[string]int{},
 			}}}
@@ -921,7 +937,7 @@ func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
 			}
 			wantInOrder(t, "joined pair view", string(r.Notation),
 				"view 'Pair BDD' {",
-				"metadata DiagramLayout::Route about SensorToController { points = (110, 200, 110, 70); }",
+				"metadata DiagramLayout::Route about SensorToController { points = "+c.want+"; }",
 			)
 		})
 	}

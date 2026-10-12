@@ -523,8 +523,10 @@ of the line or both ends are typed by one definition. A property drawn
 as its own box in a block's compartment, or as a part on an internal block diagram, is not nested
 in a path and keeps its `Layout`; when an MTIP export places an element the diagram's own stream
 shows only on a path, the export's bounds win but the end stays on the line, and an exported line
-takes which element is at which of its ends from the stream, which the export does not record,
-matching the two drawings' end points so a line the export lists the other way round is still read correctly. A route whose
+takes which two elements its ends are from the stream, which the export does not record, and which
+of them is at which end from where the line starts and stops against the export's own boxes for
+them, so a line the export lists the other way round, or between boxes it has moved, is still read
+correctly; the points stay as the export lists them when it draws no box for an end. A route whose
 connector's element is written as a named member (see [Edges a diagram shows](#edges-a-diagram-shows))
 that the view exposes, or that its graph draws, *and* that the view's rendering draws as an edge —
 a succession or flow in an `ActionFlowView`, a transition in a `StateTransitionView`, a connection

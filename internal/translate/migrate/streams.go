@@ -137,14 +137,19 @@ func (m *migration) layoutRecord(v *view) (*mtip.Diagram, layoutSources) {
 	for _, c := range export.Connectors {
 		routed[c.ID] = true
 	}
-	// The export says nothing about which element is at which end of a line either.
-	lines := map[string]mtip.Connector{}
+	// The export says nothing about which element is at which end of a line
+	// either; the stream names the two, the export's own boxes place them.
+	lines := map[string][2]string{}
 	for _, c := range stream.Connectors {
-		lines[c.ID] = c
+		lines[c.ID] = c.Ends
+	}
+	boxes := map[string]mtip.Placement{}
+	for _, p := range export.Placements {
+		boxes[p.ID] = p
 	}
 	for i := range merged.Connectors {
 		if c := &merged.Connectors[i]; c.Ends == [2]string{} {
-			c.Ends = endsAlong(c.Points, lines[c.ID])
+			c.Ends = endsAt(c.Points, lines[c.ID], boxes)
 		}
 	}
 	src := layoutSources{export: true, frame: frame}
@@ -659,26 +664,36 @@ func (m *migration) styleLine(host *sysmlv1.Element, prefix, ref string, st sysm
 	return "metadata " + prefix + "Style about " + ref + " { " + strings.Join(attrs, " ") + " }"
 }
 
-// endsAlong reads the elements at the ends of a line drawn through points from
-// the stream's drawing of the same line, whose points may run the other way;
-// it returns no ends when the two drawings do not say which way that is.
-func endsAlong(points []float64, line mtip.Connector) [2]string {
-	if len(points) < 4 || len(line.Points) < 4 {
+// endsAt places the elements named as a line's ends by where the line drawn
+// through points starts and stops against their boxes in the same drawing; it
+// returns no ends when a box is missing or the drawing does not say which is which.
+func endsAt(points []float64, ends [2]string, boxes map[string]mtip.Placement) [2]string {
+	if len(points) < 4 || ends[0] == "" || ends[1] == "" {
+		return [2]string{}
+	}
+	if ends[0] == ends[1] {
+		return ends
+	}
+	a, okA := boxes[ends[0]]
+	b, okB := boxes[ends[1]]
+	if !okA || !okB {
 		return [2]string{}
 	}
 	first, last := points[:2], points[len(points)-2:]
-	lineFirst, lineLast := line.Points[:2], line.Points[len(line.Points)-2:]
-	same := gap(first, lineFirst) + gap(last, lineLast)
-	opposite := gap(first, lineLast) + gap(last, lineFirst)
+	same := boxGap(first, a) + boxGap(last, b)
+	opposite := boxGap(first, b) + boxGap(last, a)
 	switch {
 	case same < opposite:
-		return line.Ends
+		return ends
 	case opposite < same:
-		return [2]string{line.Ends[1], line.Ends[0]}
+		return [2]string{ends[1], ends[0]}
 	}
 	return [2]string{}
 }
 
-func gap(a, b []float64) float64 {
-	return math.Hypot(a[0]-b[0], a[1]-b[1])
+// boxGap is the distance from a point to a box, 0 inside it.
+func boxGap(pt []float64, box mtip.Placement) float64 {
+	dx := math.Max(0, math.Max(box.X-pt[0], pt[0]-(box.X+box.Width)))
+	dy := math.Max(0, math.Max(box.Y-pt[1], pt[1]-(box.Y+box.Height)))
+	return math.Hypot(dx, dy)
 }
