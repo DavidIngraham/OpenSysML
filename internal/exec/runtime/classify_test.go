@@ -818,7 +818,7 @@ func TestClassificationIsKeptOrUndoneWithTheChange(t *testing.T) {
 	}
 	load := idx.LookupQualified("test::Load")[0]
 	if _, err := ctx.SignalMessage(load, map[string]Value{"seg": looseVal}, rack); !errors.Is(err, errSignalArgument) {
-		t.Fatalf("SignalMessage(Load, seg = loose) = %v, want ErrSignalArgument", err)
+		t.Fatalf("SignalMessage(Load, seg = loose) = %v, want errSignalArgument", err)
 	}
 	if !isUnclassified(loose) {
 		t.Fatal("a refused write or message classified its object")
@@ -1038,7 +1038,7 @@ func TestBindingEndAcrossACollection(t *testing.T) {
 			_, err := groups[0].GetFeatureValue(ctx, "shares")
 			var undetermined *undeterminedBindingError
 			if !errors.As(err, &undetermined) {
-				t.Fatalf("groups.1.shares = %v, want UndeterminedBindingError", err)
+				t.Fatalf("groups.1.shares = %v, want undeterminedBindingError", err)
 			}
 			if want := "binding end cannot be resolved: Group.shares is bound by `bind [0..*] groups.shares = [0..*] allShares` " +
 				"through every object groups holds; the model does not determine which of the bound values Group.shares holds"; err.Error() != want {
@@ -1059,7 +1059,7 @@ func TestBindingEndAcrossACollection(t *testing.T) {
 		_, err := shelf.GetFeatureValue(ctx, "allWeights")
 		var conflict *bindingConflictError
 		if !errors.As(err, &conflict) {
-			t.Fatalf("allWeights = %v, want BindingConflictError", err)
+			t.Fatalf("allWeights = %v, want bindingConflictError", err)
 		}
 	})
 
@@ -1113,7 +1113,7 @@ func TestBindingEndAcrossACollection(t *testing.T) {
 			shelf := instantiateQualified(t, ctx, idx, "test::shelf")
 			_, err := shelf.GetFeatureValue(ctx, "allItems")
 			if !errors.Is(err, errBindingEnd) || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("allItems = %v, want ErrBindingEnd containing %q", err, tc.want)
+				t.Fatalf("allItems = %v, want errBindingEnd containing %q", err, tc.want)
 			}
 		})
 	}
@@ -1331,7 +1331,7 @@ func TestRefusedClassificationLeavesTheObjectAsItWas(t *testing.T) {
 
 	band := idx.LookupQualified("test::Band")[0]
 	if err := ctx.classify(raw, band); !errors.Is(err, errConflictingRedefinition) {
-		t.Fatalf("classify(raw, Band) = %v, want ErrConflictingRedefinition", err)
+		t.Fatalf("classify(raw, Band) = %v, want errConflictingRedefinition", err)
 	}
 	if len(raw.classifiers) != 0 {
 		t.Fatalf("a refused classification left raw classified by %v", raw.classifiers)
@@ -2041,7 +2041,7 @@ func TestEnumerationClassifiesByItsEnumeratedValues(t *testing.T) {
 		}
 	}
 	if _, err := evalIn(t, ctx, pkg.Scope, "5 as Even"); !errors.Is(err, errUndecidedClassification) {
-		t.Errorf("5 as Even: %v, want ErrUndecidedClassification", err)
+		t.Errorf("5 as Even: %v, want errUndecidedClassification", err)
 	}
 	for _, src := range []string{"isLevel(2)", "asLevel(2)"} {
 		if _, err := evalIn(t, ctx, pkg.Scope, src); !errors.Is(err, ErrTypeMismatch) {

@@ -122,7 +122,7 @@ func TestMakeMoveRefusesATokenUnableToAct(t *testing.T) {
 	_, err := a.run.makeMove(enabledMove{Owner: a.exec, Token: 9, Label: "9@nowhere"})
 	var refused *checkMoveError
 	if !errors.As(err, &refused) || !errors.Is(err, ErrCheckRefused) || !strings.Contains(refused.Move, "token 9") {
-		t.Fatalf("moving token 9: %v, want a CheckMoveError for token 9", err)
+		t.Fatalf("moving token 9: %v, want a checkMoveError for token 9", err)
 	}
 	a.only(t, "2@a:plain 3@b:plain 4@c:plain")
 }

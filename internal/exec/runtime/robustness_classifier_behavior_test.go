@@ -209,7 +209,7 @@ func testStartOnNoObject(t *testing.T) {
 		action kick { in target : Counter[0..1] = (); perform target.count.start; }
 		first start then create; first create then kick; first kick then done;`))
 	if !errors.Is(err, errPerformerNotObject) || !strings.Contains(err.Error(), "target.count is started on null, which is no one object") {
-		t.Fatalf("error = %v, want ErrPerformerNotObject over an empty target", err)
+		t.Fatalf("error = %v, want errPerformerNotObject over an empty target", err)
 	}
 }
 
@@ -221,7 +221,7 @@ func testStartOfNoBehavior(t *testing.T) {
 		flow create.result to kick.target;
 		first start then create; first create then kick; first kick then done;`))
 	if !errors.Is(err, errNoSuchBehavior) || !strings.Contains(err.Error(), "n is no behavior of object #") {
-		t.Fatalf("error = %v, want ErrNoSuchBehavior naming n", err)
+		t.Fatalf("error = %v, want errNoSuchBehavior naming n", err)
 	}
 }
 

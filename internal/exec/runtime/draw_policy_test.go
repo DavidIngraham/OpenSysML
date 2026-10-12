@@ -71,10 +71,10 @@ func TestDrawPolicySpellsAndParses(t *testing.T) {
 		}
 	}
 	if _, err := ParseDrawPolicy("median"); !errors.Is(err, errDrawPolicy) || !strings.Contains(err.Error(), "random, min, max, average") {
-		t.Errorf("ParseDrawPolicy(median) = %v, want ErrDrawPolicy naming the policies", err)
+		t.Errorf("ParseDrawPolicy(median) = %v, want errDrawPolicy naming the policies", err)
 	}
 	if _, err := ParseDrawPolicy(""); !errors.Is(err, errDrawPolicy) {
-		t.Errorf("ParseDrawPolicy(\"\") = %v, want ErrDrawPolicy", err)
+		t.Errorf("ParseDrawPolicy(\"\") = %v, want errDrawPolicy", err)
 	}
 	var ctx Context
 	if ctx.DrawPolicy() != DrawRandom {
@@ -284,7 +284,7 @@ func TestReplayAdmitsDrawsUnderTheWitnessPolicy(t *testing.T) {
 			}
 			var refused *witnessDrawError
 			if !errors.As(err, &refused) {
-				t.Fatalf("error = %v, want a WitnessDrawError", err)
+				t.Fatalf("error = %v, want a witnessDrawError", err)
 			}
 			if !strings.Contains(err.Error(), tc.reason) {
 				t.Errorf("error %q does not say %q", err, tc.reason)

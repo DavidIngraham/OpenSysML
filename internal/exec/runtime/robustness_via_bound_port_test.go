@@ -60,10 +60,10 @@ func testViaBoundReferenceHoldsAPart(t *testing.T) {
 	), "test::Host")
 	var typed *viaNotPortError
 	if !errors.As(err, &typed) || typed.Via != "tx" {
-		t.Fatalf("error = %v, want ViaNotPortError for tx", err)
+		t.Fatalf("error = %v, want viaNotPortError for tx", err)
 	}
 	if !errors.Is(err, errSendViaNotPort) || !strings.Contains(err.Error(), `"tx" holds`) {
-		t.Fatalf("error = %v, want ErrSendViaNotPort naming the binding", err)
+		t.Fatalf("error = %v, want errSendViaNotPort naming the binding", err)
 	}
 }
 
@@ -75,10 +75,10 @@ func testViaBoundReferenceHoldsAValue(t *testing.T) {
 	), "test::Host")
 	var typed *sendTargetValueError
 	if !errors.As(err, &typed) || typed.Target != "tx" || typed.Name != "tx" || typed.Value != "3" {
-		t.Fatalf("error = %v, want SendTargetValueError for tx holding 3", err)
+		t.Fatalf("error = %v, want sendTargetValueError for tx holding 3", err)
 	}
 	if !errors.Is(err, errSendTargetNotObject) {
-		t.Fatalf("error = %v, want ErrSendTargetNotObject", err)
+		t.Fatalf("error = %v, want errSendTargetNotObject", err)
 	}
 }
 
@@ -90,9 +90,9 @@ func testViaBoundReferenceHoldsTwoPorts(t *testing.T) {
 	), "test::Host")
 	var typed *sendTargetValueError
 	if !errors.As(err, &typed) || typed.Target != "tx" || typed.Name != "tx" {
-		t.Fatalf("error = %v, want SendTargetValueError for tx holding two ports", err)
+		t.Fatalf("error = %v, want sendTargetValueError for tx holding two ports", err)
 	}
 	if !errors.Is(err, errSendTargetNotObject) {
-		t.Fatalf("error = %v, want ErrSendTargetNotObject", err)
+		t.Fatalf("error = %v, want errSendTargetNotObject", err)
 	}
 }

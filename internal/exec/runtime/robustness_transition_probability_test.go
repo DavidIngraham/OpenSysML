@@ -150,7 +150,7 @@ func testTransitionWeightsNotSummingAtDispatch(t *testing.T) {
 		transition first a accept go then c { @Probability { p = pB; } }`, "go")
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "state a on accept go: the weights of its transitions sum to 0.5, not 1.0") {
-		t.Fatalf("error = %v, want ErrBranchWeights naming the sum 0.5", err)
+		t.Fatalf("error = %v, want errBranchWeights naming the sum 0.5", err)
 	}
 }
 
@@ -194,7 +194,7 @@ func testTransitionHoldingTotalZero(t *testing.T) {
 		transition first a accept go if ready then b { @Probability { p = 1.0; } }`, "go")
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "no holding branch has a positive weight") {
-		t.Fatalf("error = %v, want ErrBranchWeights for the zero total", err)
+		t.Fatalf("error = %v, want errBranchWeights for the zero total", err)
 	}
 }
 
@@ -366,7 +366,7 @@ func testLoneEnabledZeroWeight(t *testing.T) {
 		transition first a accept go then c { @Probability { p = 1.0 - w; } }`, "go")
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "no holding branch has a positive weight") {
-		t.Fatalf("error = %v, want ErrBranchWeights for the lone enabled zero weight", err)
+		t.Fatalf("error = %v, want errBranchWeights for the lone enabled zero weight", err)
 	}
 }
 
@@ -380,7 +380,7 @@ func testLoneEnabledWeightAboveOne(t *testing.T) {
 		transition first a accept go then c { @Probability { p = w; } }`, "go")
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "not a probability in [0, 1]") {
-		t.Fatalf("error = %v, want ErrBranchWeights for the lone enabled weight 1.5", err)
+		t.Fatalf("error = %v, want errBranchWeights for the lone enabled weight 1.5", err)
 	}
 }
 
@@ -403,7 +403,7 @@ func testTriggerArgumentWeightOutOfRange(t *testing.T) {
 	err = exec.RunToCompletion()
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "not a probability in [0, 1]") {
-		t.Fatalf("error = %v, want ErrBranchWeights for the bound weight 1.5", err)
+		t.Fatalf("error = %v, want errBranchWeights for the bound weight 1.5", err)
 	}
 }
 
@@ -572,7 +572,7 @@ func testLoneCompletionWeightOutOfRange(t *testing.T) {
 		transition first a then b { @Probability { p = w; } }`, "")
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "not a probability in [0, 1]") {
-		t.Fatalf("error = %v, want ErrBranchWeights for the lone completion's 1.5", err)
+		t.Fatalf("error = %v, want errBranchWeights for the lone completion's 1.5", err)
 	}
 }
 
@@ -584,7 +584,7 @@ func testLoneCompletionZeroWeight(t *testing.T) {
 		transition first a then b { @Probability { p = w; } }`, "")
 	if !errors.Is(err, errBranchWeights) ||
 		!strings.Contains(err.Error(), "sum to 0") {
-		t.Fatalf("error = %v, want ErrBranchWeights for the lone zero-weighted completion", err)
+		t.Fatalf("error = %v, want errBranchWeights for the lone zero-weighted completion", err)
 	}
 }
 

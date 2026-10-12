@@ -657,7 +657,7 @@ func testObjectLifecycleEndedWholeAdoptsNothing(t *testing.T) {
 		t.Fatalf("endOccurrence(garage): %v", err)
 	}
 	if err := garage.SetFeatureValue(ctx, "slot", car); !errors.Is(err, errOccurrenceLifetime) {
-		t.Fatalf("ended garage.slot := live car = %v; want ErrOccurrenceLifetime", err)
+		t.Fatalf("ended garage.slot := live car = %v; want errOccurrenceLifetime", err)
 	}
 	id, _ := car.Object()
 	if owner := ctx.instances[id].owner; owner != nil {
@@ -679,7 +679,7 @@ func testObjectLifecycleEndedWholeAdoptsNothing(t *testing.T) {
 		t.Fatalf("endOccurrence(shed): %v", err)
 	}
 	if err := garage.SetFeatureValue(ctx, "slot", car); !errors.Is(err, errOccurrenceLifetime) {
-		t.Errorf("ended garage.slot := car ended after it = %v; want ErrOccurrenceLifetime", err)
+		t.Errorf("ended garage.slot := car ended after it = %v; want errOccurrenceLifetime", err)
 	}
 	if _, err := ctx.endOccurrence(barn); err != nil {
 		t.Fatalf("endOccurrence(barn): %v", err)
@@ -714,7 +714,7 @@ func testObjectLifecycleCompositeCycle(t *testing.T) {
 	for _, whole := range []*Instance{root, leafInst} {
 		err := leafInst.SetFeatureValue(ctx, "child", objectValue(whole))
 		if !errors.Is(err, errOccurrenceLifetime) {
-			t.Errorf("leaf.child := #%d = %v; want ErrOccurrenceLifetime, it would make the leaf a portion of itself", whole.ID, err)
+			t.Errorf("leaf.child := #%d = %v; want errOccurrenceLifetime, it would make the leaf a portion of itself", whole.ID, err)
 		}
 	}
 	if fv := leafInst.FeatureValues["child"]; fv != nil && fv.Written {
@@ -858,7 +858,7 @@ func testObjectLifecycleDerivationsFollowLives(t *testing.T) {
 		t.Fatalf("Scrap(garage.slot): %v", err)
 	}
 	if _, err := read("slotN"); !errors.Is(err, errOccurrenceDestroyed) {
-		t.Errorf("garage.slotN after scrapping the car = %v; want ErrOccurrenceDestroyed, derived again", err)
+		t.Errorf("garage.slotN after scrapping the car = %v; want errOccurrenceDestroyed, derived again", err)
 	}
 	if got, err := read("slotAlive"); err != nil || got != "false" {
 		t.Errorf("garage.slotAlive after scrapping the car = %s, %v; want false", got, err)

@@ -43,7 +43,7 @@ func testPartialBindingUnderdeterminedEnd(t *testing.T) {
 		binding [1] bind [0..*] a.xs = [0..*] ys;
 	}`)
 	if _, err := evalIn(t, ctx, scope, "rig.ys"); !errors.Is(err, errBindingEnd) {
-		t.Fatalf("rig.ys = %v, want ErrBindingEnd", err)
+		t.Fatalf("rig.ys = %v, want errBindingEnd", err)
 	}
 }
 
@@ -58,7 +58,7 @@ func testPartialBindingLowerBoundAboveLinks(t *testing.T) {
 	}`)
 	for _, expr := range []string{"rig.ys3", "rig.a.xs"} {
 		if _, err := evalIn(t, ctx, scope, expr); !errors.Is(err, errBindingEnd) {
-			t.Fatalf("%s = %v, want ErrBindingEnd", expr, err)
+			t.Fatalf("%s = %v, want errBindingEnd", expr, err)
 		}
 	}
 }
@@ -74,7 +74,7 @@ func testPartialBindingMutual(t *testing.T) {
 	}`)
 	_, err := evalIn(t, ctx, scope, "rig.ys")
 	if !errors.Is(err, errBindingEnd) && !errors.Is(err, errBindingCycle) {
-		t.Fatalf("rig.ys = %v, want ErrBindingEnd or ErrBindingCycle", err)
+		t.Fatalf("rig.ys = %v, want errBindingEnd or errBindingCycle", err)
 	}
 }
 
@@ -87,7 +87,7 @@ func testPartialBindingReadThrough(t *testing.T) {
 		binding [1] bind [0..*] a.xs = [0..*] ys;
 	}`)
 	if _, err := evalIn(t, ctx, scope, "rig.ys.mass"); !errors.Is(err, errBindingEnd) {
-		t.Fatalf("rig.ys.mass = %v, want ErrBindingEnd", err)
+		t.Fatalf("rig.ys.mass = %v, want errBindingEnd", err)
 	}
 }
 
@@ -122,6 +122,6 @@ func testPartialBindingInstantiatesClean(t *testing.T) {
 		t.Fatalf("rig.a.xs = %v, %v; want two objects", v, err)
 	}
 	if _, err := evalIn(t, ctx, scope, "rig.shared"); !errors.Is(err, errBindingEnd) {
-		t.Fatalf("rig.shared = %v, want ErrBindingEnd", err)
+		t.Fatalf("rig.shared = %v, want errBindingEnd", err)
 	}
 }

@@ -478,7 +478,7 @@ func TestSequenceIndexKeepsQuantityForm(t *testing.T) {
 	if _, err := evalCollectionExpr(t, "xs#(1) [m]"); !errors.Is(err, errNotAQuantity) {
 		// The model of this test declares no unit, so the quantity form fails
 		// as a quantity — not as an index.
-		t.Errorf("xs#(1) [m] error = %v, want ErrNotAQuantity", err)
+		t.Errorf("xs#(1) [m] error = %v, want errNotAQuantity", err)
 	}
 	got, err := evalCollectionExpr(t, "xs#(2)")
 	if err != nil || !valueEqual(got, integerValue(2)) {

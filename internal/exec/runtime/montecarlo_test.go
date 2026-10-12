@@ -281,7 +281,7 @@ func TestMonteCarloSampleTakesQuantitiesInTheFirstRunsUnit(t *testing.T) {
 	} {
 		_, err := MonteCarloSample(refused.runs)
 		if !errors.Is(err, errMonteCarloObserved) {
-			t.Fatalf("MonteCarloSample = %v; want an ErrMonteCarloObserved", err)
+			t.Fatalf("MonteCarloSample = %v; want an errMonteCarloObserved", err)
 		}
 		for _, name := range refused.names {
 			if !strings.Contains(err.Error(), name) {

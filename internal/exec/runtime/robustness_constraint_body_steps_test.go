@@ -24,7 +24,7 @@ func TestRuntimeRobustnessConstraintBodySteps(t *testing.T) {
 			t.Fatal("constraint writes not found")
 		}
 		if _, err := ctx.EvaluateConstraintOn(feat.Symbol, feat.DeclScope(), nil); !errors.Is(err, errConstraintExternalAssignment) {
-			t.Fatalf("err = %v, want ErrConstraintExternalAssignment", err)
+			t.Fatalf("err = %v, want errConstraintExternalAssignment", err)
 		}
 		same, err := evalIn(t, ctx, rig.Scope, "z == 1")
 		if err != nil || !(same.isBool() && same.Const.Bool) {
@@ -49,7 +49,7 @@ func TestRuntimeRobustnessConstraintBodySteps(t *testing.T) {
 			t.Fatal("constraint writes not found")
 		}
 		if _, err := ctx.EvaluateConstraintOn(feat.Symbol, feat.DeclScope(), nil); !errors.Is(err, errConstraintEffect) {
-			t.Fatalf("err = %v, want ErrConstraintEffect", err)
+			t.Fatalf("err = %v, want errConstraintEffect", err)
 		}
 		same, err := evalIn(t, ctx, lookupOne(t, idx, "test").Scope, "rig.inner.w == 1")
 		if err != nil || !(same.isBool() && same.Const.Bool) {
@@ -293,7 +293,7 @@ func TestRuntimeRobustnessConstraintBodySteps(t *testing.T) {
 		}
 		_, err := ctx.EvaluateConstraintOn(feat.Symbol, feat.DeclScope(), nil)
 		if !errors.Is(err, errConstraintExternalAssignment) {
-			t.Fatalf("err = %v, want ErrConstraintExternalAssignment: a nested constraint is its own performance", err)
+			t.Fatalf("err = %v, want errConstraintExternalAssignment: a nested constraint is its own performance", err)
 		}
 	})
 }

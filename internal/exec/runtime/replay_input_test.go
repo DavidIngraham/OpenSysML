@@ -40,7 +40,7 @@ func TestParseInputReadsEverySpelling(t *testing.T) {
 		_, err := parseInput(text)
 		var typed *inputParseError
 		if !errors.As(err, &typed) || !errors.Is(err, errInvalidInput) || typed.Text != text {
-			t.Errorf("%q: error %T %v, want an InputParseError naming the line", text, err, err)
+			t.Errorf("%q: error %T %v, want an inputParseError naming the line", text, err, err)
 		}
 	}
 	if in := InputOf("n", intOf(7)); in.Written != "7" || in.Value.Kind != ValConst || in.String() != "input n = 7" {

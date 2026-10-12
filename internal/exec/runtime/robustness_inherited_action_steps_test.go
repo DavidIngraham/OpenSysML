@@ -91,7 +91,7 @@ func TestRuntimeRobustnessInheritedActionSteps(t *testing.T) {
 			}
 		}`, "Derived")
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("ExecuteAction(Derived) error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("ExecuteAction(Derived) error = %v, want errActionStepMultiplicity", err)
 		}
 		var stepErr *lower.StepMultiplicityError
 		if !errors.As(err, &stepErr) || stepErr.Code != lower.StepOrderUnsatisfiableCode {

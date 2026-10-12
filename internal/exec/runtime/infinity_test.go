@@ -195,7 +195,7 @@ func TestUnboundedAgainstDeclaredSubtype(t *testing.T) {
 	}
 	for _, expr := range []string{"* as test::Boundless", "* as test::Cost", "(1, *) as test::Boundless"} {
 		if _, _, err := evalDeclaredExpr(t, src, expr); !errors.Is(err, errUndecidedClassification) {
-			t.Errorf("%s error = %v, want ErrUndecidedClassification", expr, err)
+			t.Errorf("%s error = %v, want errUndecidedClassification", expr, err)
 		}
 	}
 }

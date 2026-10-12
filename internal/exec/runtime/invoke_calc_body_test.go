@@ -150,10 +150,10 @@ func TestCalcStatementBodyFromEveryEntryPoint(t *testing.T) {
 
 	named, err := ctx.invokeCalcNamed(factorial, map[string]Value{"n": constInt(6)}, scope)
 	if err != nil {
-		t.Fatalf("InvokeCalcNamed: %v", err)
+		t.Fatalf("invokeCalcNamed: %v", err)
 	}
 	if named.Const.Int != 720 {
-		t.Fatalf("InvokeCalcNamed(n = 6) = %s, want 720", FormatTraceValue(named))
+		t.Fatalf("invokeCalcNamed(n = 6) = %s, want 720", FormatTraceValue(named))
 	}
 
 	nested, err := ctx.InvokeCalc(twice, []Value{constInt(6)}, scope)
@@ -435,7 +435,7 @@ func TestUnboundResultParameterHint(t *testing.T) {
 			t.Fatalf("InvokeCalc(%s) succeeded, want %q", tc.calc, tc.want)
 		}
 		if !errors.Is(err, errNoResultExpression) {
-			t.Errorf("InvokeCalc(%s) = %v, want ErrNoResultExpression", tc.calc, err)
+			t.Errorf("InvokeCalc(%s) = %v, want errNoResultExpression", tc.calc, err)
 		}
 		if err.Error() != tc.want {
 			t.Errorf("InvokeCalc(%s) = %q, want %q", tc.calc, err, tc.want)

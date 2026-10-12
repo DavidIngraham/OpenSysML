@@ -64,7 +64,7 @@ func TestSendIntoAnOutboundOnlyEndIsATypedError(t *testing.T) {
 		}
 	}`)
 	if !errors.Is(err, errUnroutableSend) {
-		t.Fatalf("expected ErrUnroutableSend, got: %v", err)
+		t.Fatalf("expected errUnroutableSend, got: %v", err)
 	}
 	if !strings.Contains(err.Error(), "src") {
 		t.Errorf("expected the refusing end in the message, got: %v", err)
@@ -85,7 +85,7 @@ func TestSendThroughAnUnjoinedPortIsATypedError(t *testing.T) {
 		}
 	}`)
 	if !errors.Is(err, errUnroutableSend) {
-		t.Fatalf("expected ErrUnroutableSend, got: %v", err)
+		t.Fatalf("expected errUnroutableSend, got: %v", err)
 	}
 }
 

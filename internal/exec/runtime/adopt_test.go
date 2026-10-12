@@ -1176,7 +1176,7 @@ func TestAdoptRebindsTheUnitsAWrittenValueNames(t *testing.T) {
 	gone := libraryContextOver(t, strings.Replace(adoptUnitSrc, "attribute furlong : LengthUnit { :>> unitConversion : ConversionByConvention { :>> referenceUnit = m; :>> conversionFactor = 201.168; } }", "", 1))
 	var adoptErr *adoptError
 	if _, err := gone.Adopt(prev, shapes, field); !errors.As(err, &adoptErr) {
-		t.Fatalf("Adopt into a re-analysis without the unit: %v, want an AdoptError", err)
+		t.Fatalf("Adopt into a re-analysis without the unit: %v, want an adoptError", err)
 	} else if !strings.Contains(err.Error(), "the unit furlong it is measured in is no longer declared") {
 		t.Errorf("Adopt refused for %q, want the missing unit named", err)
 	}
@@ -1275,7 +1275,7 @@ func TestAdoptRefusesAUnitWhoseReductionChanged(t *testing.T) {
 		var adoptErr *adoptError
 		_, err = changed.Adopt(prev, shapes, field)
 		if !errors.As(err, &adoptErr) {
-			t.Fatalf("Adopt of %s into a re-analysis redefining furlong: %v, want an AdoptError", feature, err)
+			t.Fatalf("Adopt of %s into a re-analysis redefining furlong: %v, want an adoptError", feature, err)
 		}
 		if !strings.Contains(err.Error(), "the unit furlong it is measured in now reduces to 220·metre, not 201.168·metre") {
 			t.Errorf("Adopt of %s refused for %q, want the changed reduction named", feature, err)
@@ -1346,7 +1346,7 @@ func TestAdoptRebindsAModelsOwnBaseUnit(t *testing.T) {
 	gone := libraryContextOver(t, strings.Replace(src, "attribute chain : LengthUnit;", "attribute chain : LengthUnit { :>> unitConversion : ConversionByConvention { :>> referenceUnit = m; :>> conversionFactor = 20.1168; } }", 1))
 	var adoptErr *adoptError
 	if _, err := gone.Adopt(prev, shapes, field); !errors.As(err, &adoptErr) {
-		t.Fatalf("Adopt into a re-analysis converting chain to metres: %v, want an AdoptError", err)
+		t.Fatalf("Adopt into a re-analysis converting chain to metres: %v, want an adoptError", err)
 	} else if !strings.Contains(err.Error(), "·metre, not ") || !strings.HasSuffix(err.Error(), "chain") {
 		t.Errorf("Adopt refused for %q, want the changed reduction named", err)
 	}
@@ -1402,7 +1402,7 @@ func TestAdoptRebindsTheUnitOfAnEmptyQuantitySequence(t *testing.T) {
 		var adoptErr *adoptError
 		_, err := libraryContextOver(t, tc.src).Adopt(prev, shapes, field)
 		if !errors.As(err, &adoptErr) {
-			t.Fatalf("Adopt into a re-analysis with furlong %s: %v, want an AdoptError", name, err)
+			t.Fatalf("Adopt into a re-analysis with furlong %s: %v, want an adoptError", name, err)
 		}
 		if !strings.Contains(err.Error(), tc.reason) {
 			t.Errorf("Adopt into a re-analysis with furlong %s refused for %q, want %q", name, err, tc.reason)
@@ -1621,7 +1621,7 @@ func TestAdoptRebindsTheFramesAWrittenValueNames(t *testing.T) {
 	gone := libraryContextOver(t, strings.Replace(adoptFrameSrc, "attribute datum : CartesianSpatial3dCoordinateFrame { :>> mRefs = (mm, mm, mm); }", "", 1))
 	var adoptErr *adoptError
 	if _, err := gone.Adopt(prev, shapes, body); !errors.As(err, &adoptErr) {
-		t.Fatalf("Adopt into a re-analysis without the frame: %v, want an AdoptError", err)
+		t.Fatalf("Adopt into a re-analysis without the frame: %v, want an adoptError", err)
 	} else if !strings.Contains(err.Error(), "the coordinate frame datum it holds is no longer declared") {
 		t.Errorf("Adopt refused for %q, want the missing frame named", err)
 	}
@@ -1688,7 +1688,7 @@ func TestAdoptRebindsAFunctionValue(t *testing.T) {
 	gone := libraryContextOver(t, strings.Replace(adoptFunctionSrc, "calc def Sq { in v : Real; return : Real = v * v; }", "", 1))
 	var adoptErr *adoptError
 	if _, err := gone.Adopt(prev, shapes, holder); !errors.As(err, &adoptErr) {
-		t.Fatalf("Adopt into a re-analysis without the calc: %v, want an AdoptError", err)
+		t.Fatalf("Adopt into a re-analysis without the calc: %v, want an adoptError", err)
 	} else if !strings.Contains(err.Error(), "the function Demo::Sq it holds is no longer declared") {
 		t.Errorf("Adopt refused for %q, want the missing calc named", err)
 	}

@@ -95,7 +95,7 @@ func testBindingEndPinReadsWhatItMasks(t *testing.T) {
 func testBindingEndUnresolvedName(t *testing.T) {
 	_, _, err := instantiateWithLibraries(t, bindingEndHost("in n : Integer[0..1];", "bind noting.n = nowhere;"), "test::Host")
 	if !errors.Is(err, errBindingEnd) || !strings.Contains(err.Error(), "nowhere") {
-		t.Fatalf("error = %v, want ErrBindingEnd naming nowhere", err)
+		t.Fatalf("error = %v, want errBindingEnd naming nowhere", err)
 	}
 }
 

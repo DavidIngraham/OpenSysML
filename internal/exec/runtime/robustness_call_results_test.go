@@ -170,7 +170,7 @@ func testCallResultsOverloaded(t *testing.T) {
 	}
 	got, err = exec.Call("compute", nil)
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("compute() = %v, %v; want ErrAmbiguousInvocation", got, err)
+		t.Fatalf("compute() = %v, %v; want errAmbiguousInvocation", got, err)
 	}
 	if n := exec.eventQueue.Len(); n != 0 {
 		t.Errorf("%d event(s) queued, want the ambiguous call refused before it is queued", n)
@@ -209,7 +209,7 @@ func testCallResultsArguments(t *testing.T) {
 	} {
 		got, err := exec.Call("compute", args)
 		if !errors.Is(err, errUnboundParameter) {
-			t.Errorf("compute with %s argument(s) = %v, %v; want ErrUnboundParameter", name, got, err)
+			t.Errorf("compute with %s argument(s) = %v, %v; want errUnboundParameter", name, got, err)
 		}
 		if n := exec.eventQueue.Len(); n != 0 {
 			t.Errorf("%d event(s) queued after the %s call, want it refused before it is queued", n, name)
@@ -483,7 +483,7 @@ func testCallResultsLeftQueued(t *testing.T) {
 	}
 	_, err := exec.Call("ask", nil)
 	if !errors.Is(err, errCallNotReturned) || !strings.Contains(err.Error(), "ask is still queued") {
-		t.Fatalf("Call = %v, want ErrCallNotReturned naming the queued call", err)
+		t.Fatalf("Call = %v, want errCallNotReturned naming the queued call", err)
 	}
 	if got := exec.Outcome().FinalState; got != "done" {
 		t.Errorf("final state %q, want done", got)

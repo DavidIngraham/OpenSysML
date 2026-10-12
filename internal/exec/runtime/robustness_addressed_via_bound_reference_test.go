@@ -59,7 +59,7 @@ func testAddressedViaBoundReferenceMissingReceiver(t *testing.T) {
 	), "test::Host")
 	var typed *unreachableSendReceiverError
 	if !errors.As(err, &typed) || typed.Port != "dev.tx" || typed.Receiver != "missing" {
-		t.Fatalf("error = %v, want UnreachableSendReceiverError for missing through dev.tx", err)
+		t.Fatalf("error = %v, want unreachableSendReceiverError for missing through dev.tx", err)
 	}
 	if !errors.Is(err, errUnreachableSendReceiver) || !strings.Contains(err.Error(), `"missing" is not reachable through port "dev.tx"`) {
 		t.Fatalf("error = %v, want the written path in the report", err)
@@ -74,10 +74,10 @@ func testAddressedViaBoundReferenceMissingPort(t *testing.T) {
 	), "test::Host")
 	var typed *unknownSendPortError
 	if !errors.As(err, &typed) || typed.Port != "dev.nope" || typed.Receiver != "listener" {
-		t.Fatalf("error = %v, want UnknownSendPortError for dev.nope", err)
+		t.Fatalf("error = %v, want unknownSendPortError for dev.nope", err)
 	}
 	if !errors.Is(err, errSendViaUnknownPort) {
-		t.Fatalf("error = %v, want ErrSendViaUnknownPort", err)
+		t.Fatalf("error = %v, want errSendViaUnknownPort", err)
 	}
 }
 
@@ -90,6 +90,6 @@ func testAddressedViaBoundReferenceSenderReceiver(t *testing.T) {
 	), "test::Host")
 	var typed *unreachableSendReceiverError
 	if !errors.As(err, &typed) || typed.Port != "dev.tx" || typed.Receiver != "round" {
-		t.Fatalf("error = %v, want UnreachableSendReceiverError for round through dev.tx", err)
+		t.Fatalf("error = %v, want unreachableSendReceiverError for round through dev.tx", err)
 	}
 }

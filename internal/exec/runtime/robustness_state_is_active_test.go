@@ -42,7 +42,7 @@ func testStateIsActiveWriteRefused(t *testing.T) {
 	m := findSymbolByName(idx.DocumentRoot("<test>"), "M", ast.DefState)
 	_, _, err := ctx.ExecuteStateWithEvents(m, nil)
 	if !errors.Is(err, errReadOnlyFeature) || !strings.Contains(err.Error(), "a.isActive is derived") {
-		t.Fatalf("assign a.isActive := true: %v, want ErrReadOnlyFeature naming the derived feature", err)
+		t.Fatalf("assign a.isActive := true: %v, want errReadOnlyFeature naming the derived feature", err)
 	}
 }
 

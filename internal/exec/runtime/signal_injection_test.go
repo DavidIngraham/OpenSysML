@@ -79,16 +79,16 @@ func TestSignalMessageDrivesTheExhibitedMachine(t *testing.T) {
 
 	dimSym := resolveSymbol(t, root, "Dim")
 	if _, err := ctx.SignalMessage(dimSym, map[string]Value{"brightness": integerValue(1)}, bulb); !errors.Is(err, errSignalArgument) {
-		t.Errorf("an argument Dim carries no feature for gave %v, want ErrSignalArgument", err)
+		t.Errorf("an argument Dim carries no feature for gave %v, want errSignalArgument", err)
 	} else if !strings.Contains(err.Error(), "(it carries level)") {
 		t.Errorf("the argument error does not name what Dim carries: %v", err)
 	}
 	if _, err := ctx.SignalMessage(dimSym, map[string]Value{"level": NewStringValue("x")}, bulb); !errors.Is(err, errSignalArgument) || !errors.Is(err, ErrTypeMismatch) {
-		t.Errorf("a string for Dim.level gave %v, want ErrSignalArgument wrapping ErrTypeMismatch", err)
+		t.Errorf("a string for Dim.level gave %v, want errSignalArgument wrapping ErrTypeMismatch", err)
 	}
 	batchSym := resolveSymbol(t, root, "Batch")
 	if _, err := ctx.SignalMessage(batchSym, map[string]Value{"levels": integerValue(1)}, bulb); !errors.Is(err, errSignalArgument) || !errors.Is(err, ErrMultiplicityViolation) {
-		t.Errorf("one value for Batch.levels[2..*] gave %v, want ErrSignalArgument wrapping ErrMultiplicityViolation", err)
+		t.Errorf("one value for Batch.levels[2..*] gave %v, want errSignalArgument wrapping ErrMultiplicityViolation", err)
 	}
 	if len(ctx.PendingMessages()) != 0 || activeLeaf(exec) != "on" {
 		t.Errorf("a refused message left the bus or the machine changed: %d pending, state %s", len(ctx.PendingMessages()), activeLeaf(exec))
@@ -152,7 +152,7 @@ func TestSignalMessageDrivesTheExhibitedMachine(t *testing.T) {
 		t.Fatalf("queue holds %d events, want the dim_out timer", exec.EventQueue().Len())
 	}
 	if _, err := ctx.SignalMessage(resolveSymbol(t, root, "plain"), nil, bulb); !errors.Is(err, errNotASignal) {
-		t.Errorf("a usage as a signal gave %v, want ErrNotASignal", err)
+		t.Errorf("a usage as a signal gave %v, want errNotASignal", err)
 	}
 }
 
@@ -185,7 +185,7 @@ func TestSignalMessageRefusesBehaviorDefinitions(t *testing.T) {
 			t.Errorf("IsSignalDefinition(%s %s) = true, want false", sym.Notation(), name)
 		}
 		if _, err := ctx.SignalMessage(sym, nil, lamp); !errors.Is(err, errNotASignal) {
-			t.Errorf("SignalMessage(%s %s) = %v, want ErrNotASignal", sym.Notation(), name, err)
+			t.Errorf("SignalMessage(%s %s) = %v, want errNotASignal", sym.Notation(), name, err)
 		}
 	}
 }

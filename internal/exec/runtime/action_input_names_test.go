@@ -28,7 +28,7 @@ func TestUnknownActionInputIsReported(t *testing.T) {
 
 	outputs, err := ctx.ExecuteActionWithInputs(bump, map[string]Value{"nope": constInt(7)})
 	if !errors.Is(err, errUnknownActionInput) {
-		t.Fatalf("outputs = %v, err = %v; want ErrUnknownActionInput", outputs, err)
+		t.Fatalf("outputs = %v, err = %v; want errUnknownActionInput", outputs, err)
 	}
 	if !strings.Contains(err.Error(), "nope") {
 		t.Errorf("error = %v, want it to name the input", err)
@@ -56,7 +56,7 @@ func TestSeedingAnOutputParameterIsReported(t *testing.T) {
 
 	outputs, err := ctx.ExecuteActionWithInputs(measure, map[string]Value{"total": constInt(99)})
 	if !errors.Is(err, errOutputActionInput) {
-		t.Fatalf("outputs = %v, err = %v; want ErrOutputActionInput", outputs, err)
+		t.Fatalf("outputs = %v, err = %v; want errOutputActionInput", outputs, err)
 	}
 	if !strings.Contains(err.Error(), "total") {
 		t.Errorf("error = %v, want it to name the parameter", err)
@@ -89,7 +89,7 @@ func TestActionInputsBindsAsAnInvocationDoes(t *testing.T) {
 	mix := resolveSymbol(t, root, "mix")
 
 	if got := ctx.actionInputNames(mix); fmt.Sprint(got) != "[a b]" {
-		t.Fatalf("ActionInputNames = %v, want [a b]", got)
+		t.Fatalf("actionInputNames = %v, want [a b]", got)
 	}
 	inputs, err := ctx.ActionInputs(root, mix, []Value{constInt(7)}, []NamedInput{{Name: "b", Value: constInt(3)}})
 	if err != nil {
@@ -100,15 +100,15 @@ func TestActionInputsBindsAsAnInvocationDoes(t *testing.T) {
 	}
 	_, err = ctx.ActionInputs(root, mix, []Value{constInt(7)}, []NamedInput{{Name: "a", Value: constInt(3)}})
 	if !errors.Is(err, errDuplicateArgument) {
-		t.Fatalf("positional and named a = %v, want ErrDuplicateArgument", err)
+		t.Fatalf("positional and named a = %v, want errDuplicateArgument", err)
 	}
 	_, err = ctx.ActionInputs(root, mix, nil, []NamedInput{{Name: "c", Value: constInt(1)}})
 	if !errors.Is(err, errUnknownParameter) {
-		t.Fatalf("named c = %v, want ErrUnknownParameter", err)
+		t.Fatalf("named c = %v, want errUnknownParameter", err)
 	}
 	_, err = ctx.ActionInputs(root, mix, []Value{constInt(1), constInt(2), constInt(3)}, nil)
 	if !errors.Is(err, errActionArity) {
-		t.Fatalf("three positional = %v, want ErrActionArity", err)
+		t.Fatalf("three positional = %v, want errActionArity", err)
 	}
 	if !strings.Contains(err.Error(), "takes 2 input parameter(s), got 3 argument(s)") {
 		t.Errorf("error = %v, want the arity spelled", err)

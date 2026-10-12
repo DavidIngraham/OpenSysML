@@ -120,7 +120,7 @@ func TestRuntimeRobustnessEntryTransitionEffect(t *testing.T) {
 		exec.sendSignal("Go", nil)
 		err := exec.ProcessNextEvent()
 		if !errors.Is(err, errChoiceWithoutBranch) || !errors.Is(err, errNoWayThrough) {
-			t.Fatalf("ProcessNextEvent(Go) = %v, want ErrChoiceWithoutBranch wrapped by errNoWayThrough", err)
+			t.Fatalf("ProcessNextEvent(Go) = %v, want errChoiceWithoutBranch wrapped by errNoWayThrough", err)
 		}
 		if got := exec.StateData()["attempts"].Const.Int; got != 1 {
 			t.Fatalf("entry effect attempts = %d, want 1 before resolving the choice", got)

@@ -795,7 +795,7 @@ func TestCheckReturnsInvalidSubflowAsSetupFailure(t *testing.T) {
 	_, err := Check(context.Background(), m.fresh, starterOf(m.action(t, "outer")), CheckBudget{}, reduced(), nil)
 	var setup *SetupError
 	if !errors.As(err, &setup) || !errors.Is(err, errInvalidActionFlow) {
-		t.Fatalf("check error = %v; want SetupError wrapping ErrInvalidActionFlow", err)
+		t.Fatalf("check error = %v; want SetupError wrapping errInvalidActionFlow", err)
 	}
 }
 

@@ -192,6 +192,6 @@ func TestCyclicCalcUsageOutputStillDiagnosed(t *testing.T) {
 		t.Fatal("Cycle: want an error, got a value")
 	}
 	if !errors.Is(err, errCyclicOutput) {
-		t.Errorf("Cycle: error = %v, want ErrCyclicOutput", err)
+		t.Errorf("Cycle: error = %v, want errCyclicOutput", err)
 	}
 }

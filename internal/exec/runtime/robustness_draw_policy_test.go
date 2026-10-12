@@ -45,7 +45,7 @@ func testNormalHasNoMinOrMax(t *testing.T) {
 			_, _, err := runUnderDraws(t, m, "draw", policy, seed...)
 			var unbounded *drawUnboundedError
 			if !errors.As(err, &unbounded) || !errors.Is(err, errDrawUnbounded) {
-				t.Fatalf("%s: error %T %v, want a DrawUnboundedError", policy, err, err)
+				t.Fatalf("%s: error %T %v, want a drawUnboundedError", policy, err, err)
 			}
 			if unbounded.What != "normal(12.0, 3.0)" || unbounded.Policy != policy {
 				t.Errorf("%s: the error names %s under %s", policy, unbounded.What, unbounded.Policy)
@@ -218,7 +218,7 @@ func testUnboundedTimerStopsTheRunWhereItParks(t *testing.T) {
 	ctx.SetDrawPolicy(DrawMax)
 	_, err := ctx.ExecuteAction(m.action(t, "timed"))
 	if !errors.Is(err, errDrawUnbounded) {
-		t.Fatalf("error %v, want ErrDrawUnbounded", err)
+		t.Fatalf("error %v, want errDrawUnbounded", err)
 	}
 	if ctx.Clock().Now() != 0 {
 		t.Errorf("the clock advanced to %v past a wait that never armed", ctx.Clock().Now())
@@ -234,7 +234,7 @@ func testUnknownPolicyIsRefused(t *testing.T) {
 	for _, text := range []string{"Max", "mean", "minimum", "seed:3", "random,min"} {
 		policy, err := ParseDrawPolicy(text)
 		if !errors.Is(err, errDrawPolicy) {
-			t.Errorf("ParseDrawPolicy(%q) = %v, %v; want ErrDrawPolicy", text, policy, err)
+			t.Errorf("ParseDrawPolicy(%q) = %v, %v; want errDrawPolicy", text, policy, err)
 		}
 		if policy != DrawRandom {
 			t.Errorf("ParseDrawPolicy(%q) returned %s beside its error", text, policy)
@@ -255,7 +255,7 @@ func testWitnessDrawThePolicyCannotMake(t *testing.T) {
 	_, err = replay.ExecuteAction(m.action(t, "draw"))
 	var refused *witnessDrawError
 	if !errors.As(err, &refused) {
-		t.Fatalf("error %T %v, want a WitnessDrawError", err, err)
+		t.Fatalf("error %T %v, want a witnessDrawError", err, err)
 	}
 	if refused.Draw != 1 || !strings.Contains(err.Error(), "records 0.25, which the call cannot draw under max") {
 		t.Errorf("error %q, want draw 1 refused under max", err)
@@ -275,7 +275,7 @@ func testWitnessPolicyOverACallItCannotResolve(t *testing.T) {
 	_, err = replay.ExecuteAction(m.action(t, "draw"))
 	var refused *witnessDrawError
 	if !errors.As(err, &refused) || !strings.Contains(err.Error(), "under min") {
-		t.Fatalf("error %T %v, want a WitnessDrawError under min", err, err)
+		t.Fatalf("error %T %v, want a witnessDrawError under min", err, err)
 	}
 }
 
@@ -292,7 +292,7 @@ func testWitnessLeftToAPolicyOverACallItCannotResolve(t *testing.T) {
 	_, err = replay.ExecuteAction(m.action(t, "draw"))
 	var unbounded *drawUnboundedError
 	if !errors.As(err, &unbounded) || unbounded.Policy != DrawMin || !strings.Contains(err.Error(), "normal(12.0, 3.0)") {
-		t.Fatalf("error %T %v, want a DrawUnboundedError naming the call under min", err, err)
+		t.Fatalf("error %T %v, want a drawUnboundedError naming the call under min", err, err)
 	}
 }
 
@@ -316,7 +316,7 @@ func testFixedPolicyStillChecksTheDomain(t *testing.T) {
 		for _, policy := range []DrawPolicy{DrawMin, DrawMax, DrawAverage} {
 			ctx, _, err := runUnderDraws(t, m, name, policy)
 			if !errors.Is(err, errRandomDomain) {
-				t.Errorf("%s under %s: error %v, want ErrRandomDomain", name, policy, err)
+				t.Errorf("%s under %s: error %v, want errRandomDomain", name, policy, err)
 			}
 			if draws := ctx.DrawsTaken(); len(draws) != 0 {
 				t.Errorf("%s under %s recorded %v past its refusal", name, policy, draws)

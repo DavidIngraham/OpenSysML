@@ -225,7 +225,7 @@ func TestWitnessCarriesTheClockStep(t *testing.T) {
 	} {
 		_, err := ParseWitness(bad.text)
 		if !errors.As(err, &parse) || !errors.Is(err, ErrClockStep) || !strings.Contains(err.Error(), bad.reason) || parse.Line == 0 {
-			t.Errorf("%q parsed as %v, want a ClockStepParseError on its line saying %q", bad.text, err, bad.reason)
+			t.Errorf("%q parsed as %v, want a clockStepParseError on its line saying %q", bad.text, err, bad.reason)
 		}
 	}
 }

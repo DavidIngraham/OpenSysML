@@ -24,7 +24,7 @@ func TestRuntimeRobustnessJunctionJoin(t *testing.T) {
 		}`)
 		if err == nil || !errors.Is(err, errNoWayThrough) || errors.Is(err, errChoiceWithoutBranch) ||
 			!strings.Contains(err.Error(), "no guard evaluated to true") {
-			t.Fatalf("run error = %v, want the dead junction error, not ErrChoiceWithoutBranch", err)
+			t.Fatalf("run error = %v, want the dead junction error, not errChoiceWithoutBranch", err)
 		}
 	})
 

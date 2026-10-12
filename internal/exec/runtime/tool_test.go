@@ -351,7 +351,7 @@ func TestToolCallInputsFollowTheParameters(t *testing.T) {
 		ctx.SetToolRunner(runner)
 		_, err := ctx.ExecuteAction(calcNamed(t, scope, "Unscaled"))
 		if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "input parameter k is bound by no argument") {
-			t.Fatalf("ExecuteAction = %v, want ErrUnboundParameter for k", err)
+			t.Fatalf("ExecuteAction = %v, want errUnboundParameter for k", err)
 		}
 		if len(runner.calls) != 0 {
 			t.Fatalf("tool ran %d times for an action missing a required input", len(runner.calls))
@@ -418,7 +418,7 @@ func TestToolExecutionThroughTheDebuggerExecutor(t *testing.T) {
 	bare, _ := analysisFixture(t, scaleModel)
 	_, err = bare.CreateActionExecutor(scale)
 	if !errors.Is(err, errToolNotRegistered) {
-		t.Fatalf("CreateActionExecutor without a runner = %v, want ErrToolNotRegistered", err)
+		t.Fatalf("CreateActionExecutor without a runner = %v, want errToolNotRegistered", err)
 	}
 }
 
@@ -510,7 +510,7 @@ func TestToolExecutionOnATypedUsage(t *testing.T) {
 
 			bare, bareScope := analysisFixture(t, annotatedUsageModel)
 			if _, err := bare.ExecuteAction(calcNamed(t, bareScope, driver)); !errors.Is(err, errToolNotRegistered) {
-				t.Fatalf("ExecuteAction without a runner = %v, want ErrToolNotRegistered", err)
+				t.Fatalf("ExecuteAction without a runner = %v, want errToolNotRegistered", err)
 			}
 		})
 	}
@@ -645,7 +645,7 @@ func TestToolExecutionOnASpecializationAddingParameters(t *testing.T) {
 		ctx.SetToolRunner(runner)
 		_, err := ctx.ExecuteActionWithInputs(calcNamed(t, scope, "RunSized"), map[string]Value{"n": realOf(7)})
 		if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "input parameter x is bound by no argument") {
-			t.Fatalf("ExecuteActionWithInputs = %v, want ErrUnboundParameter for x", err)
+			t.Fatalf("ExecuteActionWithInputs = %v, want errUnboundParameter for x", err)
 		}
 		if len(runner.calls) != 0 {
 			t.Fatalf("tool ran %d times for an action missing a required input", len(runner.calls))
@@ -886,7 +886,7 @@ func TestToolExecutionOfAPerformedAction(t *testing.T) {
 
 			bare, bareScope := analysisFixture(t, annotatedUsageModel)
 			if _, err := bare.Instantiate(calcNamed(t, bareScope, rig)); !errors.Is(err, errToolNotRegistered) {
-				t.Fatalf("Instantiate without a runner = %v, want ErrToolNotRegistered", err)
+				t.Fatalf("Instantiate without a runner = %v, want errToolNotRegistered", err)
 			}
 		})
 	}

@@ -261,7 +261,7 @@ func TestStateExecutor_TimeEvent(t *testing.T) {
 
 	nextEvent := exec.eventQueue.Peek()
 	if nextEvent.Type != eventTime {
-		t.Errorf("expected EventTime, got %v", nextEvent.Type)
+		t.Errorf("expected eventTime, got %v", nextEvent.Type)
 	}
 
 	if nextEvent.Timestamp != 10.0 {

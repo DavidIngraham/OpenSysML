@@ -231,7 +231,7 @@ func TestInstanceReadsInheritedLibraryFeatures(t *testing.T) {
 		t.Fatalf("MassLimit.subj: %v", err)
 	}
 	if _, err := subj.ReadValue("subj"); !errors.Is(err, errUninitializedFeatureValue) {
-		t.Errorf("reading the required subj = %v, want ErrUninitializedFeatureValue", err)
+		t.Errorf("reading the required subj = %v, want errUninitializedFeatureValue", err)
 	}
 	actors, err := req.GetFeatureValue(ctx, "actors")
 	if err != nil {

@@ -594,7 +594,7 @@ func TestRandomFunctionRefusesToDrawUnseeded(t *testing.T) {
 		ctx, _, err := runAction(t, m, "draw", policy)
 		var unseeded *unseededDrawError
 		if !errors.As(err, &unseeded) || !errors.Is(err, ErrUnseededDraw) {
-			t.Fatalf("%q: error %T %v, want an UnseededDrawError", policy, err, err)
+			t.Fatalf("%q: error %T %v, want an unseededDrawError", policy, err, err)
 		}
 		if unseeded.What != "uniform(0.0, 1.0)" || !strings.Contains(err.Error(), "seed:<n>") {
 			t.Errorf("%q: error %q, want it to name the call and the seed", policy, err)
@@ -628,7 +628,7 @@ func TestRandomFunctionsRefuseAnEmptyDomain(t *testing.T) {
 				}`)
 			ctx, _, err := runAction(t, m, "draw", "seed:1")
 			if !errors.Is(err, errRandomDomain) {
-				t.Fatalf("error %v, want ErrRandomDomain", err)
+				t.Fatalf("error %v, want errRandomDomain", err)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("error %q, want it to say %q", err, tc.want)
@@ -650,13 +650,13 @@ func TestRandomFunctionsRefuseANonFiniteBound(t *testing.T) {
 	for _, bad := range []float64{math.NaN(), math.Inf(1), math.Inf(-1)} {
 		args := []semantics.Value{drawnReal(0), drawnReal(bad)}
 		if _, err := drawUniform(ctx, randomFunctionsFQN+"::uniform", args); !errors.Is(err, errRandomDomain) || !strings.Contains(err.Error(), "is not a finite number") {
-			t.Errorf("uniform(0, %v) = %v, want ErrRandomDomain naming the bound", bad, err)
+			t.Errorf("uniform(0, %v) = %v, want errRandomDomain naming the bound", bad, err)
 		}
 		if _, err := drawNormal(ctx, randomFunctionsFQN+"::normal", args); !errors.Is(err, errRandomDomain) {
-			t.Errorf("normal(0, %v) = %v, want ErrRandomDomain", bad, err)
+			t.Errorf("normal(0, %v) = %v, want errRandomDomain", bad, err)
 		}
 		if _, err := drawTriangular(ctx, randomFunctionsFQN+"::triangular", []semantics.Value{drawnReal(0), drawnReal(bad), drawnReal(1)}); !errors.Is(err, errRandomDomain) {
-			t.Errorf("triangular(0, %v, 1) = %v, want ErrRandomDomain", bad, err)
+			t.Errorf("triangular(0, %v, 1) = %v, want errRandomDomain", bad, err)
 		}
 	}
 	if len(ctx.DrawsTaken()) != 0 {
@@ -988,7 +988,7 @@ func TestReplayRefusesDrawsItCannotConsume(t *testing.T) {
 			}
 			var refused *witnessDrawError
 			if !errors.As(err, &refused) || !errors.Is(err, errWitnessDraw) {
-				t.Fatalf("error %T %v, want a WitnessDrawError", err, err)
+				t.Fatalf("error %T %v, want a witnessDrawError", err, err)
 			}
 			if refused.Draw != tc.draw || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("error = draw %d %q, want draw %d saying %q", refused.Draw, err, tc.draw, tc.want)
@@ -998,7 +998,7 @@ func TestReplayRefusesDrawsItCannotConsume(t *testing.T) {
 
 	for _, line := range []string{"draw uniform(0.0, 1.0)", "draw = 0.5", "draw uniform(0.0, 1.0) = half", "drew uniform(0.0, 1.0) = 0.5"} {
 		if _, err := ParseDraw(line); !errors.Is(err, errInvalidDraw) {
-			t.Errorf("ParseDraw(%q) = %v, want ErrInvalidDraw", line, err)
+			t.Errorf("ParseDraw(%q) = %v, want errInvalidDraw", line, err)
 		}
 	}
 	if _, err := ParseWitness("draw uniform(0.0, 1.0) = half\n"); !errors.Is(err, errInvalidDraw) {
@@ -1076,7 +1076,7 @@ func TestReplayRefusesDrawsOutsideTheCallsDistribution(t *testing.T) {
 				return
 			}
 			if !errors.Is(err, errWitnessDraw) || !strings.Contains(err.Error(), "which the call cannot draw") {
-				t.Fatalf("error = %v, want a WitnessDrawError naming the draw the call cannot make", err)
+				t.Fatalf("error = %v, want a witnessDrawError naming the draw the call cannot make", err)
 			}
 		})
 	}

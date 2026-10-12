@@ -182,7 +182,7 @@ func TestMaterializationErrorsPassOverAnUndeterminedBinding(t *testing.T) {
 		t.Fatalf("MaterializationErrors = %v, want only the multiplicity violation of Rig.wrong", errs)
 	}
 	if _, err := inst.GetFeatureValue(ctx, "shared"); !errors.Is(err, errBindingEnd) {
-		t.Fatalf("reading shared = %v, want ErrBindingEnd", err)
+		t.Fatalf("reading shared = %v, want errBindingEnd", err)
 	}
 }
 

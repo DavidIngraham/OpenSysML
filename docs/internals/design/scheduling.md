@@ -56,7 +56,7 @@ Two rules hold at every site:
 `String()` to the trace at the point it was made (`choice …`, `unevaluable guard …`). A probe —
 a preview of what a run would do, bracketed by `beginProbe` — notes nothing, since it is not a
 run. `Context.Notes`, `Choices` and `unevaluableGuards` read them back; the executors' `Notes` and
-`noteCount` let a caller driving a run call by call see what one call noted, which is how the REPL
+`NoteCount` let a caller driving a run call by call see what one call noted, which is how the REPL
 ends `%step`, `%continue` and `%advance` with a count; `NotesSince` reads the notes past such a
 mark without copying the ones before it.
 

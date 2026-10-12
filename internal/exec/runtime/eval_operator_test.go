@@ -21,7 +21,7 @@ func TestUnimplementedOperatorReportsWhy(t *testing.T) {
 
 	_, err := ctx.InvokeCalc(complement, []Value{constInt(1)}, root)
 	if !errors.Is(err, errUnsupportedOperator) {
-		t.Fatalf("InvokeCalc: got %v, want ErrUnsupportedOperator", err)
+		t.Fatalf("InvokeCalc: got %v, want errUnsupportedOperator", err)
 	}
 	if !strings.Contains(err.Error(), "function library") {
 		t.Fatalf("InvokeCalc: %v does not say what the complement would need", err)
@@ -353,7 +353,7 @@ func TestComposedCastUndecidedWhenNoOperandExcludes(t *testing.T) {
 			sym := resolveSymbol(t, root, name)
 			if _, err := ctx.Eval(sym.Decl.(*ast.Usage).Value); !errors.Is(
 				err, errUndecidedClassification) {
-				t.Fatalf("expected ErrUndecidedClassification, got: %v", err)
+				t.Fatalf("expected errUndecidedClassification, got: %v", err)
 			}
 		})
 	}

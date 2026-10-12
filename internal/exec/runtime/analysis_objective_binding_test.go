@@ -783,7 +783,7 @@ func TestHoldAsReportsAnUndeterminedValueType(t *testing.T) {
 
 	err = ctx.holdAs(DeclScope(owner), "subject binding", ctx.boundMemberDecl(owner, []*symbols.Symbol{pair}), NewSequenceValue(seq), pair)
 	if !errors.Is(err, errUndeterminedValueType) {
-		t.Fatalf("error = %v, want ErrUndeterminedValueType", err)
+		t.Fatalf("error = %v, want errUndeterminedValueType", err)
 	}
 	if errors.Is(err, ErrTypeMismatch) {
 		t.Errorf("error = %v, must not be reported as a type mismatch", err)

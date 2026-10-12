@@ -497,7 +497,7 @@ func TestSharedDefaultRecordsUndoneWithFailedImage(t *testing.T) {
 	dst := NewContext(ctx.Model(), 10000)
 	var notPortable *notPortableError
 	if err := img.Materialize(dst); !errors.As(err, &notPortable) {
-		t.Fatalf("Materialize with a message it cannot carry = %v, want a NotPortableError", err)
+		t.Fatalf("Materialize with a message it cannot carry = %v, want a notPortableError", err)
 	}
 	if n := len(dst.sharedDefaults); n != 0 {
 		t.Errorf("the failed materialization left %d shared records on the destination", n)
@@ -807,14 +807,14 @@ func TestDestroyedPartIsNotReadThroughSharedDefault(t *testing.T) {
 		}
 		_, err = at(t, ctx, fleet, "sats[2]").GetFeatureValue(ctx, "total")
 		if !errors.Is(err, errOccurrenceDestroyed) {
-			t.Errorf("sharing=%v: sats[2].total over a destroyed c1: %v, want ErrOccurrenceDestroyed", on, err)
+			t.Errorf("sharing=%v: sats[2].total over a destroyed c1: %v, want errOccurrenceDestroyed", on, err)
 		}
 		expect(t, ctx, fleet, "sats[3]", "total", "7")
 		if err := ctx.destroy(at(t, ctx, fleet, "sats[3]")); err != nil {
 			t.Fatalf("destroy sats[3]: %v", err)
 		}
 		if _, err := at(t, ctx, fleet, "sats[3]").GetFeatureValue(ctx, "total"); !errors.Is(err, errOccurrenceDestroyed) {
-			t.Errorf("sharing=%v: destroyed sats[3].total: %v, want ErrOccurrenceDestroyed", on, err)
+			t.Errorf("sharing=%v: destroyed sats[3].total: %v, want errOccurrenceDestroyed", on, err)
 		}
 	}
 }

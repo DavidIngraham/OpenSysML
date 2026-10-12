@@ -53,7 +53,7 @@ func TestRuntimeRobustnessBodyFeatureBindings(t *testing.T) {
 			t.Fatalf("destroy Target: %v", err)
 		}
 		if _, _, err := ctx.readBodyValue(exec.root.cells, exec.root.data, "live"); !errors.Is(err, errOccurrenceDestroyed) {
-			t.Fatalf("read live after destroying target = %v, want ErrOccurrenceDestroyed", err)
+			t.Fatalf("read live after destroying target = %v, want errOccurrenceDestroyed", err)
 		}
 	})
 
@@ -89,10 +89,10 @@ func TestRuntimeRobustnessBodyFeatureBindings(t *testing.T) {
 		}
 		results, err := exec.resultsWithError()
 		if !errors.Is(err, errOccurrenceDestroyed) {
-			t.Fatalf("ResultsWithError error = %v, want ErrOccurrenceDestroyed", err)
+			t.Fatalf("resultsWithError error = %v, want errOccurrenceDestroyed", err)
 		}
 		if _, ok := results["live"]; ok {
-			t.Fatalf("ResultsWithError returned failed live binding: %s", FormatValue(results["live"]))
+			t.Fatalf("resultsWithError returned failed live binding: %s", FormatValue(results["live"]))
 		}
 		if _, ok := exec.Results()["live"]; ok {
 			t.Fatal("Results returned a failed live binding")
@@ -272,7 +272,7 @@ func TestRuntimeRobustnessBodyFeatureBindings(t *testing.T) {
 					t.Fatalf("CreateActionExecutor: %v", err)
 				}
 				if err := exec.RunToCompletion(); !errors.Is(err, errReadOnlyFeature) {
-					t.Fatalf("RunToCompletion = %v, want ErrReadOnlyFeature (%s)", err, tc.want)
+					t.Fatalf("RunToCompletion = %v, want errReadOnlyFeature (%s)", err, tc.want)
 				}
 			})
 		}
@@ -453,7 +453,7 @@ func TestRuntimeRobustnessBodyFeatureBindings(t *testing.T) {
 		}
 		results, err := copiedBehavior.Action.resultsWithError()
 		if err != nil {
-			t.Fatalf("ResultsWithError: %v", err)
+			t.Fatalf("resultsWithError: %v", err)
 		}
 		result := results["reader.result"]
 		if result.Kind != ValSequence || result.Sequence() == nil || result.Sequence().Size() != 1 {

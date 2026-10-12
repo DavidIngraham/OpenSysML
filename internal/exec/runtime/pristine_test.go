@@ -16,7 +16,7 @@ func refusal(t *testing.T, ctx *Context, obj *Instance, what, reason string) {
 	var hse *heldStateError
 	err := ctx.Pristine(obj)
 	if !errors.As(err, &hse) || !strings.Contains(err.Error(), reason) {
-		t.Errorf("Pristine %s = %v, want a HeldStateError saying %q", what, err, reason)
+		t.Errorf("Pristine %s = %v, want a heldStateError saying %q", what, err, reason)
 	}
 }
 
@@ -234,7 +234,7 @@ func TestHeldImageRefusesADestinationWithAWaitDueBeforeItsInstant(t *testing.T) 
 	before, objects := dst.clock.now, len(dst.instances)
 	err := atFive.Materialize(dst)
 	if !errors.Is(err, errImageClock) || !strings.Contains(err.Error(), "due at t=2, before the image's t=5") {
-		t.Fatalf("Materialize over a wait due at t=2 = %v, want ErrImageClock naming the wait", err)
+		t.Fatalf("Materialize over a wait due at t=2 = %v, want errImageClock naming the wait", err)
 	}
 	if dst.clock.now != before || len(dst.instances) != objects || lampLeaf(t, charge) != "armed" {
 		t.Errorf("the refused materialization left the destination at t=%v with %d objects, fuse %s; want t=%v, %d, armed",
@@ -279,7 +279,7 @@ func TestHeldImageRefusesADestinationWithAWaitDueBeforeItsInstant(t *testing.T) 
 	before, objects = dueNow.clock.now, len(dueNow.instances)
 	err = atFive.Materialize(dueNow)
 	if !errors.Is(err, errImageClock) || !strings.Contains(err.Error(), "due at t=0, before the image's t=5") {
-		t.Fatalf("Materialize over a wait due at the destination's t=0 = %v, want ErrImageClock naming the wait", err)
+		t.Fatalf("Materialize over a wait due at the destination's t=0 = %v, want errImageClock naming the wait", err)
 	}
 	if dueNow.clock.now != before || len(dueNow.instances) != objects || lampLeaf(t, detonator) != "primed" {
 		t.Errorf("the refused materialization left the destination at t=%v with %d objects, squib %s; want t=%v, %d, primed",

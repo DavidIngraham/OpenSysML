@@ -74,7 +74,7 @@ func testAtomicBodyOrderOrderDependentGuardPreview(t *testing.T) {
 	}`
 	exec, err := runAtomicBodyOrderStateDispatch(t, "seed:1", "Ok()", constraint)
 	if !errors.Is(err, errOrderDependentPreview) {
-		t.Fatalf("dispatch error = %v, want ErrOrderDependentPreview", err)
+		t.Fatalf("dispatch error = %v, want errOrderDependentPreview", err)
 	}
 	if !containsState(exec.getStateVisits(), "a2") {
 		t.Fatalf("dispatch error = %v, state visits = %v, want a to fire before b's preview refusal", err, exec.getStateVisits())
@@ -780,7 +780,7 @@ func testAtomicBodyOrderNestedPreviewInvocation(t *testing.T) {
 	defer restore()
 	_, err = ctx.EvalWithScope(expr, m.idx.DocumentRoot(m.path))
 	if !errors.Is(err, errOrderDependentPreview) {
-		t.Fatalf("invocation error = %v, want ErrOrderDependentPreview", err)
+		t.Fatalf("invocation error = %v, want errOrderDependentPreview", err)
 	}
 	if !strings.Contains(err.Error(), "Ord") || !strings.Contains(err.Error(), "statement orders") ||
 		strings.Contains(err.Error(), "*ast.") {
@@ -803,7 +803,7 @@ func testAtomicBodyOrderCalcFlowRefusal(t *testing.T) {
 	}
 	_, err = ctx.EvalWithScope(expr, m.idx.DocumentRoot(m.path))
 	if !errors.Is(err, errStatementNotExecutable) {
-		t.Fatalf("error = %v, want ErrStatementNotExecutable", err)
+		t.Fatalf("error = %v, want errStatementNotExecutable", err)
 	}
 	if !strings.Contains(err.Error(), "`first` statement") || strings.Contains(err.Error(), "*ast.") {
 		t.Fatalf("error %q does not name the unsupported construct", err)
@@ -919,7 +919,7 @@ func testAtomicBodyOrderNestedPreviewGuard(t *testing.T) {
 		return value.Const.Bool, nil
 	})
 	if !errors.Is(err, errOrderDependentPreview) {
-		t.Fatalf("guard error = %v, want ErrOrderDependentPreview", err)
+		t.Fatalf("guard error = %v, want errOrderDependentPreview", err)
 	}
 	if !strings.Contains(err.Error(), "Ok") || strings.Contains(err.Error(), "*ast.") {
 		t.Fatalf("preview error %q does not name the guard and body", err)
@@ -958,7 +958,7 @@ func testAtomicBodyOrderGuardExternalWrite(t *testing.T) {
 		return value.Const.Bool, nil
 	})
 	if !errors.Is(err, errOrderDependentGuardEffect) {
-		t.Fatalf("guard error = %v, want ErrOrderDependentGuardEffect", err)
+		t.Fatalf("guard error = %v, want errOrderDependentGuardEffect", err)
 	}
 	if !strings.Contains(err.Error(), "Guard") || strings.Contains(err.Error(), "*ast.") {
 		t.Fatalf("guard refusal %q does not identify the guard body", err)

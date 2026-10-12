@@ -86,7 +86,7 @@ func testExploreActionInitializationFailureIsSetup(t *testing.T) {
 		t.Fatalf("exploration = %v, error = %v; want root setup failure without outcomes", exploration, err)
 	}
 	if !errors.Is(err, errInvalidActionFlow) {
-		t.Errorf("setup error = %v, want ErrInvalidActionFlow", err)
+		t.Errorf("setup error = %v, want errInvalidActionFlow", err)
 	}
 }
 
@@ -136,7 +136,7 @@ func testExploreStateInitializationFailureIsSetup(t *testing.T) {
 		t.Fatalf("exploration = %v, error = %v; want root setup failure without outcomes", exploration, err)
 	}
 	if !errors.Is(err, errNoInitialState) {
-		t.Errorf("setup error = %v, want ErrNoInitialState", err)
+		t.Errorf("setup error = %v, want errNoInitialState", err)
 	}
 }
 
@@ -187,7 +187,7 @@ func testExploreInitialEntryFailureAfterChoiceIsRuntimeOutcome(t *testing.T) {
 			t.Errorf("entry error outcome = %v; want a runtime error, not SetupError", outcome.Outcome.Err)
 		}
 		if !errors.Is(outcome.Outcome.Err, errNoEnabledSuccession) {
-			t.Errorf("entry error outcome = %v; want ErrNoEnabledSuccession", outcome.Outcome.Err)
+			t.Errorf("entry error outcome = %v; want errNoEnabledSuccession", outcome.Outcome.Err)
 		}
 	}
 	if values != 1 || failures != 1 {
@@ -225,7 +225,7 @@ func testExploreDeterministicEntryFailureIsRuntimeOutcome(t *testing.T) {
 	errOutcome := exploration.Outcomes[0].Outcome.Err
 	var setup *SetupError
 	if errOutcome == nil || errors.As(errOutcome, &setup) || !errors.Is(errOutcome, errNoEnabledSuccession) {
-		t.Fatalf("entry error outcome = %v; want ErrNoEnabledSuccession, not SetupError", errOutcome)
+		t.Fatalf("entry error outcome = %v; want errNoEnabledSuccession, not SetupError", errOutcome)
 	}
 }
 
@@ -258,7 +258,7 @@ func testExploreToolPerformanceFailureIsRuntimeOutcome(t *testing.T) {
 	errOutcome := exploration.Outcomes[0].Outcome.Err
 	var setup *SetupError
 	if errOutcome == nil || errors.As(errOutcome, &setup) || !errors.Is(errOutcome, errToolNotRegistered) {
-		t.Fatalf("tool error outcome = %v; want ErrToolNotRegistered, not SetupError", errOutcome)
+		t.Fatalf("tool error outcome = %v; want errToolNotRegistered, not SetupError", errOutcome)
 	}
 }
 
@@ -280,7 +280,7 @@ func testExploreInputBindingFailureIsNotSetup(t *testing.T) {
 	runErr := exploration.Outcomes[0].Outcome.Err
 	var setup *SetupError
 	if runErr == nil || errors.As(runErr, &setup) || !errors.Is(runErr, errUnknownActionInput) {
-		t.Fatalf("input-binding error = %v; want an unwrapped ErrUnknownActionInput runtime outcome", runErr)
+		t.Fatalf("input-binding error = %v; want an unwrapped errUnknownActionInput runtime outcome", runErr)
 	}
 }
 
@@ -322,7 +322,7 @@ func testExplorePerformerFailureIsOutcome(t *testing.T) {
 		t.Fatalf("exploration = %v; want one failing linearization", exploration)
 	}
 	if !errors.Is(exploration.Outcomes[0].Outcome.Err, errOccurrenceLifetime) {
-		t.Errorf("outcome error = %v, want ErrOccurrenceLifetime", exploration.Outcomes[0].Outcome.Err)
+		t.Errorf("outcome error = %v, want errOccurrenceLifetime", exploration.Outcomes[0].Outcome.Err)
 	}
 }
 

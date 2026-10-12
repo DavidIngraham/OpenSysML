@@ -406,7 +406,7 @@ func TestActionExecutor_ForkNode_NoSuccessors(t *testing.T) {
 	}
 
 	if !errors.Is(err, errInvalidActionFlow) {
-		t.Errorf("expected ErrInvalidActionFlow, got %v", err)
+		t.Errorf("expected errInvalidActionFlow, got %v", err)
 	}
 }
 
@@ -1142,7 +1142,7 @@ func TestActionExecutor_DecisionNode(t *testing.T) {
 		}
 
 		if !errors.Is(err, errNoEnabledSuccession) {
-			t.Errorf("expected ErrNoEnabledSuccession, got %v", err)
+			t.Errorf("expected errNoEnabledSuccession, got %v", err)
 		}
 	})
 }

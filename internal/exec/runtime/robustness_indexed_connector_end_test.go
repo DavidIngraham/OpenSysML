@@ -70,7 +70,7 @@ func TestRuntimeRobustnessIndexedConnectorEnd(t *testing.T) {
 		}
 		var endErr *connectorEndError
 		if !errors.As(err, &endErr) || endErr.End != "s.y#(third)" {
-			t.Errorf("error = %+v, want a *ConnectorEndError naming the end as written", err)
+			t.Errorf("error = %+v, want a *connectorEndError naming the end as written", err)
 		}
 		if len(ctx.instances) != before {
 			t.Errorf("failed connector materialized %d object(s)", len(ctx.instances)-before)
@@ -86,7 +86,7 @@ func TestRuntimeRobustnessIndexedConnectorEnd(t *testing.T) {
 		}
 		var endErr *connectorEndError
 		if !errors.As(err, &endErr) || endErr.End != "s.y#(fraction)" || endErr.Err == nil {
-			t.Errorf("error = %+v, want a *ConnectorEndError naming the end and its cause", err)
+			t.Errorf("error = %+v, want a *connectorEndError naming the end and its cause", err)
 		}
 	})
 
@@ -98,7 +98,7 @@ func TestRuntimeRobustnessIndexedConnectorEnd(t *testing.T) {
 			t.Fatalf("OwnedConnectors = %d connector(s), want an error: the end's feature holds no value", len(conns))
 		}
 		if !errors.Is(err, errConnectorEnd) || !errors.Is(err, errUninitializedFeatureValue) {
-			t.Fatalf("OwnedConnectors = %v, want a connector end error wrapping ErrUninitializedFeatureValue", err)
+			t.Fatalf("OwnedConnectors = %v, want a connector end error wrapping errUninitializedFeatureValue", err)
 		}
 	})
 

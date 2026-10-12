@@ -54,7 +54,7 @@ func TestRuntimeRobustnessNestedRedefinition(t *testing.T) {
 			t.Fatalf("Instantiate: %v", err)
 		}
 		if _, err := obj.GetFeatureValue(ctx, "mid"); !errors.Is(err, errValuedFeatureRestated) {
-			t.Fatalf("GetFeatureValue(mid) = %v, want ErrValuedFeatureRestated", err)
+			t.Fatalf("GetFeatureValue(mid) = %v, want errValuedFeatureRestated", err)
 		}
 		existing, err := ctx.Instantiate(lookupOne(t, ctx.model.resolver.Index(), "test::existing"))
 		if err != nil {

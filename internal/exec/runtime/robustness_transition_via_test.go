@@ -80,7 +80,7 @@ func testTransitionViaRootHoldsNothing(t *testing.T) {
 		"in ref context : Peer[0..1];", "in :>> context = null;", "context.hears",
 	))
 	if !errors.Is(err, errSendTargetNotObject) || !strings.Contains(err.Error(), `"context" holds null, which is no object`) {
-		t.Fatalf("error = %v, want ErrSendTargetNotObject over an empty parameter", err)
+		t.Fatalf("error = %v, want errSendTargetNotObject over an empty parameter", err)
 	}
 }
 

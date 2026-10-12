@@ -358,7 +358,7 @@ func testNamespaceSuccessionDestroyedExhibitorStateExecutorReuse(t *testing.T) {
 		t.Fatalf("destroy Exhibitor: %v", err)
 	}
 	if _, err := ctx.CreateStateExecutorFor(machine, exhibitor); !errors.Is(err, errOccurrenceDestroyed) {
-		t.Fatalf("CreateStateExecutorFor on destroyed exhibitor = %v, want ErrOccurrenceDestroyed", err)
+		t.Fatalf("CreateStateExecutorFor on destroyed exhibitor = %v, want errOccurrenceDestroyed", err)
 	}
 }
 
@@ -982,7 +982,7 @@ func requireSuccessionError(t *testing.T, err, sentinel error, code string) {
 	}
 	var orderErr *successionOrderError
 	if !errors.As(err, &orderErr) || orderErr.Code != code {
-		t.Fatalf("error = %v, want SuccessionOrderError code %s", err, code)
+		t.Fatalf("error = %v, want successionOrderError code %s", err, code)
 	}
 }
 

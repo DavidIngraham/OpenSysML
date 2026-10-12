@@ -60,7 +60,7 @@ func testBehaviorConnectionEndRootedAtAValue(t *testing.T) {
 		"in snk : Integer;", "in snk = 4;",
 	), "test::Host")
 	if !errors.Is(err, errSendTargetNotObject) || !strings.Contains(err.Error(), `"snk" holds 4, which is no object to address "snk.local" to`) {
-		t.Fatalf("error = %v, want ErrSendTargetNotObject over a number", err)
+		t.Fatalf("error = %v, want errSendTargetNotObject over a number", err)
 	}
 }
 
@@ -72,6 +72,6 @@ func testBehaviorConnectionEndRootedAtNothing(t *testing.T) {
 		"in ref snk : Listener[0..1];", "in ref snk = null;",
 	), "test::Host")
 	if !errors.Is(err, errSendTargetNotObject) || !strings.Contains(err.Error(), `"snk" holds null, which is no object to address "snk.local" to`) {
-		t.Fatalf("error = %v, want ErrSendTargetNotObject over an empty parameter", err)
+		t.Fatalf("error = %v, want errSendTargetNotObject over an empty parameter", err)
 	}
 }

@@ -101,7 +101,7 @@ func testAssignChainUnsetStep(t *testing.T) {
 		}
 	`)
 	if !errors.Is(err, errUninitializedFeatureValue) {
-		t.Fatalf("err = %v; want ErrUninitializedFeatureValue", err)
+		t.Fatalf("err = %v; want errUninitializedFeatureValue", err)
 	}
 	if !strings.Contains(err.Error(), "probe.reading") {
 		t.Errorf("err = %v; want it to name the target", err)
@@ -139,7 +139,7 @@ func testAssignChainRejectedInCalcBody(t *testing.T) {
 	}`)
 	_, err := ctx.InvokeCalc(lookupOne(t, idx, "test::Reset"), nil, nil)
 	if !errors.Is(err, errCalcExternalAssignment) {
-		t.Fatalf("err = %v; want ErrCalcExternalAssignment", err)
+		t.Fatalf("err = %v; want errCalcExternalAssignment", err)
 	}
 	if !strings.Contains(err.Error(), "s.reading") {
 		t.Errorf("err = %v; want it to name the target", err)

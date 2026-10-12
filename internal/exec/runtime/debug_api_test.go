@@ -1666,7 +1666,7 @@ func TestStateBreakpointPausesOnATransientState(t *testing.T) {
 		t.Errorf("clock = %v, want 20: the clock moves on past a paused machine", got)
 	}
 	if !exec.hasDueEvent() {
-		t.Error("HasDueEvent() = false, want the completion event held for the resumed run")
+		t.Error("hasDueEvent() = false, want the completion event held for the resumed run")
 	}
 
 	if err := exec.RunToQuiescence(); err != nil {

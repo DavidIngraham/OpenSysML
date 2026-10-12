@@ -56,7 +56,7 @@ func rigWithUntypedPorts(binding, wiring string) string {
 func testUntypedPortJoinedToNothing(t *testing.T) {
 	_, _, err := instantiateWithLibraries(t, rigWithUntypedPorts("bind cmd = r.rx;", ""), "test::Rig")
 	if !errors.Is(err, errUnroutableSend) || !strings.Contains(err.Error(), `port "context.tx" is joined to no port that can receive it`) {
-		t.Fatalf("error = %v, want ErrUnroutableSend over an unjoined untyped port", err)
+		t.Fatalf("error = %v, want errUnroutableSend over an unjoined untyped port", err)
 	}
 }
 
@@ -65,7 +65,7 @@ func testUntypedPortJoinedToNothing(t *testing.T) {
 func testUntypedPortBoundToNoFeature(t *testing.T) {
 	_, _, err := instantiateWithLibraries(t, rigWithUntypedPorts("bind cmd = r.nowhere;", "connect s.tx to b.cmd;"), "test::Rig")
 	if !errors.Is(err, errBindingEnd) || !strings.Contains(err.Error(), `"r.nowhere"`) {
-		t.Fatalf("error = %v, want ErrBindingEnd naming r.nowhere", err)
+		t.Fatalf("error = %v, want errBindingEnd naming r.nowhere", err)
 	}
 }
 

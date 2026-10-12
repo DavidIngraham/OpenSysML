@@ -34,7 +34,7 @@ func TestRuntimeWithoutExpressionParserRefusesText(t *testing.T) {
 		mustSchedule(t, ctx, mustPolicy(t, "replay:"+file))
 		_, err := ctx.ExecuteAction(sym)
 		if !errors.Is(err, errNoExpressionParser) {
-			t.Fatalf("ExecuteAction = %v, want ErrNoExpressionParser", err)
+			t.Fatalf("ExecuteAction = %v, want errNoExpressionParser", err)
 		}
 		if errors.Is(err, ErrWitnessInput) {
 			t.Fatalf("ExecuteAction = %v, must not read as a refused witness input", err)
@@ -72,14 +72,14 @@ func TestRuntimeWithoutExpressionParserRefusesText(t *testing.T) {
 		}})
 		_, err := ctx.ExecuteAction(calcNamed(t, pkg.Scope, "Drive"))
 		if !errors.Is(err, errNoExpressionParser) {
-			t.Fatalf("ExecuteAction = %v, want ErrNoExpressionParser", err)
+			t.Fatalf("ExecuteAction = %v, want errNoExpressionParser", err)
 		}
 		var toolErr *ToolError
 		if errors.As(err, &toolErr) {
 			t.Fatalf("ExecuteAction = %v, must not read as the tool's malformed output", err)
 		}
 		if _, err := ctx.UnitOf(pkg.Scope, "m/s**2"); !errors.Is(err, errNoExpressionParser) {
-			t.Fatalf("UnitOf = %v, want ErrNoExpressionParser", err)
+			t.Fatalf("UnitOf = %v, want errNoExpressionParser", err)
 		}
 	})
 	t.Run("replaced parser forgets the units the previous one read", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestRuntimeWithoutExpressionParserRefusesText(t *testing.T) {
 		}
 		parsing.Model().SetExpressionParser(nil)
 		if _, err := parsing.UnitOf(pkg.Scope, "m/s**2"); !errors.Is(err, errNoExpressionParser) {
-			t.Fatalf("UnitOf after removing the parser = %v, want ErrNoExpressionParser", err)
+			t.Fatalf("UnitOf after removing the parser = %v, want errNoExpressionParser", err)
 		}
 	})
 }

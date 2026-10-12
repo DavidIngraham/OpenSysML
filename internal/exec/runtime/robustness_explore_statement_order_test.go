@@ -192,7 +192,7 @@ func testStatementOrderCyclicCalcBinding(t *testing.T) {
 			}
 			for _, o := range x.Outcomes {
 				if !errors.Is(o.Outcome.Err, errCalcUsageRecursion) {
-					t.Errorf("outcome %s, want ErrCalcUsageRecursion", o.Outcome)
+					t.Errorf("outcome %s, want errCalcUsageRecursion", o.Outcome)
 				}
 			}
 		})

@@ -47,7 +47,7 @@ func stationObserving(body string) string {
 func testClockReadCurrentTimeNotAssigned(t *testing.T) {
 	_, _, err := instantiateWithLibraries(t, stationObserving("assign localClock.currentTime := 5.0;"), "test::Station")
 	if !errors.Is(err, errClockNotAssignable) || !strings.Contains(err.Error(), "assignment to localClock.currentTime") {
-		t.Fatalf("error = %v, want ErrClockNotAssignable over localClock.currentTime", err)
+		t.Fatalf("error = %v, want errClockNotAssignable over localClock.currentTime", err)
 	}
 }
 
@@ -72,7 +72,7 @@ func testClockReadOwnCurrentTimeNotAssigned(t *testing.T) {
 	}`
 	_, _, err := instantiateWithLibraries(t, src, "test::Chrono")
 	if !errors.Is(err, errClockNotAssignable) || !strings.Contains(err.Error(), "assignment to currentTime") {
-		t.Fatalf("error = %v, want ErrClockNotAssignable over a bare currentTime", err)
+		t.Fatalf("error = %v, want errClockNotAssignable over a bare currentTime", err)
 	}
 }
 
@@ -116,7 +116,7 @@ func chronoStamping(tick, observe string) string {
 func testClockReadRedefinedCurrentTimeNotAssigned(t *testing.T) {
 	_, _, err := instantiateWithLibraries(t, chronoStamping("assign now := 5.0;", ""), "test::Chrono")
 	if !errors.Is(err, errClockNotAssignable) || !strings.Contains(err.Error(), "assignment to now") {
-		t.Fatalf("error = %v, want ErrClockNotAssignable over a redefined currentTime", err)
+		t.Fatalf("error = %v, want errClockNotAssignable over a redefined currentTime", err)
 	}
 }
 
@@ -125,7 +125,7 @@ func testClockReadRedefinedCurrentTimeNotAssigned(t *testing.T) {
 func testClockReadRedefinedCurrentTimeNotAssignedThroughPart(t *testing.T) {
 	_, _, err := instantiateWithLibraries(t, chronoStamping("", "assign chrono.now := 5.0;"), "test::Station")
 	if !errors.Is(err, errClockNotAssignable) || !strings.Contains(err.Error(), "assignment to chrono.now") {
-		t.Fatalf("error = %v, want ErrClockNotAssignable over chrono.now", err)
+		t.Fatalf("error = %v, want errClockNotAssignable over chrono.now", err)
 	}
 }
 
@@ -200,6 +200,6 @@ func testClockReadInstantAgainstNamedScale(t *testing.T) {
 	}`
 	_, _, err := instantiateWithLibraries(t, src, "test::Station")
 	if !errors.Is(err, errUnevaluableLibraryFunction) || !strings.Contains(err.Error(), "Time::UTC") {
-		t.Fatalf("error = %v, want ErrUnevaluableLibraryFunction naming Time::UTC", err)
+		t.Fatalf("error = %v, want errUnevaluableLibraryFunction naming Time::UTC", err)
 	}
 }

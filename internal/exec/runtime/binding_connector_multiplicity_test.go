@@ -38,7 +38,7 @@ func TestConnectorMultiplicityBoundsLinks(t *testing.T) {
 		_, err := evalIn(t, ctx, pkg.Scope, tc.expr)
 		var undetermined *undeterminedBindingError
 		if !errors.As(err, &undetermined) {
-			t.Fatalf("%s = %v, want an UndeterminedBindingError", tc.expr, err)
+			t.Fatalf("%s = %v, want an undeterminedBindingError", tc.expr, err)
 		}
 		if !strings.Contains(err.Error(), tc.binding) {
 			t.Errorf("%s error %q does not name the binding", tc.expr, err.Error())
@@ -145,7 +145,7 @@ func TestConnectorMultiplicityNamesFeature(t *testing.T) {
 	_, err := evalIn(t, ctx, pkg.Scope, "rig.b")
 	var undetermined *undeterminedBindingError
 	if !errors.As(err, &undetermined) {
-		t.Fatalf("rig.b = %v, want an UndeterminedBindingError", err)
+		t.Fatalf("rig.b = %v, want an undeterminedBindingError", err)
 	}
 	if !strings.Contains(err.Error(), "binding [1] bind [0..*] a = [0..*] b") {
 		t.Errorf("rig.b error %q does not name the binding", err.Error())

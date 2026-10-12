@@ -43,7 +43,7 @@ func TestUnboundSubjectIsReportedAsSuch(t *testing.T) {
 
 	holds, err := ctx.EvaluateRequirement(sym, rootScope)
 	if !errors.Is(err, errUnboundSubject) {
-		t.Fatalf("PayloadReq = %v, %v; want ErrUnboundSubject", holds, err)
+		t.Fatalf("PayloadReq = %v, %v; want errUnboundSubject", holds, err)
 	}
 	if errors.Is(err, ErrViolated) {
 		t.Error("an unbound subject is not a violation")

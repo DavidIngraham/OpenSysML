@@ -487,7 +487,7 @@ func TestQuantityAndIndexNotationsCoexist(t *testing.T) {
 	// A unit named where an index belongs stays a quantity error, since the
 	// bracket says the expression is a quantity.
 	if _, err := evalIn(t, ctx, scope, "speeds [m]"); !errors.Is(err, errNotAQuantity) {
-		t.Errorf("speeds [m] error = %v, want ErrNotAQuantity", err)
+		t.Errorf("speeds [m] error = %v, want errNotAQuantity", err)
 	}
 }
 
@@ -527,7 +527,7 @@ func TestNotAQuantityHintIsStatic(t *testing.T) {
 		before := len(ctx.InstanceIDs())
 		_, err := evalIn(t, ctx, pkg.Scope, tc.src)
 		if !errors.Is(err, errNotAQuantity) {
-			t.Errorf("%s: error = %v, want ErrNotAQuantity", tc.src, err)
+			t.Errorf("%s: error = %v, want errNotAQuantity", tc.src, err)
 			continue
 		}
 		if tc.want == "" && strings.Contains(err.Error(), hint) {

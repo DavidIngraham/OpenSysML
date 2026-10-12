@@ -91,7 +91,7 @@ func TestInvocationSelectionRequiresArgumentTyper(t *testing.T) {
 	arg := Value{Kind: ValConst, Const: semantics.Value{Kind: semantics.ValInt, Int: 3}}
 	_, err := ctx.InvokeCalc(sym, []Value{arg}, rootScope)
 	if !errors.Is(err, errNoArgumentTyper) {
-		t.Fatalf("InvokeCalc error = %v, want ErrNoArgumentTyper", err)
+		t.Fatalf("InvokeCalc error = %v, want errNoArgumentTyper", err)
 	}
 }
 
@@ -276,7 +276,7 @@ func testActionCallReceiverWithNamedArgumentsRefused(t *testing.T) {
 		t.Fatalf("expected a refusal, action returned %v", outputs)
 	}
 	if !errors.Is(err, errReceiverWithNamedArgs) {
-		t.Fatalf("expected ErrReceiverWithNamedArgs, got: %v", err)
+		t.Fatalf("expected errReceiverWithNamedArgs, got: %v", err)
 	}
 }
 
@@ -288,7 +288,7 @@ func testActionCallNamedArgumentTwiceRefused(t *testing.T) {
 		t.Fatalf("overloaded tag(x = 3, x = 4): expected a refusal, action returned %v", outputs)
 	}
 	if !errors.Is(err, errDuplicateArgument) || !strings.Contains(err.Error(), `input parameter "x" of tag`) {
-		t.Fatalf("overloaded tag(x = 3, x = 4): error = %v, want ErrDuplicateArgument naming x", err)
+		t.Fatalf("overloaded tag(x = 3, x = 4): error = %v, want errDuplicateArgument naming x", err)
 	}
 	const single = `
 		package test {
@@ -314,7 +314,7 @@ func testActionCallNamedArgumentTwiceRefused(t *testing.T) {
 		t.Fatalf("single tag(x = 3, x = 4): expected a refusal, action returned %v", outputs)
 	}
 	if !errors.Is(err, errDuplicateArgument) || !strings.Contains(err.Error(), `input parameter "x" of tag`) {
-		t.Fatalf("single tag(x = 3, x = 4): error = %v, want ErrDuplicateArgument naming x", err)
+		t.Fatalf("single tag(x = 3, x = 4): error = %v, want errDuplicateArgument naming x", err)
 	}
 }
 
@@ -361,7 +361,7 @@ func testActionCallNamesAParameterAsTheCheckerDoes(t *testing.T) {
 			t.Fatalf("%s: expected a refusal, action returned %v", call, outputs)
 		}
 		if !errors.Is(err, errDuplicateArgument) || !strings.Contains(err.Error(), `input parameter "y" of A`) {
-			t.Fatalf("%s: error = %v, want ErrDuplicateArgument naming y", call, err)
+			t.Fatalf("%s: error = %v, want errDuplicateArgument naming y", call, err)
 		}
 	}
 	for _, call := range []string{"A(Other::y = 1)", "B(Other::y = 1)"} {
@@ -370,7 +370,7 @@ func testActionCallNamesAParameterAsTheCheckerDoes(t *testing.T) {
 			t.Fatalf("%s: expected a refusal, action returned %v", call, outputs)
 		}
 		if !errors.Is(err, errUnknownParameter) || !strings.Contains(err.Error(), `has no parameter named "Other::y"`) {
-			t.Fatalf("%s: error = %v, want ErrUnknownParameter naming Other::y", call, err)
+			t.Fatalf("%s: error = %v, want errUnknownParameter naming Other::y", call, err)
 		}
 	}
 }
@@ -433,7 +433,7 @@ func testActionCallOmitsOptionalInputs(t *testing.T) {
 			action def tag :> base { in x : Integer :>> x; in y : Integer[1]; first start; action set { assign code := x + y; } done; succession first start then set; succession first set then done; }
 		}`)
 	if !errors.Is(err, errUnboundParameter) || !strings.Contains(err.Error(), "input parameter y") {
-		t.Fatalf("tag() with a required y: err = %v, want ErrUnboundParameter for y", err)
+		t.Fatalf("tag() with a required y: err = %v, want errUnboundParameter for y", err)
 	}
 }
 
@@ -572,7 +572,7 @@ func testActionCallAmbiguousBetweenTwoGenerals(t *testing.T) {
 		t.Fatalf("expected an ambiguity error, action returned %v", outputs)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	for _, want := range []string{"A::tag", "B::tag"} {
 		if !strings.Contains(err.Error(), want) {
@@ -649,7 +649,7 @@ func testActionCallUndeterminedStaticallyReportsATieTheValuesLeave(t *testing.T)
 		t.Fatalf("expected an ambiguity error, action returned %v", outputs)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	for _, want := range []string{"A::tag", "B::tag"} {
 		if !strings.Contains(err.Error(), want) {
@@ -681,7 +681,7 @@ func testCalcCallAmbiguousBetweenTwoGenerals(t *testing.T) {
 		t.Fatalf("expected an ambiguity error, calc returned %+v", result)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	for _, want := range []string{"A::pick", "B::pick"} {
 		if !strings.Contains(err.Error(), want) {
@@ -752,7 +752,7 @@ func testCalcCallAmbiguityNamesOnlyTheTiedBest(t *testing.T) {
 	}
 	_, err := ctx.InvokeCalc(sym, nil, rootScope)
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	if !strings.HasSuffix(err.Error(), "pick denotes A::pick, B::pick") {
 		t.Errorf("error %q should name exactly the tied overloads A::pick, B::pick", err)
@@ -872,7 +872,7 @@ func testCalcCallOmittingAnInputRunsTheFittingCandidate(t *testing.T) {
 		t.Fatalf("pick(v) with y unbound: expected a refusal, calc returned %+v", result)
 	}
 	if !errors.Is(err, errUnboundParameter) || errors.Is(err, ErrTypeMismatch) {
-		t.Fatalf("pick(v) with y unbound: error = %v, want ErrUnboundParameter", err)
+		t.Fatalf("pick(v) with y unbound: error = %v, want errUnboundParameter", err)
 	}
 	complete := findSymbolByName(rootScope, "complete", ast.DefCalc)
 	if complete == nil {
@@ -910,7 +910,7 @@ func testCalcCallOmittingEveryInputIsAmbiguous(t *testing.T) {
 		t.Fatalf("pick(): expected an ambiguity error, calc returned %+v", result)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("pick(): expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("pick(): expected errAmbiguousInvocation, got: %v", err)
 	}
 }
 
@@ -1120,13 +1120,13 @@ func testCalcCallBindsALibraryFunctionThroughRedeclaredInputs(t *testing.T) {
 
 	renamed := findSymbolByName(rootScope, "Renamed", ast.DefCalc)
 	if result, err := ctx.invokeCalcNamed(renamed, map[string]Value{"y": realVal(9)}, rootScope); err != nil || !valueEqual(result, realVal(3)) {
-		t.Fatalf("InvokeCalcNamed(Renamed, y = 9) = %+v, %v; want 3", result, err)
+		t.Fatalf("invokeCalcNamed(Renamed, y = 9) = %+v, %v; want 3", result, err)
 	}
 	if result, err := ctx.InvokeCalc(renamed, []Value{realVal(9)}, rootScope); err != nil || !valueEqual(result, realVal(3)) {
 		t.Fatalf("InvokeCalc(Renamed, 9) = %+v, %v; want 3", result, err)
 	}
 	if _, err := ctx.invokeCalcNamed(renamed, map[string]Value{"x": realVal(9)}, rootScope); !errors.Is(err, errUnknownParameter) {
-		t.Fatalf("InvokeCalcNamed(Renamed, x = 9) error = %v, want ErrUnknownParameter", err)
+		t.Fatalf("invokeCalcNamed(Renamed, x = 9) error = %v, want errUnknownParameter", err)
 	}
 	defaulted := findSymbolByName(rootScope, "Defaulted", ast.DefCalc)
 	if result, err := ctx.InvokeCalc(defaulted, nil, rootScope); err != nil || !valueEqual(result, realVal(4)) {
@@ -1134,7 +1134,7 @@ func testCalcCallBindsALibraryFunctionThroughRedeclaredInputs(t *testing.T) {
 	}
 	floor := findSymbolByName(rootScope, "Floor", ast.DefCalc)
 	if result, err := ctx.invokeCalcNamed(floor, map[string]Value{"x": realVal(-3)}, rootScope); err != nil || !valueEqual(result, realVal(0)) {
-		t.Fatalf("InvokeCalcNamed(Floor, x = -3) = %+v, %v; want 0", result, err)
+		t.Fatalf("invokeCalcNamed(Floor, x = -3) = %+v, %v; want 0", result, err)
 	}
 	narrowed := findSymbolByName(rootScope, "Narrowed", ast.DefCalc)
 	if _, err := ctx.InvokeCalc(narrowed, []Value{realVal(2.5)}, rootScope); !errors.Is(err, ErrTypeMismatch) || !strings.Contains(err.Error(), "calc test::Narrowed") {
@@ -1142,7 +1142,7 @@ func testCalcCallBindsALibraryFunctionThroughRedeclaredInputs(t *testing.T) {
 	}
 	next := findSymbolByName(rootScope, "AtLeastNext", ast.DefCalc)
 	if result, err := ctx.invokeCalcNamed(next, map[string]Value{"x": realVal(2)}, rootScope); err != nil || !valueEqual(result, realVal(3)) {
-		t.Fatalf("InvokeCalcNamed(AtLeastNext, x = 2) = %+v, %v; want 3", result, err)
+		t.Fatalf("invokeCalcNamed(AtLeastNext, x = 2) = %+v, %v; want 3", result, err)
 	}
 }
 
@@ -1370,7 +1370,7 @@ func testCalcCallExplicitAnythingTiesWithUntyped(t *testing.T) {
 		t.Fatalf("expected an ambiguity error, calc returned %+v", result)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	for _, want := range []string{"A::pick", "B::pick"} {
 		if !strings.Contains(err.Error(), want) {
@@ -1409,7 +1409,7 @@ func testCalcCallCrossedSpecificityIsAmbiguous(t *testing.T) {
 		t.Fatalf("expected an ambiguity error, calc returned %+v", result)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	for _, want := range []string{"A::pick", "B::pick"} {
 		if !strings.Contains(err.Error(), want) {
@@ -1458,7 +1458,7 @@ func testCalcCallUndeterminedStaticallyIsSettledByTheValues(t *testing.T) {
 		t.Fatalf("expected an ambiguity error, calc returned %+v", result)
 	}
 	if !errors.Is(err, errAmbiguousInvocation) {
-		t.Fatalf("expected ErrAmbiguousInvocation, got: %v", err)
+		t.Fatalf("expected errAmbiguousInvocation, got: %v", err)
 	}
 	for _, want := range []string{"C::pick", "D::pick"} {
 		if !strings.Contains(err.Error(), want) {
@@ -1646,7 +1646,7 @@ func testCalcCallRepeatedNamedArgumentIsRefused(t *testing.T) {
 	intArg := Value{Kind: ValConst, Const: semantics.Value{Kind: semantics.ValInt, Int: 3}}
 	_, err := ctx.InvokeCalc(sym, []Value{intArg, NewStringValue("s")}, rootScope)
 	if !errors.Is(err, errCalcArity) || !strings.Contains(err.Error(), `binds parameter "x" twice`) {
-		t.Fatalf("twice = %v, want ErrCalcArity naming x", err)
+		t.Fatalf("twice = %v, want errCalcArity naming x", err)
 	}
 }
 
@@ -1696,7 +1696,7 @@ func testCalcCallNamesAParameterAsTheCheckerDoes(t *testing.T) {
 		}
 		_, err := ctx.InvokeCalc(sym, nil, rootScope)
 		if !errors.Is(err, errCalcArity) || !strings.Contains(err.Error(), `binds parameter "x" twice`) {
-			t.Fatalf("%s = %v, want ErrCalcArity naming x", calc, err)
+			t.Fatalf("%s = %v, want errCalcArity naming x", calc, err)
 		}
 	}
 	for _, calc := range []string{"elsewhere", "elsewhereSpelled"} {
@@ -1706,7 +1706,7 @@ func testCalcCallNamesAParameterAsTheCheckerDoes(t *testing.T) {
 		}
 		_, err := ctx.InvokeCalc(sym, nil, rootScope)
 		if !errors.Is(err, errUnknownParameter) || !strings.Contains(err.Error(), `has no parameter named "Other::x"`) {
-			t.Fatalf("%s = %v, want ErrUnknownParameter naming Other::x", calc, err)
+			t.Fatalf("%s = %v, want errUnknownParameter naming Other::x", calc, err)
 		}
 	}
 }

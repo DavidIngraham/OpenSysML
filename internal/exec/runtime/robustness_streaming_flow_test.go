@@ -55,7 +55,7 @@ func testStreamingFlowSourceNeverWrites(t *testing.T) {
 		"action step { assign total := total + 0; }", "consumer.value",
 	))
 	if !errors.Is(err, errFlowSource) || !strings.Contains(err.Error(), "node producer produced no value at value") {
-		t.Fatalf("error = %v, want ErrFlowSource from a source that never wrote", err)
+		t.Fatalf("error = %v, want errFlowSource from a source that never wrote", err)
 	}
 }
 
@@ -81,7 +81,7 @@ func testStreamingFlowTargetCompletedFirst(t *testing.T) {
 		}
 	}`)
 	if !errors.Is(err, errStreamUnreceived) || !strings.Contains(err.Error(), "node consumer completed before node producer wrote value") {
-		t.Fatalf("error = %v, want ErrStreamUnreceived from a target over before its source wrote", err)
+		t.Fatalf("error = %v, want errStreamUnreceived from a target over before its source wrote", err)
 	}
 }
 
@@ -92,7 +92,7 @@ func testStreamingFlowTargetPinNotDeclared(t *testing.T) {
 		"action step { assign value := 1; }", "consumer.missing",
 	))
 	if !errors.Is(err, errNodePin) {
-		t.Fatalf("error = %v, want ErrNodePin from a stream to an undeclared pin", err)
+		t.Fatalf("error = %v, want errNodePin from a stream to an undeclared pin", err)
 	}
 }
 
@@ -129,7 +129,7 @@ func testStreamingFlowOneLateValueLeft(t *testing.T) {
 		}
 	}`)
 	if !errors.Is(err, errStreamUnreceived) || !strings.Contains(err.Error(), "node consumer completed before node second wrote value") {
-		t.Fatalf("error = %v, want ErrStreamUnreceived for the late value no performance took", err)
+		t.Fatalf("error = %v, want errStreamUnreceived for the late value no performance took", err)
 	}
 }
 

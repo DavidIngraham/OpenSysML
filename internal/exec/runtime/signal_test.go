@@ -985,7 +985,7 @@ func TestSendViaPortToUnknownReceiverWithLibraries(t *testing.T) {
 	}
 	_, err := ctx.ExecuteAction(sym)
 	if !errors.Is(err, errUnreachableSendReceiver) {
-		t.Fatalf("expected ErrUnreachableSendReceiver, got: %v", err)
+		t.Fatalf("expected errUnreachableSendReceiver, got: %v", err)
 	}
 }
 
@@ -1613,7 +1613,7 @@ func TestAddressedSendToUnreachablePortIsTyped(t *testing.T) {
 	send := lower.Send{Target: "alpha.count", TargetPath: true, Scope: DeclScope(oneSymbol(t, idx, "test::Node::listen"))}
 	err := ctx.post(nil, nil, Message{SignalType: "Ping"}, send, nil, instanceOfUsage(t, ctx, idx, "test::alpha"), nil)
 	if !errors.Is(err, errUnroutableSend) {
-		t.Fatalf("post to alpha.count: %v, want ErrUnroutableSend", err)
+		t.Fatalf("post to alpha.count: %v, want errUnroutableSend", err)
 	}
 	if len(ctx.PendingMessages()) != 0 {
 		t.Errorf("an unroutable send posted %+v", ctx.PendingMessages())
@@ -1797,7 +1797,7 @@ func TestAddressedSendToQualifiedPortOfAnotherTypeIsTyped(t *testing.T) {
 	send := lower.Send{Target: "Other::inPort", Scope: DeclScope(oneSymbol(t, idx, "test::Node::listen"))}
 	err := ctx.post(nil, nil, Message{SignalType: "Ping"}, send, nil, instanceOfUsage(t, ctx, idx, "test::alpha"), nil)
 	if !errors.Is(err, errUnroutableSend) {
-		t.Fatalf("post to Other::inPort: %v, want ErrUnroutableSend", err)
+		t.Fatalf("post to Other::inPort: %v, want errUnroutableSend", err)
 	}
 	if len(ctx.PendingMessages()) != 0 {
 		t.Errorf("an unroutable send posted %+v", ctx.PendingMessages())
@@ -1879,7 +1879,7 @@ func TestAddressedSendThroughMultiplePartIsTyped(t *testing.T) {
 	}
 	err := ctx.post(nil, nil, Message{SignalType: "Ping"}, send, nil, nil, nil)
 	if !errors.Is(err, errUnroutableSend) {
-		t.Fatalf("post to nodes.inPort: %v, want ErrUnroutableSend", err)
+		t.Fatalf("post to nodes.inPort: %v, want errUnroutableSend", err)
 	}
 	if len(ctx.PendingMessages()) != 0 {
 		t.Errorf("an unroutable send posted %+v", ctx.PendingMessages())

@@ -408,7 +408,7 @@ func TestRuntimeRobustnessActionStepMultiplicity(t *testing.T) {
 				return
 			}
 			if !errors.Is(err, errActionStepMultiplicity) {
-				t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+				t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 			}
 			var stepErr *lower.StepMultiplicityError
 			if !errors.As(err, &stepErr) {
@@ -659,7 +659,7 @@ func TestRuntimeRobustnessActionStepMultiplicityOutcomes(t *testing.T) {
 		err = exploration.Outcomes[0].Outcome.Err
 		assertActionStepMultiplicityErrorIsNotSetup(t, err)
 		if !errors.Is(err, errIntegerUnaddressable) {
-			t.Errorf("outcome error = %v, want ErrIntegerUnaddressable", err)
+			t.Errorf("outcome error = %v, want errIntegerUnaddressable", err)
 		}
 		if !strings.Contains(err.Error(), "1180591620717411303424") {
 			t.Errorf("outcome error = %q, want the exact bound", err)
@@ -685,7 +685,7 @@ func TestRuntimeRobustnessActionStepMultiplicityOutcomes(t *testing.T) {
 		err = exploration.Outcomes[0].Outcome.Err
 		assertActionStepMultiplicityErrorIsNotSetup(t, err)
 		if !errors.Is(err, errIntegerUnaddressable) {
-			t.Errorf("outcome error = %v, want ErrIntegerUnaddressable", err)
+			t.Errorf("outcome error = %v, want errIntegerUnaddressable", err)
 		}
 		if !strings.Contains(err.Error(), "1180591620717411303424") {
 			t.Errorf("outcome error = %q, want the exact bound", err)
@@ -773,7 +773,7 @@ func assertActionStepMultiplicityExploreOutcome(t *testing.T, exploration *Explo
 func assertActionStepMultiplicityErrorIsNotSetup(t *testing.T, err error) {
 	t.Helper()
 	if !errors.Is(err, errActionStepMultiplicity) {
-		t.Fatalf("error = %v, want ErrActionStepMultiplicity", err)
+		t.Fatalf("error = %v, want errActionStepMultiplicity", err)
 	}
 	var setup *SetupError
 	if errors.As(err, &setup) {

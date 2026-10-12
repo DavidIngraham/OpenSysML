@@ -165,7 +165,7 @@ func TestVerificationsOfRequirement(t *testing.T) {
 			got = append(got, ctx.qualifiedSymbolName(sym))
 		}
 		if strings.Join(got, ",") != strings.Join(tc.want, ",") {
-			t.Errorf("VerificationsOf(%s) = %v, want %v", tc.requirement, got, tc.want)
+			t.Errorf("verificationsOf(%s) = %v, want %v", tc.requirement, got, tc.want)
 		}
 	}
 }
@@ -195,7 +195,7 @@ func TestVerificationsOfRequirementAcrossScopeTrees(t *testing.T) {
 			got = append(got, ctx.qualifiedSymbolName(sym))
 		}
 		if strings.Join(got, ",") != strings.Join(tc.want, ",") {
-			t.Errorf("VerificationsOf(%s from another tree) = %v, want %v", tc.requirement, got, tc.want)
+			t.Errorf("verificationsOf(%s from another tree) = %v, want %v", tc.requirement, got, tc.want)
 		}
 	}
 }

@@ -71,7 +71,7 @@ func testFeatureWeightsReadMustSumToOne(t *testing.T) {
 		action fast; then done;
 		action slow; then done;`, 3)
 	if !errors.Is(err, errBranchWeights) || !strings.Contains(err.Error(), "sum to 1.2, not 1.0") {
-		t.Fatalf("error = %v, want ErrBranchWeights naming the sum 1.2", err)
+		t.Fatalf("error = %v, want errBranchWeights naming the sum 1.2", err)
 	}
 	err = weightedActionError(t, `
 		attribute w : Real = 0.6;
@@ -97,7 +97,7 @@ func testFeatureWeightsReadMustSumToOne(t *testing.T) {
 		action slow; then done;
 		action steady; then done;`, 3)
 	if !errors.Is(err, errBranchWeights) || !strings.Contains(err.Error(), "sum to 1.6, not 1.0") {
-		t.Fatalf("a guarded-out branch still counts in the sum: error = %v, want ErrBranchWeights naming 1.6", err)
+		t.Fatalf("a guarded-out branch still counts in the sum: error = %v, want errBranchWeights naming 1.6", err)
 	}
 }
 
@@ -116,7 +116,7 @@ func testFeatureWeightReadOutsideTheUnitIntervalIsRefused(t *testing.T) {
 			action fast; then done;
 			action slow; then done;`, 3)
 		if !errors.Is(err, errBranchWeights) || !strings.Contains(err.Error(), tc.want) {
-			t.Errorf("w = %s: error = %v, want ErrBranchWeights saying %q", tc.w, err, tc.want)
+			t.Errorf("w = %s: error = %v, want errBranchWeights saying %q", tc.w, err, tc.want)
 		}
 	}
 }
@@ -173,6 +173,6 @@ func testFeatureWeightReadFromThePerformerIsRefusedOutOfRange(t *testing.T) {
 	}
 	_, err = ctx.ExecuteActionPerformedBy(route, over, nil)
 	if !errors.Is(err, errBranchWeights) || !strings.Contains(err.Error(), "branch 0 weighs 1.5") {
-		t.Fatalf("on Over: error = %v, want ErrBranchWeights naming the weight 1.5", err)
+		t.Fatalf("on Over: error = %v, want errBranchWeights naming the weight 1.5", err)
 	}
 }

@@ -33,11 +33,11 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errBindingConflict) {
-			t.Fatalf("execution error = %v, want ErrBindingConflict", err)
+			t.Fatalf("execution error = %v, want errBindingConflict", err)
 		}
 		var conflict *bindingConflictError
 		if !errors.As(err, &conflict) {
-			t.Fatalf("execution error = %v, want *BindingConflictError", err)
+			t.Fatalf("execution error = %v, want *bindingConflictError", err)
 		}
 		if !strings.Contains(err.Error(), "y") {
 			t.Errorf("execution error = %q, want the pin named", err)
@@ -67,7 +67,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 		}
 		var stepErr *lower.StepMultiplicityError
 		if !errors.As(err, &stepErr) {
@@ -98,7 +98,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errNodeNotPerformed) {
-			t.Fatalf("execution error = %v, want ErrNodeNotPerformed", err)
+			t.Fatalf("execution error = %v, want errNodeNotPerformed", err)
 		}
 	})
 
@@ -116,7 +116,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 		}
 		var stepErr *lower.StepMultiplicityError
 		if !errors.As(err, &stepErr) {
@@ -188,7 +188,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 		}
 		if _, err := ctx.performanceOf(run, inst, nil); !errors.Is(err, errAmbiguousAction) ||
 			!strings.Contains(err.Error(), "2 times, under run") {
-			t.Errorf("performanceOf(run) = %v, want ErrAmbiguousAction wording the shared usage", err)
+			t.Errorf("performanceOf(run) = %v, want errAmbiguousAction wording the shared usage", err)
 		}
 	})
 
@@ -240,7 +240,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 		}
 		var stepErr *lower.StepMultiplicityError
 		if !errors.As(err, &stepErr) {
@@ -267,7 +267,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 		}
 		var stepErr *lower.StepMultiplicityError
 		if !errors.As(err, &stepErr) || stepErr.Code != lower.StepOrderUnsatisfiableCode {
@@ -510,7 +510,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 		}
 	})
 
@@ -637,7 +637,7 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 		}
 		_, err := executeActionSource(t, "A", src)
 		if !errors.Is(err, errActionStepMultiplicity) {
-			t.Fatalf("execution error = %v, want ErrActionStepMultiplicity", err)
+			t.Fatalf("execution error = %v, want errActionStepMultiplicity", err)
 		}
 		var stepErr *lower.StepMultiplicityError
 		if !errors.As(err, &stepErr) || stepErr.Code != lower.StepMultiplicityUnsupportedCode {

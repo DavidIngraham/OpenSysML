@@ -247,6 +247,6 @@ func TestDeclaredReaderSelectsCallsThroughTheArgumentTyper(t *testing.T) {
 	}
 	_, err = NewDeclaredReader(untyped, resolver).Read(invoking, "n")
 	if !errors.Is(err, errNoArgumentTyper) {
-		t.Fatalf("Invoking.n over an untyped model: err = %v, want ErrNoArgumentTyper", err)
+		t.Fatalf("Invoking.n over an untyped model: err = %v, want errNoArgumentTyper", err)
 	}
 }

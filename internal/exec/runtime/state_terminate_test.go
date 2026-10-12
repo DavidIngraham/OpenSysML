@@ -69,7 +69,7 @@ func TestTerminatedMachineHoldsNoPendingWork(t *testing.T) {
 		t.Fatalf("poll = %v, %v; want nothing fired with level at 0", fired, err)
 	}
 	if got := exec.describeChangeWaits(); len(got) != 1 {
-		t.Fatalf("ChangeWaits() = %v; want the level condition b waits on", got)
+		t.Fatalf("describeChangeWaits() = %v; want the level condition b waits on", got)
 	}
 	if err := exec.ProcessNextEvent(); err != nil {
 		t.Fatalf("dispatch Abort: %v", err)
@@ -90,7 +90,7 @@ func TestTerminatedMachineHoldsNoPendingWork(t *testing.T) {
 		t.Errorf("NextWait() reports a timer on a terminated machine")
 	}
 	if got := exec.describeChangeWaits(); len(got) != 0 {
-		t.Errorf("ChangeWaits() = %v after termination; want none", got)
+		t.Errorf("describeChangeWaits() = %v after termination; want none", got)
 	}
 }
 
@@ -172,7 +172,7 @@ func TestChangeTriggeredTerminationHoldsNoWaits(t *testing.T) {
 		t.Fatalf("poll = %v, %v; want nothing fired while both conditions are false", fired, err)
 	}
 	if got := exec.describeChangeWaits(); len(got) != 2 {
-		t.Fatalf("ChangeWaits() = %v; want both conditions", got)
+		t.Fatalf("describeChangeWaits() = %v; want both conditions", got)
 	}
 	exec.stateData["abort"] = boolValue(true)
 	fired, err := exec.PollChangeEvents()
@@ -183,7 +183,7 @@ func TestChangeTriggeredTerminationHoldsNoWaits(t *testing.T) {
 		t.Fatalf("state = %v; want Terminated", exec.State())
 	}
 	if got := exec.describeChangeWaits(); len(got) != 0 {
-		t.Errorf("ChangeWaits() = %v after termination; want none", got)
+		t.Errorf("describeChangeWaits() = %v after termination; want none", got)
 	}
 	if exec.HasPendingWork() {
 		t.Errorf("HasPendingWork() = true on a terminated machine")

@@ -40,7 +40,7 @@ func testTerminatedMachineNoActiveState(t *testing.T) {
 	ctx, sym := loadState(t, endedMachineModel, "TerminatingMachine")
 	exec, err := ctx.performStateWithEvents(sym, nil, []QueuedEvent{{Signal: "Abort"}})
 	if err != nil {
-		t.Fatalf("PerformState: %v", err)
+		t.Fatalf("performStateWithEvents: %v", err)
 	}
 	if got := exec.ActiveStates(); len(got) != 0 {
 		t.Fatalf("ActiveStates of a terminated machine = %d, want none", len(got))
@@ -58,7 +58,7 @@ func testCompletedMachineFinalState(t *testing.T) {
 	ctx, sym := loadState(t, endedMachineModel, "FinishingMachine")
 	exec, err := ctx.performStateWithEvents(sym, nil, []QueuedEvent{{Signal: "Abort"}})
 	if err != nil {
-		t.Fatalf("PerformState: %v", err)
+		t.Fatalf("performStateWithEvents: %v", err)
 	}
 	leaves := exec.ActiveLeaves()
 	if len(leaves) != 1 || leaves[0].Name != "done" {

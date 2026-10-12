@@ -517,7 +517,7 @@ func TestNaNIsOfNoScalarType(t *testing.T) {
 				t.Errorf("valueConforms(%s, %s) = %v, %v; want false", FormatValue(value), name, conforms, err)
 			}
 			if _, err := ctx.directValueType(scope, value); !errors.Is(err, errUndeterminedValueType) {
-				t.Errorf("directValueType(%s) error = %v, want ErrUndeterminedValueType", FormatValue(value), err)
+				t.Errorf("directValueType(%s) error = %v, want errUndeterminedValueType", FormatValue(value), err)
 			}
 		}
 	}

@@ -117,7 +117,7 @@ func TestInvokeCalcBuiltinIsTraced(t *testing.T) {
 
 	trace.Clear()
 	if _, err := ctx.invokeCalcNamed(cond, map[string]Value{"test": constBool(true), "other": constInt(1)}, nil); err == nil {
-		t.Fatal("InvokeCalcNamed('if', other): expected an unknown parameter error")
+		t.Fatal("invokeCalcNamed('if', other): expected an unknown parameter error")
 	}
 	got := trace.String()
 	inOrder(t, got,

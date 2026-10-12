@@ -144,7 +144,7 @@ func TestTimeTriggerRefusesTheTypeValidationRefuses(t *testing.T) {
 				t.Fatalf("accept %s scheduled", tc.trigger)
 			}
 			if !errors.Is(err, errTimeTriggerType) {
-				t.Errorf("err = %v, want it to wrap ErrTimeTriggerType", err)
+				t.Errorf("err = %v, want it to wrap errTimeTriggerType", err)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("err = %v, want it to contain %q", err, tc.want)
@@ -200,7 +200,7 @@ func TestTimeTriggerRejectsNonTimeDimension(t *testing.T) {
 		t.Errorf("err = %v, want it to contain %q", err, want)
 	}
 	if !errors.Is(err, errTimeTriggerType) {
-		t.Errorf("err = %v, want it to wrap ErrTimeTriggerType", err)
+		t.Errorf("err = %v, want it to wrap errTimeTriggerType", err)
 	}
 	if errors.Is(err, ErrIncommensurableUnits) {
 		t.Errorf("err = %v, want the static refusal, not a conversion of the value", err)

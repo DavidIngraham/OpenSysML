@@ -1948,7 +1948,7 @@ func TestReplayRefusesAMoveNamingAnObjectTheRunDidNotMake(t *testing.T) {
 	err = exec.RunToCompletion()
 	var refused *witnessObjectError
 	if !errors.As(err, &refused) || !errors.Is(err, errWitnessObject) {
-		t.Fatalf("error %T %v, want a WitnessObjectError", err, err)
+		t.Fatalf("error %T %v, want a witnessObjectError", err, err)
 	}
 	if refused.Object != w.Objects[0] || !strings.Contains(refused.Reason, "test::beacon#1") {
 		t.Errorf("refused %+v", refused)

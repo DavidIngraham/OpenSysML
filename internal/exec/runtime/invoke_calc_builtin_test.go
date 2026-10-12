@@ -151,7 +151,7 @@ func TestInvokeCalcOmittedBodyOverEmptyCollection(t *testing.T) {
 		}
 		got, err := ctx.invokeCalcNamed(sym, map[string]Value{"collection": empty}, nil)
 		if err != nil || FormatValue(got) != tc.want {
-			t.Errorf("InvokeCalcNamed(%s, collection = ()) = %s, %v; want %s", tc.fqn, FormatValue(got), err, tc.want)
+			t.Errorf("invokeCalcNamed(%s, collection = ()) = %s, %v; want %s", tc.fqn, FormatValue(got), err, tc.want)
 		}
 		if _, err := ctx.InvokeCalc(sym, []Value{one}, nil); !errors.Is(err, ErrTypeMismatch) {
 			t.Errorf("InvokeCalc(%s, 1) = %v, want %v", tc.fqn, err, ErrTypeMismatch)

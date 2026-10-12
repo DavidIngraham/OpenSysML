@@ -13,14 +13,14 @@ func TestRuntimeRobustnessToolCalc(t *testing.T) {
 		ctx, scope := analysisFixture(t, toolCalcModel)
 		_, err := ctx.InvokeCalc(calcNamed(t, scope, "Thermal"), thermalArgs(t, ctx, scope), scope)
 		if !errors.Is(err, errToolNotRegistered) {
-			t.Fatalf("InvokeCalc = %v, want ErrToolNotRegistered", err)
+			t.Fatalf("InvokeCalc = %v, want errToolNotRegistered", err)
 		}
 	})
 	t.Run("no_runner_usage", func(t *testing.T) {
 		ctx, scope := analysisFixture(t, toolCalcModel)
 		_, err := ctx.CalcUsageOutputs(calcNamed(t, scope, "t"), scope, nil)
 		if !errors.Is(err, errToolNotRegistered) {
-			t.Fatalf("CalcUsageOutputs = %v, want ErrToolNotRegistered", err)
+			t.Fatalf("CalcUsageOutputs = %v, want errToolNotRegistered", err)
 		}
 	})
 	t.Run("runner_fault_usage", func(t *testing.T) {
@@ -40,7 +40,7 @@ func TestRuntimeRobustnessToolCalc(t *testing.T) {
 		ctx.SetToolRunner(runner)
 		_, err := ctx.CalcUsageOutputs(calcNamed(t, scope, "tbare"), scope, nil)
 		if !errors.Is(err, errUnboundParameter) {
-			t.Fatalf("CalcUsageOutputs = %v, want ErrUnboundParameter", err)
+			t.Fatalf("CalcUsageOutputs = %v, want errUnboundParameter", err)
 		}
 		if len(runner.calls) != 0 {
 			t.Fatalf("tool ran %d times for an unbound input", len(runner.calls))
@@ -53,7 +53,7 @@ func TestRuntimeRobustnessToolCalc(t *testing.T) {
 		_, err := ctx.InvokeCalc(calcNamed(t, scope, "Colliding"), []Value{realOf(1), realOf(2)}, scope)
 		var failure *ToolError
 		if !errors.As(err, &failure) || failure.Kind != toolAmbiguousVariable {
-			t.Fatalf("InvokeCalc = %v, want ToolAmbiguousVariable", err)
+			t.Fatalf("InvokeCalc = %v, want toolAmbiguousVariable", err)
 		}
 		if len(runner.calls) != 0 {
 			t.Fatalf("tool ran %d times under an ambiguous variable", len(runner.calls))
@@ -69,7 +69,7 @@ func TestRuntimeRobustnessToolCalc(t *testing.T) {
 		}})
 		_, err := ctx.InvokeCalc(calcNamed(t, scope, "TwoOuts"), []Value{realOf(1)}, scope)
 		if !errors.Is(err, errAmbiguousResult) {
-			t.Fatalf("InvokeCalc = %v, want ErrAmbiguousResult", err)
+			t.Fatalf("InvokeCalc = %v, want errAmbiguousResult", err)
 		}
 	})
 	t.Run("unanswered_output", func(t *testing.T) {
@@ -81,7 +81,7 @@ func TestRuntimeRobustnessToolCalc(t *testing.T) {
 		_, err := ctx.calcUsageOutput(calcNamed(t, scope, "tw"), "warn", scope, nil)
 		var failure *ToolError
 		if !errors.As(err, &failure) || failure.Kind != ToolMissingOutput {
-			t.Fatalf("CalcUsageOutput = %v, want ToolMissingOutput", err)
+			t.Fatalf("calcUsageOutput = %v, want ToolMissingOutput", err)
 		}
 	})
 	t.Run("direct_result_unanswered", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestRuntimeRobustnessToolCalc(t *testing.T) {
 		ctx.SetCalcCompile(true)
 		_, err := ctx.InvokeCalc(calcNamed(t, scope, "Wrapper"), []Value{realOf(3)}, scope)
 		if !errors.Is(err, errToolNotRegistered) {
-			t.Fatalf("InvokeCalc = %v, want ErrToolNotRegistered", err)
+			t.Fatalf("InvokeCalc = %v, want errToolNotRegistered", err)
 		}
 	})
 }

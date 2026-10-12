@@ -132,7 +132,7 @@ func testInitialHorizonRefusesAnAction(t *testing.T) {
 	}
 	_, err := Check(context.Background(), m.fresh, start, CheckBudget{}, unreduced(), nil)
 	if !errors.Is(err, errNothingStarted) {
-		t.Fatalf("err = %v, want ErrNothingStarted", err)
+		t.Fatalf("err = %v, want errNothingStarted", err)
 	}
 }
 

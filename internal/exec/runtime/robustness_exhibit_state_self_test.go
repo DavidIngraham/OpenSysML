@@ -35,7 +35,7 @@ func testExhibitReferenceNamesNoState(t *testing.T) {
 
 	_, err := ctx.Instantiate(resolveSymbol(t, root, "P"))
 	if !errors.Is(err, errUnresolvedClassifierBehavior) {
-		t.Fatalf("error = %v, want ErrUnresolvedClassifierBehavior", err)
+		t.Fatalf("error = %v, want errUnresolvedClassifierBehavior", err)
 	}
 	if !strings.Contains(err.Error(), "modes") {
 		t.Errorf("error %q does not name the behavior", err)
@@ -57,7 +57,7 @@ func testExhibitSubsettingNamesNothing(t *testing.T) {
 
 	_, err := ctx.Instantiate(resolveSymbol(t, root, "P"))
 	if !errors.Is(err, errUnresolvedClassifierBehavior) {
-		t.Fatalf("error = %v, want ErrUnresolvedClassifierBehavior", err)
+		t.Fatalf("error = %v, want errUnresolvedClassifierBehavior", err)
 	}
 }
 
@@ -75,6 +75,6 @@ func testExhibitTypingNamesNothing(t *testing.T) {
 
 	_, err := ctx.Instantiate(resolveSymbol(t, root, "P"))
 	if !errors.Is(err, errUnresolvedClassifierBehavior) {
-		t.Fatalf("error = %v, want ErrUnresolvedClassifierBehavior", err)
+		t.Fatalf("error = %v, want errUnresolvedClassifierBehavior", err)
 	}
 }

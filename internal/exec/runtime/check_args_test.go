@@ -83,7 +83,7 @@ func TestCheckConstraintWithBindsArguments(t *testing.T) {
 		t.Fatal("a String bound to an Integer parameter was held")
 	}
 	if _, err = ctx.CheckConstraintOn(between, scope, nil); !errors.Is(err, errUnboundParameter) {
-		t.Fatalf("Between with low unbound: err = %v, want ErrUnboundParameter", err)
+		t.Fatalf("Between with low unbound: err = %v, want errUnboundParameter", err)
 	}
 }
 

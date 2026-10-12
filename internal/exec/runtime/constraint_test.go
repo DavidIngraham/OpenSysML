@@ -288,7 +288,7 @@ func TestConstraintBodyStepsRun(t *testing.T) {
 		}
 		satisfied, err := ctx.EvaluateConstraintOn(feat.Symbol, feat.DeclScope(), nil)
 		if !errors.Is(err, errConstraintExternalAssignment) {
-			t.Errorf("%s: err = %v, want ErrConstraintExternalAssignment", name, err)
+			t.Errorf("%s: err = %v, want errConstraintExternalAssignment", name, err)
 		}
 		if want := "z is not one of its features"; err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%s: err = %v, want it to say %s", name, err, want)
@@ -350,7 +350,7 @@ func TestConstraintBodyPerformIsRefused(t *testing.T) {
 	}
 	satisfied, err := ctx.EvaluateConstraint(performed, testPkg)
 	if !errors.Is(err, errConstraintEffect) {
-		t.Fatalf("err = %v, want ErrConstraintEffect", err)
+		t.Fatalf("err = %v, want errConstraintEffect", err)
 	}
 	if want := "`perform` statement"; err == nil || !strings.Contains(err.Error(), want) {
 		t.Errorf("err = %v, want it to name the %s", err, want)
@@ -374,7 +374,7 @@ func TestConstraintBodyPerformIsRefused(t *testing.T) {
 		}
 		satisfied, err := evaluate(feat.Symbol, feat.DeclScope(), nil)
 		if !errors.Is(err, errConstraintEffect) {
-			t.Errorf("%s: err = %v, want ErrConstraintEffect", name, err)
+			t.Errorf("%s: err = %v, want errConstraintEffect", name, err)
 		}
 		if want := "`perform` statement"; err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%s: err = %v, want it to name the %s", name, err, want)
@@ -421,7 +421,7 @@ func TestConstraintBodyActionFlowIsRefused(t *testing.T) {
 	}
 	satisfied, err := ctx.EvaluateConstraint(flowed, testPkg)
 	if !errors.Is(err, errConstraintEffect) {
-		t.Fatalf("err = %v, want ErrConstraintEffect", err)
+		t.Fatalf("err = %v, want errConstraintEffect", err)
 	}
 	if want := "`perform` statement"; err == nil || !strings.Contains(err.Error(), want) {
 		t.Errorf("err = %v, want it to name the %s", err, want)
@@ -445,7 +445,7 @@ func TestConstraintBodyActionFlowIsRefused(t *testing.T) {
 		}
 		satisfied, err := evaluate(feat.Symbol, feat.DeclScope(), nil)
 		if !errors.Is(err, errConstraintEffect) {
-			t.Errorf("%s: err = %v, want ErrConstraintEffect", name, err)
+			t.Errorf("%s: err = %v, want errConstraintEffect", name, err)
 		}
 		if want := "`perform` statement"; err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%s: err = %v, want it to name the %s", name, err, want)
@@ -496,7 +496,7 @@ func TestConstraintBodySuccessionIsRefused(t *testing.T) {
 		}
 		satisfied, err := ctx.EvaluateConstraintOn(feat.Symbol, feat.DeclScope(), nil)
 		if !errors.Is(err, errStatementNotExecutable) {
-			t.Errorf("%s: err = %v, want ErrStatementNotExecutable", name, err)
+			t.Errorf("%s: err = %v, want errStatementNotExecutable", name, err)
 		}
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%s: err = %v, want it to name the %s", name, err, want)

@@ -143,7 +143,7 @@ func TestTraceLabelsExpressionKinds(t *testing.T) {
 
 	for _, tc := range cases {
 		if got := traceLabel(tc.node); got != tc.want {
-			t.Errorf("TraceLabel(%T) = %q, want %q", tc.node, got, tc.want)
+			t.Errorf("traceLabel(%T) = %q, want %q", tc.node, got, tc.want)
 		}
 	}
 }

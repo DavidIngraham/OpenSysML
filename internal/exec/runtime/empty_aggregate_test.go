@@ -270,16 +270,16 @@ func TestEmptySequenceKeepsItsElementUnitOnlyWhileEmpty(t *testing.T) {
 	unit := Unit{Text: "kg"}
 	val := newEmptySequenceOf(unit)
 	if got, ok := val.Sequence().emptyElementUnit(); !ok || got.Text != "kg" {
-		t.Fatalf("ElementUnit() = %v, %v; want kg, true", got, ok)
+		t.Fatalf("emptyElementUnit() = %v, %v; want kg, true", got, ok)
 	}
 	if val.Sequence().Size() != 0 {
 		t.Fatalf("Size() = %d, want 0", val.Sequence().Size())
 	}
 	val.Sequence().Append(Value{Kind: ValConst, Const: semantics.Value{Kind: semantics.ValInt, Int: 1}})
 	if _, ok := val.Sequence().emptyElementUnit(); ok {
-		t.Fatal("ElementUnit() reported a unit for a sequence with an element")
+		t.Fatal("emptyElementUnit() reported a unit for a sequence with an element")
 	}
 	if _, ok := NewSequence().emptyElementUnit(); ok {
-		t.Fatal("ElementUnit() reported a unit for an untyped sequence")
+		t.Fatal("emptyElementUnit() reported a unit for an untyped sequence")
 	}
 }

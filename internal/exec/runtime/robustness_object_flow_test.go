@@ -90,7 +90,7 @@ func TestRuntimeRobustnessObjectFlow(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errAmbiguousMergeInput) {
-			t.Fatalf("run error = %v, want ErrAmbiguousMergeInput", err)
+			t.Fatalf("run error = %v, want errAmbiguousMergeInput", err)
 		}
 	})
 
@@ -119,7 +119,7 @@ func TestRuntimeRobustnessObjectFlow(t *testing.T) {
 			}
 		}`)
 		if !errors.Is(err, errAmbiguousMergeInput) {
-			t.Fatalf("run error = %v, want ErrAmbiguousMergeInput", err)
+			t.Fatalf("run error = %v, want errAmbiguousMergeInput", err)
 		}
 	})
 

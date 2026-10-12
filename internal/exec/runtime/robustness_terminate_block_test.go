@@ -100,6 +100,6 @@ func testTerminateOfAStateNameInABlock(t *testing.T) {
 		}
 	}`)
 	if !errors.Is(err, errTerminateTarget) {
-		t.Fatalf("error = %v, want ErrTerminateTarget", err)
+		t.Fatalf("error = %v, want errTerminateTarget", err)
 	}
 }

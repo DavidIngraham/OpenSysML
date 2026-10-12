@@ -467,7 +467,7 @@ func TestInvokeOperationPerformedByTheObject(t *testing.T) {
 
 	results, err := ctx.invokeOperation(inst, "fillBy", map[string]Value{"n": intArgument(3)})
 	if err != nil {
-		t.Fatalf("InvokeOperation: %v", err)
+		t.Fatalf("invokeOperation: %v", err)
 	}
 	if got, ok := results["filled"]; !ok || got.Const.Int != 5 {
 		t.Errorf("filled = %v, want 5", results)
@@ -482,14 +482,14 @@ func TestInvokeOperationPerformedByTheObject(t *testing.T) {
 
 	results, err = ctx.invokeOperation(inst, "capacity", map[string]Value{"bonus": intArgument(3)})
 	if err != nil {
-		t.Fatalf("InvokeOperation(calc): %v", err)
+		t.Fatalf("invokeOperation(calc): %v", err)
 	}
 	if got, ok := results["total"]; !ok || got.Const.Int != 8 {
 		t.Errorf("calc result = %v, want total = 8", results)
 	}
 	results, err = ctx.invokeOperation(inst, "rawCapacity", nil)
 	if err != nil {
-		t.Fatalf("InvokeOperation(anonymous calc): %v", err)
+		t.Fatalf("invokeOperation(anonymous calc): %v", err)
 	}
 	if got, ok := results["result"]; !ok || got.Const.Int != 6 {
 		t.Errorf("anonymous calc result = %v, want result = 6", results)
@@ -507,7 +507,7 @@ func TestInvokeOperationPerformedByTheObject(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			results, err := ctx.invokeOperation(inst, tc.name, tc.args)
 			if err != nil {
-				t.Fatalf("InvokeOperation(constraint): %v", err)
+				t.Fatalf("invokeOperation(constraint): %v", err)
 			}
 			got, ok := results["result"]
 			if !ok || got.Kind != ValConst || got.Const.Kind != semantics.ValBool {
@@ -694,17 +694,17 @@ func TestInvokeOperationCountsItsOwnCostAgainstBudget(t *testing.T) {
 		ctx, inst := newInvocation(2)
 		results, err := ctx.invokeOperation(inst, "rawCapacity", nil)
 		if !errors.Is(err, ErrStepLimitExceeded) {
-			t.Fatalf("InvokeOperation(rawCapacity) with budget 2: %v, want ErrStepLimitExceeded", err)
+			t.Fatalf("invokeOperation(rawCapacity) with budget 2: %v, want ErrStepLimitExceeded", err)
 		}
 		if results != nil {
-			t.Fatalf("InvokeOperation(rawCapacity) with budget 2 = %v, want no results", results)
+			t.Fatalf("invokeOperation(rawCapacity) with budget 2 = %v, want no results", results)
 		}
 
 		ctx, inst = newInvocation(3)
 		for i := 0; i < 2; i++ {
 			results, err := ctx.invokeOperation(inst, "rawCapacity", nil)
 			if err != nil {
-				t.Fatalf("InvokeOperation(rawCapacity), call %d with budget 3: %v", i, err)
+				t.Fatalf("invokeOperation(rawCapacity), call %d with budget 3: %v", i, err)
 			}
 			if got, ok := results["result"]; !ok || got.Const.Int != 3 {
 				t.Fatalf("rawCapacity result on call %d = %v, want 3", i, results)
@@ -718,10 +718,10 @@ func TestInvokeOperationCountsItsOwnCostAgainstBudget(t *testing.T) {
 			"minimum": intArgument(1),
 		})
 		if !errors.Is(err, ErrStepLimitExceeded) {
-			t.Fatalf("InvokeOperation(acceptable) with budget 2: %v, want ErrStepLimitExceeded", err)
+			t.Fatalf("invokeOperation(acceptable) with budget 2: %v, want ErrStepLimitExceeded", err)
 		}
 		if results != nil {
-			t.Fatalf("InvokeOperation(acceptable) with budget 2 = %v, want no results", results)
+			t.Fatalf("invokeOperation(acceptable) with budget 2 = %v, want no results", results)
 		}
 
 		ctx, inst = newInvocation(3)
@@ -730,7 +730,7 @@ func TestInvokeOperationCountsItsOwnCostAgainstBudget(t *testing.T) {
 				"minimum": intArgument(1),
 			})
 			if err != nil {
-				t.Fatalf("InvokeOperation(acceptable), call %d with budget 3: %v", i, err)
+				t.Fatalf("invokeOperation(acceptable), call %d with budget 3: %v", i, err)
 			}
 			got, ok := results["result"]
 			if !ok || got.Kind != ValConst || got.Const.Kind != semantics.ValBool || !got.Const.Bool {
@@ -776,7 +776,7 @@ func TestCalcOperationNestedUsageSeesPerformingObject(t *testing.T) {
 
 	results, err := ctx.invokeOperation(inst, "capacityViaUsage", nil)
 	if err != nil {
-		t.Fatalf("InvokeOperation: %v", err)
+		t.Fatalf("invokeOperation: %v", err)
 	}
 	if got, ok := results["result"]; !ok || got.Const.Int != 7 {
 		t.Errorf("nested calc result = %v, want result = 7", results)
@@ -843,7 +843,7 @@ func TestCalcInvocationExpressionSeesPerformingObject(t *testing.T) {
 		t.Fatalf("Instantiate: %v", err)
 	}
 	if _, err := ctx.invokeOperation(inst, "drain", nil); err != nil {
-		t.Fatalf("InvokeOperation(drain): %v", err)
+		t.Fatalf("invokeOperation(drain): %v", err)
 	}
 	charge, err := inst.GetFeatureValue(ctx, "charge")
 	if err != nil {
@@ -865,7 +865,7 @@ func TestCalcInvocationExpressionSeesPerformingObject(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			results, err := ctx.invokeOperation(inst, tc.name, nil)
 			if err != nil {
-				t.Fatalf("InvokeOperation(%s): %v", tc.name, err)
+				t.Fatalf("invokeOperation(%s): %v", tc.name, err)
 			}
 			got, ok := results["result"]
 			if !ok || got.Const.Int != tc.want {
@@ -1084,7 +1084,7 @@ func TestExhibitedStateNamingNothingWithNoInitialStateIsReported(t *testing.T) {
 
 			_, err := ctx.Instantiate(resolveSymbol(t, root, "Controller"))
 			if !errors.Is(err, errNoInitialState) {
-				t.Fatalf("error = %v, want ErrNoInitialState", err)
+				t.Fatalf("error = %v, want errNoInitialState", err)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("error %q does not name the behavior %q", err, tc.want)
@@ -1266,7 +1266,7 @@ func TestOperationOutputNamedLikeAFeatureAnswersTheCaller(t *testing.T) {
 
 	results, err := ctx.invokeOperation(inst, "read", nil)
 	if err != nil {
-		t.Fatalf("InvokeOperation: %v", err)
+		t.Fatalf("invokeOperation: %v", err)
 	}
 	if got, ok := results["level"]; !ok || got.Const.Int != 7 {
 		t.Errorf("output level = %v, want 7", results)
@@ -2145,7 +2145,7 @@ func TestUsageDeclaredContextBindingOnAnOccurrence(t *testing.T) {
 		t.Errorf("life state data seen = %d, want 2: the declared context binding did not reach the entry action", got)
 	}
 	if _, err := ctx.invokeOperation(inst, "fill", nil); err != nil {
-		t.Fatalf("InvokeOperation: %v", err)
+		t.Fatalf("invokeOperation: %v", err)
 	}
 	if got := featureInt(t, ctx, inst, "level"); got != 5 {
 		t.Errorf("level = %d, want 5: the declared context binding did not reach the invoked action", got)
@@ -2204,7 +2204,7 @@ func TestPerformedActionJoinReadsOnlyTheImplicitBinding(t *testing.T) {
 		"context": {Kind: ValInstance, Instance: other.ID},
 	})
 	if !errors.Is(err, errPerformedInputs) {
-		t.Fatalf("join with a binding to another object: %v, want ErrPerformedInputs", err)
+		t.Fatalf("join with a binding to another object: %v, want errPerformedInputs", err)
 	}
 }
 
@@ -2257,7 +2257,7 @@ func TestPerformedActionJoinReadsTheStoredBinding(t *testing.T) {
 		"context": {Kind: ValInstance, Instance: inst.ID},
 	})
 	if !errors.Is(err, errPerformedInputs) {
-		t.Fatalf("join offering the performer where `other` is bound: %v, want ErrPerformedInputs", err)
+		t.Fatalf("join offering the performer where `other` is bound: %v, want errPerformedInputs", err)
 	}
 	if _, err = ctx.ExecuteActionPerformedBy(nudge, inst, map[string]Value{
 		"context": other,
@@ -2659,7 +2659,7 @@ func TestCalcQualifiedWriteRejectsAnotherObject(t *testing.T) {
 	}
 	bump := lookupOne(t, idx, "test::Bump")
 	if _, err := ctx.invokeCalcWithSelf(bump, calcArgs{}, idx.DocumentRoot("<test>"), inst); !errors.Is(err, errCalcExternalAssignment) {
-		t.Fatalf("Bump on Host: err = %v; want ErrCalcExternalAssignment", err)
+		t.Fatalf("Bump on Host: err = %v; want errCalcExternalAssignment", err)
 	}
 	if fv, err := inst.GetFeatureValue(ctx, "count"); err != nil {
 		t.Fatalf("read Host.count: %v", err)
@@ -3255,7 +3255,7 @@ func TestPerformedActionJoinRejectsADifferentRefValue(t *testing.T) {
 	}
 	_, err = ctx.ExecuteActionPerformedBy(work, inst, map[string]Value{"threshold": constInt(2)})
 	if !errors.Is(err, errPerformedInputs) {
-		t.Fatalf("join offering threshold 2 where 1 is bound: %v, want ErrPerformedInputs", err)
+		t.Fatalf("join offering threshold 2 where 1 is bound: %v, want errPerformedInputs", err)
 	}
 	if _, err = ctx.ExecuteActionPerformedBy(work, inst, map[string]Value{"threshold": constInt(1)}); err != nil {
 		t.Fatalf("join with the binding the performance stored: %v", err)
@@ -3437,6 +3437,6 @@ func TestStandaloneActionPerformedOnPartDeclaredInAnotherFileKeepsScope(t *testi
 	}
 	_, err = ctx.ActionOutcomePerformedBy(touch, host, nil)
 	if !errors.Is(err, errPerformerFeatureNotInScope) {
-		t.Fatalf("perform Touch on host: %v, want ErrPerformerFeatureNotInScope", err)
+		t.Fatalf("perform Touch on host: %v, want errPerformerFeatureNotInScope", err)
 	}
 }
