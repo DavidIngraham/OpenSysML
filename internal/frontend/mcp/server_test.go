@@ -86,11 +86,11 @@ func TestTheServerRegistersTheGroupsAskedFor(t *testing.T) {
 		groups []Group
 		want   []string
 	}{
-		{nil, []string{"server_info", "session_close", "session_list", "session_open", "workspace_info"}},
+		{nil, []string{"apply_edits", "convert", "evaluate", "evaluate_calc", "execute_action", "execute_state", "export_graphs", "instantiate", "list_engines", "migrate", "parse", "query", "render_model_document", "render_model_view", "run_analysis", "run_document_query", "run_sweep", "server_info", "session_close", "session_list", "session_open", "symbol", "validate_instance", "verify_constraint", "verify_requirement", "verify_satisfaction", "workspace_info"}},
 		{[]Group{GroupLSP}, []string{"workspace_info"}},
-		{[]Group{GroupRuntime}, []string{"server_info"}},
+		{[]Group{GroupRuntime}, []string{"apply_edits", "convert", "evaluate", "evaluate_calc", "execute_action", "execute_state", "export_graphs", "instantiate", "list_engines", "migrate", "parse", "query", "render_model_document", "render_model_view", "run_analysis", "run_document_query", "run_sweep", "server_info", "symbol", "validate_instance", "verify_constraint", "verify_requirement", "verify_satisfaction"}},
 		{[]Group{GroupSession}, []string{"session_close", "session_list", "session_open"}},
-		{[]Group{GroupSession, GroupRuntime, GroupSession}, []string{"server_info", "session_close", "session_list", "session_open"}},
+		{[]Group{GroupSession, GroupRuntime, GroupSession}, []string{"apply_edits", "convert", "evaluate", "evaluate_calc", "execute_action", "execute_state", "export_graphs", "instantiate", "list_engines", "migrate", "parse", "query", "render_model_document", "render_model_view", "run_analysis", "run_document_query", "run_sweep", "server_info", "session_close", "session_list", "session_open", "symbol", "validate_instance", "verify_constraint", "verify_requirement", "verify_satisfaction"}},
 	}
 	for _, tc := range cases {
 		cs := connect(t, Config{Root: root, Groups: tc.groups, Version: "test"})
@@ -208,5 +208,19 @@ func TestParseGroups(t *testing.T) {
 	}
 	if _, err := ParseGroups("lsp,debugger"); err == nil {
 		t.Error("ParseGroups accepted an unknown group")
+	}
+}
+
+// With every group on, the catalogue is the sum of the groups' catalogues: the
+// SDK replaces a same-name tool silently, so two groups must never share a name.
+func TestGroupsShareNoToolName(t *testing.T) {
+	sum := 0
+	for _, g := range []Group{GroupLSP, GroupRuntime, GroupSession} {
+		cs := connect(t, Config{Root: t.TempDir(), Groups: []Group{g}, Version: "test"})
+		sum += len(toolNames(t, cs))
+	}
+	cs := connect(t, Config{Root: t.TempDir(), Groups: []Group{GroupLSP, GroupRuntime, GroupSession}, Version: "test"})
+	if all := len(toolNames(t, cs)); all != sum {
+		t.Fatalf("all groups register %d tools, the groups alone %d: a name is shared", all, sum)
 	}
 }
