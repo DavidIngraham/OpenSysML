@@ -777,11 +777,12 @@ func TestRenderDrawsVerdictsWhenAskedFor(t *testing.T) {
 func TestRenderTakesALineRouting(t *testing.T) {
 	s := viewSession(t)
 	for line, want := range map[string]string{
-		"%render Demo::summary dot ortho":                                                       "splines=ortho",
-		"%render Demo::summary dot okabe-ito polyline cameo":                                    "splines=polyline",
-		"%render Demo::summary dot okabe-ito cameo full ortho link=https://example.test/{file}": "splines=ortho",
-		"%render Demo::summary plantuml ortho":                                                  "skinparam linetype ortho",
-		"%render Demo::summary mermaid polyline":                                                "%% not represented: lines polyline; mermaid routes no edge itself, the dot and plantuml forms do",
+		"%render Demo::summary dot ortho":                                                                                "splines=ortho",
+		"%render Demo::summary dot okabe-ito polyline cameo":                                                             "splines=polyline",
+		"%render Demo::summary dot okabe-ito cameo full ortho link=https://example.test/{file}":                          "splines=ortho",
+		"%render GeneralViews::requirementView dot okabe-ito cameo full ortho verdicts link=https://example.test/{file}": "splines=ortho",
+		"%render Demo::summary plantuml ortho":                                                                           "skinparam linetype ortho",
+		"%render Demo::summary mermaid polyline":                                                                         "%% not represented: lines polyline; mermaid routes no edge itself, the dot and plantuml forms do",
 	} {
 		wants(t, run(t, s, line), want)
 	}
@@ -789,7 +790,7 @@ func TestRenderTakesALineRouting(t *testing.T) {
 		t.Errorf("the splines routing is the engine's default, stated nowhere:\n%s", got)
 	}
 	wants(t, run(t, s, "%render Demo::summary dot ortho polyline"), renderUsage)
-	for _, head := range []string{"%render Demo::summary dot cameo ort", "%render Demo::summary dot okabe-ito cameo full ort"} {
+	for _, head := range []string{"%render Demo::summary dot cameo ort", "%render Demo::summary dot okabe-ito cameo full ort", "%render GeneralViews::requirementView dot okabe-ito cameo full verdicts link=https://example.test/{file} ort"} {
 		if got := s.Complete(head, len(head)); !slices.Equal(got.Candidates, []string{"ortho"}) {
 			t.Errorf("Complete(%q) = %v, want ortho", head, got.Candidates)
 		}

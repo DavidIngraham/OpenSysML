@@ -537,7 +537,7 @@ func renderUsageOf(line string) (string, view.Form, view.Options, view.Overlay, 
 // parseRenderArgs reads %render's arguments: the view, the form and the options
 // after it; usage is what to print instead when they do not read.
 func parseRenderArgs(args []string) (name string, form view.Form, opts view.Options, overlay view.Overlay, usage []string) {
-	if len(args) < 1 || len(args) > 7 {
+	if len(args) < 1 {
 		return renderUsageOf(renderUsage)
 	}
 	form = view.FormText
