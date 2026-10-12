@@ -305,7 +305,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 | Absolute TimeEvent a trigger refers to | `accept at <instant>` on the transition or accept action, the instant an attribute of the `state def`/`action def` typed `Time::TimeInstantValue` when `when` is a number with a time unit or an expression that resolves, read on the simulation clock, which starts at 0 | approximated (the clock's origin is the run's, not the calendar's) |
 | Event (of any kind) no trigger refers to | — | skipped, counted as a model element nothing refers to |
 | SignalEvent whose signal is not written, TimeEvent whose `when` is not a number with a time unit | comment; the transition that refers to it drops the trigger | **unmapped** — the reason names the signal or the time |
-| Interaction | a scenario `action def` on the owning block: each message in occurrence order as a step — a signal send `send new Sig(args) to context.part`, a `synchCall`/`asynchCall` of an operation `perform action x : Owner::Op ::> part.op { in p = arg; }` with the arguments bound to the `in` parameters by name or position, a `reply` an assignment of the call's `out` to the caller lifeline's attribute the reply's argument names | approximated (the lifelines' own behavior is not part of it; an `asynchCall` waits for the callee where v1 did not) |
+| Interaction | a scenario `action def` on the owning block: each message in occurrence order as a step — a signal send `send new Sig(args) to context.part`, a `synchCall`/`asynchCall` of an operation `perform action x ::> part.op { in p = arg; }` (`perform action x : Owner::Op ::> part.op { … }` for an operation kept as an `action def`) with the arguments bound to the `in` parameters by name or position, a `reply` an assignment of the call's `out` to the caller lifeline's attribute the reply's argument names | approximated (the lifelines' own behavior is not part of it; an `asynchCall` waits for the callee where v1 did not) |
 | Lifeline | the feature path from the owning block to the part, port or reference it `represents`, through the parts and their types (`drive.motor`), or the interaction's `in` parameter | mapped |
 | Lifeline with a `selector`, standing for an `out` parameter, a property no part of the owning block reaches or one reached along two paths, or for no ConnectableElement; Interaction owned by a Collaboration or by no block | comment: the whole interaction is refused | **unmapped** — the reason names the lifeline |
 | CombinedFragment `alt`, `opt` | `action x { if <guard> { … } else { … } }` when every guard parses as a v2 expression whose names resolve | mapped |
@@ -362,7 +362,8 @@ chaining to it: `perform action <call> ::> <target>.<op> { in <param> = …; }` 
 `this`, a feature of `this` or a part a port connects to; and, when the target pin holds an object
 handed in or created, an action usage whose `in <pin> : <Block>` parameter the nested
 `perform action <op> ::> <pin>.<op>` chains through, its other pins bound to the operation's
-parameters by position. A call that reaches no object of the block (a caller outside it, an Alf
+parameters by position (a pin past the parameters of its direction is not declared, as in a
+typed call, and the report names it and the flows into or out of it). A call that reaches no object of the block (a caller outside it, an Alf
 `this` with no known type) is an empty step declaring the call's pins, reported as such. Two
 operations keep an `action def <Op>` with a context parameter, as every other block-owned
 behavior a state runs does: one whose method a state's entry, do, exit or a transition's effect

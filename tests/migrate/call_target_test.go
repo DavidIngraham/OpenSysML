@@ -129,6 +129,54 @@ func TestCallOperationRunsOnTheObjectItsTargetPinHolds(t *testing.T) {
 	}
 }
 
+// extraPinsNetwork is motorNetwork with Turn's call of Spin carrying an input pin
+// and an output pin that no parameter of Spin receives or produces.
+var extraPinsNetwork = strings.NewReplacer(
+	`<argument xmi:type="uml:InputPin" xmi:id="_callTo" name="to"/>`,
+	`<argument xmi:type="uml:InputPin" xmi:id="_callTo" name="to"/>
+          <argument xmi:type="uml:InputPin" xmi:id="_callExtra" name="extra"/>
+          <result xmi:type="uml:OutputPin" xmi:id="_callEcho" name="echo"/>`,
+	`<node xmi:type="uml:ActivityFinalNode" xmi:id="_tf"/>`,
+	`<node xmi:type="uml:ActivityFinalNode" xmi:id="_tf"/>
+        <ownedParameter xmi:type="uml:Parameter" xmi:id="_turnCount" name="count" direction="out">
+          <type xmi:type="uml:PrimitiveType" href="http://www.omg.org/spec/UML/20131001/PrimitiveTypes.xmi#Integer"/>
+        </ownedParameter>
+        <node xmi:type="uml:ActivityParameterNode" xmi:id="_turnCountN" name="count" parameter="_turnCount"/>
+        <edge xmi:type="uml:ObjectFlow" xmi:id="_tof3" source="_tenOut" target="_callExtra"/>
+        <edge xmi:type="uml:ObjectFlow" xmi:id="_tof4" source="_callEcho" target="_turnCountN"/>`,
+).Replace(motorNetwork)
+
+// A pin of a call on a handed-in object that no parameter of the operation pairs
+// with is not declared, as in a typed call: the flows naming it are reported, and
+// the call still runs the operation with its paired pin.
+func TestCallOperationOnATargetLeavesUnpairedPinsUndeclared(t *testing.T) {
+	r := migrateDocument(t, extraPinsNetwork, motorNetworkApplications)
+	for _, line := range []string{
+		"in target : Motor[1];",
+		"perform action 'spin on target' ::> target.spin;",
+		"bind 'spin on target'.'to' = 'to';",
+	} {
+		wantLine(t, r.Notation, line)
+	}
+	for _, line := range []string{"in extra", "out echo", "spin.extra", "spin.echo"} {
+		wantNoLine(t, r.Notation, line)
+	}
+	wantNote(t, r, "_callExtra", migrate.Unmapped, "the called Motor::Spin has no in parameter for the pin, its in parameters being to")
+	wantNote(t, r, "_callEcho", migrate.Unmapped, "the called Motor::Spin has no out parameter for the pin, declaring none of that direction")
+	wantNote(t, r, "_call", migrate.Approximated, "the called Motor::Spin has no in parameter for the pin")
+	wantNote(t, r, "_tof3", migrate.Unmapped, "has no v2 name")
+	wantNote(t, r, "_tof4", migrate.Approximated, "stands for no out parameter")
+
+	s := session(t, r)
+	meta(t, s, "%instantiate Net")
+	meta(t, s, "%action Net::kick #1")
+	meta(t, s, "%continue")
+	meta(t, s, "%advance 0")
+	if out := meta(t, s, "%eval in #1 : m2.rpm"); !strings.Contains(out, "= 10") {
+		t.Errorf("the motor the target pin held did not spin: %s", out)
+	}
+}
+
 // A call on an object a CreateObjectAction creates keeps its target pin and the
 // flow into it, but CreateObjectAction is not migrated: the ledger says the pin
 // holds no object, and a run stops at the call rather than running it elsewhere.

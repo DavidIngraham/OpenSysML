@@ -226,9 +226,6 @@ func (m *migration) operationUsage(op *sysmlv1.Element) string {
 	return name
 }
 
-// operationFeature writes the action usage that makes an operation a feature of
-// its owner, as a v1 operation is; the classifier behavior's own performance is that usage.
-// In a port def, whose usages may not be composite, the action is referential.
 // operationDirection is the direction prefix of an operation's usage: that of
 // its «DirectedFeature» application, or none.
 func (m *migration) operationDirection(op *sysmlv1.Element) string {
@@ -247,6 +244,9 @@ func (m *migration) operationDirection(op *sysmlv1.Element) string {
 	return ""
 }
 
+// operationFeature writes the action usage that makes an operation a feature of
+// its owner, as a v1 operation is; the classifier behavior's own performance is that usage.
+// In a port def, whose usages may not be composite, the action is referential.
 func (m *migration) operationFeature(op *sysmlv1.Element) {
 	if m.classifierBehaviorOperation(op.Parent) == op {
 		return
