@@ -128,23 +128,69 @@ func (r *Resolver) shortNamedMembers(scope *symbols.Scope, name string, hide *re
 	if scope == nil || name == "" {
 		return nil
 	}
-	model, ok := r.model.(shortNamer)
-	if !ok {
-		return nil
-	}
 	var out []*symbols.Symbol
 	for _, sym := range r.derivedNamedMembers(scope) {
-		if r.naming[sym] || hide.hides(sym) {
-			continue
-		}
-		r.naming[sym] = true
-		short := model.EffectiveShortNameOf(sym)
-		delete(r.naming, sym)
-		if short == name {
+		if !hide.hides(sym) && r.derivedShortName(sym) == name {
 			out = append(out, sym)
 		}
 	}
 	return out
+}
+
+// derivedShortName returns the short name sym takes from its naming feature
+// (KerML 8.3.3.3 Feature::effectiveShortName): that feature's declared short
+// name, or the one it derives in turn; none while a feature on the way declares
+// a name of its own, or while its naming is being decided (see BindsName).
+func (r *Resolver) derivedShortName(sym *symbols.Symbol) string {
+	seen := map[*symbols.Symbol]bool{}
+	for sym != nil && !seen[sym] {
+		if sym.Naming == symbols.NamedByDeclaration || sym.ShortName != "" {
+			return sym.ShortName
+		}
+		if r.naming[sym] {
+			return ""
+		}
+		seen[sym] = true
+		r.naming[sym] = true
+		next := r.namingFeatureOf(sym)
+		delete(r.naming, sym)
+		sym = next
+	}
+	return ""
+}
+
+// namingFeatureOf resolves the feature sym takes its name from, the way
+// BindsName does: the feature it references or the first it redefines, through
+// aliases; a feature chain names it, so it has no naming feature.
+func (r *Resolver) namingFeatureOf(sym *symbols.Symbol) *symbols.Symbol {
+	if sym.Recorded() {
+		model, ok := r.model.(shortNamer)
+		if !ok {
+			return nil
+		}
+		return model.NamingFeatureOf(sym)
+	}
+	target := sym.NamingTarget
+	if target == nil || ast.IsFeatureChain(target) {
+		return nil
+	}
+	r.EnterDoc(sym.DocName)
+	defer r.LeaveDoc()
+	var found *symbols.Symbol
+	r.aside(func() {
+		if sym.Naming == symbols.NamedByReference {
+			found, _ = r.resolveTarget(sym.OwnerScope, target, referenceFilter(sym.Decl, target))
+		} else {
+			found, _ = r.ResolveRedefinitionTarget(sym.OwnerScope, sym.Decl, target)
+		}
+	})
+	if alias, isAlias := r.ResolveAliasTarget(found); isAlias {
+		found = alias
+	}
+	if found == nil || found == sym || !found.IsFeature() {
+		return nil
+	}
+	return found
 }
 
 // derivedNamedMembers returns the members of scope named after a naming feature

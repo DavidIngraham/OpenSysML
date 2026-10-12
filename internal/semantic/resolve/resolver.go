@@ -45,10 +45,10 @@ type metaclassProvider interface {
 // maskChecker is the part of the semantic model that reports redefinition
 // masking: which of a type's inheritable members it does not inherit because
 // one of its features redefines them. *semantics.Model implements it.
-// shortNamer derives the short name an element takes from its naming feature
-// (KerML Element::shortName, Feature::namingFeature); *semantics.Model is one.
+// shortNamer knows the naming feature of a feature loaded from a library
+// snapshot (KerML Feature::namingFeature); *semantics.Model is one.
 type shortNamer interface {
-	EffectiveShortNameOf(sym *symbols.Symbol) string
+	NamingFeatureOf(sym *symbols.Symbol) *symbols.Symbol
 }
 
 type maskChecker interface {

@@ -3,6 +3,12 @@ package resolve_test
 import (
 	"strings"
 	"testing"
+
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/resolve"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/parser"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
+	"github.com/Open-MBEE/OpenSysML/internal/workspace/libs"
 )
 
 // A feature with no declared name or short name takes the short name of the
@@ -82,5 +88,38 @@ func TestDeclaredShortNameOfARedefiningFeatureReplacesTheInheritedOne(t *testing
 				t.Errorf("errors %v, want one containing %q", errs, tc.unresolved)
 			}
 		})
+	}
+}
+
+// A derived short name may be asked for while the owner's own header is being
+// resolved from its body, before the owner's generals are decided: that early
+// query binds nothing, and the redefinition still resolves among the generals
+// once they are, not to a like-named element outside.
+func TestEarlyShortNameQueryLeavesTheRedefinitionToItsGenerals(t *testing.T) {
+	const name = "early.sysml"
+	const src = `package P {
+		private import Metaobjects::SemanticMetadata;
+		part def <env> Environment;
+		part def Base { part <e> env; }
+		part bases : Base[*];
+		metadata def <ctx> CtxMeta :> SemanticMetadata { :>> baseType = bases meta SysML::Usage; }
+		#ctx part x { part :>> env : Environment; }
+	}`
+	p := parser.New(source.New(name, []byte(src)))
+	root := p.ParseFile()
+	if len(p.Diagnostics) != 0 {
+		t.Fatalf("parse diagnostics: %v", p.Diagnostics)
+	}
+	idx := libs.NewModelIndex()
+	idx.AddDocument(name, root)
+	idx.ExpandWildcardImports()
+	r := resolve.New(idx)
+	r.SetModel(semantics.NewModel(r))
+	r.ResolveDocument(name, root)
+	if got := bindingOf(t, r, root, idx.DocumentRoot(name), "env"); got != "P::Base::env" {
+		t.Errorf("env binds %q, want P::Base::env", got)
+	}
+	if _, errs := diagnosticsOf(r); len(errs) != 0 {
+		t.Errorf("unexpected errors: %v", errs)
 	}
 }
