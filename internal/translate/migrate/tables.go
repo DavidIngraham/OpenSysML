@@ -711,7 +711,7 @@ func (m *migration) sorted(rows qx, t *sysmlv1.Table, host *sysmlv1.Element, l *
 // isDefinition reports whether e migrates to a definition a feature can belong to.
 func (m *migration) isDefinition(e *sysmlv1.Element) bool {
 	cat, _ := m.classify(e)
-	return cat.keyword() != "" && cat != catPackage
+	return cat.keyword() != "" && cat != catPackage && !cat.usage()
 }
 
 func columnByID(t *sysmlv1.Table, id string) (sysmlv1.Column, bool) {

@@ -147,6 +147,16 @@ func (c category) metaclass() string {
 	return ""
 }
 
+// usage reports whether a classifier of category c is written as a usage, not
+// a definition: an instance, actor, use case, requirement or view.
+func (c category) usage() bool {
+	switch c {
+	case catInstance, catActor, catUseCase, catRequirement, catView:
+		return true
+	}
+	return false
+}
+
 // usageKeyword is the keyword of a usage typed by (or, for a category written
 // as a usage, subsetting) a classifier of category c; "" when no usage can be.
 func (c category) usageKeyword() string {

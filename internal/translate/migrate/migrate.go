@@ -4019,10 +4019,6 @@ func (m *migration) definitionEnd(e *sysmlv1.Element) bool {
 	if m.asUsage[e] || m.selfUsage(e) {
 		return false
 	}
-	switch c, _ := m.classify(e); c {
-	case catView, catInstance:
-		return false
-	}
 	return m.isDefinition(e)
 }
 
