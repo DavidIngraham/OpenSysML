@@ -195,7 +195,11 @@ branch that moves the integration state onto `main`:
 4. Tag `main` as [Tagging](#tagging) describes.
 
 5. Merge the `chore/pin-vx.y.z` pull request the tag's pipeline opens against
-   `develop` (see [Pinned release digests](#pinned-release-digests)), then merge
+   `develop` (see [Pinned release digests](#pinned-release-digests)). Its Node
+   client job fails until the lockfile names the platform packages the tag just
+   published — `npm install --package-lock-only` in `client/node` could not lock
+   them before they existed — so run that on the pin branch and commit the
+   lockfile first. Then merge
    `main` back into `develop` — a plain merge, no rebase — so the folded
    changelog, and any hotfix that landed on `main` in the meantime, flow down:
 
