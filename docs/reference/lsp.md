@@ -367,6 +367,12 @@ request fails with the typed error's message (for example `Observatory::Subsyste
 is not a document: one is a part def specializing DocumentQueries::Document`)
 rather than crashing or answering with partial output.
 
+An optional `show` array names the [optional notation elements](../project/view-rendering-forms.md#optional-notation-elements) every
+diagram draws besides those its view's rendering and its diagram block's `show` attribute show —
+`parameter-symbols`, `port-symbols`, `compartments`, `edge-labels`, `keywords`, `multiplicities`,
+`typings`, `qualifiers`, or `all` — as `-render-show` does; a name none of them has is an
+`InvalidParams` error naming the elements there are.
+
 An optional `linkTemplate` request field applies `{file}`, `{line}`, `{col}`, `{qname}` and `{id}`
 to linkable diagram elements. Only on-disk workspace documents are linked; bundled libraries and
 non-file documents have no source link.
