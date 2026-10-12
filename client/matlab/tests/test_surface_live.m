@@ -155,6 +155,9 @@ function test_surface_live()
     assert_equal(numel(renderedView.edges), 1, 'RenderView edges');
     assert_equal(~isempty(renderedView.edges(1).fromPort), true, 'RenderView from port');
     assert_equal(~isempty(renderedView.edges(1).toPort), true, 'RenderView to port');
+    assert_equal(any(strcmp(renderedView.shown, 'port-symbols')), true, 'RenderView shown');
+    shownView = opensysml.renderView(viewModel, 'RenderViewDemo::connections', 'show', {'edge-labels'});
+    assert_equal(any(strcmp(shownView.shown, 'edge-labels')), true, 'RenderView show');
 
     behaviorModel = opensysml.parseSource(conn, fileread(fullfile(fixtures, 'behavior.sysml')), ...
         'name', 'behavior.sysml');

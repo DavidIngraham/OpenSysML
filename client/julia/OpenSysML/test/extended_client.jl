@@ -696,6 +696,9 @@ end
                 @test !isempty(rendered_view.edges[1].from_port)
                 @test !isempty(rendered_view.edges[1].to_port)
                 @test all(node -> node.origin !== nothing, rendered_view.nodes)
+                @test "port-symbols" in rendered_view.shown
+                shown_view = render_view(views_model, "RenderViewDemo::connections"; show=["edge-labels"])
+                @test "edge-labels" in shown_view.shown
                 full_view = render_view(views_model, "RenderViewDemo::connections"; ports="full")
                 @test any(port.name == "spare" for node in full_view.nodes for port in node.ports)
                 behavior_model = parse_file(conn, joinpath(FIXTURES, "behavior.sysml"))
