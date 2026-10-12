@@ -468,7 +468,10 @@ geometry form [DiagramLayout](../project/diagram-layout-annotations.md) already 
 rendering honors it. Cameo stores y negated (top at or below zero); the migration writes
 `x = left`, `y = -top`, `width = right - left`, `height = top - bottom`, pixels y-down from the top
 left, and a connector's waypoints source to target — client point, breakpoints reversed, supplier
-point. `@DiagramLayout::Canvas { unit = "px"; width; height; }` sizes the canvas by the bounding
+point. That path is all the export records of a connector's drawing (`supplierPoint`,
+`clientPoint`, `breakPoint`): where the tool set the connector's name or its ends' names is not
+exported, so the rendering places them itself, each end's name beside the last segment before
+that end. `@DiagramLayout::Canvas { unit = "px"; width; height; }` sizes the canvas by the bounding
 box of what the view writes, and is omitted when nothing is.
 
 Geometry is written only for what the view draws: a placement whose element resolves and whose
