@@ -125,7 +125,7 @@ func TestGeneralViewUnresolvedRelationshipEnds(t *testing.T) {
 	if rendering.Kind != KindRequirement {
 		t.Fatalf("kind = %q, want %q", rendering.Kind, KindRequirement)
 	}
-	text := rendering.Text()
+	text := rendering.textWith(fullNotation)
 	for _, want := range []string{"requirement def Model::Limit", "requirement Model::limit : Limit", "Model::limit ..|> Model::Limit"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("rendering lacks %q:\n%s", want, text)

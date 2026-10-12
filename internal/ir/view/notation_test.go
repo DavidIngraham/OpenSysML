@@ -257,3 +257,7 @@ func TestUnknownElementsAreRefusedOnEveryForm(t *testing.T) {
 		t.Errorf("%v does not name the elements", err)
 	}
 }
+
+// fullNotation draws every optional notation element, as the tests of the
+// elements' drawing ask for.
+var fullNotation = Options{Show: AllShown()}

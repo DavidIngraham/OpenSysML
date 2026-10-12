@@ -60,16 +60,16 @@ func TestTheMinimalDisplayDrawsTheConnectedPortsAlone(t *testing.T) {
 	if got := rendering.portView(PortsFull).of(primary); len(got) != 1 || got[0].ID != idle.ID {
 		t.Errorf("the full display draws %v of primary, want its pin %s", got, idle.ID)
 	}
-	dot, err := rendering.DOT()
+	dot, err := rendering.DOTWith(fullNotation)
 	if err != nil {
 		t.Fatalf("DOT: %v", err)
 	}
-	plantuml, err := rendering.PlantUML()
+	plantuml, err := rendering.PlantUMLWith(fullNotation)
 	if err != nil {
 		t.Fatalf("PlantUML: %v", err)
 	}
-	mermaid := rendering.Mermaid()
-	text := rendering.Text()
+	mermaid := rendering.MermaidWith(fullNotation)
+	text := rendering.textWith(fullNotation)
 	for label, form := range map[string]string{"DOT": dot, "PlantUML": plantuml, "Mermaid": mermaid, "text": text} {
 		if strings.Contains(form, idle.ID) {
 			t.Errorf("%s draws the unconnected pin %s:\n%s", label, idle.ID, form)
@@ -106,7 +106,7 @@ func TestTheMinimalDisplayDrawsTheConnectedPortsAlone(t *testing.T) {
 			}
 		}
 	}
-	full, err := rendering.WriteWith(FormDot, Options{Ports: PortsFull})
+	full, err := rendering.WriteWith(FormDot, Options{Show: AllShown(), Ports: PortsFull})
 	if err != nil {
 		t.Fatalf("full DOT: %v", err)
 	}
@@ -165,15 +165,15 @@ func TestPortedAndPinlessEdgesMixUnderTheMinimalDisplay(t *testing.T) {
 	if outlet == nil || inlet == nil || pinNamed(sensor, "outlet") == nil {
 		t.Fatalf("the parts pin no port: %+v %+v %+v", pump, tank, sensor)
 	}
-	dot, err := rendering.DOT()
+	dot, err := rendering.DOTWith(fullNotation)
 	if err != nil {
 		t.Fatalf("DOT: %v", err)
 	}
-	plantuml, err := rendering.PlantUML()
+	plantuml, err := rendering.PlantUMLWith(fullNotation)
 	if err != nil {
 		t.Fatalf("PlantUML: %v", err)
 	}
-	mermaid := rendering.Mermaid()
+	mermaid := rendering.MermaidWith(fullNotation)
 	for label, wants := range map[string][]string{
 		"DOT": {`"` + pump.ID + `":"` + outlet.ID + `" -> "` + tank.ID + `":"` + inlet.ID + `" [label="supply"`,
 			`"` + pump.ID + `" -> "` + tank.ID + `" [label="of Water"`,
@@ -220,8 +220,8 @@ func TestMixedActionPinsKeepTheirFormBehavior(t *testing.T) {
 		}
 		return NodeData{}, false
 	}
-	minimalData := rendering.DataWith(Options{Ports: PortsMinimal})
-	fullData := rendering.DataWith(Options{Ports: PortsFull})
+	minimalData := rendering.DataWith(Options{Show: AllShown(), Ports: PortsMinimal})
+	fullData := rendering.DataWith(Options{Show: AllShown(), Ports: PortsFull})
 	for name, want := range map[string]string{"source": "output", "sink": "input", "Check": "request"} {
 		minimalNode, ok := nodeNamed(minimalData, name)
 		if !ok {
@@ -268,8 +268,8 @@ func TestMixedActionPinsKeepTheirFormBehavior(t *testing.T) {
 		t.Errorf("full monitor ports = %+v, want unused", got)
 	}
 
-	minimalOptions := Options{Ports: PortsMinimal}
-	fullOptions := Options{Ports: PortsFull}
+	minimalOptions := Options{Show: AllShown(), Ports: PortsMinimal}
+	fullOptions := Options{Show: AllShown(), Ports: PortsFull}
 	dotMinimal, err := rendering.DOTWith(minimalOptions)
 	if err != nil {
 		t.Fatalf("minimal DOT: %v", err)
@@ -286,8 +286,8 @@ func TestMixedActionPinsKeepTheirFormBehavior(t *testing.T) {
 	if err != nil {
 		t.Fatalf("full PlantUML: %v", err)
 	}
-	textMinimal := rendering.textWith(Options{Width: WidthUnbounded, Ports: PortsMinimal})
-	textFull := rendering.textWith(Options{Width: WidthUnbounded, Ports: PortsFull})
+	textMinimal := rendering.textWith(Options{Show: AllShown(), Width: WidthUnbounded, Ports: PortsMinimal})
+	textFull := rendering.textWith(Options{Show: AllShown(), Width: WidthUnbounded, Ports: PortsFull})
 	mermaidMinimal := rendering.MermaidWith(minimalOptions)
 	mermaidFull := rendering.MermaidWith(fullOptions)
 
@@ -373,7 +373,7 @@ func TestAnActionDrawsEveryPinWhateverTheDisplay(t *testing.T) {
 // too, not left a pin nothing ends at; the strip, drawing every node, draws it.
 func TestTheMinimalDisplayFollowsTheEdgesDOTDraws(t *testing.T) {
 	rendering := render(t, "interconnection-ports.sysml", "ToasterViews::placedView")
-	omitted, err := rendering.DOTWith(Options{})
+	omitted, err := rendering.DOTWith(Options{Show: AllShown()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,7 +387,7 @@ func TestTheMinimalDisplayFollowsTheEdgesDOTDraws(t *testing.T) {
 			t.Errorf("the drawing lacks %q:\n%s", want, omitted)
 		}
 	}
-	stripped, err := rendering.DOTWith(Options{Unplaced: UnplacedStrip})
+	stripped, err := rendering.DOTWith(Options{Show: AllShown(), Unplaced: UnplacedStrip})
 	if err != nil {
 		t.Fatal(err)
 	}

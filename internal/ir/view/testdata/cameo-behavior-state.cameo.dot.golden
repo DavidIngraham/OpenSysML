@@ -52,7 +52,7 @@ digraph "NotationViews::alignmentView" {
           bb="790,30,910,130";
           "n6" [shape=point, style=invis, width=0, height=0, label="", pos="850,80!", pin=true];
           subgraph "cluster_n7" {
-            label=<<b>Guiding</b>>;
+            label=<<font point-size="9">«region»</font><br/><b>Guiding</b>>;
             style="rounded,dashed";
             color="#5B5B59";
             penwidth=1;
@@ -61,7 +61,7 @@ digraph "NotationViews::alignmentView" {
             "n9" [style="rounded,filled", fillcolor="#FFFFCC:#FFFFF2", color="#5B5B59", label=<<b>guide</b>>, margin=0, pos="850,90!", pin=true, width=1.1111111111111112, height=0.4166666666666667, fixedsize=true];
           }
           subgraph "cluster_n8" {
-            label=<<b>Focusing</b>>;
+            label=<<font point-size="9">«region»</font><br/><b>Focusing</b>>;
             style="rounded,dashed";
             color="#5B5B59";
             penwidth=1;

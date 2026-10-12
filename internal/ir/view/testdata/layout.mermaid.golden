@@ -27,16 +27,16 @@ config:
 %% layout: n2 x=500 y=40 w=120 h=60
 %% route: n1->n2 400,70 450,120 500,70
 flowchart LR
-  subgraph n0 ["`**Loop**`"]
+  subgraph n0 ["`*«part def»* **Loop**`"]
     direction LR
-    subgraph n1 ["`**pump**`"]
+    subgraph n1 ["`*«part»* **pump : Pump**`"]
       direction LR
       n1_anchor[" "]
       n1.0["outlet"]
       note0@{ shape: notch-rect, label: "always" }
       note2@{ shape: notch-rect, label: "check pressure" }
     end
-    subgraph n2 ["`**tank**`"]
+    subgraph n2 ["`*«part»* **tank : Tank**`"]
       direction LR
       n2_anchor[" "]
       n2.0["inlet"]
@@ -44,7 +44,7 @@ flowchart LR
     end
   end
   note3@{ shape: notch-rect, label: "free" }
-  n1.0 === n2.0
+  n1.0 ===|"supply"| n2.0
   note0 -.- n1_anchor
   note1 -.- n2_anchor
   note2 -.- n1_anchor

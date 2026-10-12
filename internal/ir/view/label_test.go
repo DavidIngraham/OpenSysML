@@ -28,7 +28,7 @@ func TestLabelLines(t *testing.T) {
 		{"state note", &Node{Kind: "state", Name: "off", Detail: "initial, entry"}, []string{"«state»", "off", "initial, entry"}},
 	}
 	for _, tc := range cases {
-		got := (labeller{}).lines(tc.node)
+		got := (labeller{shown: AllShown()}).lines(tc.node)
 		if strings.Join(got, "\x00") != strings.Join(tc.want, "\x00") {
 			t.Errorf("%s: labelLines = %q, want %q", tc.name, got, tc.want)
 		}
@@ -122,7 +122,7 @@ func TestLabelsHeadMembersUnderTheirDrawnOwner(t *testing.T) {
 		}
 	}
 	rendering := &Rendering{View: "V", Kind: KindTree, Roots: roots}
-	if text := rendering.Text(); !strings.Contains(text, "attribute TMT::Budget::'K-Mirror Offset'::errorReq : ScalarValues::Real\n") {
+	if text := rendering.textWith(fullNotation); !strings.Contains(text, "attribute TMT::Budget::'K-Mirror Offset'::errorReq : ScalarValues::Real\n") {
 		t.Errorf("the text form is headed by the diagram label:\n%s", text)
 	}
 }
@@ -174,7 +174,7 @@ func TestLabelsHeadMembersUnderTheirDrawnOwnersType(t *testing.T) {
 	if strings.Join(got, "\x00") != strings.Join(want, "\x00") {
 		t.Errorf("heads = %q, want %q", got, want)
 	}
-	if text := rendering.Text(); !strings.Contains(text, "part Sites::'Summit Installation'::computer : Control") {
+	if text := rendering.textWith(fullNotation); !strings.Contains(text, "part Sites::'Summit Installation'::computer : Control") {
 		t.Errorf("the text form is headed by the diagram label:\n%s", text)
 	}
 }
@@ -207,7 +207,7 @@ func TestTextLabelShape(t *testing.T) {
 			{ID: "n4", Kind: "connect", Detail: "already shown"},
 		}},
 	}}
-	text := rendering.Text()
+	text := rendering.textWith(fullNotation)
 	for _, want := range []string{
 		"part def Plant::Loop\n",
 		"  part pump : Pump\n",
@@ -257,7 +257,7 @@ func TestMermaidLabelShapePerForm(t *testing.T) {
 	}
 	for _, tc := range cases {
 		rendering := &Rendering{View: "V", Kind: tc.kind, Roots: roots, Edges: edges}
-		mermaid := rendering.Mermaid()
+		mermaid := rendering.MermaidWith(fullNotation)
 		for _, want := range tc.want {
 			if !strings.Contains(mermaid, want) {
 				t.Errorf("%s Mermaid lacks %q:\n%s", tc.kind, want, mermaid)
@@ -319,7 +319,7 @@ func TestMermaidContainerTitleShape(t *testing.T) {
 		ID: "n0", Kind: "state def", Name: "PEAS", Children: []*Node{
 			{ID: "n1", Kind: "state", Name: "off", Detail: "initial"},
 		},
-	}}}).Mermaid()
+	}}}).MermaidWith(fullNotation)
 	for _, want := range []string{
 		`state "«state def» PEAS" as n0 {`,
 		`state "«state»<br>off<br>initial" as n1`,
@@ -331,7 +331,7 @@ func TestMermaidContainerTitleShape(t *testing.T) {
 
 	named := (&Rendering{Kind: KindInterconnection, Roots: []*Node{{
 		ID: "n0", Kind: "part", Name: `'two\nlines'`, Children: []*Node{{ID: "n1", Kind: "part", Name: "child"}},
-	}}}).Mermaid()
+	}}}).MermaidWith(fullNotation)
 	if !strings.Contains(named, "subgraph n0 [\"`*«part»* **'two**\n**lines'**`\"]") ||
 		!strings.Contains(named, "subGraphTitleMargin:\n      bottom: 24\n") {
 		t.Errorf("line-break container title lacks its lines or margin:\n%s", named)
@@ -339,7 +339,7 @@ func TestMermaidContainerTitleShape(t *testing.T) {
 
 	fallback := (&Rendering{Kind: KindInterconnection, Roots: []*Node{{
 		ID: "n0", Kind: "part", Name: "a&b", Detail: "note", Children: []*Node{{ID: "n1", Kind: "part", Name: "child"}},
-	}}}).Mermaid()
+	}}}).MermaidWith(fullNotation)
 	if !strings.Contains(fallback, `subgraph n0 ["«part» a&b<br>note"]`) {
 		t.Errorf("unsafe container title lacks its escaped one-line fallback:\n%s", fallback)
 	}

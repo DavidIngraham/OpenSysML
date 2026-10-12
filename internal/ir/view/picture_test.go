@@ -297,7 +297,7 @@ func TestPictureAloneLeavesNoNodeUndrawn(t *testing.T) {
 	if !rendering.Positioned() {
 		t.Fatal("a pictured view is not positioned")
 	}
-	for _, options := range []Options{{}, {Unplaced: UnplacedStrip}} {
+	for _, options := range []Options{fullNotation, {Show: AllShown(), Unplaced: UnplacedStrip}} {
 		dot, err := rendering.DOTWith(options)
 		if err != nil {
 			t.Fatalf("DOT %+v: %v", options, err)
@@ -311,7 +311,7 @@ func TestPictureAloneLeavesNoNodeUndrawn(t *testing.T) {
 			t.Errorf("DOT %+v leaves the parts undrawn:\n%s", options, dot)
 		}
 	}
-	if mermaid := rendering.Mermaid(); !strings.Contains(mermaid, "bench") || !strings.Contains(mermaid, "camera") || strings.Contains(mermaid, "without a position") {
+	if mermaid := rendering.MermaidWith(fullNotation); !strings.Contains(mermaid, "bench") || !strings.Contains(mermaid, "camera") || strings.Contains(mermaid, "without a position") {
 		t.Errorf("Mermaid leaves the parts undrawn:\n%s", mermaid)
 	}
 }

@@ -3,13 +3,13 @@ PlantViews::placedView - interconnection rendering (render asInterconnectionDiag
 canvas size 1200×800 in px
 
 part def Plant::Loop
-  part pump at (300, 40) collapsed
+  part pump : Pump at (300, 40) collapsed
     port outlet
-  part tank at (500, 40) size 120×60
+  part tank : Tank at (500, 40) size 120×60
     port inlet
 
 connections:
-  pump.outlet -- tank.inlet via (400, 70) (450, 120) (500, 70)
+  pump.outlet -- tank.inlet: supply via (400, 70) (450, 120) (500, 70)
 
 notes:
   "always" on pump at (10, 90)
