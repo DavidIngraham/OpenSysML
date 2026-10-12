@@ -13,8 +13,9 @@ package RequirementsModel {
         part block : Block;
     }
     part def Block;
-    dependency RequirementsModel::'Outer Requirement'::'Nested Requirement'::'Innermost Requirement' to RequirementsModel::Host::block {
+    dependency 'Outer Requirement.Nested Requirement.Innermost Requirement refines block' from RequirementsModel::'Outer Requirement'::'Nested Requirement'::'Innermost Requirement' to RequirementsModel::Host::block {
         @ModelingMetadata::Refinement;
     }
+    metadata MigrationMetadata::SynthesizedName about 'Outer Requirement.Nested Requirement.Innermost Requirement refines block';
 }
 metadata MigrationMetadata::LibraryNameAvoided about RequirementsModel { sourceName = "Requirements"; }

@@ -6,7 +6,7 @@ Package	Requirements	_pkg_requirements	-> RequirementsModel	(written as Requirem
 
 ## mapped (9)
 Model	Model	_model	(the root model's members are written at the top level)
-«Refine» Abstraction	Requirements::<Abstraction>	_dep_refine
+«Refine» Abstraction	Requirements::<Abstraction>	_dep_refine	-> RequirementsModel::'Outer Requirement.Nested Requirement.Innermost Requirement refines block'
 Comment	Requirements::<Comment>	_comment_inner
 «Block» Class	Requirements::Block	_block_type	-> RequirementsModel::Block
 «Block» Class	Requirements::Host	_host	-> RequirementsModel::Host
