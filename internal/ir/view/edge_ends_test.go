@@ -202,3 +202,26 @@ func TestLabelPlacerKeepsLabelsApart(t *testing.T) {
 		t.Errorf("placed again at %v, want %v", again, first)
 	}
 }
+
+// An end name whose last segment is hemmed in — a box on either side of it —
+// steps back to the segment before rather than sit on a box; a line across
+// the spot beside the last segment is borne, the name staying at its end.
+func TestEndNamesLeaveAHemmedInLastSegment(t *testing.T) {
+	w := &dotWriter{skin: skinOf(StylePilot), clusters: map[string]bool{}}
+	route := []Point{{X: 0, Y: 0}, {X: 200, Y: 0}, {X: 200, Y: 100}}
+	width, _ := dotTextExtent([]string{"hemmed"}, w.skin.edgePts)
+	w.boxes = map[string]nodeBox{
+		"left":  {low: Point{X: 200 - width - 20, Y: 10}, high: Point{X: 196, Y: 100}},
+		"right": {low: Point{X: 204, Y: 10}, high: Point{X: 200 + width + 20, Y: 100}},
+	}
+	at := w.placeLabel(route, "hemmed", labelTo)
+	if at.Y > 0 || at.X >= 200 {
+		t.Errorf("hemmed-in end name at %v, want it beside the segment before the last", at)
+	}
+	w.placer, w.boxes = nil, map[string]nodeBox{}
+	w.edges = []Edge{{Route: []Point{{X: 220, Y: 50}, {X: 300, Y: 50}}}}
+	at = w.placeLabel(route, "crossed", labelTo)
+	if at.X <= 200 || at.Y < 50 {
+		t.Errorf("end name at %v, want it beside the last segment though a line crosses it", at)
+	}
+}

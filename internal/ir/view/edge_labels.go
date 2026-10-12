@@ -44,18 +44,23 @@ const labelGap = 4
 const labelEndClearance = dotArrowLength
 
 // labelPlacer places the labels of one positioned drawing, in pixels y-down,
-// so that none sits on a node, a note or a label placed before it. An end name
-// goes beside the last segment before its end, the edge's own text beside the
-// midpoint of its longest segment, each clear of the line by the label's
-// half-extent and a gap. The candidate spots are tried in a fixed order — the
-// nearest first, the other side of the line next, then farther along the
-// route — and the first clear of everything wins, else the least covered.
+// so that none sits on a node, a note or a label placed before it, nor, where
+// it can be helped, across a drawn line. An end name goes beside the last
+// segment before its end, the edge's own text beside the midpoint of its
+// longest segment, each clear of the line by the label's half-extent and a
+// gap. The candidate spots are tried in a fixed order — the nearest first, the
+// other side of the line next, then farther along — and the first clear of
+// everything wins, else the least covered. An end name leaves its last segment
+// for the ones before only when every spot beside it lies on a box, a note, a
+// label or off the canvas: a line across it is borne rather than the name
+// straying from its end.
 type labelPlacer struct {
 	// extent is the box, in pixels, a text takes at the drawing's edge font.
 	extent func(text string) (width, height float64)
 	// cover is how much of a box lies on the drawing's nodes and notes or off
-	// its canvas, as an area.
-	cover func(box nodeBox) float64
+	// its canvas, as an area, and how much of the drawing's routed lines run
+	// through it, as a length.
+	cover func(box nodeBox) (area, lines float64)
 	// placed are the boxes of the labels placed so far, in order.
 	placed []nodeBox
 }
@@ -64,25 +69,30 @@ type labelPlacer struct {
 // it names; the point is rounded to the half pixel.
 func (p *labelPlacer) place(route []Point, text string, end labelEnd) Point {
 	width, height := p.extent(text)
-	var candidates []Point
+	var groups [][]Point
 	if end == labelMid {
-		candidates = midCandidates(route, width, height)
+		groups = [][]Point{midCandidates(route, width, height)}
 	} else {
-		candidates = endCandidates(route, width, height, end)
+		groups = endCandidates(route, width, height, end)
 	}
-	best := candidates[0]
-	cover := math.Inf(1)
-	for _, at := range candidates {
-		box := labelBox(at, width, height)
-		c := p.cover(box)
-		for _, other := range p.placed {
-			c += box.overlap(other)
-		}
-		if c < cover {
-			best, cover = at, c
-			if c == 0 {
-				break
+	best := groups[0][0]
+	area, score := math.Inf(1), math.Inf(1)
+	for _, group := range groups {
+		for _, at := range group {
+			box := labelBox(at, width, height)
+			a, lines := p.cover(box)
+			for _, other := range p.placed {
+				a += box.overlap(other)
 			}
+			if a+lines < score {
+				best, area, score = at, a, a+lines
+				if score == 0 {
+					break
+				}
+			}
+		}
+		if area == 0 {
+			break
 		}
 	}
 	p.placed = append(p.placed, labelBox(best, width, height))
@@ -134,12 +144,14 @@ func midCandidates(route []Point, width, height float64) []Point {
 	return candidates
 }
 
-// endCandidates are the spots an end name may take: beside the last segment
-// before its end at increasing distances from the end — clear of the arrowhead
-// there and stepping back by the label's extent along the line — on both sides
-// of the segment, never past the route's middle. A last segment too short to
-// hold the label beside it lets the label step back onto the segments before.
-func endCandidates(route []Point, width, height float64, end labelEnd) []Point {
+// endCandidates are the spots an end name may take, nearest first: beside the
+// last segment before its end at increasing distances from the end — clear of
+// the arrowhead there and stepping back by the label's extent along the line —
+// on both sides of the segment, then the same beside the segments before, never
+// past the route's middle. The two are returned as separate groups, the last
+// segment's first, either left out when empty; a route too short to hold the
+// label beside any segment gets the spots beside its end alone.
+func endCandidates(route []Point, width, height float64, end labelEnd) [][]Point {
 	if end == labelFrom {
 		reversed := make([]Point, len(route))
 		for i, p := range route {
@@ -152,7 +164,7 @@ func endCandidates(route []Point, width, height float64, end labelEnd) []Point {
 		total += math.Hypot(route[i].X-route[i-1].X, route[i].Y-route[i-1].Y)
 	}
 	if total == 0 {
-		return []Point{route[len(route)-1]}
+		return [][]Point{{route[len(route)-1]}}
 	}
 	var onLast, beyond []Point
 	for d := 0.0; ; {
@@ -172,14 +184,17 @@ func endCandidates(route []Point, width, height float64, end labelEnd) []Point {
 			break
 		}
 	}
-	switch {
-	case len(onLast) > 0:
-		return onLast
-	case len(beyond) > 0:
-		return beyond
+	var groups [][]Point
+	for _, group := range [][]Point{onLast, beyond} {
+		if len(group) > 0 {
+			groups = append(groups, group)
+		}
+	}
+	if len(groups) > 0 {
+		return groups
 	}
 	at, ux, uy, _, _ := alongRoute(route, math.Min(labelEndClearance, total), width, height)
-	return []Point{beside(at, ux, uy, width, height, 1), beside(at, ux, uy, width, height, -1)}
+	return [][]Point{{beside(at, ux, uy, width, height, 1), beside(at, ux, uy, width, height, -1)}}
 }
 
 // alongRoute is the centre of a label of the given extent whose near edge is

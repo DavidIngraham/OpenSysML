@@ -1980,15 +1980,15 @@ func (w *dotWriter) placeLabel(route []Point, text string, end labelEnd) Point {
 	return w.placer.place(route, text, end)
 }
 
-// labelCover is how much of a label's box lies on a node's box, a note, a
-// routed edge's line — counted a pixel wide — or off the canvas, as an area in
-// whole square pixels.
-func (w *dotWriter) labelCover(label nodeBox) float64 {
+// labelCover is how much of a label's box lies on a node's box, a note or off
+// the canvas, as an area in whole square pixels, and how much of the routed
+// edges' lines run through it, as a length in whole pixels.
+func (w *dotWriter) labelCover(label nodeBox) (area, lines float64) {
 	width, height := label.high.X-label.low.X, label.high.Y-label.low.Y
-	cover := 0.0
 	for _, segment := range w.segments {
-		cover += label.crossing(segment[0], segment[1])
+		lines += label.crossing(segment[0], segment[1])
 	}
+	cover := 0.0
 	for id, box := range w.boxes {
 		if !w.clusters[id] {
 			cover += label.overlap(box)
@@ -2001,7 +2001,7 @@ func (w *dotWriter) labelCover(label nodeBox) float64 {
 		canvas := nodeBox{high: Point{X: w.canvas.Width, Y: w.canvas.Height}}
 		cover += width*height - label.overlap(canvas)
 	}
-	return math.Round(cover)
+	return math.Round(cover), math.Round(lines)
 }
 
 // crossing is the length of the segment from p to q that lies in the box.

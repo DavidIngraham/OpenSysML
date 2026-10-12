@@ -120,7 +120,7 @@ func renderViewData(model *CachedModel, data view.Data) *pb.RenderViewResponse {
 	for _, edge := range data.Edges {
 		item := &pb.RenderEdge{
 			From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
-			Label: edge.Label, Name: edge.Name, Kind: edge.Kind.String(), Origin: origins.span(edge.Origin),
+			Label: edge.Text(), Name: edge.Name, Kind: edge.Kind.String(), Origin: origins.span(edge.Origin),
 		}
 		for _, point := range edge.Route {
 			item.Route = append(item.Route, &pb.RenderPoint{X: point.X, Y: point.Y})

@@ -840,7 +840,9 @@ digraph "PlantViews::placedView" {
   by its half-extent and a 4 px gap, and takes the first of its candidate spots — the nearest,
   the other side of the line, then a step farther along — that covers no drawn box, note or
   routed line, stays on the canvas and overlaps no label placed before it, else the least
-  covered; labels are placed in edge order, so the placement is the same on every run. Every edge a
+  covered; an end name leaves its last segment for the ones before only when every spot beside
+  it lies on a box, a note or a label, bearing a line across it rather than straying from its
+  end; labels are placed in edge order, so the placement is the same on every run. Every edge a
   kind draws takes a route: a connection, binding or flow of an interconnection, a transition
   of a state rendering, a succession or flow of an action rendering — the annotation names the
   member (`metadata DiagramLayout::Route about 'a to b'`), so only a named edge can carry one.
