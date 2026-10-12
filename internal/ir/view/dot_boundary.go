@@ -190,13 +190,14 @@ type sideRange struct {
 // obstacle nearer the side's start cuts the range there, else at its end.
 func (b nodeBox) freeRange(side boundarySide, depth float64, obstacles []nodeBox) sideRange {
 	r := sideRange{low: side.along(b.low), high: side.along(b.high)}
+	middle := (r.low + r.high) / 2
 	laneLow, laneHigh := b.lane(side, depth)
 	for _, o := range obstacles {
 		if side.through(o.high) <= laneLow || side.through(o.low) >= laneHigh {
 			continue
 		}
 		start, end := side.along(o.low), side.along(o.high)
-		if (start+end)/2 < (r.low+r.high)/2 {
+		if (start+end)/2 < middle {
 			r.low, r.lowCut = math.Max(r.low, end+dotBoundaryGap), true
 		} else {
 			r.high, r.highCut = math.Min(r.high, start-dotBoundaryGap), true
@@ -261,29 +262,31 @@ func (w *dotWriter) spreadAlong(box nodeBox, side boundarySide, symbols []bounda
 }
 
 // centre is where the run is centred along side, within the range rng: on its
-// ideal, moved within the range when it fits; when it does not, it starts at a
-// cut-off corner and runs past the far end, clear of the corner's symbol, or
-// sits at the middle of an uncut side. A single symbol stays where the routes
-// place it, moved only off a cut-off corner.
+// ideal, moved within the range when it fits. When it does not fit, a run cut
+// off one corner starts at that corner and runs past the side's far end, clear
+// of the corner's symbol; one cut off both corners, or none, sits at the
+// range's middle, as nothing clears both and the overlap is split between
+// them. A single symbol stays where the routes place it, moved only off a
+// cut-off corner.
 func (r symbolRun) centre(side boundarySide, rng sideRange) float64 {
-	if len(r.symbols) < 2 {
-		c := side.along(r.symbols[0].box.centre())
-		if rng.highCut {
-			c = math.Min(c, rng.high-r.length/2)
-		}
-		if rng.lowCut {
-			c = math.Max(c, rng.low+r.length/2)
-		}
-		return c
-	}
-	if r.length > rng.high-rng.low {
+	if r.length > rng.high-rng.low && (len(r.symbols) > 1 || rng.lowCut && rng.highCut) {
 		switch {
-		case rng.lowCut:
+		case rng.lowCut && !rng.highCut:
 			return rng.low + r.length/2
-		case rng.highCut:
+		case rng.highCut && !rng.lowCut:
 			return rng.high - r.length/2
 		}
 		return (rng.low + rng.high) / 2
+	}
+	if len(r.symbols) < 2 {
+		c := side.along(r.symbols[0].box.centre())
+		if rng.lowCut {
+			c = math.Max(c, rng.low+r.length/2)
+		}
+		if rng.highCut {
+			c = math.Min(c, rng.high-r.length/2)
+		}
+		return c
 	}
 	return math.Max(rng.low+r.length/2, math.Min(r.ideal, rng.high-r.length/2))
 }

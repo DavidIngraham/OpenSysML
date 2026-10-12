@@ -290,3 +290,36 @@ func TestDOTRunsCrowdedCornerSymbolsPastTheFarCorner(t *testing.T) {
 		}
 	}
 }
+
+// Two symbols from above that fit between neither corner's symbol are centred
+// between the two, the unavoidable overlap split evenly, each still touching
+// the top and each route still ending on its own symbol.
+func TestDOTSplitsTheOverlapOfACrowdedSideBetweenItsCorners(t *testing.T) {
+	rendering, boxes, _, ends, technician, administrator := symbolBoxes(t, "BoundaryParameters::crowdedCorners", "BoundaryParameters::'Load Sample'", "technician", "administrator")
+	operator := child(t, rendering, "BoundaryParameters::'Load Sample'", "operator")
+	supervisor := child(t, rendering, "BoundaryParameters::'Load Sample'", "supervisor")
+	op, sup, tech, admin := boxes[operator.ID], boxes[supervisor.ID], boxes[technician.ID], boxes[administrator.ID]
+	if math.Abs(op.low.X-320) > 0.5 || math.Abs(sup.high.X-480) > 0.5 {
+		t.Fatalf("corner symbols off their sides: operator %v, supervisor %v", op, sup)
+	}
+	if tech.overlaps(admin) {
+		t.Errorf("symbols from above overlap: %v and %v", tech, admin)
+	}
+	low, high := op.high.X+dotBoundaryGap, sup.low.X-dotBoundaryGap
+	if tech.high.X-tech.low.X+dotBoundaryGap+admin.high.X-admin.low.X <= high-low {
+		t.Fatalf("the symbols from above fit between the corners' (%v..%v): %v, %v", low, high, tech, admin)
+	}
+	if math.Abs((tech.low.X-low)-(high-admin.high.X)) > 0.5 {
+		t.Errorf("overlap not split between the corners (%v..%v): technician %v, administrator %v", low, high, tech, admin)
+	}
+	for name, box := range map[string]nodeBox{"technician": tech, "administrator": admin} {
+		if math.Abs(box.low.Y-120) > 0.5 {
+			t.Errorf("%s does not touch the top border y=120: %v", name, box)
+		}
+	}
+	for name, node := range map[string]*Node{"operator": operator, "supervisor": supervisor, "technician": technician, "administrator": administrator} {
+		if routeEnds := ends[node.ID]; len(routeEnds) != 1 || !boxes[node.ID].onBorder(routeEnds[0]) {
+			t.Errorf("%s: route ends at %v, off its symbol %v", name, routeEnds, boxes[node.ID])
+		}
+	}
+}

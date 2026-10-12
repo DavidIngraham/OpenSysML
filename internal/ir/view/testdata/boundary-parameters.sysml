@@ -7,6 +7,7 @@ package BoundaryParameters {
     part Operator;
     part Administrator;
     part 'Service Technician';
+    part Supervisor;
     part Rack;
 
     use case 'Load Sample' {
@@ -14,6 +15,7 @@ package BoundaryParameters {
         actor operator :> Operator;
         actor technician :> 'Service Technician';
         actor administrator :> Administrator;
+        actor supervisor :> Supervisor;
     }
     part Instrument {
         part detector;
@@ -22,6 +24,7 @@ package BoundaryParameters {
     connection 'Operator to Load Sample' connect Operator to 'Load Sample'.operator;
     connection 'Service Technician to Load Sample' connect 'Service Technician' to 'Load Sample'.technician;
     connection 'Administrator to Load Sample' connect Administrator to 'Load Sample'.administrator;
+    connection 'Supervisor to Load Sample' connect Supervisor to 'Load Sample'.supervisor;
     connection 'Rack to Detector' connect Rack to Instrument.detector;
     connection 'Rack to Filament' connect Rack to Instrument.filament;
 
@@ -113,6 +116,31 @@ package BoundaryParameters {
         metadata DiagramLayout::Route about 'Operator to Load Sample' { points = (120, 120, 320, 120); }
         metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
         metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (400, 64, 400, 120); }
+    }
+
+    // As crowdedCorner, with a fourth route from the right meeting the top-right
+    // corner: the two symbols from above fit between neither corner's symbol.
+    view crowdedCorners {
+        expose Operator;
+        expose Administrator;
+        expose 'Service Technician';
+        expose Supervisor;
+        expose 'Load Sample';
+        expose 'Operator to Load Sample';
+        expose 'Service Technician to Load Sample';
+        expose 'Administrator to Load Sample';
+        expose 'Supervisor to Load Sample';
+        render Views::asInterconnectionDiagram;
+
+        metadata DiagramLayout::Layout about Operator { x = 40; y = 98; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about 'Service Technician' { x = 280; y = 20; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Administrator { x = 360; y = 20; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Supervisor { x = 520; y = 98; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 160; height = 50; }
+        metadata DiagramLayout::Route about 'Operator to Load Sample' { points = (120, 120, 320, 120); }
+        metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
+        metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (400, 64, 400, 120); }
+        metadata DiagramLayout::Route about 'Supervisor to Load Sample' { points = (520, 120, 480, 120); }
     }
 
     // The use case has a position but no size, so its box is fitted round its
