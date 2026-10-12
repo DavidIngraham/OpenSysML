@@ -363,7 +363,14 @@ chaining to it: `perform action <call> ::> <target>.<op> { in <param> = …; }` 
 handed in or created, an action usage whose `in <pin> : <Block>` parameter the nested
 `perform action <op> ::> <pin>.<op>` chains through, its other pins bound to the operation's
 parameters by position. A call that reaches no object of the block (a caller outside it, an Alf
-`this` with no known type) is an empty step declaring the call's pins, reported as such.
+`this` with no known type) is an empty step declaring the call's pins, reported as such. Two
+operations keep an `action def <Op>` with a context parameter, as every other block-owned
+behavior a state runs does: one whose method a state's entry, do, exit or a transition's effect
+runs — a state def's member reaches no usage of the block, so the state writes
+`entry action : <Op> { in ref :>> context = <Machine>::context; }` — and one whose method acts
+on another block through its ports, which a usage's `this` cannot stand for. The block's usage
+of such a def binds the context to the object, `action <op> : <Op> { in ref :>> context = this; }`,
+so a call chaining to it runs the method on that object.
 
 ### Diagrams
 
@@ -1024,6 +1031,11 @@ followed as the document's own are: a class stereotyped «Subsystem», which the
 profile derives from «Block», is a `part def`, mapped, with nested parts and ports, connection
 defs typed by it, and tables filtered by it (rows filtered as blocks, with the note) all as for
 a «Block»; its own kind is kept as an `AppliedStereotype` marker, `stereotype = "Subsystem";`.
+A snapshot's generalizations count whatever module declares them — a user profile module's
+«Structural» :> «Block» classifies and filters as «Subsystem» does — and a stereotype the
+document itself defines as specializing a module's stereotype by `href` inherits the
+snapshot's generalizations through it: «Instrument» :> «Subsystem» is a block, and its classes
+carry `@Tailoring::Instrument` as a user stereotype's classes do.
 When no snapshot declares the stereotype either — a plain XMI export — the tool's block
 stereotypes are known by name: «System», «Subsystem», «Domain» and «External», applied under
 the OMG SysML namespace, which MagicDraw's SysML profile defines as specializations of «Block»

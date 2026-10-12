@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"cmp"
 	"slices"
 	"strings"
 
@@ -293,15 +294,20 @@ func (m *migration) typeFilter(ref sysmlv1.ElementRef) typeFilter {
 // the stereotype or metaclass it stands for, or by its specializers inside.
 func (m *migration) proxyTypeFilter(e *sysmlv1.Element) typeFilter {
 	s := m.model.StereotypeRef(e.ID)
-	if s.Name != "" && isStandardNamespace(s.Namespace) {
-		if t, ok := stereotypeTypes[s.Name]; ok {
-			return m.nameUsages(fromTypes("«"+s.Name+"»", t))
+	standard := s.Name != "" && isStandardNamespace(s.Namespace)
+	if t, ok := stereotypeTypes[s.Name]; ok && standard {
+		return m.nameUsages(fromTypes("«"+s.Name+"»", t))
+	}
+	// A snapshot's generalizations count whatever profile declares them: a
+	// user module's «Structural» :> «Block» filters as blocks do.
+	ancestors, declared := m.model.StereotypeAncestors(e.ID)
+	if declared {
+		if f, ok := specializedFilter(cmp.Or(s.Name, e.Name), ancestors); ok {
+			return m.nameUsages(f)
 		}
-		if ancestors, declared := m.model.StereotypeAncestors(e.ID); declared {
-			if f, ok := specializedFilter(s.Name, ancestors); ok {
-				return m.nameUsages(f)
-			}
-		} else if toolBlockStereotypes[s.Name] {
+	}
+	if standard {
+		if !declared && toolBlockStereotypes[s.Name] {
 			return m.nameUsages(toolBlockFilter(s.Name))
 		}
 		return typeFilter{label: "«" + s.Name + "»", refused: "no v2 metaclass stands for the elements of «" + s.Name + "»"}
@@ -335,7 +341,7 @@ func specializedFilter(name string, ancestors []sysmlv1.StereotypeRef) (typeFilt
 			continue
 		}
 		if t, ok := stereotypeTypes[general]; ok {
-			t.note = "«" + name + "» specializes «" + general + "» in the tool's profile; rows are filtered as its elements are"
+			t.note = "«" + name + "» specializes «" + general + "» as the archive's module snapshot declares; rows are filtered as its elements are"
 			return fromTypes("«"+name+"»", t), true
 		}
 	}
