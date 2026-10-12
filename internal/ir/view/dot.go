@@ -247,7 +247,7 @@ func (w *dotWriter) dotBB(box nodeBox) string {
 func newDOTWriter(r *Rendering, options Options) *dotWriter {
 	skin := skinOf(options.Style)
 	w := &dotWriter{kind: r.Kind, tree: r.Kind == KindTree, action: r.Kind == KindAction, clusters: map[string]bool{}, enclosing: map[string][]string{}, canvas: r.Canvas,
-		placement: placeRendering(r), drawn: map[string]bool{}, boxes: map[string]nodeBox{}, pins: map[string]nodeBox{}, ported: map[string]*Node{}, omitted: map[string]bool{},
+		placement: placeRendering(r), drawn: map[string]bool{}, boxes: map[string]nodeBox{}, spread: map[string]bool{}, pins: map[string]nodeBox{}, ported: map[string]*Node{}, omitted: map[string]bool{},
 		fills: familyFills{palette: options.Palette, tree: r.Kind == KindTree}, skin: skin, pictures: r.Pictures, pictureRefusals: r.pictureRefusals(), links: options.Links}
 	w.notices = append(w.notices, refusedPictureNotices(w.pictures, w.pictureRefusals)...)
 	w.sources = map[string]bool{}
@@ -451,6 +451,7 @@ type dotWriter struct {
 	placement       *placement          // which nodes have a place, shared with every form
 	drawn           map[string]bool     // node ID -> in the rendering's trees
 	boxes           map[string]nodeBox  // node ID -> the box it is drawn in, for every node that has one
+	spread          map[string]bool     // node ID -> true for a boundary symbol spread along its cluster's side, whose routes end on it
 	pins            map[string]nodeBox  // port ID -> the box its pin is drawn in, for every port of a boxed node
 	ported          map[string]*Node    // port ID -> the node it is a port of
 	ports           portView            // the ports drawn of each node, and how they are named
@@ -697,7 +698,9 @@ func reachingEnds(ends []routeEnd) []routeEnd {
 
 // ledEdges is edges with every route that stops short of an end led on to it,
 // from the point of the end's box's border facing where the route stops, when
-// that is not the point itself; an end with no box is left short.
+// that is not the point itself; an end with no box is left short. A route that
+// reaches a boundary symbol spread along its cluster's side ends on the
+// symbol's border instead, facing the waypoint before.
 func (w *dotWriter) ledEdges(edges []Edge) []Edge {
 	led := make([]Edge, 0, len(edges))
 	for _, edge := range edges {
@@ -707,13 +710,18 @@ func (w *dotWriter) ledEdges(edges []Edge) []Edge {
 				edge.Route = append([]Point{lead}, edge.Route...)
 			}
 			edge.openFrom = false
+		} else if ok && w.spread[edge.From] && len(edge.Route) > 1 {
+			edge.Route = append([]Point{box.toward(edge.Route[1])}, edge.Route[1:]...)
 		}
+		n := len(edge.Route)
 		if box, ok := w.boxes[edge.To]; ok && edge.openTo {
-			at := edge.Route[len(edge.Route)-1]
+			at := edge.Route[n-1]
 			if lead := box.faces(at, at); lead != at {
 				edge.Route = append(slices.Clone(edge.Route), lead)
 			}
 			edge.openTo = false
+		} else if ok && w.spread[edge.To] && n > 1 {
+			edge.Route = append(slices.Clone(edge.Route[:n-1]), box.toward(edge.Route[n-2]))
 		}
 		led = append(led, edge)
 	}
@@ -735,7 +743,10 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 	for _, root := range roots {
 		w.placeNode(root, ends, &derived)
 	}
-	if len(derived) == 0 {
+	for _, root := range roots {
+		w.spreadBoundaries(root, ends)
+	}
+	if len(derived) == 0 && len(w.spread) == 0 {
 		return
 	}
 	for _, node := range derived {
@@ -747,7 +758,8 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 }
 
 // reboxClusters recomputes, members first, the box of every cluster under node
-// boxed round its members, once nodes placed by their neighbours have theirs.
+// boxed round its members, once nodes placed by their neighbours have theirs
+// and spread boundary symbols their new places.
 func (w *dotWriter) reboxClusters(node *Node) {
 	for _, child := range node.Children {
 		w.reboxClusters(child)

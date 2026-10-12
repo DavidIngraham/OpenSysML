@@ -21,8 +21,14 @@ var (
 // ends with the pin IDs of the named ports of node.
 func pinBoxes(t *testing.T, view, node string, names ...string) (boxes map[string]nodeBox, ends map[string][]Point, pins []string) {
 	t.Helper()
+	return pinBoxesWith(t, Options{}, view, node, names...)
+}
+
+// pinBoxesWith is pinBoxes with the DOT text written under options.
+func pinBoxesWith(t *testing.T, options Options, view, node string, names ...string) (boxes map[string]nodeBox, ends map[string][]Point, pins []string) {
+	t.Helper()
 	rendering := render(t, "boundary-parameters.sysml", view)
-	dot, err := rendering.DOT()
+	dot, err := rendering.DOTWith(options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,4 +256,118 @@ func TestDOTSplitsTheOverlapOfACrowdedSideBetweenItsCorners(t *testing.T) {
 		}
 	}
 	routesEndOnPins(t, boxes, ends, pins...)
+}
+
+var dotClusterBB = regexp.MustCompile(`(?s)subgraph "cluster_(n\d+)" \{.*?bb="([-0-9.]+),([-0-9.]+),([-0-9.]+),([-0-9.]+)"`)
+
+// clusterBoxes is the box of every cluster the DOT text gives a `bb`, by ID,
+// in the rendering's pixels (y down).
+func clusterBoxes(t *testing.T, dot string) map[string]nodeBox {
+	t.Helper()
+	boxes := map[string]nodeBox{}
+	for _, m := range dotClusterBB.FindAllStringSubmatch(dot, -1) {
+		boxes[m[1]] = nodeBox{low: Point{X: dotNumber(t, m[2]), Y: -dotNumber(t, m[5])}, high: Point{X: dotNumber(t, m[4]), Y: -dotNumber(t, m[3])}}
+	}
+	return boxes
+}
+
+// memberBoxes renders the view and returns the DOT text's pinned boxes, cluster boxes and
+// route ends with the IDs of the named members of node.
+func memberBoxes(t *testing.T, view, node string, names ...string) (boxes, clusters map[string]nodeBox, ends map[string][]Point, members []string) {
+	t.Helper()
+	rendering := render(t, "boundary-parameters.sysml", view)
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	members = append(members, findNode(t, rendering.Roots, node).ID)
+	for _, name := range names {
+		members = append(members, child(t, rendering, node, name).ID)
+	}
+	return pinnedBoxes(t, dot), clusterBoxes(t, dot), routeEndsAt(t, dot), members
+}
+
+// child is the member of the node named parent that is named name.
+func child(t *testing.T, rendering *Rendering, parent, name string) *Node {
+	t.Helper()
+	for _, node := range findNode(t, rendering.Roots, parent).Children {
+		if node.Name == name {
+			return node
+		}
+	}
+	t.Fatalf("no member %q of %q", name, parent)
+	return nil
+}
+
+// Two declared ports, drawn as members of their part, whose routes end at one point of the left
+// border are drawn apart along it inside the border, each route ending on its own symbol.
+func TestDOTSpreadsDeclaredPortsAlongTheSide(t *testing.T) {
+	boxes, _, ends, ports := memberBoxes(t, "BoundaryParameters::ports", "BoundaryParameters::Instrument", "sensor", "heater")
+	ports = ports[1:]
+	sensor, heater := boxes[ports[0]], boxes[ports[1]]
+	if sensor.overlaps(heater) {
+		t.Errorf("port symbols overlap: sensor %v, heater %v", sensor, heater)
+	}
+	for name, box := range map[string]nodeBox{"sensor": sensor, "heater": heater} {
+		if math.Abs(box.low.X-320) > 0.5 {
+			t.Errorf("%s does not touch the left border x=320 from inside: %v", name, box)
+		}
+	}
+	routesEndOnPins(t, boxes, ends, ports...)
+}
+
+// A positioned part with no stated size has its coincident ports drawn apart and its box
+// refitted round them: the margin round the ports, stretched to the stated corner.
+func TestDOTReboxesAnUnsizedNodeRoundItsSpreadPorts(t *testing.T) {
+	boxes, clusters, _, members := memberBoxes(t, "BoundaryParameters::unsized", "BoundaryParameters::Instrument", "sensor", "heater")
+	sensor, heater := boxes[members[1]], boxes[members[2]]
+	if sensor.overlaps(heater) {
+		t.Errorf("port symbols overlap: sensor %v, heater %v", sensor, heater)
+	}
+	cluster, ok := clusters[members[0]]
+	if !ok {
+		t.Fatalf("no bb for the instrument %s; clusters: %v", members[0], clusters)
+	}
+	ports := sensor.union(heater)
+	want := nodeBox{low: Point{X: math.Min(320, ports.low.X-dotClusterMargin), Y: math.Min(120, ports.low.Y-dotClusterMargin)},
+		high: Point{X: ports.high.X + dotClusterMargin, Y: ports.high.Y + dotClusterMargin}}
+	for _, corner := range [][2]Point{{cluster.low, want.low}, {cluster.high, want.high}} {
+		if math.Abs(corner[0].X-corner[1].X) > 0.5 || math.Abs(corner[0].Y-corner[1].Y) > 0.5 {
+			t.Fatalf("instrument boxed at %v, want the margin round its spread ports %v", cluster, want)
+		}
+	}
+}
+
+// Nested parts are no boundary symbols: the routes that reach them inside their
+// owner leave them where they end, off the owner's border.
+func TestDOTLeavesInteriorMembersWhereRoutesPlaceThem(t *testing.T) {
+	boxes, _, _, parts := memberBoxes(t, "BoundaryParameters::interior", "BoundaryParameters::Instrument", "detector", "filament")
+	parts = parts[1:]
+	owner := nodeBox{low: Point{X: 320, Y: 120}, high: Point{X: 480, Y: 220}}
+	for name, box := range map[string]nodeBox{"detector": boxes[parts[0]], "filament": boxes[parts[1]]} {
+		inside := box.low.X > owner.low.X+1 && box.high.X < owner.high.X-1 && box.low.Y > owner.low.Y+1 && box.high.Y < owner.high.Y-1
+		if !inside {
+			t.Errorf("%s %v was moved to the border of %v", name, box, owner)
+		}
+		if !box.holds(Point{X: 370, Y: 170}) && !box.onBorder(Point{X: 370, Y: 170}) {
+			t.Errorf("%s %v does not meet its route's end (370, 170)", name, box)
+		}
+	}
+}
+
+// Under the full ports display, a routed pin whose route ends where an unconnected parameter's
+// pin is placed is drawn apart from it along the top, every pin still touching the top.
+func TestDOTKeepsRoutedPinsOffUnconnectedPins(t *testing.T) {
+	boxes, ends, pins := pinBoxesWith(t, Options{Ports: PortsFull}, "BoundaryParameters::freePin", "BoundaryParameters::'Load Sample'", "operator", "technician", "administrator", "supervisor")
+	for i, a := range pins {
+		if math.Abs(boxes[a].high.Y-120) > 0.5 {
+			t.Errorf("%s does not touch the top border y=120: %v", a, boxes[a])
+		}
+		for _, b := range pins[i+1:] {
+			if boxes[a].overlaps(boxes[b]) {
+				t.Errorf("pins overlap: %s %v and %s %v", a, boxes[a], b, boxes[b])
+			}
+		}
+	}
+	routesEndOnPins(t, boxes, ends, pins[2])
 }

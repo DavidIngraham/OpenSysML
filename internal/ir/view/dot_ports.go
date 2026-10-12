@@ -77,9 +77,9 @@ func (b nodeBox) holds(p Point) bool {
 }
 
 // placePorts finds the box of every port of a boxed node, under it: a port a
-// route meets sits outside the border where the route ends, touching it, the
-// ports of a side spread apart where they would overlap; the rest are spread
-// along the top edge and the bottom, by portSide.
+// route meets sits outside the border where the route ends, touching it; the
+// rest are spread along the top edge and the bottom, by portSide; pins that
+// would lie over one another are then moved apart along their side.
 func (w *dotWriter) placePorts(node *Node, ends map[string]routeEnd) {
 	for _, child := range node.Children {
 		w.placePorts(child, ends)
@@ -101,24 +101,26 @@ func (w *dotWriter) placePorts(node *Node, ends map[string]routeEnd) {
 		w.pins[port.ID] = pinBox(box, side, end.at)
 		sides[side] = append(sides[side], boundarySymbol{id: port.ID, box: w.pins[port.ID], at: end.at, from: end.next})
 	}
-	w.spreadPins(box, sides)
-	for side, ports := range free {
-		y := box.low.Y - dotPinSize/2
-		if side == 1 {
-			y = box.high.Y + dotPinSize/2
+	for i, ports := range free {
+		side, y := topSide, box.low.Y-dotPinSize/2
+		if i == 1 {
+			side, y = bottomSide, box.high.Y+dotPinSize/2
 		}
 		for i, port := range ports {
 			x := box.low.X + (box.high.X-box.low.X)*float64(i+1)/float64(len(ports)+1)
 			w.pins[port.ID] = pinAround(Point{X: halfPixel(x), Y: y})
+			at := w.pins[port.ID].centre()
+			sides[side] = append(sides[side], boundarySymbol{id: port.ID, box: w.pins[port.ID], at: at, from: at})
 		}
 	}
+	w.spreadPins(box, sides)
 }
 
 // pinBox is the box of a pin on side of box that a route meets at end: just
 // outside the border, touching it, level with end along the side.
 func pinBox(box nodeBox, side boundarySide, end Point) nodeBox {
 	border := Point{X: math.Min(math.Max(end.X, box.low.X), box.high.X), Y: math.Min(math.Max(end.Y, box.low.Y), box.high.Y)}
-	return box.pinOn(side, pinAround(Point{}), side.along(border))
+	return box.sideBox(side, pinAround(Point{}), side.along(border), true)
 }
 
 // pinAround is a pin's box centred on a point.

@@ -1,10 +1,23 @@
-// Use cases whose actor parameters are pins of a positioned node, meeting at one route end,
-// at a corner and crowded at the corners; and a migration made up one connection's name.
+// Use cases whose actor parameters are pins of a positioned node, meeting at one route end, at
+// a corner, crowded at the corners and over an unconnected pin; a part whose declared ports
+// meet at one route end, sized and unsized, and whose nested parts are routed inside it; and a
+// migration made up one connection's name.
 package BoundaryParameters {
     part Operator;
     part Administrator;
     part 'Service Technician';
     part Supervisor;
+    part Rack;
+    part Instrument {
+        port sensor;
+        port heater;
+        part detector;
+        part filament;
+    }
+    connection 'Rack to Sensor' connect Rack to Instrument.sensor;
+    connection 'Rack to Heater' connect Rack to Instrument.heater;
+    connection 'Rack to Detector' connect Rack to Instrument.detector;
+    connection 'Rack to Filament' connect Rack to Instrument.filament;
 
     use case 'Load Sample' {
         subject;
@@ -100,7 +113,7 @@ package BoundaryParameters {
 
         metadata DiagramLayout::Layout about Operator { x = 40; y = 98; width = 80; height = 44; }
         metadata DiagramLayout::Layout about 'Service Technician' { x = 280; y = 20; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about Administrator { x = 360; y = 20; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Administrator { x = 350; y = 20; width = 80; height = 44; }
         metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 30; height = 50; }
         metadata DiagramLayout::Route about 'Operator to Load Sample' { points = (120, 120, 320, 120); }
         metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
@@ -123,13 +136,64 @@ package BoundaryParameters {
 
         metadata DiagramLayout::Layout about Operator { x = 40; y = 98; width = 80; height = 44; }
         metadata DiagramLayout::Layout about 'Service Technician' { x = 280; y = 20; width = 80; height = 44; }
-        metadata DiagramLayout::Layout about Administrator { x = 360; y = 20; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Administrator { x = 350; y = 20; width = 80; height = 44; }
         metadata DiagramLayout::Layout about Supervisor { x = 520; y = 98; width = 80; height = 44; }
         metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 30; height = 50; }
         metadata DiagramLayout::Route about 'Operator to Load Sample' { points = (120, 120, 320, 120); }
         metadata DiagramLayout::Route about 'Service Technician to Load Sample' { points = (320, 64, 320, 120); }
         metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (340, 64, 340, 120); }
         metadata DiagramLayout::Route about 'Supervisor to Load Sample' { points = (520, 120, 350, 120); }
+    }
+
+    // The routes to the instrument's two declared ports end at one point of its left border.
+    view ports {
+        expose Rack;
+        expose Instrument;
+        expose 'Rack to Sensor';
+        expose 'Rack to Heater';
+        render Views::asInterconnectionDiagram;
+        metadata DiagramLayout::Layout about Rack { x = 40; y = 60; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Instrument { x = 320; y = 120; width = 160; height = 100; }
+        metadata DiagramLayout::Route about 'Rack to Sensor' { points = (120, 82, 320, 170); }
+        metadata DiagramLayout::Route about 'Rack to Heater' { points = (120, 82, 320, 170); }
+    }
+
+    // The instrument has a position but no size, so its box is fitted round its ports.
+    view unsized {
+        expose Rack;
+        expose Instrument;
+        expose 'Rack to Sensor';
+        expose 'Rack to Heater';
+        render Views::asInterconnectionDiagram;
+        metadata DiagramLayout::Layout about Rack { x = 40; y = 60; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Instrument { x = 320; y = 120; }
+        metadata DiagramLayout::Route about 'Rack to Sensor' { points = (120, 82, 320, 170); }
+        metadata DiagramLayout::Route about 'Rack to Heater' { points = (120, 82, 320, 170); }
+    }
+
+    // The routes to the instrument's nested parts end at one point inside it.
+    view interior {
+        expose Rack;
+        expose Instrument;
+        expose 'Rack to Detector';
+        expose 'Rack to Filament';
+        render Views::asInterconnectionDiagram;
+        metadata DiagramLayout::Layout about Rack { x = 40; y = 60; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Instrument { x = 320; y = 120; width = 160; height = 100; }
+        metadata DiagramLayout::Route about 'Rack to Detector' { points = (120, 82, 370, 170); }
+        metadata DiagramLayout::Route about 'Rack to Filament' { points = (120, 82, 370, 170); }
+    }
+
+    // Only the administrator is connected; its route ends where the middle of the three
+    // unconnected parameters' pins is placed on the top side.
+    view freePin {
+        expose Administrator;
+        expose 'Load Sample';
+        expose 'Administrator to Load Sample';
+        render Views::asInterconnectionDiagram;
+        metadata DiagramLayout::Layout about Administrator { x = 350; y = 20; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about 'Load Sample' { x = 320; y = 120; width = 160; height = 50; }
+        metadata DiagramLayout::Route about 'Administrator to Load Sample' { points = (390, 64, 390, 120); }
     }
 
     metadata MigrationMetadata::SynthesizedName about 'Operator to Acquire Image';
