@@ -4436,7 +4436,7 @@ func (p *Parser) parseEndIndex(feature ast.Node) (ast.Node, bool) {
 	defer p.release()
 	p.advance() // '#'
 	p.advance() // '('
-	index := p.parseSequenceExpr()
+	index := p.parseSequenceExpr(lexer.RParen)
 	whole := index != nil && p.accept2(lexer.RParen) && len(p.Diagnostics) == cp.diagnosticLen
 	if !whole || p.atExpressionOperator() || p.at(lexer.Dot) {
 		p.restore(cp)
