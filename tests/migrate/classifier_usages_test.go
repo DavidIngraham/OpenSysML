@@ -15,14 +15,14 @@ func TestClassifierTablesListActorAndUseCaseUsages(t *testing.T) {
 
 	for _, name := range []string{"Classifiers", "Types", "Namespaces", "Packageable Elements"} {
 		got := rows(t, s, "Tables::'"+name+" Rows'")
-		want := []string{"returned 4 rows", "Operations::Console\n", "Operations::Focus\n", "Operations::Operator\n", "Operations::Scan\n"}
+		want := []string{"returned 6 rows", "Operations::Console\n", "Operations::Focus\n", "Operations::Operator\n", "Operations::Panel\n", "Operations::PanelToConsole\n", "Operations::Scan\n"}
 		if name == "Packageable Elements" {
-			want = append([]string{"returned 5 rows"}, append(want[1:], "Operations::alice\n")...)
+			want = append([]string{"returned 7 rows"}, append(want[1:], "Operations::alice\n")...)
 		} else if strings.Contains(got, "alice") {
 			t.Errorf("%s lists the instance alice:\n%s", name, got)
 		}
 		wantInOrder(t, name+" rows", got, want...)
-		for _, feature := range []string{"Console::current", "Console::user", "Scan::"} {
+		for _, feature := range []string{"Console::current", "Console::user", "Console::panel", "Panel::console", "Scan::"} {
 			if strings.Contains(got, feature) {
 				t.Errorf("%s lists the owned feature %s:\n%s", name, feature, got)
 			}
@@ -69,4 +69,9 @@ func TestInstanceTablesOfUsageClassifiers(t *testing.T) {
 
 	instances := rows(t, s, "Tables::'Instance Specifications Rows'")
 	wantInOrder(t, "Instance Specifications rows", instances, "returned 1 row", "Operations::alice\n")
+	for _, synthesized := range []string{"Operations::console", "Operations::panel"} {
+		if strings.Contains(instances, synthesized) {
+			t.Errorf("Instance Specifications lists %q, a usage the migration wrote for an association end, which is no instance:\n%s", synthesized, instances)
+		}
+	}
 }

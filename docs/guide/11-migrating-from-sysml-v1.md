@@ -254,8 +254,9 @@ under [Run configurations](../reference/sysml-v1-migration.md#run-configurations
 
 ## Finishing by hand
 
-Alongside every element the report calls unmapped or approximated-with-loss is a comment
-saying so, at the place in the v2 model where the element belongs:
+Every element the report calls unmapped or approximated-with-loss is marked at the place in
+the v2 model where it belongs: what has no v2 form is a `/* not migrated: … */` comment, and
+a stereotype or tag the v2 form does not carry is an `AppliedStereotype` marker holding it:
 
 ```sysml
 package 'Value Types' {

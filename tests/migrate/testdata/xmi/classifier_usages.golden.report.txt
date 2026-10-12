@@ -1,8 +1,9 @@
 # SysML v1 to v2 migration report: classifier_usages.xmi
 # exported by Example UML Tool
-# migrated 29 element(s): 13 mapped, 16 approximated, 0 unmapped (0 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)
+# migrated 33 element(s): 16 mapped, 17 approximated, 0 unmapped (0 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)
 
-## approximated (16)
+## approximated (17)
+Association	Operations::<Association>	_assoc_console_panel	-> Operations::PanelToConsole	(the anonymous Association is written as connection def PanelToConsole; its one usage is the connection panel to console joining panel and console)
 Property	Operations::Console::current	_prop_current	-> Operations::Console::current	(a property typed by a behavior is written as a reference use case usage)
 Actor	Operations::Operator	_act_operator	-> Operations::Operator	(a UML actor is written as a part usage)
 Diagram	Tables::Actors	_diag_actors	-> Tables::Actors	(a Generic Table written as a view rendered asElementTable; the diagram shows nothing; the view exposes nothing)
@@ -20,12 +21,15 @@ Diagram	Tables::Packageable Elements	_diag_packageable	-> Tables::'Packageable E
 Diagram	Tables::Types	_diag_types	-> Tables::Types	(a Generic Table written as a view rendered asElementTable; the diagram shows nothing; the view exposes nothing)
 Diagram	Tables::Use Cases	_diag_usecases	-> Tables::'Use Cases'	(a Generic Table written as a view rendered asElementTable; the diagram shows nothing; the view exposes nothing)
 
-## mapped (13)
+## mapped (16)
 Model	Model	_m	(the root model's members are written at the top level)
 Package	Operations	_pkg_operations	-> Operations
 Class	Operations::Console	_blk_console	-> Operations::Console
+Property	Operations::Console::panel	_prop_panel	-> Operations::Console::panel
 Property	Operations::Console::user	_prop_user	-> Operations::Console::user
 UseCase	Operations::Focus	_uc_focus	-> Operations::Focus
+Class	Operations::Panel	_blk_panel	-> Operations::Panel
+Property	Operations::Panel::console	_prop_console	-> Operations::Panel::console
 UseCase	Operations::Scan	_uc_scan	-> Operations::Scan
 Include	Operations::Scan::<Include>	_inc_focus	-> Operations::Scan
 InstanceSpecification	Operations::alice	_inst_alice	-> Operations::alice

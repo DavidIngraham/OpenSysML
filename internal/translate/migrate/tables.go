@@ -436,8 +436,10 @@ func (m *migration) typedRows(src qx, types []sysmlv1.ElementRef, subtypes, indi
 			qs = append(qs, merged.query(source))
 		}
 		if merged.instances {
-			// A link is a connection usage, as the lines of a use case diagram are.
-			instances := qcall("Except", qarg1("source", whereType(source, "Usage")), qarg1("exclude", whereType(source, "ConnectionUsage")))
+			// A link is a connection usage, as the lines of a use case diagram are;
+			// a migration marker is a metadata usage. Neither is an instance.
+			links := qcall("Union", qarg1("source", whereType(source, "ConnectionUsage")), qarg1("other", whereType(source, "MetadataUsage")))
+			instances := qcall("Except", qarg1("source", whereType(source, "Usage")), qarg1("exclude", links))
 			// An actor, use case or requirement is a package-owned usage too, and no instance.
 			var classifiers uniqueNames
 			for _, name := range m.nameUsages(typeFilter{usageKinds: classifierUsages}).usages {
@@ -448,7 +450,7 @@ func (m *migration) typedRows(src qx, types []sysmlv1.ElementRef, subtypes, indi
 			if len(classifiers) > 0 {
 				instances = qcall("Except", qarg1("source", instances), qarg1("exclude", qcall("Named", qstrs("qualifiedName", classifiers...))))
 			}
-			qs = append(qs, packageOwnedUsages(instances, source, l.roots))
+			qs = append(qs, m.exceptSynthesizedUsages(packageOwnedUsages(instances, source, l.roots)))
 		}
 		if len(metadata) > 0 {
 			qs = append(qs, qcall("WhereMetadata", qarg1("source", source), qstrs("'metadata'", metadata...)))
@@ -467,9 +469,33 @@ func (m *migration) typedRows(src qx, types []sysmlv1.ElementRef, subtypes, indi
 		l.note("rows of subtypes of the row types are listed too: a type filter admits conforming elements")
 	}
 	if individuals {
-		rows = packageOwnedUsages(whereType(rows, "Usage"), src, l.roots)
+		rows = m.exceptSynthesizedUsages(packageOwnedUsages(whereType(rows, "Usage"), src, l.roots))
 	}
 	return rows
+}
+
+// exceptSynthesizedUsages drops the package-owned usages the migration wrote
+// for definitions a connection joins (planAssociations, the use case lines),
+// which stand for no v1 instance specification.
+func (m *migration) exceptSynthesizedUsages(rows qx) qx {
+	var names uniqueNames
+	for _, byDef := range m.defUsages {
+		for _, u := range byDef {
+			if u.self {
+				continue
+			}
+			if host := m.plainName(u.host); host != "" {
+				names.add(host + "::" + u.name)
+			} else {
+				names.add(u.name)
+			}
+		}
+	}
+	if len(names) == 0 {
+		return rows
+	}
+	slices.Sort(names)
+	return qcall("Except", qarg1("source", rows), qarg1("exclude", qcall("Named", qstrs("qualifiedName", names...))))
 }
 
 // packageOwnedUsages keeps the usages a package owns — the scope's instances —
