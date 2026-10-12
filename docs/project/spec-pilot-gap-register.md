@@ -588,7 +588,10 @@ neither is hidden — and:
   two imports. The pilot never compares imported with inherited memberships either; it does
   compare what a type inherits from a general's own imports: on the `Sub :> Base` fixture below
   it reports `Duplicate of inherited member name 'Engine' from Left, Right` on `Sub` and binds
-  the first.
+  the first. The reading holds at every level: the import stays a membership of the type, so a
+  specialization inherits both members and is warned in turn (`part def G :> Base { public import
+  Q::*; } part def S :> G;` draws `Duplicate of inherited member name 'x' from Base, Q` at `S`, as
+  the pilot does). Locked by `TestImportsCollidingWithInheritedNamesAreInherited`.
 - *A hidden import is not inherited.* A membership §7.2.5.4 hides — colliding with another
   import's name or with an owned name — is excluded from `importedMemberships` and so is no
   membership of the importing namespace; a type specializing that namespace inherits none of it
@@ -596,7 +599,7 @@ neither is hidden — and:
   Introduction;` where `Introduction` has `expose Fleet::**` bringing two parts' `payload` draws
   the import warning at `Introduction` alone; `v` is clean (`Resolver.importedMembers` reads the
   same `importedCollisions` the warning and every lookup read, and `hiddenImports` leaves out
-  what an owned or inherited name of the general hides). The
+  what an owned name of the general hides; an inherited name hides nothing, above). The
   pilot reports `Duplicate of inherited member name 'payload' from Trailer, Truck` at `v` as
   well: its `NamespaceImportAdapter` adds every visible membership (above), so the hidden pair is
   inherited there — the same shortfall, one level down. Locked by
