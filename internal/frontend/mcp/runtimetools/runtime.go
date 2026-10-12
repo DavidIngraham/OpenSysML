@@ -29,7 +29,7 @@ type InstantiateInput struct {
 type ExecuteActionInput struct {
 	ModelInput
 	ActionSymbolID    string                    `json:"actionSymbolId" jsonschema:"qualified name of the action definition or usage to run"`
-	Inputs            map[string]map[string]any `json:"inputs,omitempty" jsonschema:"input parameter name to value; each value is a protojson Value"`
+	Inputs            map[string]map[string]any `json:"inputs,omitempty" jsonschema:"input parameter name to value; each value is a protojson Value. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
 	Schedule          string                    `json:"schedule,omitempty" jsonschema:"scheduling policy for choice points: declared, reverse (the default), seed:<n>, or explore[:runs=<n>,depth=<d>] which runs every linearization and answers with outcomes"`
 	PerformerSymbolID string                    `json:"performerSymbolId,omitempty" jsonschema:"qualified name of a part/usage, or a path from one as Mission::mission.vehicle, whose object the action is performed on; empty performs it outside any object"`
 }

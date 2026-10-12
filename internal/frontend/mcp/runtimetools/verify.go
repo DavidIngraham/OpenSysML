@@ -19,8 +19,8 @@ type VerifyInput struct {
 	SubjectSymbolID string                    `json:"subjectSymbolId,omitempty" jsonschema:"qualified name of a part/usage to instantiate and evaluate against, or a path from one to a nested object; empty evaluates declared values"`
 	Engine          string                    `json:"engine,omitempty" jsonschema:"the analysis engine asked, as list_engines names them; empty is auto"`
 	Question        string                    `json:"question,omitempty" jsonschema:"evaluate (the default: one evaluation), holds (prove over every free assignment) or satisfiable (find one satisfying assignment)"`
-	Arguments       []map[string]any          `json:"arguments,omitempty" jsonschema:"positional values for the element's in parameters, each a protojson Value"`
-	NamedArguments  map[string]map[string]any `json:"namedArguments,omitempty" jsonschema:"values for the element's in parameters by name, each a protojson Value"`
+	Arguments       []map[string]any          `json:"arguments,omitempty" jsonschema:"positional values for the element's in parameters, each a protojson Value. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
+	NamedArguments  map[string]map[string]any `json:"namedArguments,omitempty" jsonschema:"values for the element's in parameters by name, each a protojson Value. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
 }
 
 // VerifySatisfactionInput asks whether the satisfy assertions of a model hold.
@@ -42,7 +42,7 @@ type ValidateInstanceInput struct {
 type EvaluateCalcInput struct {
 	ModelInput
 	SymbolID  string           `json:"symbolId" jsonschema:"qualified name of the calc definition or usage"`
-	Arguments []map[string]any `json:"arguments,omitempty" jsonschema:"positional arguments, each a protojson Value; a calc usage given none binds its inputs from its own members and answers every output"`
+	Arguments []map[string]any `json:"arguments,omitempty" jsonschema:"positional arguments, each a protojson Value; a calc usage given none binds its inputs from its own members and answers every output. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
 	Engine    string           `json:"engine,omitempty" jsonschema:"the analysis engine asked; empty is auto"`
 }
 
@@ -51,8 +51,8 @@ type RunAnalysisInput struct {
 	ModelInput
 	SymbolID        string                    `json:"symbolId" jsonschema:"qualified name of the analysis case definition or usage"`
 	SubjectSymbolID string                    `json:"subjectSymbolId,omitempty" jsonschema:"qualified name of a part/usage to instantiate as the case's subject, or a path from one; empty leaves the case's own subject binding to supply it"`
-	Arguments       []map[string]any          `json:"arguments,omitempty" jsonschema:"positional values for the case's input parameters, each a protojson Value; the subject is never among them"`
-	NamedArguments  map[string]map[string]any `json:"namedArguments,omitempty" jsonschema:"values for input parameters by name, each a protojson Value"`
+	Arguments       []map[string]any          `json:"arguments,omitempty" jsonschema:"positional values for the case's input parameters, each a protojson Value; the subject is never among them. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
+	NamedArguments  map[string]map[string]any `json:"namedArguments,omitempty" jsonschema:"values for input parameters by name, each a protojson Value. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
 	Schedule        string                    `json:"schedule,omitempty" jsonschema:"scheduling policy for choice points: declared, reverse (the default), seed:<n>, or explore[:runs=<n>,depth=<d>]"`
 	Engine          string                    `json:"engine,omitempty" jsonschema:"the analysis engine asked; empty is auto"`
 }
@@ -62,8 +62,8 @@ type RunSweepInput struct {
 	ModelInput
 	SymbolID        string                    `json:"symbolId" jsonschema:"qualified name of the analysis case or calc, definition or usage"`
 	SubjectSymbolID string                    `json:"subjectSymbolId,omitempty" jsonschema:"qualified name of a part/usage to instantiate as an analysis case's subject, or a path from one"`
-	Arguments       []map[string]any          `json:"arguments,omitempty" jsonschema:"positional values every row binds, each a protojson Value"`
-	NamedArguments  map[string]map[string]any `json:"namedArguments,omitempty" jsonschema:"values every row binds by name, each a protojson Value"`
+	Arguments       []map[string]any          `json:"arguments,omitempty" jsonschema:"positional values every row binds, each a protojson Value. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
+	NamedArguments  map[string]map[string]any `json:"namedArguments,omitempty" jsonschema:"values every row binds by name, each a protojson Value. Example arms: {\"intValue\":\"7\"}, {\"realValue\":1.5}, {\"boolValue\":true}, {\"stringValue\":\"x\"}, {\"quantity\":{\"realMagnitude\":5.0,\"unit\":\"m\"}}, {\"enumLiteral\":{\"literalId\":\"Colors::red\"}}"`
 	Ranges          []map[string]any          `json:"ranges" jsonschema:"the ranges swept, each a protojson SweepRange {\"parameter\":name,\"start\":Value,\"end\":Value,\"step\":Value}; several make one row per point of their cartesian product"`
 	Samples         int64                     `json:"samples,omitempty" jsonschema:"rows to draw uniformly from each range instead of stepping through it; 0 steps, above 0 needs seed and refuses a range with a step"`
 	Seed            uint64                    `json:"seed,omitempty" jsonschema:"seed the draws are taken from; required with samples"`

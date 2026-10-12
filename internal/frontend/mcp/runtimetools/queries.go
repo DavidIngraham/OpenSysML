@@ -203,8 +203,9 @@ func (g *group) registerQueries(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name: "export_graphs",
 		Description: "Export the lowered graph of an action or state machine — the subject's and every behavior it performs — as " +
-			"the canonical graphs:<version> JSON external analysis engines read (the ExportGraphs RPC). The text is the JSON; the " +
-			"result is the ExportGraphsResponse as protojson writes it.",
+			"the canonical graphs:<version> JSON external analysis engines read (the ExportGraphs RPC). The result is the " +
+			"ExportGraphsResponse as protojson writes it, the JSON in `content`; the text names the subject and version on its first " +
+			"line and carries the JSON after it.",
 		Annotations: toolkit.ReadOnly("Export graphs"),
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in ExportGraphsInput) (*mcp.CallToolResult, Result, error) {
 		m, err := g.resolve(ctx, in.ModelInput)
