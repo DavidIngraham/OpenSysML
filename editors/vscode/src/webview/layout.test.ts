@@ -25,6 +25,7 @@ import {
   keepOrthogonalRoutes,
   insertedWaypoint,
   labelLines,
+  simpleName,
   simpleNames,
   layoutCanvas,
   liftedEdges,
@@ -681,6 +682,24 @@ test("simpleNames keeps the qualifier that tells nodes of one name apart", () =>
   assert.deepEqual(labelLines(nodes[0], ["qualifiers"], names), [
     "Plant::pump",
   ]);
+});
+
+test("simpleNames reads an escaped quote inside a quoted segment", () => {
+  const nodes = [
+    node("a", "Quoted::'It\\'s'::pump"),
+    node("b", "Quoted::'It\\'s'"),
+    node("c", "Plant::'It\\'s'"),
+  ];
+  assert.deepEqual(
+    [...simpleNames(nodes).entries()],
+    [
+      ["a", "pump"],
+      ["b", "Quoted::'It\\'s'"],
+      ["c", "Plant::'It\\'s'"],
+    ],
+  );
+  assert.equal(simpleName("Quoted::'It\\'s'::pump"), "pump");
+  assert.equal(simpleName("'It\\'s'"), "'It\\'s'");
 });
 
 test("labelLines and shapeOf follow the graphical notation", () => {

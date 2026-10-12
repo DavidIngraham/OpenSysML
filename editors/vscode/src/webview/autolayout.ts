@@ -390,6 +390,7 @@ function reconcile(
       }
     }
   }
+  const names = simpleNames(result.nodes ?? []);
   for (const node of nodes
     .filter(
       (n) =>
@@ -405,7 +406,6 @@ function reconcile(
       continue;
     }
     const geometry = placed.get(node.id)!;
-    const names = simpleNames(result.nodes ?? []);
     const header =
       symbolSize(shapeOf(node.kind)) ??
       labelSize(labelLines(node, result.shown, names));

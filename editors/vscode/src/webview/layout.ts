@@ -500,14 +500,16 @@ export function labelLines(
   return lines;
 }
 
-/** nameSegments splits a qualified name at its `::`, a quoted segment kept whole. */
+/** nameSegments splits a qualified name at its `::`, a quoted segment with its escapes kept whole. */
 function nameSegments(name: string): string[] {
   const segments: string[] = [];
   let start = 0;
   let quoted = false;
   for (let i = 0; i < name.length; i++) {
     const c = name[i];
-    if (c === "'") {
+    if (quoted && c === "\\") {
+      i++;
+    } else if (c === "'") {
       quoted = !quoted;
     } else if (!quoted && c === ":" && name[i + 1] === ":") {
       segments.push(name.slice(start, i));
