@@ -78,9 +78,9 @@ curl -fsSL https://opensysml.org/install.sh | sh
 irm https://opensysml.org/install.ps1 | iex
 ```
 Both scripts take a release (`--version v0.9.1`, `nightly`), a tool list (`--tools sysml`,
-`sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel`, `all`) and a destination (`--prefix`, or
-`-InstallDir` on Windows), and `--dry-run` shows the choice without installing; `sh -s -- --help`
-lists the rest. The scripts are [`install.sh`](install.sh) and [`install.ps1`](install.ps1) in
+`sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel`, or `all` for every tool the chosen release
+published, read from its `SHA256SUMS.txt`) and a destination (`--prefix`, or `-InstallDir` on
+Windows), and `--dry-run` shows the choice without installing; `sh -s -- --help` lists the rest. The scripts are [`install.sh`](install.sh) and [`install.ps1`](install.ps1) in
 this repository, so a checkout runs them as `./install.sh`.
 
 **Download pre-built binaries by hand:**
@@ -301,7 +301,7 @@ Guidance on selecting a client, the coverage of the six clients, and the functio
 ## Goals
 
 - **Performance:** sub-millisecond parsing, a single static binary, and no JVM or Eclipse runtime
-- **Completeness:** SysML v2 textual notation support (105 of 105 standard library files parse cleanly: 94 vendored OMG files and 11 OpenSysML extensions)
+- **Completeness:** SysML v2 textual notation support (110 of 110 standard library files parse cleanly: 94 vendored OMG files and 16 OpenSysML extensions)
 - **Executable models:** instantiate, evaluate and simulate, turning specifications into running systems
 - **Practical ergonomics:** multi-file workspaces, incremental analysis and detailed diagnostics
 
