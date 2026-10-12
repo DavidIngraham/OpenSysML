@@ -137,7 +137,7 @@ func TestLandingStackModel(t *testing.T) {
 		"modelHash": parsed.ModelHash,
 		"view":      "#interconnection:OpenSysMLStack::stack",
 		"ports":     "minimal",
-		"show":      []string{"edge-labels", "typings"},
+		"show":      []string{"edge-labels", "typings", "keywords"},
 	}, &diagram)
 	pinLandingFixture(t, parsed.ModelHash, renderBody, instantiateBody)
 	if diagram.Kind != "interconnection" {

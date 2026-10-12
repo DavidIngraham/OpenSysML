@@ -152,7 +152,7 @@ export function layoutCanvas(result: RenderResult, overrides: Overrides = {}, au
     const entry: PlacedNode = {
       node,
       box: { x: 0, y: 0, width: 0, height: 0 },
-      lines: labelLines(node),
+      lines: labelLines(node, result.shown),
       shape: shapeOf(node.kind),
       pinned: false,
       collapsed: false,
@@ -379,19 +379,41 @@ function hide(entries: PlacedNode[]): void {
   }
 }
 
-/** labelLines is a node's label as the graphical notation orders it: head, «kind», detail. */
-export function labelLines(node: RenderNode): string[] {
+/**
+ * labelLines is a node's label as the graphical notation orders it: head, «kind», detail —
+ * the «kind», the `: Type`, the detail and the name's qualification only when `shown`, the
+ * optional notation elements the rendering draws, names keywords, typings, compartments and
+ * qualifiers; a result without `shown` draws them all.
+ */
+export function labelLines(node: RenderNode, shown?: string[]): string[] {
   if (symbolSize(shapeOf(node.kind))) {
     return [];
   }
-  const lines = [labelHead(node)];
-  if (node.name !== "") {
+  const draws = (element: string): boolean => shown === undefined || shown.includes(element);
+  const lines = [labelHead(node, draws("typings"), draws("qualifiers"))];
+  if (node.name !== "" && draws("keywords")) {
     lines.push(`«${node.kind}»`);
   }
-  if (node.detail !== "") {
+  if (node.detail !== "" && draws("compartments")) {
     lines.push(node.detail);
   }
   return lines;
+}
+
+/** simpleName is the last segment of a qualified name, a quoted segment kept whole. */
+export function simpleName(name: string): string {
+  let start = 0;
+  let quoted = false;
+  for (let i = 0; i < name.length; i++) {
+    const c = name[i];
+    if (c === "'") {
+      quoted = !quoted;
+    } else if (!quoted && c === ":" && name[i + 1] === ":") {
+      start = i + 2;
+      i++;
+    }
+  }
+  return name.slice(start);
 }
 
 /** glyphSize uses the same average-glyph metrics as a node label, without box padding. */
@@ -969,11 +991,12 @@ function includePortExtent(layout: CanvasLayout): CanvasLayout {
 
 // labelHead is a label's first line: the kind of an unnamed node, else the name
 // with its type when it has one.
-function labelHead(node: RenderNode): string {
+function labelHead(node: RenderNode, typed: boolean, qualified: boolean): string {
   if (node.name === "") {
     return node.kind;
   }
-  return node.type === "" ? node.name : `${node.name} : ${node.type}`;
+  const name = qualified ? node.name : simpleName(node.name);
+  return node.type === "" || !typed ? name : `${name} : ${node.type}`;
 }
 
 // labelSize is the box a label needs, its head in bold glyphs.

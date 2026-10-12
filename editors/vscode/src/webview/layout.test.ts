@@ -478,6 +478,18 @@ test("layoutCanvas lays a sequence out as lifelines in a row with messages down 
 
 test("labelLines and shapeOf follow the graphical notation", () => {
   assert.deepEqual(labelLines(node("a", "tank", { type: "Tank", detail: "[2]" })), ["tank : Tank", "«part»", "[2]"]);
+  assert.deepEqual(
+    labelLines(node("a", "Plant::tank", { type: "Tank", detail: "[2]" }), ["port-symbols", "compartments"]),
+    ["tank", "[2]"],
+  );
+  assert.deepEqual(
+    labelLines(node("a", "'Lab Use Cases'::'Acquire Image'", { kind: "use case", type: "Case" }), ["keywords", "typings"]),
+    ["'Acquire Image' : Case", "«use case»"],
+  );
+  assert.deepEqual(
+    labelLines(node("a", "P::tank", { type: "Tank", detail: "[2]" }), ["keywords", "typings", "compartments", "qualifiers"]),
+    ["P::tank : Tank", "«part»", "[2]"],
+  );
   assert.deepEqual(labelLines(node("a", "", { kind: "region" })), ["region"]);
   assert.deepEqual(labelLines(node("a", "", { kind: "fork" })), []);
   assert.equal(shapeOf("part def"), "box");

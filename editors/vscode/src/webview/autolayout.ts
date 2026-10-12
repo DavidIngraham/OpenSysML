@@ -122,7 +122,7 @@ async function layOut(result: RenderResult): Promise<AutoLayout> {
   // stacks them in one column, and cannot size such a container while its ports have no side.
   const packed = new Map<string, ElkNode>();
   const elkNode = (node: RenderNode, packing = false): ElkNode => {
-    const size = symbolSize(shapeOf(node.kind)) ?? labelSize(labelLines(node));
+    const size = symbolSize(shapeOf(node.kind)) ?? labelSize(labelLines(node, result.shown));
     const kids = node.collapsed ? [] : (children.get(node.id) ?? []);
     const alone = packed.get(node.id);
     const order = (children.get(node.parent) ?? []).indexOf(node);
@@ -318,7 +318,7 @@ function reconcile(
       continue;
     }
     const geometry = placed.get(node.id)!;
-    const header = symbolSize(shapeOf(node.kind)) ?? labelSize(labelLines(node));
+    const header = symbolSize(shapeOf(node.kind)) ?? labelSize(labelLines(node, result.shown));
     let left = geometry.x;
     let top = geometry.y;
     let right = geometry.x + (geometry.width ?? 0);
