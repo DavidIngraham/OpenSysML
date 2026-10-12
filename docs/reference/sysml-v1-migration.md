@@ -363,7 +363,12 @@ chaining to it: `perform action <call> ::> <target>.<op> { in <param> = …; }` 
 handed in or created, an action usage whose `in <pin> : <Block>` parameter the nested
 `perform action <op> ::> <pin>.<op>` chains through, its other pins bound to the operation's
 parameters by position. A call that reaches no object of the block (a caller outside it, an Alf
-`this` with no known type) is an empty step declaring the call's pins, reported as such.
+`this` with no known type) is an empty step declaring the call's pins, reported as such. Two
+operations keep an `action def <Op>` with a context parameter, as every other block-owned
+behavior a state runs does: one whose method a state's entry, do, exit or a transition's effect
+runs — a state def's member reaches no usage of the block, so the state writes
+`entry action : <Op> { in ref :>> context = <Machine>::context; }` — and one whose method acts
+on another block through its ports, which a usage's `this` cannot stand for.
 
 ### Diagrams
 
