@@ -674,9 +674,10 @@ func (ss *Session) diagnostics(notes []runtime.RunNote) []*pb.Diagnostic {
 	return ss.svc.filterDiagnosticCapabilities(RunNoteDiagnosticsToProto(notes, ss.cached))
 }
 
-// declared resolves a symbol id in the session's model.
+// declared resolves a symbol id in the session's model; a member a subtype
+// inherits is named by the subtype too (Sub::inherited).
 func (ss *Session) declared(symbolID string) (*symbols.Symbol, error) {
-	syms := symbolfacts.LookupNamed(ss.cached.Index, symbolID)
+	syms := symbolfacts.LookupNamedMember(ss.cached.Index, ss.cached.SymbolContext().Semantics, symbolID)
 	if len(syms) == 0 {
 		return nil, sessionFailuref("symbol not found: %s", symbolID)
 	}
