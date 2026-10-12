@@ -746,7 +746,7 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 	for _, root := range roots {
 		w.spreadBoundaries(root, ends)
 	}
-	if len(derived) == 0 {
+	if len(derived) == 0 && len(w.spread) == 0 {
 		return
 	}
 	for _, node := range derived {
@@ -758,7 +758,8 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 }
 
 // reboxClusters recomputes, members first, the box of every cluster under node
-// boxed round its members, once nodes placed by their neighbours have theirs.
+// boxed round its members, once nodes placed by their neighbours have theirs
+// and spread boundary symbols their new places.
 func (w *dotWriter) reboxClusters(node *Node) {
 	for _, child := range node.Children {
 		w.reboxClusters(child)

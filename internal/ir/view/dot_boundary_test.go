@@ -13,7 +13,32 @@ import (
 var (
 	dotPinnedNode = regexp.MustCompile(`(?m)^\s*"(n\d+)" \[.*pos="([-0-9.]+),([-0-9.]+)!".*width=([0-9.]+), height=([0-9.]+)`)
 	dotRoutedEdge = regexp.MustCompile(`(?m)^\s*"(n\d+)" -> "(n\d+)" \[.*pos="([^"]+)"`)
+	dotClusterBB  = regexp.MustCompile(`(?s)subgraph "cluster_(n\d+)" \{.*?bb="([-0-9.]+),([-0-9.]+),([-0-9.]+),([-0-9.]+)"`)
 )
+
+// clusterBoxes is the box of every cluster the DOT text gives a `bb`, by ID,
+// in the rendering's pixels (y down).
+func clusterBoxes(t *testing.T, dot string) map[string]nodeBox {
+	t.Helper()
+	boxes := map[string]nodeBox{}
+	for _, m := range dotClusterBB.FindAllStringSubmatch(dot, -1) {
+		boxes[m[1]] = nodeBox{low: Point{X: dotNumber(t, m[2]), Y: -dotNumber(t, m[5])}, high: Point{X: dotNumber(t, m[4]), Y: -dotNumber(t, m[3])}}
+	}
+	return boxes
+}
+
+// symbolBoxes renders the view and returns the DOT text's pinned boxes, cluster
+// boxes and route ends with the boxes of the two named members of parent.
+func symbolBoxes(t *testing.T, view, parent, first, second string) (rendering *Rendering, boxes, clusters map[string]nodeBox, ends map[string][]Point, a, b *Node) {
+	t.Helper()
+	rendering = render(t, "boundary-parameters.sysml", view)
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, b = child(t, rendering, parent, first), child(t, rendering, parent, second)
+	return rendering, pinnedBoxes(t, dot), clusterBoxes(t, dot), routeEndsAt(t, dot), a, b
+}
 
 // pinnedBoxes is the box of every node the DOT text pins, by ID, in the
 // rendering's pixels (y down).
@@ -167,6 +192,68 @@ func TestSynthesizedConnectionNameIsNoEdgeLabel(t *testing.T) {
 	for _, written := range []string{"'Operator to Configure Instrument'", "'Administrator to Configure Instrument'"} {
 		if !labels[written] {
 			t.Errorf("written name %s labels no edge; labels: %v", written, slices.Sorted(maps.Keys(labels)))
+		}
+	}
+}
+
+// Two actor parameters whose routes reach one corner from different sides are
+// drawn apart, each on the side its route comes to, each route ending on its
+// own symbol.
+func TestDOTSpreadsBoundaryParametersAtACorner(t *testing.T) {
+	_, boxes, _, ends, operator, technician := symbolBoxes(t, "BoundaryParameters::corner", "BoundaryParameters::'Load Sample'", "operator", "technician")
+	op, tech := boxes[operator.ID], boxes[technician.ID]
+	if op.overlaps(tech) {
+		t.Errorf("actor symbols overlap: operator %v, technician %v", op, tech)
+	}
+	if math.Abs(op.low.X-320) > 0.5 {
+		t.Errorf("operator, reached from the left, does not touch the left border x=320: %v", op)
+	}
+	if math.Abs(tech.low.Y-120) > 0.5 {
+		t.Errorf("technician, reached from above, does not touch the top border y=120: %v", tech)
+	}
+	for name, node := range map[string]*Node{"operator": operator, "technician": technician} {
+		if routeEnds := ends[node.ID]; len(routeEnds) != 1 || !boxes[node.ID].onBorder(routeEnds[0]) {
+			t.Errorf("%s: route ends at %v, off its symbol %v", name, routeEnds, boxes[node.ID])
+		}
+	}
+}
+
+// A use case with a position but no stated size is boxed round its parameters:
+// the two the routes place over one another are drawn apart, and the box drawn
+// for the use case is refitted round them.
+func TestDOTSpreadsBoundaryParametersOfAnUnsizedNode(t *testing.T) {
+	rendering, boxes, clusters, _, operator, administrator := symbolBoxes(t, "BoundaryParameters::unsized", "BoundaryParameters::'Configure Instrument'", "operator", "administrator")
+	useCase := findNode(t, rendering.Roots, "BoundaryParameters::'Configure Instrument'")
+	op, admin := boxes[operator.ID], boxes[administrator.ID]
+	if op.overlaps(admin) {
+		t.Errorf("actor symbols overlap: operator %v, administrator %v", op, admin)
+	}
+	cluster, ok := clusters[useCase.ID]
+	if !ok {
+		t.Fatalf("no bb for the use case %s; clusters: %v", useCase.ID, clusters)
+	}
+	margin := Point{X: dotClusterMargin, Y: dotClusterMargin}
+	want := nodeBox{low: Point{X: 320, Y: 120}, high: Point{X: 320, Y: 120}}.union(op.union(admin))
+	want = nodeBox{low: Point{X: want.low.X - margin.X, Y: want.low.Y - margin.Y}, high: Point{X: want.high.X + margin.X, Y: want.high.Y + margin.Y}}
+	for _, corner := range [][2]Point{{cluster.low, want.low}, {cluster.high, want.high}} {
+		if math.Abs(corner[0].X-corner[1].X) > 0.5 || math.Abs(corner[0].Y-corner[1].Y) > 0.5 {
+			t.Fatalf("use case boxed at %v, want the margin round its spread symbols %v", cluster, want)
+		}
+	}
+}
+
+// Nested parts are no boundary symbols: the routes that reach them inside their
+// owner leave them where they end, off the owner's border.
+func TestDOTLeavesInteriorMembersWhereRoutesPlaceThem(t *testing.T) {
+	_, boxes, _, _, detector, filament := symbolBoxes(t, "BoundaryParameters::interior", "BoundaryParameters::Instrument", "detector", "filament")
+	owner := nodeBox{low: Point{X: 320, Y: 120}, high: Point{X: 480, Y: 220}}
+	for name, box := range map[string]nodeBox{"detector": boxes[detector.ID], "filament": boxes[filament.ID]} {
+		inside := box.low.X > owner.low.X+1 && box.high.X < owner.high.X-1 && box.low.Y > owner.low.Y+1 && box.high.Y < owner.high.Y-1
+		if !inside {
+			t.Errorf("%s %v was moved to the border of %v", name, box, owner)
+		}
+		if !box.holds(Point{X: 370, Y: 170}) && !box.onBorder(Point{X: 370, Y: 170}) {
+			t.Errorf("%s %v does not meet its route's end (370, 170)", name, box)
 		}
 	}
 }
