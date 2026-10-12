@@ -529,9 +529,14 @@ loads the library and the model without complaint before leaving the usages unev
 
 OpenSysML answers `box.faces` (6), `box.edges` (24), `box.tf.edges` (4) and every
 face-local value; the groups and everything read through them are the typed
-`ErrBindingEnd` naming the binding and both ends, on `-e`, `%eval`, `-instantiate`
-and `%features` alike (`runtime/binding.go` `UndeterminedBindingError`; conformance
-`instance_library_geometry_box`):
+`ErrBindingEnd` naming the binding and both ends, on `-e`, `%eval`, the gRPC and LSP
+evaluation requests and `%features` alike (`runtime/binding.go`
+`UndeterminedBindingError`; conformance `instance_library_geometry_box`,
+`instance_library_geometry_box_bare`). Instantiating a `Box` is clean: the check
+`-instantiate` makes over the new object reads every feature value but reports what the
+model leaves open no more than it reports an unset attribute, so a `Drone` whose `shape`
+is a `Box` instantiates without a diagnostic and the error is seen only where a group is
+read (`runtime/materialize.go` `materializeWalk.walk`):
 
 ```text
 binding end cannot be resolved: box.tfe is bound by `binding [1] bind [0..1] tf.edges = [0..1] tfe`, which makes some value of tfe a value of tf.edges without saying which value of either; the model does not state what tfe holds
@@ -682,7 +687,8 @@ attribute <'m²⋅A'> 'metre squared ampere' : ISQAtomicNuclear::MagneticDipoleM
 one (L^2·I, ISO 80000-10 item 10-9.1, unit `m²⋅A`, in `ISQAtomicNuclear`). KerML 7.2.5.4 hides
 a name two imports bring from the importing namespace, so in `SI` (which imports `ISQ::*`) the
 unqualified name resolves to nothing; a first-match reader — the pinned pilot, and OpenSysML
-after it — binds the electromagnetic one, against which `m^2*A` fails **KerML 7.4.9**. The
+reading the library as the pilot does, though it hides such a pair in a model — binds the
+electromagnetic one, against which `m^2*A` fails **KerML 7.4.9**. The
 value is the atomic unit, and `ISQAtomicNuclear::MagneticDipoleMomentUnit` is the one qualified
 name with its dimension, so the line is **corrected**. The clash itself stays in the `ISQ`
 library (the eight hidden names are listed in
