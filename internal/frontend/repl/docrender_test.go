@@ -153,6 +153,7 @@ func TestRenderDocumentDiagramForm(t *testing.T) {
 		t.Errorf("default rendering is DOT:\n%s", mermaid)
 	}
 	wants(t, run(t, s, "%render-document Imaging::ChainReport mermaid"), "```mermaid\n")
+	wants(t, run(t, s, "%render-document Imaging::ChainReport show=edge-labels"), "```mermaid\n", `===|"link"|`)
 	dot := run(t, s, "%render-document Imaging::ChainReport dot show=edge-labels")
 	wants(t, dot,
 		"```dot\n// view: Imaging::chainView\n// kind: interconnection\n",

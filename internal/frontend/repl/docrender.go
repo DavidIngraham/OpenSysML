@@ -21,7 +21,7 @@ import (
 // renderDocumentUsage is what %render-document accepts: a document's name,
 // then optionally the form its graph-shaped diagrams are written in and the
 // drawing style the DOT or Mermaid form draws them in.
-const renderDocumentUsage = "usage: %render-document <name> [mermaid|dot|plantuml|d2 [pilot|cameo] [show=<elements>]]"
+const renderDocumentUsage = "usage: %render-document <name> [mermaid|dot|plantuml|d2] [pilot|cameo] [show=<elements>]"
 
 // RenderDocumentMarkdown compiles the named document definition, evaluates its
 // queries against the session's model, and renders the result as Markdown. A
@@ -248,14 +248,19 @@ func parseRenderDocumentArgs(invocation string) (name string, opts docrender.Mar
 		return "", opts, []string{renderDocumentUsage}
 	}
 	opts = docrender.MarkdownOptions{Drawer: replext.Drawer(), WithoutGraphviz: replext.Drawer() == nil}
+	options := min(len(fields), 2)
 	if len(fields) >= 2 {
-		opts.DiagramForm = view.Form(fields[1])
-		if !slices.Contains(view.DiagramForms(), opts.DiagramForm) {
+		switch {
+		case slices.Contains(view.DiagramForms(), view.Form(fields[1])):
+			opts.DiagramForm = view.Form(fields[1])
+		case renderOptionWord(fields[1]):
+			options = 1
+		default:
 			return "", opts, []string{errPrefix + fmt.Sprintf("%q is not a diagram form (%s); a document binds its queries' parameters in the model",
 				fields[1], view.FormNames(view.DiagramForms()))}
 		}
 	}
-	for _, word := range fields[min(len(fields), 2):] {
+	for _, word := range fields[options:] {
 		if strings.HasPrefix(word, "show=") {
 			shown, err := view.ParseShown(strings.TrimPrefix(word, "show="))
 			if err != nil || shown == nil || opts.Show != nil {

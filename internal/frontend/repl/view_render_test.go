@@ -787,3 +787,36 @@ func TestRenderDrawsVerdictsWhenAskedFor(t *testing.T) {
 		t.Errorf("completing the overlay offered %v", got.Candidates)
 	}
 }
+
+// The form is optional before the options: an option word first reads as the text form.
+func TestRenderReadsAnOptionWithoutAForm(t *testing.T) {
+	s := viewSession(t)
+	withForm, _, err := s.RunMeta("%render Demo::summary text show=typings")
+	if err != nil {
+		t.Fatal(err)
+	}
+	withoutForm, _, err := s.RunMeta("%render Demo::summary show=typings")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(withoutForm, "\n") != strings.Join(withForm, "\n") {
+		t.Errorf("show= without a form rendered:\n%s\nwant, as with text:\n%s", strings.Join(withoutForm, "\n"), strings.Join(withForm, "\n"))
+	}
+	refused, _, err := s.RunMeta("%render Demo::summary show=bogus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := strings.Join(refused, "\n")
+	for _, want := range []string{"show= names the optional notation elements to draw", view.ElementNames()} {
+		if !strings.Contains(text, want) {
+			t.Errorf("show=bogus answered %q, want it to contain %q", text, want)
+		}
+	}
+	unknown, _, err := s.RunMeta("%render Demo::summary svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(unknown, "\n"), `unknown form "svg"`) {
+		t.Errorf("a word that is neither a form nor an option answered %q", unknown)
+	}
+}
