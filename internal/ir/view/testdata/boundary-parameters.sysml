@@ -1,7 +1,7 @@
 // Use cases whose actor parameters are pins of a positioned node, meeting at one route end, at
 // a corner, crowded at the corners and over an unconnected pin; a part whose declared ports
-// meet at one route end, sized and unsized, and whose nested parts are routed inside it; and a
-// migration made up one connection's name.
+// meet at one route end, sized and unsized, or are routed inside it like its nested parts; and
+// a migration made up one connection's name.
 package BoundaryParameters {
     part Operator;
     part Administrator;
@@ -169,6 +169,19 @@ package BoundaryParameters {
         metadata DiagramLayout::Layout about Instrument { x = 320; y = 120; }
         metadata DiagramLayout::Route about 'Rack to Sensor' { points = (120, 82, 320, 170); }
         metadata DiagramLayout::Route about 'Rack to Heater' { points = (120, 82, 320, 170); }
+    }
+
+    // The routes to the instrument's declared ports end at one point inside it.
+    view interiorPorts {
+        expose Rack;
+        expose Instrument;
+        expose 'Rack to Sensor';
+        expose 'Rack to Heater';
+        render Views::asInterconnectionDiagram;
+        metadata DiagramLayout::Layout about Rack { x = 40; y = 60; width = 80; height = 44; }
+        metadata DiagramLayout::Layout about Instrument { x = 320; y = 120; width = 160; height = 100; }
+        metadata DiagramLayout::Route about 'Rack to Sensor' { points = (120, 82, 370, 170); }
+        metadata DiagramLayout::Route about 'Rack to Heater' { points = (120, 82, 370, 170); }
     }
 
     // The routes to the instrument's nested parts end at one point inside it.

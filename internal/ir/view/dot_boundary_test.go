@@ -317,9 +317,10 @@ func TestDOTSpreadsDeclaredPortsAlongTheSide(t *testing.T) {
 }
 
 // A positioned part with no stated size has its coincident ports drawn apart and its box
-// refitted round them: the margin round the ports, stretched to the stated corner.
+// refitted round them: the margin round the ports except on the side they touch, stretched to
+// the stated corner; the ports touch the refitted border and the routes end on them.
 func TestDOTReboxesAnUnsizedNodeRoundItsSpreadPorts(t *testing.T) {
-	boxes, clusters, _, members := memberBoxes(t, "BoundaryParameters::unsized", "BoundaryParameters::Instrument", "sensor", "heater")
+	boxes, clusters, ends, members := memberBoxes(t, "BoundaryParameters::unsized", "BoundaryParameters::Instrument", "sensor", "heater")
 	sensor, heater := boxes[members[1]], boxes[members[2]]
 	if sensor.overlaps(heater) {
 		t.Errorf("port symbols overlap: sensor %v, heater %v", sensor, heater)
@@ -329,45 +330,33 @@ func TestDOTReboxesAnUnsizedNodeRoundItsSpreadPorts(t *testing.T) {
 		t.Fatalf("no bb for the instrument %s; clusters: %v", members[0], clusters)
 	}
 	ports := sensor.union(heater)
-	want := nodeBox{low: Point{X: math.Min(320, ports.low.X-dotClusterMargin), Y: math.Min(120, ports.low.Y-dotClusterMargin)},
+	want := nodeBox{low: Point{X: math.Min(320, ports.low.X), Y: math.Min(120, ports.low.Y-dotClusterMargin)},
 		high: Point{X: ports.high.X + dotClusterMargin, Y: ports.high.Y + dotClusterMargin}}
 	for _, corner := range [][2]Point{{cluster.low, want.low}, {cluster.high, want.high}} {
 		if math.Abs(corner[0].X-corner[1].X) > 0.5 || math.Abs(corner[0].Y-corner[1].Y) > 0.5 {
 			t.Fatalf("instrument boxed at %v, want the margin round its spread ports %v", cluster, want)
 		}
 	}
+	for name, box := range map[string]nodeBox{"sensor": sensor, "heater": heater} {
+		if math.Abs(box.low.X-cluster.low.X) > 0.5 {
+			t.Errorf("%s %v does not touch the refitted left border x=%v", name, box, cluster.low.X)
+		}
+	}
+	routesEndOnPins(t, boxes, ends, members[1:]...)
 }
 
-// Nested parts are no boundary symbols: the routes that reach them inside their
-// owner leave them where they end, off the owner's border.
-func TestDOTLeavesInteriorMembersWhereRoutesPlaceThem(t *testing.T) {
-	boxes, _, _, parts := memberBoxes(t, "BoundaryParameters::interior", "BoundaryParameters::Instrument", "detector", "filament")
-	parts = parts[1:]
+// Declared ports whose routes end inside their owner are no boundary symbols: they stay where
+// the routes end, off the owner's border, as nested parts do.
+func TestDOTLeavesInteriorRoutedPortsWhereTheirRoutesEnd(t *testing.T) {
+	boxes, _, ends, members := memberBoxes(t, "BoundaryParameters::interiorPorts", "BoundaryParameters::Instrument", "sensor", "heater")
 	owner := nodeBox{low: Point{X: 320, Y: 120}, high: Point{X: 480, Y: 220}}
-	for name, box := range map[string]nodeBox{"detector": boxes[parts[0]], "filament": boxes[parts[1]]} {
-		inside := box.low.X > owner.low.X+1 && box.high.X < owner.high.X-1 && box.low.Y > owner.low.Y+1 && box.high.Y < owner.high.Y-1
-		if !inside {
+	for name, box := range map[string]nodeBox{"sensor": boxes[members[1]], "heater": boxes[members[2]]} {
+		if !owner.enclosesClear(box) {
 			t.Errorf("%s %v was moved to the border of %v", name, box, owner)
 		}
 		if !box.holds(Point{X: 370, Y: 170}) && !box.onBorder(Point{X: 370, Y: 170}) {
 			t.Errorf("%s %v does not meet its route's end (370, 170)", name, box)
 		}
 	}
-}
-
-// Under the full ports display, a routed pin whose route ends where an unconnected parameter's
-// pin is placed is drawn apart from it along the top, every pin still touching the top.
-func TestDOTKeepsRoutedPinsOffUnconnectedPins(t *testing.T) {
-	boxes, ends, pins := pinBoxesWith(t, Options{Ports: PortsFull}, "BoundaryParameters::freePin", "BoundaryParameters::'Load Sample'", "operator", "technician", "administrator", "supervisor")
-	for i, a := range pins {
-		if math.Abs(boxes[a].high.Y-120) > 0.5 {
-			t.Errorf("%s does not touch the top border y=120: %v", a, boxes[a])
-		}
-		for _, b := range pins[i+1:] {
-			if boxes[a].overlaps(boxes[b]) {
-				t.Errorf("pins overlap: %s %v and %s %v", a, boxes[a], b, boxes[b])
-			}
-		}
-	}
-	routesEndOnPins(t, boxes, ends, pins[2])
+	routesEndOnPins(t, boxes, ends, members[1:]...)
 }

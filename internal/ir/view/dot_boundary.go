@@ -108,6 +108,11 @@ func (b nodeBox) toward(p Point) Point {
 	return Point{X: halfPixel(c.X + dx*t), Y: halfPixel(c.Y + dy*t)}
 }
 
+// enclosesClear reports whether other lies within b clear of its border.
+func (b nodeBox) enclosesClear(other nodeBox) bool {
+	return other.low.X > b.low.X && other.high.X < b.high.X && other.low.Y > b.low.Y && other.high.Y < b.high.Y
+}
+
 // sideToward is the side of b that a route reaching the point at from the direction dir comes
 // to: the nearest side, or the one facing the route most squarely when two are as near.
 func (b nodeBox) sideToward(at, dir Point) boundarySide {
@@ -124,7 +129,8 @@ func (b nodeBox) sideToward(at, dir Point) boundarySide {
 }
 
 // spreadBoundaries spreads apart, along the side their routes come to, the port members of
-// every boxed cluster at or under node that the routes place over one another.
+// every boxed cluster at or under node that the routes place over one another; an unsized
+// cluster's box is its members' with the margin, so its border is judged inside that.
 func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
 	for _, child := range node.Children {
 		w.spreadBoundaries(child, ends)
@@ -133,9 +139,14 @@ func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
 	if !ok || len(node.Children) == 0 || w.tree {
 		return
 	}
+	inner := box
+	if node.Geometry != nil && !node.Geometry.HasSize {
+		inner = nodeBox{low: Point{X: box.low.X + dotClusterMargin, Y: box.low.Y + dotClusterMargin},
+			high: Point{X: box.high.X - dotClusterMargin, Y: box.high.Y - dotClusterMargin}}
+	}
 	var sides [4][]boundarySymbol
 	for _, child := range node.Children {
-		symbol, ok := w.boundarySymbol(child, ends)
+		symbol, ok := w.boundarySymbol(child, inner, ends)
 		if !ok {
 			continue
 		}
@@ -149,7 +160,7 @@ func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
 		}
 		for id, moved := range spreadAlong(box, side, sides[side], placed, false) {
 			w.boxes[id] = moved
-			w.spread[id] = true
+			w.spread[id] = side
 		}
 		for _, symbol := range sides[side] {
 			placed = append(placed, w.boxes[symbol.id])
@@ -157,11 +168,12 @@ func (w *dotWriter) spreadBoundaries(node *Node, ends map[string][]routeEnd) {
 	}
 }
 
-// boundarySymbol is node as a boundary symbol of its cluster: a port member drawn as a leaf
-// with no Layout or neighbour-derived place that a route of its edges reaches or stops short of.
-func (w *dotWriter) boundarySymbol(node *Node, ends map[string][]routeEnd) (boundarySymbol, bool) {
+// boundarySymbol is node as a boundary symbol of its cluster, whose members owner bounds: a port
+// member drawn as a leaf with no Layout or neighbour-derived place, that a route of its edges
+// reaches or stops short of, placed meeting the owner's border rather than inside it.
+func (w *dotWriter) boundarySymbol(node *Node, owner nodeBox, ends map[string][]routeEnd) (boundarySymbol, bool) {
 	box, ok := w.boxes[node.ID]
-	if !ok || !isPortKind(node.Kind) || node.Geometry != nil || len(node.Children) > 0 || w.placement.derived[node.ID] {
+	if !ok || !isPortKind(node.Kind) || node.Geometry != nil || len(node.Children) > 0 || w.placement.derived[node.ID] || owner.enclosesClear(box) {
 		return boundarySymbol{}, false
 	}
 	reaching := reachingEnds(ends[node.ID])
