@@ -1,11 +1,11 @@
 VehicleSequenceViews::startVehicleView - sequence rendering (view def SequenceView)
 
-part driver : Driver
-part vehicle : Vehicle
+part driver
+part vehicle
 
 messages:
-  driver => vehicle: of ignitionCmd : IgnitionCmd
-  vehicle => driver: of es : EngineStatus
+  driver => vehicle
+  vehicle => driver
 
 not represented:
   - the flows in perform action startVehicle are its action flow, not interaction messages; they are not shown

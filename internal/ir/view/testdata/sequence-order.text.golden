@@ -4,5 +4,5 @@ part left
 part right
 
 messages:
-  left => right: early
-  left => right: late
+  left => right
+  left => right

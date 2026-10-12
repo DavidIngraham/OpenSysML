@@ -1,18 +1,18 @@
 GeneralViews::plainView - tree rendering (view def GeneralView)
 
 part def VehicleStructure::Vehicle
-  attribute mass : Real
-  part chassis : Chassis
-  part driver : Driver
+  attribute mass
+  part chassis
+  part driver
 part def VehicleStructure::Chassis
 part def VehicleStructure::LightChassis
 part def VehicleStructure::Driver
 action def VehicleStructure::Brake
-part VehicleStructure::vehicle : Vehicle
+part VehicleStructure::vehicle
   attribute mass
-part VehicleStructure::heavyVehicle : Vehicle
+part VehicleStructure::heavyVehicle
   attribute mass
-action VehicleStructure::brake : Brake
+action VehicleStructure::brake
 package VehicleStructure::Powertrain
   part def Engine
 datatype ScalarValues::Boolean

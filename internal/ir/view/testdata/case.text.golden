@@ -1,23 +1,23 @@
 CaseExamples::caseDiagram - case rendering (render asCaseDiagram)
 
-use case CaseExamples::'Provide Transportation' : 'Enter Vehicle'
-subject vehicle : Vehicle
-actor driver : Person
+use case CaseExamples::'Provide Transportation'
+subject vehicle
+actor driver
 objective (Transport the vehicle and its passengers safely.)
 use case def CaseExamples::'Add Fuel'
-subject vehicle : Vehicle
-actor fueler : Person
-include use case 'enter vehicle' : 'Enter Vehicle'
+subject vehicle
+actor fueler
+include use case 'enter vehicle'
 subject vehicle
 actor driver
 use case 'Drive Vehicle'
 subject vehicle
 actor driver
 analysis def CaseExamples::FuelAnalysis
-subject vehicle : Vehicle
+subject vehicle
 objective (Estimate the fuel remaining after a journey.)
 verification def CaseExamples::FuelVerification
-subject vehicle : Vehicle
+subject vehicle
 objective
 
 relationships:

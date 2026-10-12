@@ -1,11 +1,11 @@
 UseCaseViews::caseDefinitionView - case rendering (view def GeneralView, filter @CaseDefinition)
 
 use case def VehicleUseCases::'Add Fuel'
-subject vehicle : Vehicle
-actor fueler : Person
+subject vehicle
+actor fueler
 use case def VehicleUseCases::'Enter Vehicle'
-subject vehicle : Vehicle
-actor driver : Person
+subject vehicle
+actor driver
 
 relationships:
   VehicleUseCases::'Add Fuel' -- vehicle: «subject»

@@ -1,9 +1,9 @@
 RobustViews::unrecognized - tree rendering (view def GeneralView)
 
 part def Loops::A
-  part b : B
+  part b
 part def Loops::B
-  part a : A
+  part a
 part def Cycles::C
 connection def DerivationConnections::Derivation
   requirement originalRequirement

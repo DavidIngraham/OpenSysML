@@ -4,8 +4,8 @@ part near
 part far
 
 messages:
-  near => far: ask
-  far => near: reply
+  near => far
+  far => near
 
 not represented:
   - successions form a cycle (answering, heard to sent); the messages are shown in declaration order

@@ -1,7 +1,7 @@
 RobustViews::loopRequirements - requirement rendering (view def GeneralView, filter @RequirementUsage)
 
-requirement Loops::primary : Looped
-requirement Loops::secondary : Looped
+requirement Loops::primary
+requirement Loops::secondary
 
 relationships:
   Loops::secondary ..> Loops::primary: derive

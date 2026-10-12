@@ -5,12 +5,12 @@ part def VehicleStructure::Chassis
 part def VehicleStructure::LightChassis
 part def VehicleStructure::Driver
 action def VehicleStructure::Brake
-part VehicleStructure::vehicle : Vehicle
-part VehicleStructure::heavyVehicle : Vehicle
-action VehicleStructure::brake : Brake
-attribute VehicleStructure::Vehicle::mass : Real
-part VehicleStructure::Vehicle::chassis : Chassis
-part VehicleStructure::Vehicle::driver : Driver
+part VehicleStructure::vehicle
+part VehicleStructure::heavyVehicle
+action VehicleStructure::brake
+attribute VehicleStructure::Vehicle::mass
+part VehicleStructure::Vehicle::chassis
+part VehicleStructure::Vehicle::driver
 attribute VehicleStructure::vehicle::mass
 attribute VehicleStructure::heavyVehicle::mass
 part def VehicleStructure::Powertrain::Engine
