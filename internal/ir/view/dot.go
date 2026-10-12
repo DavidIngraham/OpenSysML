@@ -1100,6 +1100,14 @@ func (w *dotWriter) writeEdge(edge Edge, attrs []string) {
 		fmt.Fprintf(&w.b, "  %s -> %s;\n", from, to)
 		return
 	}
+	if w.lines == LinesOrtho {
+		// Graphviz places no label on an orthogonal edge; an xlabel it does.
+		for i, attr := range attrs {
+			if strings.HasPrefix(attr, "label=") {
+				attrs[i] = "x" + attr
+			}
+		}
+	}
 	fmt.Fprintf(&w.b, "  %s -> %s [%s];\n", from, to, strings.Join(attrs, ", "))
 }
 

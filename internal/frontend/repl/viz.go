@@ -49,9 +49,7 @@ func vizStyles() []string {
 		out = append(out, string(ports))
 	}
 	out = append(out, vizPilotDefaultStyle, vizPlantUMLCodeStyle)
-	for _, style := range vizLinesStyleNames() {
-		out = append(out, style)
-	}
+	out = append(out, vizLinesStyleNames()...)
 	for _, style := range view.PilotStyles() {
 		out = append(out, string(style))
 	}
