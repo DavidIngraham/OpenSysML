@@ -58,6 +58,13 @@ func TestNegative(t *testing.T) {
 		{"connect_end_invocation", "part def A { part s; part k; connect [1] s.y->first to [1] k.u; }"},
 		{"unterminated_string", `part p { doc /* comment `},
 		{"double_colon_only", "attribute ::x;"},
+		// A declaration opening with a specialization states no name
+		// (SysML.xtext FeatureDeclaration), and its MultiplicityPart puts the
+		// bracketed multiplicity ahead of `ordered`/`nonunique`, once each.
+		{"name_after_specialization_part", "part def D { :>> values ordered x; }"},
+		{"short_name_after_specialization_part", "part def D { :>> values <s> ordered; }"},
+		{"duplicate_ordered_after_specialization", "part def D { :>> values ordered ordered; }"},
+		{"multiplicity_after_ordered", "part def D { :>> values ordered [2]; }"},
 		// A classifier declaration admits one specialization list.
 		{"def_two_specialization_lists", "part def X :> A :> B;"},
 

@@ -2376,7 +2376,9 @@ func (p *Parser) parseUsage(start int, kind ast.UsageKind, keyword string, mods 
 			preRels = append(preRels, &ast.Relationship{Kind: ast.RelTyping, Target: metaType})
 		}
 	}
-	if !skipIdentification {
+	// FeatureDeclaration: `Identification FeatureSpecializationPart? | FeatureSpecializationPart`,
+	// so a part begun ahead of the name leaves no name: `:>> values ordered` continues the part.
+	if !skipIdentification && len(preRels) == 0 {
 		u.Ident = p.parseUsageIdentification(kind)
 	}
 
