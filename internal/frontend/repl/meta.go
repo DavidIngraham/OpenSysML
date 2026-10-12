@@ -30,7 +30,7 @@ import (
 // renderUsage is how %render is written: a view, the form to write it in, text
 // when none is named, then a palette, style and port display the form draws.
 const (
-	renderUsage    = "usage: %render <name> [text|mermaid|markdown|dot|plantuml|d2|csv|tsv [palette] [pilot|cameo] [minimal|full] [verdicts] [link=<template>]]"
+	renderUsage    = "usage: %render <name> [text|mermaid|markdown|dot|plantuml|d2|csv|tsv [palette] [pilot|cameo] [minimal|full] [splines|ortho|polyline] [verdicts] [link=<template>]]"
 	renderRunUsage = "usage: %render-run <timeline|sequence> [text|mermaid|plantuml|dot] [link=<template>]"
 )
 
@@ -579,6 +579,13 @@ func parseRenderArgs(args []string) (name string, form view.Form, opts view.Opti
 				return renderUsageOf(renderUsage)
 			}
 			opts.Ports = ports
+			continue
+		}
+		if lines, ok := view.ParseLines(word); ok {
+			if opts.Lines != "" {
+				return renderUsageOf(renderUsage)
+			}
+			opts.Lines = lines
 			continue
 		}
 		if !form.TakesPalette() {

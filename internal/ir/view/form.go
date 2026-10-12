@@ -179,8 +179,9 @@ func (r *Rendering) wrongFormError(form Form) *WrongFormError {
 
 // Options are what a rendering is written with beside its form. Each form
 // takes the ones that apply to it: the text form its Width, Mermaid, DOT,
-// PlantUML and D2 their Direction, Palette, Style and Unplaced, and the
-// interconnection and mixed forms their Ports display. A form ignores the rest.
+// PlantUML and D2 their Direction, Palette, Style and Unplaced, DOT and
+// PlantUML their Lines routing, and the interconnection and mixed forms their
+// Ports display. A form ignores the rest.
 type Options struct {
 	// Links is the source link each node and edge is written with; zero writes none.
 	Links Links
@@ -201,6 +202,9 @@ type Options struct {
 	// Width is the width the text form is written to fit; WidthUnbounded
 	// writes every column as wide as its widest cell.
 	Width int
+	// Lines is how the DOT and PlantUML forms route their edges; empty leaves
+	// each engine's curved default, as LinesSplines does.
+	Lines Lines
 }
 
 // Write is the rendering in form, with the default options: no particular
@@ -221,6 +225,9 @@ func (r *Rendering) WriteWith(form Form, options Options) (string, error) {
 		}
 	}
 	if err := options.Ports.check(); err != nil {
+		return "", err
+	}
+	if err := options.Lines.check(); err != nil {
 		return "", err
 	}
 	switch form {

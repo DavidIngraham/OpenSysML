@@ -165,8 +165,8 @@ func renderFilenames(views []model.ViewInfo, form view.Form) (map[string]string,
 
 // renderOptions is what -render and -render-all write with: the text width,
 // the palette -render-palette names, the port display -render-ports names,
-// the placement -render-unplaced names and the drawing style -render-style
-// names, each of which must be one there is.
+// the placement -render-unplaced names, the drawing style -render-style names
+// and the edge routing -render-lines names, each of which must be one there is.
 func renderOptions(width int) (view.Options, error) {
 	options := view.Options{Width: width}
 	if renderLink != "" {
@@ -187,6 +187,11 @@ func renderOptions(width int) (view.Options, error) {
 		return view.Options{}, fmt.Errorf("-render-ports: %w", &view.UnknownPortsError{Name: renderPorts})
 	}
 	options.Ports = ports
+	lines, ok := view.ParseLines(renderLines)
+	if !ok {
+		return view.Options{}, fmt.Errorf("-render-lines: %w", &view.UnknownLinesError{Name: renderLines})
+	}
+	options.Lines = lines
 	unplaced, err := unplacedOption()
 	if err != nil {
 		return view.Options{}, err

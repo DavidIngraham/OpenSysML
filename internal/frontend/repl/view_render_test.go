@@ -769,3 +769,26 @@ func TestRenderDrawsVerdictsWhenAskedFor(t *testing.T) {
 		t.Errorf("completing the overlay offered %v", got.Candidates)
 	}
 }
+
+// %render takes an edge routing for the dot and plantuml forms — splines, the
+// default, ortho or polyline — one of them at most, anywhere among the palette,
+// style and port display; it completes beside them, and a form that routes no
+// edge itself notes the routing.
+func TestRenderTakesALineRouting(t *testing.T) {
+	s := viewSession(t)
+	for line, want := range map[string]string{
+		"%render Demo::summary dot ortho":                    "splines=ortho",
+		"%render Demo::summary dot okabe-ito polyline cameo": "splines=polyline",
+		"%render Demo::summary plantuml ortho":               "skinparam linetype ortho",
+		"%render Demo::summary mermaid polyline":             "%% not represented: lines polyline; mermaid routes no edge itself, the dot and plantuml forms do",
+	} {
+		wants(t, run(t, s, line), want)
+	}
+	if got := run(t, s, "%render Demo::summary dot splines"); strings.Contains(got, "splines=") {
+		t.Errorf("the splines routing is the engine's default, stated nowhere:\n%s", got)
+	}
+	wants(t, run(t, s, "%render Demo::summary dot ortho polyline"), renderUsage)
+	if got := s.Complete("%render Demo::summary dot cameo ort", len("%render Demo::summary dot cameo ort")); !slices.Equal(got.Candidates, []string{"ortho"}) {
+		t.Errorf("Complete(ort) = %v, want ortho", got.Candidates)
+	}
+}
