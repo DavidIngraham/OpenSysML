@@ -48,9 +48,9 @@ or Q::Engine? The name is hidden here: import P::* and import Q::* bring distinc
 (`P::Engine`) resolves as ever; the importing namespace's own qualified name (`Use::Engine`) does
 not reach a hidden membership, and a namespace that re-exports both imports has no such member to
 re-export. (The OMG pilot implementation binds the first import's member instead and reports
-nothing.) A called name is the exception: an invocation selects among every function visible under
-its name, imported ones included, so `pick(2)` still chooses between two imported `calc def pick`
-by signature.
+nothing.) A called name is read the same way: two `calc def pick` that two imports bring are
+hidden, so `pick(2)` is unresolved with the hint above, while a set one namespace owns, a type
+inherits or one import brings still selects by signature.
 
 | Wording | Reported on |
 |---------|-------------|

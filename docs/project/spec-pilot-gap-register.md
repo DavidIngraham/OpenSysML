@@ -639,20 +639,21 @@ part def Base { protected import Left::*; protected import Right::*; }
 | any of these | `Use::Engine` | unresolved | `Left::Engine` |
 
 - *Private imports count:* visibility governs what `C` re-exports, not what it imports.
-- *Overload sets are warned, and a call still selects among them.* Two `calc def pick` reached
-  through `import A::*; import B::*;` are indistinguishable memberships like two owned `pick`
-  are, which already warn (`Duplicate of other owned member name`), and are hidden from ordinary
-  lookup: `ref p : pick;` in that namespace is unresolved with the hint above. A called name is
-  looked up differently — an invocation gathers every function the name is visible as, owned,
-  inherited, imported or re-exported, and selects by signature ([spec-compliance.md](spec-compliance.md),
-  "Invocation overload selection") — and that gathering does not thin the set by §7.2.5.4, so
-  `pick(2)` still selects between `A::pick` and `B::pick` (`resolve.Resolver.InvocationCandidates`;
-  `TestInvocationOverloadCandidatesThroughInheritedImports`). This is a documented extension of the
-  specification, which has no overloading: read literally, the two memberships are hidden and the
-  call unresolved. Only the called name is read so; the namespaces qualifying it are ordinary
-  references, so `Engine::build()` is unresolved where `Engine` is hidden. Operator expressions (`'+'`, `'=='`, …) resolve against the Kernel Function
-  Library packages, library content the collision computation leaves out, so they are untouched
-  either way.
+- *Overload sets two imports bring are hidden like any other collision.* Two `calc def pick`
+  reached through `import A::*; import B::*;` are indistinguishable memberships like two owned
+  `pick` are, which already warn (`Duplicate of other owned member name`), and §7.2.5.4 hides
+  them from every lookup, a called name included: `pick(2)` in that namespace is unresolved with
+  the hint above (`resolve.Resolver.InvocationCandidates` reads the same collision set;
+  `TestInvocationOverloadCandidatesThroughInheritedImports`,
+  `TestHiddenImportedMembershipsOverloadSet`). The specification has no overloading to keep such a
+  set for. Selection by signature ([spec-compliance.md](spec-compliance.md), "Invocation overload
+  selection") stays for the sets the specification leaves in the namespace: overloads one namespace
+  owns, a type inherits, or one import brings, and the Kernel Function Library sets
+  (`IntegerFunctions`/`RealFunctions`, `ISQ`; `TestInvocationOverloadSetWithinOneNamespaceSelects`).
+  The namespaces qualifying a called name are ordinary references too, so `Engine::build()` is
+  unresolved where `Engine` is hidden. Operator expressions (`'+'`, `'=='`, …) resolve against the
+  Kernel Function Library packages, library content the collision computation leaves out, so they
+  are untouched.
 
 Over the OMG corpora this reports 238 warnings, every one a same-metaclass pair under the
 rule above, and the hiding leaves 32 references unresolved (adjudicated per file in
