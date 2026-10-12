@@ -95,12 +95,19 @@ def parse_fragment(path: pathlib.Path) -> tuple[str, str]:
 
 
 def check() -> int:
+    """Exit 1 when a fragment is malformed. A fragment a fold would skip is reported but not an
+    error: a hotfix branch legitimately carries the fragments its previous release folded."""
     errors: list[str] = []
+    text = CHANGELOG.read_text(encoding="utf-8")
     for p in fragments():
         try:
-            parse_fragment(p)
+            section, body = parse_fragment(p)
         except FragmentError as e:
             errors.append(str(e))
+            continue
+        found = _already_folded(text, section, body)
+        if found:
+            _report_skipped(p, section, found)
     for e in errors:
         print(e, file=sys.stderr)
     return 1 if errors else 0
@@ -128,16 +135,29 @@ def _split_sections(body: str) -> tuple[str, list[tuple[str, str]]]:
     return preamble, sections
 
 
-def _already_folded(text: str, section: str, entry: str) -> bool:
-    """True if `entry` sits whole, on item boundaries, under `section` of any version (a previous
-    render wrote it, or a release already carried it)."""
+def _already_folded(text: str, section: str, entry: str) -> str | None:
+    """The heading of the version whose `section` already carries `entry` whole, on item boundaries,
+    or None. Only "## Unreleased" and the latest release are searched: a render that died before
+    deleting its fragments wrote them to the former, and a hotfix cut from `main` before the previous
+    release was merged back folds them into the latter; an older release cannot hold a live fragment,
+    so an entry that merely repeats one of its lines is new and must not be dropped."""
     at_boundaries = re.compile(rf"(?:\A|\n\n){re.escape(entry)}(?:\Z|\n\n)")
-    start, _ = _unreleased_bounds(text)
-    for version_body in VERSION_HEADING.split(text[start:]):
-        for name, content in _split_sections(version_body)[1]:
+    start, end = _unreleased_bounds(text)
+    candidates = [("## Unreleased", text[start:end])]
+    if end < len(text):
+        heading, _, rest = text[end:].partition("\n")
+        nxt = VERSION_HEADING.search(rest)
+        candidates.append((heading.rstrip(), rest[: nxt.start()] if nxt else rest))
+    for heading, body in candidates:
+        for name, content in _split_sections(body)[1]:
             if name == section and at_boundaries.search(content.strip("\n")):
-                return True
-    return False
+                return heading
+    return None
+
+
+def _report_skipped(path: pathlib.Path, section: str, heading: str) -> None:
+    """Name the fragment a fold leaves out, so an entry that merely repeats an old line is noticed."""
+    print(f"{_rel(path)}: not folded, '### {section}' of '{heading}' already carries it", file=sys.stderr)
 
 
 def fold(text: str, entries: dict[str, list[str]]) -> str:
@@ -177,9 +197,9 @@ def _folded(paths: list[pathlib.Path]) -> str:
     entries: dict[str, list[str]] = {}
     for p in paths:
         section, body = parse_fragment(p)
-        # Already folded by an interrupted run, or carried by a release the fragment
-        # outlived: only the deletion is outstanding.
-        if _already_folded(text, section, body):
+        found = _already_folded(text, section, body)
+        if found:
+            _report_skipped(p, section, found)
             continue
         entries.setdefault(section, []).append(body)
     return fold(text, entries) if entries else text

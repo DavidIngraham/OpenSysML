@@ -17,7 +17,12 @@
       <packagedElement xmi:type="uml:Class" xmi:id="_blk_console" name="Console">
         <ownedAttribute xmi:type="uml:Property" xmi:id="_prop_current" name="current" type="_uc_scan"/>
         <ownedAttribute xmi:type="uml:Property" xmi:id="_prop_user" name="user" type="_act_operator"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="_prop_panel" name="panel" type="_blk_panel" association="_assoc_console_panel"/>
       </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="_blk_panel" name="Panel">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="_prop_console" name="console" type="_blk_console" association="_assoc_console_panel"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Association" xmi:id="_assoc_console_panel" memberEnd="_prop_panel _prop_console"/>
     </packagedElement>
 
     <packagedElement xmi:type="uml:Package" xmi:id="_pkg_tables" name="Tables"/>
