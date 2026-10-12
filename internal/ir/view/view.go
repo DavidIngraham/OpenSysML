@@ -209,7 +209,8 @@ const (
 	EdgeRefine
 	// EdgeAllocate is an allocation, from the allocated element.
 	EdgeAllocate
-	// EdgeAssociation connects an actor or subject to a case.
+	// EdgeAssociation is an association drawn as a plain line: an actor or subject
+	// to a case, or a connection def between the definitions typing its two ends.
 	EdgeAssociation
 	// EdgeInclude includes one case in another.
 	EdgeInclude
@@ -327,6 +328,9 @@ type Port struct {
 	ID string
 	// Name is the pin's name, as the notation writes it.
 	Name string
+	// NameSynthesized marks a name the model did not give, which a form
+	// leaves off the pin's label as it does off a node's.
+	NameSynthesized bool
 	// Type is the port's declared type as the notation writes it, `~T` for a
 	// conjugated one; empty for a pin, whose type the flow's label carries.
 	Type string
@@ -367,10 +371,14 @@ func (d PortDirection) String() string {
 
 // label is the text a port is drawn with: its name, and its type where it has one.
 func (p Port) label() string {
-	if p.Type == "" {
-		return p.Name
+	name := p.Name
+	if p.NameSynthesized {
+		name = ""
 	}
-	return p.Name + " : " + p.Type
+	if p.Type == "" {
+		return name
+	}
+	return name + " : " + p.Type
 }
 
 // Edge joins two nodes of a rendering.
