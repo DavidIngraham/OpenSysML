@@ -89,9 +89,10 @@ func TestOtherLanguageKeywordsAreNames(t *testing.T) {
 	}
 }
 
-// A keyword of the other notation stays the keyword only where a declaration
-// of that notation follows it, which the notation pass then reports; before
-// anything a name can be followed by, it is the name.
+// A keyword of the other notation stays the keyword only where a named
+// declaration of that notation follows it, which the notation pass then
+// reports; before anything a name can be followed by — a body and a
+// multiplicity included — it is the name.
 func TestOtherLanguageKeywordReadsAsName(t *testing.T) {
 	for _, tc := range []struct {
 		file, input string
@@ -107,9 +108,13 @@ func TestOtherLanguageKeywordReadsAsName(t *testing.T) {
 		{"a.sysml", "part def D { calc c { (step < upperBound) == (step > lowerBound) } }", false},
 		{"a.sysml", "step #M s;", true},
 		{"a.sysml", "feature redefines x;", true},
-		{"a.sysml", "part def D { inv { x > 0 } }", true},
-		{"a.sysml", "part def D { connector [1] a to b; }", true},
-		{"a.sysml", "namespace { }", true},
+		{"a.sysml", "part def D { inv { x > 0 } }", false},
+		{"a.sysml", "part def D { connector [1] a to b; }", false},
+		{"a.sysml", "namespace { }", false},
+		{"a.sysml", "part def D { step { } }", false},
+		{"a.sysml", "part def D { step [1]; }", false},
+		{"a.kerml", "struct S { action { } }", false},
+		{"a.kerml", "struct S { part [1]; }", false},
 		{"a.sysml", "part def D { step : T; }", false},
 		{"a.sysml", "part def D { ref step : T; }", false},
 		{"a.sysml", "part def D { expr; }", false},
@@ -127,8 +132,8 @@ func TestOtherLanguageKeywordReadsAsName(t *testing.T) {
 		{"a.sysml", "part def D { action a { assign step := 1; } }", false},
 		{"a.kerml", "action a;", true},
 		{"a.kerml", "struct S { connection c connect a to b; }", true},
-		{"a.kerml", "struct S { constraint { x > 0 } }", true},
-		{"a.kerml", "struct S { connect [1] a to b; }", true},
+		{"a.kerml", "struct S { constraint { x > 0 } }", false},
+		{"a.kerml", "struct S { connect [1] a to b; }", false},
 		{"a.kerml", "struct S { action : T; }", false},
 		{"a.kerml", "struct S { part; }", false},
 		{"a.kerml", "struct S { inv { action <= 3 } }", false},

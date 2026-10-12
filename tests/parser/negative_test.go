@@ -23,6 +23,13 @@ func TestNegative(t *testing.T) {
 		// FeatureDirection).
 		{"direction_without_feature_action", "package P { action def A { in ; } }"},
 		{"direction_without_feature_part", "package P { part def D { out ; } }"},
+		// A word only KerML.xtext spells is a name in SysML, a body or a leading
+		// multiplicity after it included, so an anonymous KerML declaration is the
+		// syntax error the pinned pilot reports: `inv { x > 0 }` is
+		// `no viable alternative at input '>'`, `connector [1] a to b;`
+		// `no viable alternative at input 'a'`.
+		{"kerml_inv_body_in_sysml", "package P { part def D { attribute x : ScalarValues::Real; inv { x > 0 } } }"},
+		{"kerml_connector_multiplicity_in_sysml", "package P { part def D { part a; part b; connector [1] a to b; } }"},
 		{"empty_requirement", "requirement r { require ; }"},
 		{"empty_expression", "attribute x = ;"},
 		// A KerML-only word is a name in SysML, so an operator after it still

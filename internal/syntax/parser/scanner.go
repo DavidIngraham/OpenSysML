@@ -9,11 +9,12 @@ import (
 // union of both languages' keywords; a keyword the file's own grammar does not
 // reserve — a KerML-only literal such as `step` in a `.sysml` file, a SysML-only
 // one such as `action` in `.kerml` — is the name it is there, so the Scanner
-// hands it on as an Identifier. The one exception is a declaration of the other
-// notation: `step s;` in a `.sysml` file keeps its keyword, so the declaration
-// parses and the notation pass can report it, where `step <= bound`, `step : Real;`
-// and `(step)` read the name. The rule is the same for every consumer of the
-// token stream (parser, semantic tokens), so they classify a word alike.
+// hands it on as an Identifier. The one exception is a named declaration of the
+// other notation: `step s;` in a `.sysml` file keeps its keyword, so the
+// declaration parses and the notation pass can report it, where `step <= bound`,
+// `step : Real;`, `step { }` and `(step)` read the name. The rule is the same for
+// every consumer of the token stream (parser, semantic tokens), so they classify
+// a word alike.
 type Scanner struct {
 	lx      *lexer.Lexer
 	kind    source.Kind
@@ -29,7 +30,7 @@ func NewScanner(sf *source.SourceFile) *Scanner {
 // Next returns the next token, trivia included; EOF is returned repeatedly.
 func (s *Scanner) Next() lexer.Token {
 	tok := s.take()
-	if tok.Kind == lexer.Keyword && !Reserves(s.kind, tok.KeywordID) && s.readsAsName(tok.KeywordID) {
+	if tok.Kind == lexer.Keyword && !Reserves(s.kind, tok.KeywordID) && s.readsAsName() {
 		tok.Kind = lexer.Identifier
 		tok.KeywordID = ""
 	}
@@ -71,14 +72,14 @@ func (s *Scanner) ahead(n int) lexer.Token {
 // readsAsName reports whether the unreserved keyword being returned is a name
 // rather than the keyword of a declaration in the other notation. Before a
 // name, a short name, prefix metadata or a further keyword of a declaration
-// (`step s`, `feature redefines x`, `chains a.b`) every such word keeps its
-// keyword. A declaration kind also keeps it before the body or the leading
-// multiplicity of an anonymous declaration (`inv { x > 0 }`, `connector [1] a
-// to b`), since a declaration of the other notation is parsed and then reported
-// by the notation pass (docs/reference/grammar/conformance-audit.md). Before
-// anything else — an operator, `:`, `;`, `=`, `)`, `}`, `,`, `.`, `::`, `(` —
-// the word is the name, since the file's own grammar gives it no other reading.
-func (s *Scanner) readsAsName(word string) bool {
+// (`step s`, `feature redefines x`, `chains a.b`) the word keeps its keyword,
+// since a declaration of the other notation is parsed and then reported by the
+// notation pass (docs/reference/grammar/conformance-audit.md). Before anything
+// else — a body or multiplicity (`step { }`, `step [1]`), an operator, `:`, `;`,
+// `=`, `)`, `}`, `,`, `.`, `::`, `(` — the word is the name, since the file's
+// own grammar gives it no other reading; `inv { x > 0 }` in a `.sysml` file is
+// then the syntax error the pinned pilot reports, not an anonymous invariant.
+func (s *Scanner) readsAsName() bool {
 	next := s.ahead(0)
 	switch next.Kind {
 	case lexer.Identifier, lexer.UnrestrictedName:
@@ -100,23 +101,8 @@ func (s *Scanner) readsAsName(word string) bool {
 	case lexer.Hash:
 		// `step #M s` is prefix metadata; `step#(1)` indexes.
 		return s.ahead(1).Kind == lexer.LParen
-	case lexer.LBrace, lexer.LBracket:
-		return !declaresKind(word)
 	}
 	return true
-}
-
-// declaresKind reports whether word is a declaration kind keyword of either
-// notation, which an anonymous declaration may open with (`inv { … }`,
-// `connect [1] a to b`, `namespace { … }`).
-func declaresKind(word string) bool {
-	switch word {
-	case "namespace", "connect":
-		return true
-	}
-	_, usage := usageKindKeywords[word]
-	_, definition := definitionKindKeywords[word]
-	return usage || definition
 }
 
 // continuesDeclaration reports whether t can follow a declaration's name: its
