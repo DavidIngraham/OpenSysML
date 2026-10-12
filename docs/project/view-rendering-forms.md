@@ -578,7 +578,9 @@ graph attribute list and `polyline` `splines=polyline`, after `compound` and bef
 layout's `layout=neato` scale attributes, so a pinned drawing keeps its routes and only the edges
 Graphviz still routes follow the setting (where pinned boxes touch, Graphviz falls back to straight
 edges). Under `ortho` an edge's `label` is written as `xlabel`, since Graphviz places no label on an
-orthogonal edge but does place an external one. These are the Pilot visualizer's `ORTHOLINE` and
+orthogonal edge but does place an external one. Graphviz's orthogonal router also ignores edge
+ports, so an edge drawn to a part's pin may run through the part's body to reach it; the default
+splines honour the pins. These are the Pilot visualizer's `ORTHOLINE` and
 `POLYLINE` styles, which `%viz` maps to them; PlantUML draws the same routing as
 `skinparam linetype ortho|polyline`, and Mermaid and D2, which route no edge themselves, note it
 (`lines ortho; mermaid routes no edge itself, the dot and plantuml forms do`).
