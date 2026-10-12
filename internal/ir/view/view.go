@@ -385,6 +385,12 @@ type Edge struct {
 	// Label is what the edge carries: a connector's name, a transition's
 	// trigger, guard and effect, a succession's guard, a flow's pins. It may be empty.
 	Label string
+	// FromLabel and ToLabel name the edge's ends — the association or
+	// connector end at From and the one at To, a composite part usage's name
+	// and multiplicity on the composition to its type — drawn beside that end,
+	// not along the edge; empty for an unnamed end.
+	FromLabel string
+	ToLabel   string
 	// Name is the edge's own name, for a writer whose drawing shows the rest
 	// of its Label another way; empty for one anonymous or named by a migration.
 	Name string

@@ -783,6 +783,17 @@ in each form:
 | `plantuml` | `rectangle "<size:10>//«part»//</size>\n**pump : Pump**" as n1 <<part>> <<usage>>` — a creole label, the keyword line italic at 10pt over the name in bold; the stereotypes drive the style and are hidden |
 | `d2` | `n1: "«part»\npump : Pump" { class: usage }` — a quoted label with the keyword line over the name, the class the B&W rule the node takes |
 
+An association end's name — a composite part's name and multiplicity on the composition from its
+owner to its type, a `ref`'s on its reference edge — is drawn at the end it names, as the
+graphical notation draws an end name, not along the edge; a connection's own name stays along the
+edge. Each form sets it where its grammar has a place at an end: `dot` as `headlabel` (set by
+Graphviz beside the head of a laid-out edge, and by `head_lp` beside the last segment of a routed
+edge before that end, clear of the line, the boxes and the other labels), `plantuml` in quotes
+before the end's alias (`n0 *-- "wheels[4]" n16`), `d2` as the arrowhead's label
+(`target-arrowhead: { label: "wheels[4]" }`). `mermaid`'s flowchart and the `text` form have no
+place at an end and keep the name in the edge's text (`◆ wheels[4]`), where it reads as the
+edge's label; the LSP's render result carries no label positions and keeps it there too.
+
 An action rendering draws the action's own directed parameters as pins on its frame — `in` and
 `inout` on the frame's input side, `out` and `return` on the output side; a usage's are the ones its
 type gives it — the way it draws each nested node's parameters as pins on the node, and draws a

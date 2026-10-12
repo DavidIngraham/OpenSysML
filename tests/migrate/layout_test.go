@@ -394,7 +394,8 @@ func TestGoldenControlNodeLayout(t *testing.T) {
 // The routes a migrated view carries reach the DOT form as pinned edge splines for each
 // edge kind, labelled by name only where the edge has no text of its own and the name is
 // the source's: one the migration made up, and marked, labels nothing. An object flow
-// runs pin to pin, the pins named beside the action; a label sits inside the canvas.
+// runs pin to pin, the pins named beside the action; a label sits inside the canvas, and
+// two labels on one route, or a label and a parallel line, keep apart.
 func TestMigratedRoutesRenderPinned(t *testing.T) {
 	r := migrateLaidOut(t, "diagram_edges")
 	s := session(t, r)
@@ -410,10 +411,10 @@ func TestMigratedRoutesRenderPinned(t *testing.T) {
 			`"n1" -> "n2" [label="accept Go", pos="e,110,110 200,110 200,110 120,110 120,110", lp="155,98"];`,
 			`"n2" -> "n3" [label="accept Stop", pos="e,250,90 250,40 250,40 250,80 250,80", lp="203,65"];`,
 			`"n3" -> "n2" [label="accept Go", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="281,65"];`,
-			`"n3" -> "n2" [label="accept Resume", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="265.5,65"];`,
+			`"n3" -> "n2" [label="accept Resume", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="265.5,84.5"];`,
 		},
 		"Structure::Vehicle::'Vehicle Internals'": {
-			`[label="connection", arrowhead=none, penwidth=3, pos="200,100 200,100 120,100 120,100", lp="160,88"];`,
+			`[label="connection", arrowhead=none, penwidth=3, pos="200,100 200,100 120,100 120,100", lp="160,112"];`,
 			`[label="connection", arrowhead=none, penwidth=3, pos="200,80 200,80 160,60 160,60 160,60 120,80 120,80", lp="192.5,44.5"];`,
 			`[label="drive", arrowhead=none, penwidth=3, pos="200,90 200,90 120,90 120,90", lp="160,78"];`,
 			`[label="binding", arrowhead=none, pos="200,10 200,10 120,10 120,10", lp="160,22"];`,

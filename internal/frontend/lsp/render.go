@@ -501,7 +501,7 @@ func (s *Server) renderEdges(out *renderResult, snapshot *model.Snapshot, edges 
 	for _, edge := range edges {
 		e := renderEdge{
 			From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
-			Label: edge.Label, Kind: edge.Kind.String(), Style: wireStyle(edge.Style),
+			Label: edge.Text(), Kind: edge.Kind.String(), Style: wireStyle(edge.Style),
 		}
 		declaring := s.declaring(snapshot, edge.Origin)
 		e.Origin = s.originOf(declaring, edge.Origin)

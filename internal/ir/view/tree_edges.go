@@ -123,7 +123,7 @@ func (g *treeGraph) edgesOf(node *Node, site treeSite) {
 			if to == nil || to == node || g.nested(node, to) {
 				continue
 			}
-			g.add(Edge{From: node.ID, To: to.ID, Kind: kind, Label: g.r.usageLabel(member), Origin: symbolOrigin(member),
+			g.add(Edge{From: node.ID, To: to.ID, Kind: kind, ToLabel: g.r.usageLabel(member), Origin: symbolOrigin(member),
 				Route: g.r.routeOf(site.view, member, g.out), Style: g.r.styleOf(site.view, member, g.out)}, member)
 		}
 	}
@@ -155,7 +155,7 @@ func (g *treeGraph) encloses(outer, inner string) bool {
 // add records an edge once; usage is the member the edge stands for, nil for
 // a relationship clause.
 func (g *treeGraph) add(edge Edge, usage *symbols.Symbol) {
-	key := treeEdgeKey{from: edge.From, to: edge.To, label: edge.Label, kind: edge.Kind, usage: symbols.KeyOf(usage)}
+	key := treeEdgeKey{from: edge.From, to: edge.To, label: edge.text(), kind: edge.Kind, usage: symbols.KeyOf(usage)}
 	if g.edges[key] {
 		return
 	}

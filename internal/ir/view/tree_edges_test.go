@@ -24,8 +24,8 @@ func treeEdgeLines(rendering *Rendering) []string {
 	var lines []string
 	for _, edge := range rendering.Edges {
 		line := fmt.Sprintf("%s %s %s", names[edge.From], edge.Kind, names[edge.To])
-		if edge.Label != "" {
-			line += ": " + edge.Label
+		if text := edge.text(); text != "" {
+			line += ": " + text
 		}
 		lines = append(lines, line)
 	}
@@ -97,9 +97,9 @@ func TestTreeCompositionEdgeIsRoutedByTheUsagesRoute(t *testing.T) {
 	var routed []string
 	for _, edge := range rendering.Edges {
 		if len(edge.Route) > 0 {
-			routed = append(routed, edge.Label)
+			routed = append(routed, edge.ToLabel)
 			if want := []Point{{100, 200}, {300, 200}}; !reflect.DeepEqual(edge.Route, want) {
-				t.Errorf("route of %s = %v, want %v", edge.Label, edge.Route, want)
+				t.Errorf("route of %s = %v, want %v", edge.ToLabel, edge.Route, want)
 			}
 		}
 	}
@@ -229,7 +229,7 @@ package Views {
 	}
 	var labels []string
 	for _, edge := range rendering.Edges {
-		labels = append(labels, edge.Label)
+		labels = append(labels, edge.ToLabel)
 	}
 	if want := []string{"wheels[axles]", "seats[0..rows]"}; !reflect.DeepEqual(labels, want) {
 		t.Errorf("labels = %q, want %q", labels, want)

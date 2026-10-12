@@ -463,10 +463,12 @@ type dotWriter struct {
 	labels          labeller            // the node labels, headed relative to the roots' namespace
 	skin            dotSkin             // the drawing style's defaults
 	links           Links
-	notes           []Note    // the notes the drawing keeps, those of the nodes it draws
-	noteBoxes       []nodeBox // where each positioned note is drawn, by index in notes
-	noteShown       []int     // note index -> the index of the note drawn for it, itself unless a twin at the same place is
-	pictures        []Picture // the pictures drawn, each at its stated bounds
+	notes           []Note       // the notes the drawing keeps, those of the nodes it draws
+	noteBoxes       []nodeBox    // where each positioned note is drawn, by index in notes
+	placer          *labelPlacer // where the routed edges' labels went, once one is placed
+	segments        [][2]Point   // the routed edges' segments, which a label's cover counts crossing
+	noteShown       []int        // note index -> the index of the note drawn for it, itself unless a twin at the same place is
+	pictures        []Picture    // the pictures drawn, each at its stated bounds
 	pictureRefusals []error
 	frameRoot       string // the root the Cameo frame header names, drawn untitled
 }
@@ -1822,9 +1824,15 @@ func (b nodeBox) union(other nodeBox) nodeBox {
 // `pos` spline when a Route gives waypoints.
 func (w *dotWriter) dotEdgeAttributes(edge Edge) []string {
 	var attrs []string
-	label := w.edgeText(edge)
+	from, label, to := w.edgeTexts(edge)
 	if label != "" {
 		attrs = append(attrs, dotLabelAttribute(dotQuote(label)))
+	}
+	if from != "" {
+		attrs = append(attrs, "taillabel="+dotQuote(from))
+	}
+	if to != "" {
+		attrs = append(attrs, "headlabel="+dotQuote(to))
 	}
 	switch edge.Kind {
 	case EdgeConnection:
@@ -1866,9 +1874,16 @@ func (w *dotWriter) dotEdgeAttributes(edge Edge) []string {
 	}
 	attrs = append(attrs, dotStyleAttributes(edge.Style, false)...)
 	if len(edge.Route) > 1 {
-		attrs = append(attrs, "pos="+dotQuote(w.dotSpline(w.pinnedRoute(edge), dotArrowtailed(attrs), dotArrowheaded(attrs))))
+		route := w.pinnedRoute(edge)
+		attrs = append(attrs, "pos="+dotQuote(w.dotSpline(route, dotArrowtailed(attrs), dotArrowheaded(attrs))))
 		if label != "" {
-			attrs = append(attrs, "lp="+dotQuote(w.dotPoint(w.dotLabelPoint(edge))))
+			attrs = append(attrs, "lp="+dotQuote(w.dotPoint(w.placeLabel(route, label, labelMid))))
+		}
+		if from != "" {
+			attrs = append(attrs, "tail_lp="+dotQuote(w.dotPoint(w.placeLabel(route, from, labelFrom))))
+		}
+		if to != "" {
+			attrs = append(attrs, "head_lp="+dotQuote(w.dotPoint(w.placeLabel(route, to, labelTo))))
 		}
 	}
 	attrs = append(attrs, w.dotLinkAttributes(edge.Origin)...)
@@ -1942,42 +1957,38 @@ func dotArrowBase(route []Point) Point {
 	return Point{X: halfPixel(tip.X - (tip.X-from.X)/d*back), Y: halfPixel(tip.Y - (tip.Y-from.Y)/d*back)}
 }
 
-// dotLabelGap is the space, in pixels, between a routed edge and its label.
-const dotLabelGap = 4
-
-// dotLabelPoint is where a routed edge's label is centred: beside the midpoint
-// of the route's longest segment, clear of it by the label's half-extent and a
-// gap — right of a segment going down, above one going right — unless the
-// other side, or a quarter point of the segment, keeps more of the label off
-// the drawn boxes and notes and on the canvas.
-func (w *dotWriter) dotLabelPoint(edge Edge) Point {
-	from, to := longestSegment(edge.Route)
-	length := math.Hypot(to.X-from.X, to.Y-from.Y)
-	if length == 0 {
-		return from
-	}
-	nx, ny := (to.Y-from.Y)/length, -(to.X-from.X)/length
-	width, height := dotTextExtent([]string{w.edgeText(edge)}, w.skin.edgePts)
-	off := math.Abs(nx)*width/2 + math.Abs(ny)*height/2 + dotLabelGap
-	var best Point
-	cover := math.Inf(1)
-	for _, along := range []float64{0.5, 0.25, 0.75} {
-		at := Point{X: from.X + (to.X-from.X)*along, Y: from.Y + (to.Y-from.Y)*along}
-		for _, side := range []float64{1, -1} {
-			p := Point{X: halfPixel(at.X + side*nx*off), Y: halfPixel(at.Y + side*ny*off)}
-			if c := w.labelCover(p, width, height); c < cover {
-				best, cover = p, c
+// placeLabel is where a routed edge's text is centred, at the end it names,
+// clear of its route and every other, the drawn boxes and notes, the canvas's
+// edge and the labels placed before it (labelPlacer); the drawing's labels are
+// placed in the order its edges are written.
+func (w *dotWriter) placeLabel(route []Point, text string, end labelEnd) Point {
+	if w.placer == nil {
+		w.placer = &labelPlacer{
+			extent: func(text string) (width, height float64) { return dotTextExtent([]string{text}, w.skin.edgePts) },
+			cover:  w.labelCover,
+		}
+		for _, edge := range w.edges {
+			if len(edge.Route) < 2 {
+				continue
+			}
+			route := w.pinnedRoute(edge)
+			for i := 1; i < len(route); i++ {
+				w.segments = append(w.segments, [2]Point{route[i-1], route[i]})
 			}
 		}
 	}
-	return best
+	return w.placer.place(route, text, end)
 }
 
-// labelCover is how much of a label centred at p, of the given extent, lies on
-// a node's box, a note or off the canvas, as an area in whole square pixels.
-func (w *dotWriter) labelCover(p Point, width, height float64) float64 {
-	label := nodeBox{low: Point{X: p.X - width/2, Y: p.Y - height/2}, high: Point{X: p.X + width/2, Y: p.Y + height/2}}
+// labelCover is how much of a label's box lies on a node's box, a note, a
+// routed edge's line — counted a pixel wide — or off the canvas, as an area in
+// whole square pixels.
+func (w *dotWriter) labelCover(label nodeBox) float64 {
+	width, height := label.high.X-label.low.X, label.high.Y-label.low.Y
 	cover := 0.0
+	for _, segment := range w.segments {
+		cover += label.crossing(segment[0], segment[1])
+	}
 	for id, box := range w.boxes {
 		if !w.clusters[id] {
 			cover += label.overlap(box)
@@ -1993,6 +2004,30 @@ func (w *dotWriter) labelCover(p Point, width, height float64) float64 {
 	return math.Round(cover)
 }
 
+// crossing is the length of the segment from p to q that lies in the box.
+func (b nodeBox) crossing(p, q Point) float64 {
+	dx, dy := q.X-p.X, q.Y-p.Y
+	enter, leave := 0.0, 1.0
+	for _, side := range [][2]float64{{-dx, p.X - b.low.X}, {dx, b.high.X - p.X}, {-dy, p.Y - b.low.Y}, {dy, b.high.Y - p.Y}} {
+		d, room := side[0], side[1]
+		if d == 0 {
+			if room < 0 {
+				return 0
+			}
+			continue
+		}
+		if t := room / d; d < 0 {
+			enter = math.Max(enter, t)
+		} else {
+			leave = math.Min(leave, t)
+		}
+	}
+	if enter >= leave {
+		return 0
+	}
+	return (leave - enter) * math.Hypot(dx, dy)
+}
+
 // overlap is the area the two boxes share.
 func (b nodeBox) overlap(o nodeBox) float64 {
 	w := math.Min(b.high.X, o.high.X) - math.Max(b.low.X, o.low.X)
@@ -2003,25 +2038,26 @@ func (b nodeBox) overlap(o nodeBox) float64 {
 	return w * h
 }
 
-// edgeText is the label an edge is drawn with: an action's flow at a pin is
-// labelled by its own name alone, the drawn pins naming what it carries, where
-// an interconnection's connector at a port keeps its label, the port naming
-// only where it attaches; under Cameo's look a transition reads
+// edgeTexts are the texts an edge is drawn with: the names of its ends, set at
+// them, about its own label. An action's flow at a pin is labelled by its own
+// name alone, the drawn pins naming what it carries, where an
+// interconnection's connector at a port keeps its label, the port naming only
+// where it attaches; under Cameo's look a transition reads
 // `trigger [guard] / effect` with the `accept` keyword off and every name bare,
 // as Cameo writes it.
-func (w *dotWriter) edgeText(edge Edge) string {
-	label := edge.Label
+func (w *dotWriter) edgeTexts(edge Edge) (from, label, to string) {
+	label = edge.Label
 	if w.action && (edge.FromPort != "" || edge.ToPort != "") {
 		label = edge.Name
 	}
 	if !w.skin.cameo {
-		return label
+		return edge.FromLabel, label, edge.ToLabel
 	}
 	label = bareNames(label)
 	if edge.Kind == EdgeTransition {
 		label = strings.TrimPrefix(label, "accept ")
 	}
-	return displayText(label)
+	return displayText(bareNames(edge.FromLabel)), displayText(label), displayText(bareNames(edge.ToLabel))
 }
 
 // halfPixel rounds a coordinate to the nearest half pixel.
