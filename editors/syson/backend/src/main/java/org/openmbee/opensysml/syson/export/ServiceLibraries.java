@@ -1,5 +1,7 @@
 package org.openmbee.opensysml.syson.export;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -7,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.openmbee.opensysml.Connection;
+import org.openmbee.opensysml.Model;
 import org.openmbee.opensysml.Symbol;
 
 // A library package is bundled when an empty model already resolves it: the service's libraries
@@ -21,17 +24,25 @@ public final class ServiceLibraries implements BundledLibraries {
     }
 
     @Override
-    public Optional<Set<String>> members(String libraryName) {
+    public Optional<Set<String>> declarations(String libraryName) {
         if (libraryName == null || libraryName.isBlank()) return Optional.empty();
-        return known.computeIfAbsent(libraryName, name -> connection.parse("").find(name).map(ServiceLibraries::memberNames));
+        return known.computeIfAbsent(libraryName, name -> {
+            Model empty = connection.parse("");
+            return empty.find(name).map(root -> declarationsUnder(empty, root, name + "::"));
+        });
     }
 
-    // The simple names of a symbol's direct members, as its child ids end.
-    private static Set<String> memberNames(Symbol symbol) {
+    // Every id under the root, relative to it, walking child ids depth first; members a scope
+    // only imports or inherits lie outside the prefix and are left out.
+    private static Set<String> declarationsUnder(Model model, Symbol root, String prefix) {
         Set<String> names = new LinkedHashSet<>();
-        for (String id : symbol.childIds()) {
-            int separator = id.lastIndexOf("::");
-            names.add(separator < 0 ? id : id.substring(separator + 2));
+        Deque<Symbol> pending = new ArrayDeque<>();
+        pending.push(root);
+        while (!pending.isEmpty()) {
+            for (String id : pending.pop().childIds()) {
+                if (!id.startsWith(prefix) || !names.add(id.substring(prefix.length()))) continue;
+                model.findSymbol(id).ifPresent(pending::push);
+            }
         }
         return names;
     }

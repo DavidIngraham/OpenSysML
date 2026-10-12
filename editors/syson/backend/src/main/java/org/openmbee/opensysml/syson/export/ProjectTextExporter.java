@@ -58,9 +58,10 @@ public class ProjectTextExporter implements ProjectExporter {
     }
 
     // A project's copy of a library the service bundles would shadow the service's own, so an
-    // unextended copy is left out; a copy declaring members the service lacks is exported with a warning.
+    // unextended copy is left out; a copy declaring anything, at any depth, that the service's
+    // library lacks is exported with a warning.
     private boolean skipsBundledCopy(LibraryPackage library, List<ExportedProject.ExportMessage> messages) {
-        Set<String> bundled = bundledLibraries.members(library.getName()).orElse(null);
+        Set<String> bundled = bundledLibraries.declarations(library.getName()).orElse(null);
         if (bundled == null) return false;
         List<String> added = new ArrayList<>();
         String prefix = library.getQualifiedName() + "::";
@@ -68,9 +69,7 @@ public class ProjectTextExporter implements ProjectExporter {
             if (!(iterator.next() instanceof Element member)) continue;
             String qualifiedName = member.getQualifiedName();
             if (qualifiedName == null || !qualifiedName.startsWith(prefix)) continue;
-            String name = qualifiedName.substring(prefix.length());
-            if (name.contains("::")) continue;
-            name = name.replace("'", "");
+            String name = qualifiedName.substring(prefix.length()).replace("'", "");
             if (!bundled.contains(name)) added.add(name);
         }
         if (added.isEmpty()) {

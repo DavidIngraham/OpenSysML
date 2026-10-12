@@ -288,8 +288,32 @@ class ProjectTextExporterTest {
     }
 
     private static final org.openmbee.opensysml.syson.export.BundledLibraries DOCUMENT_QUERIES = name ->
-            "DocumentQueries".equals(name) ? java.util.Optional.of(java.util.Set.of("Query", "Document", "Paragraph"))
+            "DocumentQueries".equals(name)
+                    ? java.util.Optional.of(java.util.Set.of("Query", "Query::result", "Document", "Document::title", "Paragraph"))
                     : java.util.Optional.empty();
+
+    @Test
+    void exportsALibraryCopyThatAddsANestedMember() {
+        ResourceSet set = new ResourceSetImpl();
+        FakeLibraryPackage copy = new FakeLibraryPackage("DocumentQueries");
+        FakeElement document = new FakeElement("DocumentQueries::Document");
+        document.addChild(new FakeElement("DocumentQueries::Document::title"));
+        document.addChild(new FakeElement("DocumentQueries::Document::'custom field'"));
+        copy.addChild(document);
+        Resource resource = new ResourceImpl(URI.createURI("sirius:///DocumentQueries.sysml"));
+        resource.getContents().add(copy);
+        set.getResources().add(resource);
+        IEMFEditingContext context = context(set);
+        ElementSerializer serializer = (element, report) -> ElementSerializer.Serialization.of("library package DocumentQueries {}");
+
+        var result = new ProjectTextExporter(serializer, mock(IIdentityService.class), DOCUMENT_QUERIES).export(context);
+
+        assertThat(result.documents()).hasSize(1);
+        assertThat(result.messages()).singleElement().satisfies(message -> {
+            assertThat(message.level()).isEqualTo(org.eclipse.sirius.components.representations.MessageLevel.WARNING);
+            assertThat(message.message()).contains("Document::custom field").doesNotContain("Document::title");
+        });
+    }
 
     @Test
     void exportsALibraryCopyThatAddsMembersAndWarnsThatItShadows() {

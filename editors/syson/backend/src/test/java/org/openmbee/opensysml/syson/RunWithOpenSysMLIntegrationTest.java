@@ -189,11 +189,11 @@ class RunWithOpenSysMLIntegrationTest {
     @Test
     void recognizesTheLibrariesTheServiceBundles() {
         ServiceLibraries libraries = new ServiceLibraries(connection);
-        assertThat(libraries.members("DocumentQueries")).isPresent().get(InstanceOfAssertFactories.collection(String.class))
-                .contains("Query", "Document", "Paragraph", "Section", "Table");
-        assertThat(libraries.members("ScalarValues")).isPresent();
-        assertThat(libraries.members("Observatory")).isEmpty();
-        assertThat(libraries.members("")).isEmpty();
+        assertThat(libraries.declarations("DocumentQueries")).isPresent().get(InstanceOfAssertFactories.collection(String.class))
+                .contains("Query", "Query::result", "Document", "Document::title", "Verdict::kind", "Paragraph", "Section", "Table");
+        assertThat(libraries.declarations("ScalarValues")).isPresent();
+        assertThat(libraries.declarations("Observatory")).isEmpty();
+        assertThat(libraries.declarations("")).isEmpty();
     }
 
     @Test

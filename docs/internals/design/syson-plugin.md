@@ -686,9 +686,9 @@ Where the code departs from §3–§4, and why.
   only when the project holds the library's text, but exporting that copy would shadow the
   service's own and the document check (`part def :> DocumentQueries::Document`) compares against
   the service's symbol. `ServiceLibraries` asks a freshly parsed empty model whether it already
-  resolves a `library package`'s name and which members it has; `ProjectTextExporter` drops a copy
-  with no members beyond those with an informational message, and exports one that adds members
-  with a warning that it shadows the service's library.
+  resolves a `library package`'s name and what it declares at any depth; `ProjectTextExporter`
+  drops a copy declaring nothing beyond that with an informational message, and exports one that
+  adds declarations with a warning that it shadows the service's library.
 - **Diagnostic selection:** diagnostics naming a qualified name select that element; span-only
   diagnostics select the root element of the exported document containing the line. The
   serializer emits no source map.
