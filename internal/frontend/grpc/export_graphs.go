@@ -8,7 +8,6 @@ import (
 
 	pb "github.com/Open-MBEE/OpenSysML/api/proto"
 	"github.com/Open-MBEE/OpenSysML/internal/exec/analysis/modelform"
-	"github.com/Open-MBEE/OpenSysML/internal/frontend/symbolfacts"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 )
 
@@ -57,7 +56,7 @@ func (s *Service) ExportGraphs(ctx context.Context, req *pb.ExportGraphsRequest)
 // of the same name, as every RPC reads a name; a name the model declares more
 // than once denotes none of them.
 func graphsSubject(cached *CachedModel, name string) (*symbols.Symbol, error) {
-	found := symbolfacts.LookupNamedMember(cached.Index, cached.SymbolContext().Semantics, name)
+	found := cached.LookupNamedMember(name)
 	if len(found) == 0 {
 		return nil, statusErrorf(connect.CodeNotFound, "symbol not found: %s", name)
 	}

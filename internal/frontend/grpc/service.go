@@ -1163,7 +1163,7 @@ func (s *Service) ExecuteAction(ctx context.Context, req *pb.ExecuteActionReques
 	}
 
 	// An inherited action is named by the subtype too (Sub::inherited).
-	syms := symbolfacts.LookupNamedMember(cached.Index, cached.SymbolContext().Semantics, req.ActionSymbolId)
+	syms := cached.LookupNamedMember(req.ActionSymbolId)
 	if len(syms) == 0 {
 		return &pb.ExecuteActionResponse{
 			Error: fmt.Sprintf("action not found: %s", req.ActionSymbolId),
@@ -1307,7 +1307,7 @@ func (s *Service) ExecuteState(ctx context.Context, req *pb.ExecuteStateRequest)
 	}
 
 	// An inherited state machine is named by the subtype too (Sub::inherited).
-	syms := symbolfacts.LookupNamedMember(cached.Index, cached.SymbolContext().Semantics, req.StateMachineSymbolId)
+	syms := cached.LookupNamedMember(req.StateMachineSymbolId)
 	if len(syms) == 0 {
 		return &pb.ExecuteStateResponse{
 			Error: fmt.Sprintf("state machine not found: %s", req.StateMachineSymbolId),

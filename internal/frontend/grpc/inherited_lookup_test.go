@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
+	"sync"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -137,4 +138,30 @@ func TestExportGraphs_InheritedActionBySubtypesQualifiedName(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a miss answered %v, want NOT_FOUND", err)
 	}
+}
+
+// Concurrent requests naming inherited members share one cached model, whose
+// semantic model memoizes the member walk: the lookups must serialize on it.
+func TestExecuteAction_ConcurrentInheritedLookupsShareTheModel(t *testing.T) {
+	srv := mustNewService(t, 10)
+	parsed, _ := parseContent(t, srv, inheritedBehaviorModel)
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		for _, tc := range []struct{ action, performer string }{
+			{"Demo::BigPlant::fill", "Demo::p"},
+			{"Demo::HugePlant::fill", "Demo::h"},
+		} {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				resp, err := srv.ExecuteAction(context.Background(), &pb.ExecuteActionRequest{
+					ModelHash: parsed.ModelHash, ActionSymbolId: tc.action, PerformerSymbolId: tc.performer,
+				})
+				if err != nil || resp.Error != "" {
+					t.Errorf("ExecuteAction(%s): %v %s", tc.action, err, resp.GetError())
+				}
+			}()
+		}
+	}
+	wg.Wait()
 }
