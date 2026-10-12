@@ -12,6 +12,7 @@ import org.eclipse.sirius.components.core.api.IIdentityService;
 import org.eclipse.sirius.components.emf.services.api.IEMFEditingContext;
 import org.eclipse.sirius.components.representations.MessageLevel;
 import org.eclipse.syson.sysml.Element;
+import org.eclipse.syson.sysml.LibraryPackage;
 import org.eclipse.syson.sysml.metamodel.util.ElementUtil;
 import org.eclipse.syson.sysml.metamodel.services.textual.utils.Status;
 import org.openmbee.opensysml.SourceDocument;
@@ -23,10 +24,17 @@ public class ProjectTextExporter implements ProjectExporter {
 
     private final ElementSerializer serializer;
     private final IIdentityService identityService;
+    private final BundledLibraries bundledLibraries;
 
     public ProjectTextExporter(ElementSerializer serializer, IIdentityService identityService) {
+        this(serializer, identityService, BundledLibraries.NONE);
+    }
+
+    public ProjectTextExporter(ElementSerializer serializer, IIdentityService identityService,
+            BundledLibraries bundledLibraries) {
         this.serializer = serializer;
         this.identityService = identityService;
+        this.bundledLibraries = bundledLibraries;
     }
 
     @Override
@@ -67,8 +75,16 @@ public class ProjectTextExporter implements ProjectExporter {
             Map<String, IndexedElement> entries, Map<Element, IndexedElement> enclosing,
             Map<String, IndexedElement> byElementId) {
         StringBuilder text = new StringBuilder();
+        boolean skippedLibrary = false;
         for (EObject root : resource.getContents()) {
             if (!(root instanceof Element element)) continue;
+            // A project's copy of a library the service bundles would shadow the service's own.
+            if (root instanceof LibraryPackage library && bundledLibraries.bundles(library.getName())) {
+                messages.add(new ExportedProject.ExportMessage(MessageLevel.INFO, "library package "
+                        + library.getName() + " is provided by the OpenSysML service; the project's copy was not exported"));
+                skippedLibrary = true;
+                continue;
+            }
             if (!text.isEmpty() && text.charAt(text.length() - 1) != '\n') text.append('\n');
             int start = text.isEmpty() ? 1 : lineCount(text);
             List<Status> statuses = new ArrayList<>();
@@ -85,6 +101,7 @@ public class ProjectTextExporter implements ProjectExporter {
                     status.message())));
             index(element, null, entries, enclosing, byElementId);
         }
+        if (skippedLibrary && text.isEmpty()) return;
         documents.add(SourceDocument.inline(name, text.toString()));
     }
 

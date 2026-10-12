@@ -255,4 +255,36 @@ class ProjectTextExporterTest {
     private static int startLine(org.openmbee.opensysml.syson.export.ExportedProject.DocumentRange range) {
         return range.startLine();
     }
+
+    @Test
+    void skipsLibraryPackagesTheServiceBundles() {
+        ResourceSet set = new ResourceSetImpl();
+        FakeLibraryPackage copy = new FakeLibraryPackage("DocumentQueries");
+        FakeLibraryPackage own = new FakeLibraryPackage("Vocabulary");
+        FakeElement model = new FakeElement("Observatory");
+        Resource libraries = new ResourceImpl(URI.createURI("sirius:///DocumentQueries.sysml"));
+        libraries.getContents().add(copy);
+        Resource project = new ResourceImpl(URI.createURI("sirius:///model.sysml"));
+        project.getContents().add(own);
+        project.getContents().add(model);
+        set.getResources().add(libraries);
+        set.getResources().add(project);
+        IEMFEditingContext context = context(set);
+        ElementSerializer serializer = (element, report) -> ElementSerializer.Serialization
+                .of("library package " + ((org.eclipse.syson.sysml.Element) element).getName() + " {}");
+
+        var result = new ProjectTextExporter(serializer, mock(IIdentityService.class),
+                "DocumentQueries"::equals).export(context);
+
+        assertThat(result.documents()).singleElement().satisfies(document -> {
+            assertThat(document.name()).contains("model.sysml");
+            assertThat(document.content().orElse("")).contains("Vocabulary").contains("Observatory").doesNotContain("DocumentQueries");
+        });
+        assertThat(result.messages()).singleElement().satisfies(message -> {
+            assertThat(message.level()).isEqualTo(org.eclipse.sirius.components.representations.MessageLevel.INFO);
+            assertThat(message.message()).contains("DocumentQueries").contains("not exported");
+        });
+        assertThat(result.index().byQualifiedName("DocumentQueries")).isEmpty();
+        assertThat(result.index().byQualifiedName("Vocabulary")).isPresent();
+    }
 }
