@@ -78,7 +78,7 @@ func (g *group) registerRuntime(s *mcp.Server) {
 			"%instantiate): every attribute's value or default, nested parts as instance ids, with every reachable instance in " +
 			"`instances`. The service keeps the object for the model: run_document_query on the same modelHash can bind it. The result " +
 			"is the InstantiateResponse as protojson writes it.",
-		Annotations: toolkit.ReadOnly("Instantiate"),
+		Annotations: instantiateAnnotations(),
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in InstantiateInput) (*mcp.CallToolResult, Result, error) {
 		m, err := g.resolve(ctx, in.ModelInput)
 		if err != nil {
@@ -256,4 +256,12 @@ func explorationText(outcomes []*pb.Outcome, status *pb.ExplorationStatus) strin
 		}
 	}
 	return b.String()
+}
+
+// instantiateAnnotations says what instantiate does to the server: it adds an
+// object the model's later document queries can reach, so it is not read-only,
+// but it destroys nothing and every call adds one more object.
+func instantiateAnnotations() *mcp.ToolAnnotations {
+	closed, destructive := false, false
+	return &mcp.ToolAnnotations{Title: "Instantiate", DestructiveHint: &destructive, OpenWorldHint: &closed}
 }

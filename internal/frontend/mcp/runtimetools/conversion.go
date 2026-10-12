@@ -15,7 +15,7 @@ import (
 type ConvertInput struct {
 	ModelInput
 	FilePath             string   `json:"filePath,omitempty" jsonschema:"a file to convert, read afresh in the format its extension names (or fromFormat), absolute or relative to the workspace root; instead of modelHash, paths or sources"`
-	Content              string   `json:"content,omitempty" jsonschema:"the document to convert, inline; fromFormat must then say what it is"`
+	Content              *string  `json:"content,omitempty" jsonschema:"the document to convert, inline (an empty string is an empty document); fromFormat must then say what it is"`
 	FromFormat           string   `json:"fromFormat,omitempty" jsonschema:"sysml, kerml, text, ttl, turtle, rdf, api-json or json; empty infers from filePath's extension and is notation for a parsed model"`
 	ToFormat             string   `json:"toFormat" jsonschema:"format to write: sysml, kerml, text, ttl, turtle, rdf, api-json or json"`
 	TolerateSyntaxErrors bool     `json:"tolerateSyntaxErrors,omitempty" jsonschema:"notation to notation only: write the notation back out even when the parser could not read all of it, reporting syntax errors as diagnostics"`
@@ -28,16 +28,16 @@ type ConvertInput struct {
 
 // MigrateInput asks for a SysML v1 model migrated to v2.
 type MigrateInput struct {
-	FilePath      string `json:"filePath,omitempty" jsonschema:"the v1 model file to migrate (.xmi, .uml or .mdzip), absolute or relative to the workspace root"`
-	Content       string `json:"content,omitempty" jsonschema:"the v1 document inline, base64-encoded (an .mdzip archive is binary); fromFormat must then say what it is"`
-	FromFormat    string `json:"fromFormat,omitempty" jsonschema:"xmi (UML XMI 2.5.1 with the SysML profile), uml (Eclipse UML2) or mdzip (Cameo/MagicDraw); empty infers from filePath's extension"`
-	ToFormat      string `json:"toFormat" jsonschema:"format to write: sysml, kerml, text, ttl, turtle, rdf, api-json or json"`
-	Report        bool   `json:"report,omitempty" jsonschema:"carry every element's verdict (mapped, approximated, unmapped, skipped) and the report text; the summary and counts come regardless"`
-	Results       bool   `json:"results,omitempty" jsonschema:"carry the result snapshots the v1 tool stored with the model, as sysml -compare-results reads them"`
-	LayoutPath    string `json:"layoutPath,omitempty" jsonschema:"an MTIP export of the model's diagrams (Model_mtip.xml) laying the migrated views out, absolute or relative to the workspace root"`
-	LayoutContent string `json:"layoutContent,omitempty" jsonschema:"the MTIP export inline, instead of layoutPath"`
-	ImageBaseURL  string `json:"imageBaseUrl,omitempty" jsonschema:"absolute http(s) URL a server-relative image reference in a v1 comment is resolved against"`
-	Strict        bool   `json:"strict,omitempty" jsonschema:"write only notation a pinned SysML v2 production admits; a construct whose only v2 form is an OpenSysML extension is reported unmapped instead"`
+	FilePath      string  `json:"filePath,omitempty" jsonschema:"the v1 model file to migrate (.xmi, .uml or .mdzip), absolute or relative to the workspace root"`
+	Content       *string `json:"content,omitempty" jsonschema:"the v1 document inline, base64-encoded (an .mdzip archive is binary); fromFormat must then say what it is"`
+	FromFormat    string  `json:"fromFormat,omitempty" jsonschema:"xmi (UML XMI 2.5.1 with the SysML profile), uml (Eclipse UML2) or mdzip (Cameo/MagicDraw); empty infers from filePath's extension"`
+	ToFormat      string  `json:"toFormat" jsonschema:"format to write: sysml, kerml, text, ttl, turtle, rdf, api-json or json"`
+	Report        bool    `json:"report,omitempty" jsonschema:"carry every element's verdict (mapped, approximated, unmapped, skipped) and the report text; the summary and counts come regardless"`
+	Results       bool    `json:"results,omitempty" jsonschema:"carry the result snapshots the v1 tool stored with the model, as sysml -compare-results reads them"`
+	LayoutPath    string  `json:"layoutPath,omitempty" jsonschema:"an MTIP export of the model's diagrams (Model_mtip.xml) laying the migrated views out, absolute or relative to the workspace root"`
+	LayoutContent string  `json:"layoutContent,omitempty" jsonschema:"the MTIP export inline, instead of layoutPath"`
+	ImageBaseURL  string  `json:"imageBaseUrl,omitempty" jsonschema:"absolute http(s) URL a server-relative image reference in a v1 comment is resolved against"`
+	Strict        bool    `json:"strict,omitempty" jsonschema:"write only notation a pinned SysML v2 production admits; a construct whose only v2 form is an OpenSysML extension is reported unmapped instead"`
 }
 
 // ApplyEditsInput applies source-preserving edits to a parsed model.
@@ -61,7 +61,7 @@ func (g *group) registerConversion(s *mcp.Server) {
 		var m model
 		named := in.ModelHash != "" || len(in.Paths)+len(in.Sources) > 0
 		sources := 0
-		for _, given := range []bool{named, in.FilePath != "", in.Content != ""} {
+		for _, given := range []bool{named, in.FilePath != "", in.Content != nil} {
 			if given {
 				sources++
 			}
@@ -107,7 +107,7 @@ func (g *group) registerConversion(s *mcp.Server) {
 			"the MigrateResponse as protojson writes it.",
 		Annotations: toolkit.ReadOnly("Migrate SysML v1 model"),
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in MigrateInput) (*mcp.CallToolResult, Result, error) {
-		if (in.FilePath == "") == (in.Content == "") {
+		if (in.FilePath == "") == (in.Content == nil) {
 			return nil, nil, argumentError("migrate needs exactly one source: filePath or content")
 		}
 		if in.LayoutPath != "" && in.LayoutContent != "" {

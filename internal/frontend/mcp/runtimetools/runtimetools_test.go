@@ -257,7 +257,14 @@ func TestEveryToolTakingAModelTakesPathsAndSources(t *testing.T) {
 	modelTools := 0
 	for _, tool := range res.Tools {
 		names = append(names, tool.Name)
-		if tool.Annotations == nil || !tool.Annotations.ReadOnlyHint {
+		switch {
+		case tool.Annotations == nil:
+			t.Errorf("%s declares no annotations", tool.Name)
+		case tool.Name == "instantiate":
+			if tool.Annotations.ReadOnlyHint || tool.Annotations.DestructiveHint == nil || *tool.Annotations.DestructiveHint {
+				t.Errorf("instantiate adds an object the server keeps: annotations = %+v", tool.Annotations)
+			}
+		case !tool.Annotations.ReadOnlyHint:
 			t.Errorf("%s is not annotated read-only", tool.Name)
 		}
 		if tool.Description == "" {
@@ -335,6 +342,13 @@ func TestParseReportsRootsDiagnosticsAndAHash(t *testing.T) {
 		if d.GetSeverity() == "error" {
 			t.Errorf("KerML source read as SysML: %s", d.GetMessage())
 		}
+	}
+
+	// An empty inline document is a document, as the service has it.
+	var blank pb.ParseSourcesResponse
+	h.ok("parse", map[string]any{"sources": []map[string]any{{"path": "blank.sysml", "text": ""}}}, &blank)
+	if blank.GetModelHash() == "" || len(blank.GetRoots()) != 1 {
+		t.Errorf("an empty document: %v", &blank)
 	}
 
 	if msg := h.fails("parse", map[string]any{}); !strings.Contains(msg, "INVALID_ARGUMENT") {
@@ -652,6 +666,10 @@ func TestConvertMigrateAndApplyEditsAnswerText(t *testing.T) {
 	h.ok("convert", map[string]any{"content": "package P { part def Q; }", "fromFormat": "sysml", "toFormat": "api-json"}, &convert)
 	if !strings.Contains(convert.GetContent(), "PartDefinition") {
 		t.Errorf("content to api-json:\n%s", convert.GetContent())
+	}
+	h.ok("convert", map[string]any{"content": "", "fromFormat": "sysml", "toFormat": "sysml"}, &convert)
+	if convert.GetFromFormat() != "sysml" {
+		t.Errorf("an empty inline document was not converted: %v", &convert)
 	}
 	if msg := h.fails("convert", map[string]any{"toFormat": "ttl"}); !strings.Contains(msg, "exactly one source") {
 		t.Errorf("convert of nothing: %s", msg)

@@ -51,7 +51,7 @@ func Register(s *mcp.Server, svc *sysmlgrpc.Service, root string) {
 // Source is one document given inline.
 type Source struct {
 	Path     string `json:"path" jsonschema:"name the document is reported by in diagnostics and indexed under; a .kerml extension makes it KerML unless language says otherwise"`
-	Text     string `json:"text" jsonschema:"the document's source text"`
+	Text     string `json:"text" jsonschema:"the document's source text; empty is an empty document"`
 	Language string `json:"language,omitempty" jsonschema:"sysml or kerml; empty is inferred from path's extension, sysml when it has none"`
 }
 
@@ -104,10 +104,7 @@ func (g *group) parse(ctx context.Context, in ModelInput, base string) (*pb.Pars
 			Source: &pb.SourceDocument_FilePath{FilePath: g.path(path)},
 		})
 	}
-	for i, src := range in.Sources {
-		if src.Text == "" {
-			return nil, argumentError("sources[%d] has no text", i)
-		}
+	for _, src := range in.Sources {
 		language := src.Language
 		if language == "" && strings.EqualFold(filepath.Ext(src.Path), ".kerml") {
 			language = "kerml"
@@ -204,6 +201,8 @@ func result(resp proto.Message, m model) (Result, error) {
 
 // answer builds a tool's result: the structured response and a text the agent
 // reads, prefixed by the hash and the diagnostics of a model parsed on the way.
+// The text is kept byte for byte, so a rendered document or converted source
+// ending it is what the service answered.
 func answer(resp proto.Message, m model, text string) (*mcp.CallToolResult, Result, error) {
 	out, err := result(resp, m)
 	if err != nil {
@@ -217,7 +216,7 @@ func answer(resp proto.Message, m model, text string) (*mcp.CallToolResult, Resu
 		}
 	}
 	b.WriteString(text)
-	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: strings.TrimRight(b.String(), "\n")}}}, out, nil
+	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: b.String()}}}, out, nil
 }
 
 // progressInterval is how often a running call reports that it still runs.
