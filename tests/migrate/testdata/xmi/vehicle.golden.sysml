@@ -5,7 +5,10 @@ package 'Vehicle Design' {
     doc /* Structural model of the demo vehicle. */
     package 'Value Types' {
         attribute def Mass :> ScalarValues::Real {
-            /* «ValueType» tags with no v2 form: quantityKind = Vehicle Design::Value Types::mass; unit = Vehicle Design::Value Types::kilogram */
+            @MigrationMetadata::AppliedStereotype {
+                stereotype = "ValueType";
+                tags = ("quantityKind = Vehicle Design::Value Types::mass", "unit = Vehicle Design::Value Types::kilogram");
+            }
         }
         attribute def Speed :> Mass;
         /* not migrated: «Unit» InstanceSpecification 'kilogram' — units and quantity kinds are not migrated; use the SI and ISQ libraries; applied stereotypes «Unit» (quantityKind = Vehicle Design::Value Types::mass; symbol = kg) */
@@ -56,13 +59,20 @@ package 'Vehicle Design' {
             /* the region has no initial pseudostate: nothing enters it */
             state Off;
         }
-        assert constraint 'positive mass' { mass > 0 }
+        constraint def 'Positive mass' {
+            in ref context : Vehicle[1];
+            context.mass > 0
+        }
+        assert constraint 'positive mass' : 'Positive mass' { in ref :>> context = this; }
         part def Chassis {
             attribute mass : 'Vehicle Design'::'Value Types'::Mass;
         }
         satisfy RequirementsModel::'Mass Requirement';
         satisfy RequirementsModel::'Engine Mass Requirement' by engine;
-        /* «Block» tags with no v2 form: isEncapsulated = true */
+        @MigrationMetadata::AppliedStereotype {
+            stereotype = "Block";
+            tags = "isEncapsulated = true";
+        }
     }
     abstract part def System;
     part def Engine {
@@ -72,7 +82,11 @@ package 'Vehicle Design' {
         in port speedIn[1] {
             in attribute speedIn : 'Vehicle Design'::'Value Types'::Speed;
         }
-        /* applied stereotype «Critical»: level = high */
+        @MigrationMetadata::AppliedStereotype {
+            stereotype = "Critical";
+            profile = "http://example.com/profiles/Safety";
+            tags = "level = high";
+        }
     }
     part def Piston {
         in port p[1] {
@@ -87,8 +101,18 @@ package 'Vehicle Design' {
     part def Motor :> Engine;
     part Driver;
     occurrence def Helper;
+    connection def EngineToVehicle {
+        end engine : Engine crosses vehicle.engine;
+        end vehicle : Vehicle;
+        metadata MigrationMetadata::SynthesizedName about vehicle;
+    }
+    connection def WheelToVehicle {
+        end wheels : Wheel crosses vehicle.wheels;
+        end vehicle : Vehicle;
+        metadata MigrationMetadata::SynthesizedName about vehicle;
+    }
     connection def Drives {
-        end driver :> Driver[0..1];
+        end [0..1] ref driver :> Driver;
         end vehicle : Vehicle;
     }
     constraint def MassLimit {
@@ -103,7 +127,12 @@ package 'Vehicle Design' {
     action def Drive;
     part vehicle : Vehicle;
     connection drives : Drives connect Driver to vehicle;
+    part engine : Engine;
+    connection 'engine to vehicle' : EngineToVehicle connect engine to vehicle;
+    part wheel : Wheel;
+    connection 'wheel to vehicle' : WheelToVehicle connect wheel to vehicle;
     action drive : Drive;
+    metadata MigrationMetadata::SynthesizedName about EngineToVehicle, WheelToVehicle;
 }
 package RequirementsModel {
     requirement <R1> 'Mass Requirement' {
@@ -123,7 +152,11 @@ package RequirementsModel {
         end #RequirementDerivation::derive derivedRequirement :> 'Engine Mass Requirement';
     }
     /* not migrated: «Verify» Abstraction (_dep_verify_block) — a verify whose client is not a test case has no v2 form; applied stereotypes «Verify» */
-    dependency 'Speed Requirement' to 'Vehicle Design'::Engine; /* «Trace» */
+    dependency 'Speed Requirement traces Engine' from 'Speed Requirement' to 'Vehicle Design'::Engine {
+        @MigrationMetadata::AppliedStereotype {
+            stereotype = "Trace";
+        }
+    }
     allocation def 'Drive to Engine' {
         end :>> source : 'Vehicle Design'::Drive;
         end :>> target : 'Vehicle Design'::Engine;
@@ -138,7 +171,7 @@ package RequirementsModel {
             verify 'Mass Requirement';
         }
     }
-    metadata MigrationMetadata::SynthesizedName about 'Drive to Engine', 'Motor to Engine';
+    metadata MigrationMetadata::SynthesizedName about 'Speed Requirement traces Engine', 'Drive to Engine', 'Motor to Engine';
 }
 package 'Empty Package';
 metadata MigrationMetadata::LibraryNameAvoided about RequirementsModel { sourceName = "Requirements"; }

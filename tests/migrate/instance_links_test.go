@@ -42,10 +42,9 @@ func TestInstanceSpecificationLink(t *testing.T) {
 	wantNote(t, r, "_link", migrate.Mapped, "")
 }
 
-// A link of an association written as its member-end properties has no
-// connection def to be typed by: it is an untyped connection between the
-// instances, joined in the order of the association's member ends.
-func TestInstanceSpecificationLinkWithoutConnectionDefinitionIsUntyped(t *testing.T) {
+// A link of an anonymous association specializes the connection def the
+// association is written as, like the link of a named one.
+func TestInstanceSpecificationLinkOfAnonymousAssociationSpecializesItsConnectionDef(t *testing.T) {
 	r := migrateDocument(t, `
     <packagedElement xmi:type="uml:Class" xmi:id="_a" name="A">
       <ownedAttribute xmi:type="uml:Property" xmi:id="_aEnd" name="b" type="_b" association="_association"/>
@@ -64,7 +63,14 @@ func TestInstanceSpecificationLinkWithoutConnectionDefinitionIsUntyped(t *testin
         <value xmi:type="uml:InstanceValue" xmi:id="_valueB" instance="_ia"/>
       </slot>
     </packagedElement>`, "")
-	wantClean(t, "untyped_link.sysml", r)
-	wantLine(t, r.Notation, "connection L connect IB to IA;")
-	wantNote(t, r, "_link", migrate.Approximated, "the link is written as an untyped connection: its association is written as its member-end properties, so there is no connection def to type it by")
+	wantClean(t, "instance_links_anonymous.sysml", r)
+	for _, line := range []string{
+		"connection def BToA {",
+		"end b : B crosses a.b;",
+		"end a : A crosses b.a;",
+		"connection L : BToA connect IB to IA;",
+	} {
+		wantLine(t, r.Notation, line)
+	}
+	wantNote(t, r, "_link", migrate.Mapped, "")
 }
