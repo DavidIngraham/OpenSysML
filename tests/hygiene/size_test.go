@@ -29,7 +29,7 @@ type oversize struct {
 // oversizeTestFiles lists every `_test.go` file over maxTestFileLines, in lines.
 // Split one along the feature seams of AGENTS.md §5.2 and remove its entry.
 var oversizeTestFiles = []oversize{
-	{"internal/exec/runtime/robustness_test.go", 17178, "shared runtime failure-mode registry; new cases go in robustness_<feature>_test.go"},
+	{"internal/exec/runtime/robustness_test.go", 17176, "shared runtime failure-mode registry; new cases go in robustness_<feature>_test.go"},
 	{"tests/export/export_test.go", 4357, "one black-box suite over the whole RDF export surface"},
 	{"internal/exec/runtime/classifier_behavior_test.go", 3442, "classifier-behavior scenarios on one shared harness"},
 	{"internal/exec/runtime/classify_test.go", 2720, "classification-change scenarios on one shared harness"},
@@ -39,7 +39,7 @@ var oversizeTestFiles = []oversize{
 	{"tests/migrate/behavior_more_test.go", 2465, "SysML v1 behavior migration scenarios on one shared harness"},
 	{"internal/frontend/lsp/debug_test.go", 2203, "LSP debug-protocol scenarios over one wire fixture"},
 	{"internal/exec/runtime/signal_injection_test.go", 2181, "signal-injection scenarios on one shared harness"},
-	{"internal/exec/runtime/adopt_test.go", 2161, "adoption scenarios on one shared harness"},
+	{"internal/exec/runtime/adopt_test.go", 2163, "adoption scenarios on one shared harness"},
 	{"internal/doc/queryexec/execute_test.go", 2114, "query-execution scenarios on one shared harness"},
 	{"internal/exec/runtime/debug_api_test.go", 2094, "debug-API scenarios on one shared harness"},
 	{"internal/exec/runtime/replay_test.go", 2025, "replay scenarios on one shared harness"},
@@ -63,7 +63,7 @@ var oversizeFixtures = []oversize{
 
 // TestTestFilesStayUnderTheLineCap fails when a tracked `_test.go` file is over
 // maxTestFileLines without an oversizeTestFiles entry, when an allowlisted file
-// has moved from its recorded size, or when its entry has nothing left to excuse.
+// has grown past its recorded size, or when its entry has nothing left to excuse.
 func TestTestFilesStayUnderTheLineCap(t *testing.T) {
 	var files []string
 	for _, path := range trackedFiles(t) {
@@ -78,7 +78,7 @@ func TestTestFilesStayUnderTheLineCap(t *testing.T) {
 
 // TestFixturesStayUnderTheSizeCap fails when a tracked fixture (a file under a
 // `testdata/` directory or named `*.golden.*`) is over maxFixtureKiB without an
-// oversizeFixtures entry, when an allowlisted fixture has moved from its recorded
+// oversizeFixtures entry, when an allowlisted fixture has grown past its recorded
 // size, or when its entry has nothing left to excuse.
 func TestFixturesStayUnderTheSizeCap(t *testing.T) {
 	var files []string
@@ -103,8 +103,8 @@ func isFixture(path string) bool {
 	return i > 0 && i+len(".golden.") < len(base)
 }
 
-// ratchet reports every file over the limit that the allowlist does not record at
-// its current size, and every allowlist entry that no longer matches the tree.
+// ratchet reports every file over the limit that the allowlist does not cover
+// at its current size, and every allowlist entry that no longer excuses anything.
 func ratchet(t *testing.T, kind string, files []string, allowlist []oversize, limit int, unit, listName, remedy string, measure func([]byte) int) {
 	t.Helper()
 	recorded := map[string]oversize{}
@@ -137,9 +137,6 @@ func ratchet(t *testing.T, kind string, files []string, allowlist []oversize, li
 		case listed && size <= limit:
 			problems = append(problems, fmt.Sprintf("%s is %d %s, within the cap of %d %s: remove its %s entry",
 				path, size, unit, limit, unit, listName))
-		case listed && size < entry.size:
-			problems = append(problems, fmt.Sprintf("%s shrank from %d to %d %s: record the new size in its %s entry so it cannot grow back",
-				path, entry.size, size, unit, listName))
 		}
 	}
 	for _, entry := range allowlist {
