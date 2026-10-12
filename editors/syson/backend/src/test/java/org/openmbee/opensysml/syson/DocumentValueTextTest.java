@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.openmbee.opensysml.DocumentRow;
 import org.openmbee.opensysml.DocumentValue;
 import org.openmbee.opensysml.Quantity;
 import org.openmbee.opensysml.syson.run.DocumentValueText;
@@ -20,11 +21,11 @@ class DocumentValueTextTest {
                 .isEqualTo("P::a, mount, 15, 8.5, true, infinity");
         assertThat(DocumentValueText.render(new DocumentValue.ObjectRef(3, "", Optional.empty()))).isEqualTo("#3");
         assertThat(DocumentValueText.render(new DocumentValue.ObjectRef(3, "car.wheels[2]", Optional.empty())))
-                .isEqualTo("car.wheels[2]");
+                .isEqualTo("car.wheels[2] (#3)");
         assertThat(DocumentValueText.render(new DocumentValue.QuantityValue(new Quantity(2.0, Optional.of("kg"), Optional.empty()))))
                 .isEqualTo("2.0 kg");
         assertThat(DocumentValueText.render(new DocumentValue.DocumentVerdict(element, "requirement", "text", "path",
-                "holds", "", "", List.of()))).isEqualTo("holds");
+                "holds", "", "", List.of()))).isEqualTo("path: holds");
         assertThat(DocumentValueText.render(List.of())).isEmpty();
     }
 
@@ -49,5 +50,25 @@ class DocumentValueTextTest {
         assertThat(org.openmbee.opensysml.syson.run.RunDocument.of(
                 org.openmbee.opensysml.syson.run.RunDocumentForm.HTML, "", "Reports::'Mass Report'").fileName())
                 .isEqualTo("Reports-Mass.20Report.html");
+    }
+
+    @Test
+    void labelsRowsByWhatTheyStandFor() {
+        DocumentValue.ElementRef type = new DocumentValue.ElementRef("Vehicles::Car", "PartDefinition");
+        DocumentValue.ObjectRef car = new DocumentValue.ObjectRef(7, "car", Optional.of(type));
+        DocumentRow plain = new DocumentRow(type, List.of(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
+        DocumentRow object = new DocumentRow(type, List.of(), Optional.empty(), Optional.of(car), Optional.empty(),
+                Optional.empty());
+        DocumentRow state = new DocumentRow(type, List.of(), Optional.empty(), Optional.of(car),
+                Optional.of(new DocumentValue.DocumentState(car, "machine", "run", "on.run", Optional.empty(), "", List.of("on"))),
+                Optional.empty());
+        DocumentRow event = new DocumentRow(type, List.of(), Optional.empty(), Optional.of(car), Optional.empty(),
+                Optional.of(new DocumentValue.DocumentEvent("transition", new DocumentValue.RealValue(2), "car: off -> on",
+                        Optional.of(car), "machine", "", "off", "on", Optional.empty(), "", List.of(), List.of(), "")));
+        assertThat(DocumentValueText.rowLabel(plain)).isEqualTo("Vehicles::Car");
+        assertThat(DocumentValueText.rowLabel(object)).isEqualTo("car (#7)");
+        assertThat(DocumentValueText.rowLabel(state)).isEqualTo("car (#7) in on.run");
+        assertThat(DocumentValueText.rowLabel(event)).isEqualTo("car: off -> on");
     }
 }

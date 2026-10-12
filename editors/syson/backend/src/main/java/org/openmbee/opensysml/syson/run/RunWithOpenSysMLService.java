@@ -321,7 +321,7 @@ public class RunWithOpenSysMLService {
         static ResultParts table(DocumentQueryResult result, ExportedProject project) {
             ResultParts p = new ResultParts(project);
             p.table = new RunTable(result.columns(), result.rows().stream().map(row -> new RunTableRow(
-                    row.element().id(),
+                    DocumentValueText.rowLabel(row),
                     project.index().byQualifiedName(row.element().id()).map(IndexedElement::siriusId).orElse(null),
                     row.cells().stream().map(DocumentValueText::render).toList())).toList());
             p.resultText = result.rows().size() + (result.rows().size() == 1 ? " row" : " rows");
