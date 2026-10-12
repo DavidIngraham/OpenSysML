@@ -15,7 +15,7 @@ import (
 // predate them, each at its current size, so none of them can grow further.
 const (
 	maxTestFileLines = 2000
-	maxFixtureKiB    = 200
+	maxFixtureBytes  = 200 * 1024
 )
 
 // oversize is an allowlisted file: its tracked path, its size when recorded (in
@@ -45,20 +45,20 @@ var oversizeTestFiles = []oversize{
 	{"internal/exec/runtime/replay_test.go", 2025, "replay scenarios on one shared harness"},
 }
 
-// oversizeFixtures lists every fixture over maxFixtureKiB, in KiB rounded up.
+// oversizeFixtures lists every fixture over maxFixtureBytes, in bytes.
 // Shrink the model a golden comes from, or digest it, and remove its entry.
 var oversizeFixtures = []oversize{
-	{"tests/export/testdata/convert/then_after_members.golden.ttl", 650, "full Turtle golden of a model with many then/after successions"},
-	{"tests/export/testdata/superseded/then_done_membership.ttl", 594, "superseded-form Turtle input the reader must still accept whole"},
-	{"tests/export/testdata/convert/result_expressions.golden.ttl", 393, "full Turtle golden of a model dense in result expressions"},
-	{"tests/export/testdata/interchange/state_entry.toolkit.full.json", 329, "complete toolkit JSON interchange export of a state model"},
-	{"tests/export/testdata/interchange/transitions.toolkit.full.json", 313, "complete toolkit JSON interchange export of a transition model"},
-	{"tests/export/testdata/interchange/p10.toolkit.full.json", 294, "complete toolkit JSON interchange export of the P10 sample"},
-	{"tests/export/testdata/convert/end_binding_bodies.golden.ttl", 261, "full Turtle golden of a model with many end-binding bodies"},
-	{"tests/export/testdata/convert/constraints.golden.ttl", 239, "full Turtle golden of a constraint-heavy model"},
-	{"tests/export/testdata/convert/irregular_layout.golden.ttl", 230, "full Turtle golden of the irregular-layout sample"},
-	{"tests/export/testdata/convert/loops_conditionals.golden.ttl", 213, "full Turtle golden of a model dense in loops and conditionals"},
-	{"tests/export/testdata/interchange/states.toolkit.full.json", 212, "complete toolkit JSON interchange export of a state model"},
+	{"tests/export/testdata/convert/then_after_members.golden.ttl", 665584, "full Turtle golden of a model with many then/after successions"},
+	{"tests/export/testdata/superseded/then_done_membership.ttl", 607315, "superseded-form Turtle input the reader must still accept whole"},
+	{"tests/export/testdata/convert/result_expressions.golden.ttl", 401796, "full Turtle golden of a model dense in result expressions"},
+	{"tests/export/testdata/interchange/state_entry.toolkit.full.json", 336355, "complete toolkit JSON interchange export of a state model"},
+	{"tests/export/testdata/interchange/transitions.toolkit.full.json", 319603, "complete toolkit JSON interchange export of a transition model"},
+	{"tests/export/testdata/interchange/p10.toolkit.full.json", 300281, "complete toolkit JSON interchange export of the P10 sample"},
+	{"tests/export/testdata/convert/end_binding_bodies.golden.ttl", 266780, "full Turtle golden of a model with many end-binding bodies"},
+	{"tests/export/testdata/convert/constraints.golden.ttl", 244082, "full Turtle golden of a constraint-heavy model"},
+	{"tests/export/testdata/convert/irregular_layout.golden.ttl", 234525, "full Turtle golden of the irregular-layout sample"},
+	{"tests/export/testdata/convert/loops_conditionals.golden.ttl", 217901, "full Turtle golden of a model dense in loops and conditionals"},
+	{"tests/export/testdata/interchange/states.toolkit.full.json", 217088, "complete toolkit JSON interchange export of a state model"},
 }
 
 // TestTestFilesStayUnderTheLineCap fails when a tracked `_test.go` file is over
@@ -73,11 +73,11 @@ func TestTestFilesStayUnderTheLineCap(t *testing.T) {
 	}
 	ratchet(t, "test file", files, oversizeTestFiles, maxTestFileLines, "lines", "oversizeTestFiles",
 		"split it along the feature seams AGENTS.md §5.2 describes, one file per feature",
-		func(data []byte) int { return bytes.Count(data, []byte("\n")) })
+		countLines)
 }
 
 // TestFixturesStayUnderTheSizeCap fails when a tracked fixture (a file under a
-// `testdata/` directory or named `*.golden.*`) is over maxFixtureKiB without an
+// `testdata/` directory or named `*.golden.*`) is over maxFixtureBytes without an
 // oversizeFixtures entry, when an allowlisted fixture has grown past its recorded
 // size, or when its entry has nothing left to excuse.
 func TestFixturesStayUnderTheSizeCap(t *testing.T) {
@@ -87,9 +87,18 @@ func TestFixturesStayUnderTheSizeCap(t *testing.T) {
 			files = append(files, path)
 		}
 	}
-	ratchet(t, "fixture", files, oversizeFixtures, maxFixtureKiB, "KiB", "oversizeFixtures",
+	ratchet(t, "fixture", files, oversizeFixtures, maxFixtureBytes, "bytes", "oversizeFixtures",
 		"shrink the model it is generated from, or replace it with a digest of the output",
-		func(data []byte) int { return (len(data) + 1023) / 1024 })
+		func(data []byte) int { return len(data) })
+}
+
+// countLines counts a final line that lacks its newline too.
+func countLines(data []byte) int {
+	lines := bytes.Count(data, []byte("\n"))
+	if len(data) > 0 && data[len(data)-1] != '\n' {
+		lines++
+	}
+	return lines
 }
 
 func isFixture(path string) bool {
