@@ -332,8 +332,8 @@ func summarizeMissing(items []string, many, one string) []string {
 }
 
 // topLevelNames lists the written top-level elements of the user model, the
-// members of the global namespace a whole-model scope starts from: the roots'
-// members and the views of the diagrams written there.
+// members of the global namespace a whole-model scope starts from: the roots
+// and the views of the diagrams written there.
 func (m *migration) topLevelNames() []string {
 	var names []string
 	add := func(c *sysmlv1.Element) {
@@ -342,14 +342,8 @@ func (m *migration) topLevelNames() []string {
 		}
 	}
 	for _, r := range m.model.Roots {
-		switch {
-		case m.isLibrary(r):
-		case r.Type != "Model":
+		if !m.isLibrary(r) {
 			add(r)
-		default:
-			for _, c := range r.Children {
-				add(c)
-			}
 		}
 	}
 	for _, v := range m.hosted[nil] {

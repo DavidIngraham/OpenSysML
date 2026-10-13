@@ -22,7 +22,7 @@
       },
       {
         "name": "fixtures",
-        "files": 109
+        "files": 113
       }
     ],
     "counts": {
@@ -140,7 +140,7 @@
       },
       "uml:Class": {
         "pssm": 311,
-        "fixtures": 523
+        "fixtures": 534
       },
       "uml:ClearAssociationAction": {
         "pssm": 0,
@@ -156,7 +156,7 @@
       },
       "uml:Constraint": {
         "pssm": 59,
-        "fixtures": 25
+        "fixtures": 26
       },
       "uml:ControlFlow[weight]": {
         "pssm": 0,
@@ -248,7 +248,7 @@
       },
       "uml:Property": {
         "pssm": 25,
-        "fixtures": 513
+        "fixtures": 524
       },
       "uml:Property[qualifier]": {
         "pssm": 0,
@@ -17867,7 +17867,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -17892,7 +17892,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -17917,7 +17917,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -17942,7 +17942,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -17967,7 +17967,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -17992,7 +17992,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -18018,7 +18018,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -18043,7 +18043,7 @@
       "tests": [
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written",
       "scope": []
     },
     {
@@ -18060,14 +18060,14 @@
         "ownedRelationship"
       ],
       "ocl": "sha256:7d3fbcc11d01d1d0e070b268a3b3c6c70fd37ec7d5eb6fa5c4f0b35afdb64f90",
-      "status": "deliberate",
+      "status": "faithful",
       "implementation": [
-        "internal/translate/migrate/migrate.go:imports"
+        "internal/translate/migrate/migrate.go:root"
       ],
       "tests": [
-        "tests/migrate/migrate_test.go:TestGoldenNotation"
+        "tests/migrate/root_model_test.go:TestRootModelWrittenAsPackage"
       ],
-      "reason": "the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written",
+      "reason": "",
       "scope": []
     },
     {

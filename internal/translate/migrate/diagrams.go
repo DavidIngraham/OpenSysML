@@ -159,8 +159,8 @@ func (m *migration) viewName(host *sysmlv1.Element, name string) string {
 // owner when that hosts views — the operation, for a behavior written as the
 // operation's method — else the owner's nearest ancestor that does; for a
 // diagram naming no owner the element whose extension holds it, and failing
-// that the document's top level. The top level is a nil host; the root model,
-// whose members are written there, is never one. note says why the host is not
+// that the document's top level, a nil host; a root Model hosts views as any
+// package does. note says why the host is not
 // the owner; placed is false when nothing written can hold the view.
 func (m *migration) viewHost(d *sysmlv1.Diagram) (host *sysmlv1.Element, placed bool, note string) {
 	from := m.viewOwner(d)
@@ -180,9 +180,6 @@ func (m *migration) viewHost(d *sysmlv1.Diagram) (host *sysmlv1.Element, placed 
 		host := m.bodyOf(cur)
 		if !m.hostsViews(host) {
 			continue
-		}
-		if m.flattened(host) {
-			host = nil
 		}
 		switch {
 		case cur == from && d.Owner != nil:
@@ -213,12 +210,9 @@ func (m *migration) bodyOf(e *sysmlv1.Element) *sysmlv1.Element {
 	return e
 }
 
-// hostsViews reports whether e is written with a body a view can be a member of: the
-// root model, or a declared package or definition (not an enum def, node, vertex or region).
+// hostsViews reports whether e is written with a body a view can be a member of: a
+// declared package or definition (not an enum def, node, vertex or region).
 func (m *migration) hostsViews(e *sysmlv1.Element) bool {
-	if m.flattened(e) {
-		return true
-	}
 	switch e.Type {
 	case "Property", "Port", "Parameter", "EnumerationLiteral", "Region":
 		return false
@@ -249,12 +243,6 @@ func (m *migration) writtenIn(host *sysmlv1.Element) string {
 		return "written at the top level"
 	}
 	return "written in " + m.hostName(host)
-}
-
-// isTopLevel reports whether e is the root model, whose members are the
-// document's top level.
-func isTopLevel(e *sysmlv1.Element) bool {
-	return e.Parent == nil && e.Type == "Model"
 }
 
 // views leaves room for the views of the diagrams host owns (nil: the top level's), written

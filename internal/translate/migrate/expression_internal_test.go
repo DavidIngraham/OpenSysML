@@ -163,7 +163,7 @@ func TestExpressionTreeLowering(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := string(r.Notation); !strings.Contains(got, tc.want) {
+			if got := string(r.Notation); !hasBlock(got, tc.want) {
 				t.Errorf("notation lacks %q:\n%s", tc.want, got)
 			}
 		})
@@ -194,7 +194,7 @@ func TestBlankTreeIsNotationOnly(t *testing.T) {
 			Unmapped, `the types at "a" disagree: the expression is a Real, not the Boolean wanted`},
 		{"an instance value naming a literal is read and type checked",
 			`<specification xmi:type="uml:Expression" xmi:id="_s"><operand xmi:type="uml:InstanceValue" xmi:id="_iv" instance="_on"/></specification>`,
-			Unmapped, `the types at "On" disagree: the expression is a Mode, not the Boolean wanted`},
+			Unmapped, `the types at "On" disagree: the expression is a Model::Mode, not the Boolean wanted`},
 		{"a tree without operands is not blank",
 			`<specification xmi:type="uml:Expression" xmi:id="_s"/>`,
 			Unmapped, "the UML Expression tree has no v2 form"},
@@ -235,7 +235,7 @@ func TestTreeOpaqueLiteralDefault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "attribute n : ScalarValues::Integer default = 2;"; !strings.Contains(string(r.Notation), want) {
+	if want := "attribute n : ScalarValues::Integer default = 2;"; !hasBlock(string(r.Notation), want) {
 		t.Errorf("notation lacks %q:\n%s", want, r.Notation)
 	}
 }
@@ -250,7 +250,7 @@ func TestTreePlaceholderShadowing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "context.On == Mode::On"; !strings.Contains(string(r.Notation), want) {
+	if want := "context.On == Mode::On"; !hasBlock(string(r.Notation), want) {
 		t.Errorf("notation lacks %q:\n%s", want, r.Notation)
 	}
 }

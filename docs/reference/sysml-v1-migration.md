@@ -128,7 +128,7 @@ ties each of its mapping classes to the code that carries it out (or records why
 
 | SysML v1 | SysML v2 | Verdict |
 |---|---|---|
-| Model, Package | `package` | mapped |
+| Model, Package | `package` — a root Model is `package <ModelName> { … }` holding everything the Model owns, as the OMG transformation maps it; a Model with no name is named after the file, which its report note says | mapped |
 | «Block» Class | `part def` | mapped |
 | Plain UML Class | `occurrence def` | mapped |
 | Actor | `part` usage — one element per actor, a role a connection can join, which v2 writes as a usage rather than a definition; each use case associated with it declares an `actor` parameter subsetting that one usage, and the association is a `connection` from the usage to the parameter | mapped |
@@ -415,9 +415,16 @@ and `umlType` (`Class Diagram`) together — by the first family below a word of
 | a use case diagram | `Views::asInterconnectionDiagram` over the actors' `part` usages, the `use case` and `requirement` usages and the connections written for the actor associations, includes, extends and «Refine»s it shows; the renderer draws a use case's subject and `actor` parameters as pins on its node, not as nested nodes, so an actor is one node and its association one line ending at the use case |
 | other behavior diagrams (sequence, an activity diagram of a package or one showing nothing of its activity's graph), requirement, content and free-form diagrams, a tool's own kinds, a diagram naming no kind | `Views::asTextualNotation` |
 
-The rendering is written `$::Views::…` where a member named `Views` would shadow the library, a
-view definition `$::StandardViewDefinitions::…` where one named `StandardViewDefinitions` would, and a
-shown primitive is exposed as `$::ScalarValues::…` where a member named `ScalarValues` would.
+A qualified name is written from the root Model's package — `Catalog::Parts::Wheel`, or just
+`Parts::Wheel` where no scope between the reference and the package declares a `Parts` of its own —
+and from the global namespace, `$::…`, only where a member still shadows the name: the rendering
+is written `$::Views::…` where a member named `Views` would shadow the library, a view definition
+`$::StandardViewDefinitions::…` where one named `StandardViewDefinitions` would, a shown primitive
+is exposed as `$::ScalarValues::…` where a member named `ScalarValues` would, a member of one
+root package is named `$::Alpha::Sensor` from another where a feature named `Alpha` would shadow
+the package, and a model whose member is named like the Model itself — a diagram named `SEM` in
+the Model `SEM`, say — has its references through the package written `$::SEM::…` wherever a
+nearer member shadows the bare name.
 
 A typed graph view exposes the definition whose graph it draws — the `action def` or `state def`
 the diagram's owner, or the owner's nearest behavior ancestor (a region, an action node, a
@@ -667,7 +674,7 @@ metadata, and a look-alike application from an unbundled profile stays a comment
 
 | Table definition | Query |
 |---|---|
-| `scope` (the packages or classifiers whose subtree the table lists); `takeWholeModelAsScope` | `Descendants(source = Named(qualifiedName = (…)))`, unbounded; the whole model is the union of the top-level members and their descendants |
+| `scope` (the packages or classifiers whose subtree the table lists); `takeWholeModelAsScope` | `Descendants(source = Named(qualifiedName = (…)))`, unbounded; the whole model is the root Models' packages (and any other root) with their descendants |
 | `rowElements`, `additionalElements` (explicit rows) | one `Union(source = Named(qualifiedName = (row, row, …)), other = <scope>)`, the rows in their v1 order ahead of the scope's other elements, so an unsorted table — and each level of a tree — keeps the order the tool listed them in |
 | `excludedElements` | `Except(source = <rows>, exclude = Named(qualifiedName = (…)))` ahead of the sort, the row noted with their count; an excluded element that resolves to nothing, or that the migration does not write, is absent regardless and the note says so; the rows nested under an excluded row stay, as they do in the tool, which lists each row it hides by itself |
 | `displayMode` — `List`, `Compact tree` or `Complete tree`, the literals of the MagicDraw profile's `TableDisplayMode` enumeration — with `showScopeAsRoot` and `expandedRows` | a list stays flat; `Compact tree` wraps the sorted rows in `Tree(source = <rows>)`, which nests each row under the nearest row containing it at the depth the renderers indent by ([hierarchical rows](../manual/outputs.md#hierarchical-rows)), so a nested row's `name` cell is the element's own name (a dotted name the tool gave a nested instance stays as written) and its depth is structural, never spaces in the name; `Complete tree` adds `ancestors = Descendants(source = <scope>)`, so the scope's elements containing the rows join as intermediate levels; `showScopeAsRoot = true` adds the scope itself to the ancestors, as the root (noted, not applied, for a flat list or a table naming no scope). A mode the profile does not define lists the rows flat with the note; `expandedRows` records which nodes the tool had unfolded (`NoExpanded` when none was), which is window state, so every nested row is listed, with the note; an entry not of the form `<level>,<id>` is dropped with the note, not a refusal |
@@ -861,7 +868,7 @@ reported the same way. Where a model member named `DocumentQueries` would shadow
 every reference is written `$::DocumentQueries::…`. A section, paragraph, table, list or diagram
 block declares members of its own (`title`, `rows`, the nested sections), and a reference written
 inside it is qualified past whichever of those it would otherwise resolve to — a section named
-like a top-level package names that package's view as `$::<package>::…`.
+like a package of the model names that package's view as `<Model>::<package>::…`.
 
 #### Rendering a migrated document
 
@@ -1127,18 +1134,20 @@ tell it from a v1 node the source merely left unnamed: no diagram symbol stands 
 and a positioned rendering draws the edges through it as one, where an unnamed v1 fork is drawn
 as its bar.
 
-A top-level declaration named like a standard library root package — `Requirements`, `Views`,
-`ScalarValues`, and the rest — is renamed, since a qualified name starting with that name would
-resolve to the library package instead: a bare identifier becomes `<name>Model` (`Requirements`
-writes as `package RequirementsModel`), any other name gains `" Model"`, and a taken result adds
-` 2`, ` 3`, … until it is free. References into the package follow the rename, the declaration is
-annotated `metadata MigrationMetadata::LibraryNameAvoided about <written> { sourceName = "<source>"; }`
+A root declaration — a root Model or a root package of the document — named like a standard
+library root package — `Requirements`, `Views`, `ScalarValues`, and the rest — is renamed, since
+a qualified name starting with that name would resolve to the library package instead: a bare
+identifier becomes `<name>Model` (a root `Requirements` writes as `package RequirementsModel`),
+any other name gains `" Model"`, and a taken result adds ` 2`, ` 3`, … until it is free.
+References into the package follow the rename, the declaration is annotated
+`metadata MigrationMetadata::LibraryNameAvoided about <written> { sourceName = "<source>"; }`
 once per renamed root at the document's top level, and its report entry is approximated with the
 note `written as <written> since a root package named <source> would be hidden by the standard
 library's <source>`. An opaque expression copied verbatim has its references through the
 renamed root rewritten to the new name too, wherever a nearer element does not take the source
-name. A nested package keeps its name: only a top-level declaration hides the
-library root.
+name. A member of the root Model, like any nested package, keeps its name: it is reached as
+`<Model>::Requirements`, and inside the Model's package the library's own root is named
+`$::Requirements::…` where that member would shadow it.
 
 **Activities.** The nodes are written first, then the edges. A node's name is its v1 name when
 it has one, else its kind (`call`, `decide`, `fork`, …) made unique within the activity. A

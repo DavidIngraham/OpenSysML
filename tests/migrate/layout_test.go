@@ -270,7 +270,7 @@ func TestGoldenEdgeLayout(t *testing.T) {
 	}
 	// An activity diagram showing none of its activity's graph is not a graph view of it:
 	// it exposes nothing rather than drawing the whole activity.
-	if !strings.Contains(string(r.Notation), "view 'Driving Sketch' {\n                render Views::asTextualNotation;\n            }") {
+	if !strings.Contains(string(r.Notation), "view 'Driving Sketch' {\n                    render Views::asTextualNotation;\n                }") {
 		t.Errorf("the empty activity diagram is not an empty textual view:\n%s", r.Notation)
 	}
 	// A transition, drawn as an edge, and an initial or final node written as start or done
@@ -763,9 +763,9 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 	}
 	visit(rendering.Roots)
 	wantDrawn := []string{
-		"part def Blocks::Vehicle at (40, 20) size 120x50",
+		"part def Model::Blocks::Vehicle at (40, 20) size 120x50",
 		"part engine",
-		"part def Blocks::Engine at (40, 160) size 120x90",
+		"part def Model::Blocks::Engine at (40, 160) size 120x90",
 		"part piston at (55, 200) size 90x30",
 	}
 	if !slices.Equal(drawn, wantDrawn) {
@@ -775,7 +775,7 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 	for _, edge := range rendering.Edges {
 		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
 	}
-	wantEdges := []string{"Blocks::Vehicle composition Blocks::Engine: engine"}
+	wantEdges := []string{"Model::Blocks::Vehicle composition Model::Blocks::Engine: engine"}
 	if !slices.Equal(edges, wantEdges) {
 		t.Errorf("edges = %q, want %q", edges, wantEdges)
 	}
@@ -821,11 +821,11 @@ func TestGoldenAssociationEndPairPinsItsConnectionDef(t *testing.T) {
 		route []view.Point
 	}{
 		"Blocks::'Pair BDD'": {
-			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			edges: []string{"Model::Blocks::Controller composition Model::Blocks::Sensor: sensors / controller"},
 			route: []view.Point{{X: 100, Y: 70}, {X: 100, Y: 130}, {X: 100, Y: 200}},
 		},
 		"Blocks::'Sensor BDD'": {
-			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			edges: []string{"Model::Blocks::Controller composition Model::Blocks::Sensor: sensors / controller"},
 			route: []view.Point{{X: 300, Y: 70}, {X: 300, Y: 225}, {X: 160, Y: 225}},
 		},
 	} {
@@ -992,7 +992,7 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 		}
 	}
 	visit(rendering.Roots)
-	gui := nodes["UI::GUI"]
+	gui := nodes["Model::UI::GUI"]
 	if gui == nil || gui.Geometry == nil || *gui.Geometry != (view.Geometry{X: 20, Y: 200, Width: 80, Height: 37, HasSize: true}) {
 		t.Fatalf("GUI def node = %+v, want one at its own position; drawn: %v", gui, slices.Sorted(maps.Keys(nodes)))
 	}
@@ -1000,7 +1000,7 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 	for _, edge := range rendering.Edges {
 		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
 	}
-	want := []string{"UI::Console composition UI::GUI: GUI", "UI::Console composition UI::Panel: panel"}
+	want := []string{"Model::UI::Console composition Model::UI::GUI: GUI", "Model::UI::Console composition Model::UI::Panel: panel"}
 	if !reflect.DeepEqual(edges, want) {
 		t.Errorf("edges = %q, want %q", edges, want)
 	}
