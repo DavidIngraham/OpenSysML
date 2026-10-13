@@ -129,3 +129,43 @@ a plain class. Two definitions with the same simple name get path-qualified
 class names, such as `A_Thing` and `B_Thing`. A feature named like a generated
 class member (`instance`, `from_instance` or `sysml_id`) gets a trailing
 underscore on its Python property; its SysML feature name is unchanged.
+
+## Standalone scalar dataclasses
+
+Use `--format dataclass` to generate frozen, slotted, keyword-only value records.
+Select definitions by qualified name; their model-defined bases are included:
+
+```bash
+python -m opensysml.generate model.sysml --format dataclass \
+  --definition Demo::Design -o design_types.py
+```
+
+The generated module uses only the Python standard library. Construct a record
+with keyword arguments, or call `Design.from_mapping(values)` using SysML field
+names. `Design.from_instance(instance)` copies evaluated feature values from an
+instance of the selected definition or an included specialization. Defaults must
+be evaluated in SysML; the generator does not translate default expressions.
+`to_mapping()` preserves SysML names. `dataclasses.replace(record, length_m=1.2)`
+creates an edited snapshot without mutating the original.
+
+This mode supports Real, Integer, Natural, Boolean, String, Rational and Complex
+scalar attributes, optional scalars, and bounded or unbounded collections of those
+scalars. Collections become tuples. Construction checks scalar types, finite Real
+and Complex values, Natural nonnegativity, and resolved multiplicity. Rational
+inputs must be integers or `Fraction` values, avoiding implicit float conversion.
+Optional fields are explicit constructor arguments; use `None` for no value.
+
+Inheritance is flattened into the snapshot fields, with explicit redefinitions
+taking precedence. Snapshot classes do not represent Python subtype relationships.
+Ambiguous inherited fields, missing bases, cycles and identifier collisions are
+errors. Nested objects, quantities, enums and unresolved types or multiplicities
+are currently unsupported and fail generation explicitly; use live typed views
+for those models. Runtime library attributes withheld by the service are not
+snapshot fields; their count is retained as `sysml_withheld_library_attributes`.
+
+Each field carries its SysML name, identity, declared type, supplied unit and
+multiplicity in dataclass metadata. Unit names are never inferred from suffixes.
+These structural checks do not execute constraints or establish requirement
+compliance. Search brackets remain separate from record validity.
+
+The same `--check` option works with `--format dataclass` and `--definition`.

@@ -3538,3 +3538,7 @@ SysML v2 defines *evaluation* of a constraint, requirement or `assert satisfy` a
 | Contract | Implementation | Tests | Status |
 |---|---|---|---|
 | Optional formatted source preserves typed view data and shares CLI writers, with capability gating, verdicts and validated presentation options | `api/proto/sysml.proto`; `internal/frontend/grpc/render_view.go`, `render_artifact.go`; Go, Python, Node, Java, Rust, Julia and MATLAB clients | `TestRenderViewArtifactsMatchSharedWriters`, `TestRenderViewArtifactRejectsInvalidOptions`, `TestRenderViewArtifactVerdictOverlay`; `conformance/scenarios/18-render-view-artifacts.json`; native client artifact tests | ✅ Implemented for the eight text/source forms; image conversion and targetless bulk rendering are not part of this operation |
+
+### Python scalar snapshots
+
+The Python generator supports `--format dataclass` for resolved scalar records, including optional and collection multiplicity and flattened model-defined inheritance. Nested objects, quantities and enums fail explicitly in this mode; live typed views remain available. This is a client interoperability feature, not additional SysML execution semantics. Verified by `client/python/tests/test_generate_records.py`.

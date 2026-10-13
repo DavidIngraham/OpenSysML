@@ -581,7 +581,8 @@ def _render_property(feature: Feature, names: Dict[str, str]) -> List[str]:
     return lines
 
 
-def generate_source(model, source_text: str) -> str:
+def generate_source(model, source_text: str, *, format: str = "view",
+                    selected: Optional[Sequence[str]] = None) -> str:
     """Render the typed module for a loaded :class:`~opensysml.model.Model`.
 
     ``source_text`` is the model source the module is stamped with; it is
@@ -589,7 +590,27 @@ def generate_source(model, source_text: str) -> str:
     several documents (:meth:`Connection.parse_sources`) is generated whole,
     from every document's root.
     """
-    return render_module(collect_definitions(*model.roots), model_stamp(source_text))
+    definitions = collect_definitions(*model.roots)
+    if selected:
+        by_id = {d.id: d for d in definitions}
+        keep = set()
+        def include(name):
+            if name in keep:
+                return
+            if name not in by_id:
+                raise ValueError("Unknown definition: " + name)
+            keep.add(name)
+            for base in by_id[name].base_ids:
+                include(base)
+        for name in selected:
+            include(name)
+        definitions = [d for d in definitions if d.id in keep]
+    if format == "dataclass":
+        from opensysml.generate_records import render_dataclasses
+        return render_dataclasses(definitions, model_stamp(source_text))
+    if format != "view":
+        raise ValueError("Unknown generation format: " + format)
+    return render_module(definitions, model_stamp(source_text))
 
 
 # Named in the failure message below: which binary is at fault, and what to do.
@@ -619,6 +640,10 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         prog="python -m opensysml.generate",
         description="Generate typed Python classes from a SysML model.",
     )
+    parser.add_argument("--format", choices=("view", "dataclass"), default="view",
+                        help="live typed views or standalone scalar dataclasses")
+    parser.add_argument("--definition", action="append",
+                        help="generate this qualified definition and its bases; repeatable")
     parser.add_argument("source", help="path to a .sysml file")
     parser.add_argument("-o", "--output", help="output .py path (default: stdout)")
     parser.add_argument("--host", default="localhost", help="sysml-grpc host")
@@ -668,7 +693,11 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 print(f"error: {diag.message}", file=sys.stderr)
             return 1
 
-        source = generate_source(model, source_text)
+        try:
+            source = generate_source(model, source_text, format=args.format, selected=args.definition)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
 
     if args.check:
         existing = None
@@ -680,7 +709,9 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         reason = "does not exist" if existing is None else "is out of date"
         print(
             f"error: {args.output} {reason}; regenerate with: "
-            f"python -m opensysml.generate {args.source} -o {args.output}",
+            f"python -m opensysml.generate {args.source} -o {args.output}"
+            + (" --format dataclass" if args.format == "dataclass" else "")
+            + "".join(" --definition " + name for name in args.definition or []),
             file=sys.stderr,
         )
         return 1
