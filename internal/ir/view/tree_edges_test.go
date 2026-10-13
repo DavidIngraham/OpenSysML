@@ -458,8 +458,15 @@ func TestTreeAssociationLineIsPlain(t *testing.T) {
 	if strings.Contains(dot, "penwidth=3") {
 		t.Errorf("DOT draws an association as a heavy connector:\n%s", dot)
 	}
-	if want := `[label="Tows", taillabel="tower", headlabel="trailer[0..1]", dir=none];`; !strings.Contains(dot, want) {
-		t.Errorf("DOT lacks the plain line %s:\n%s", want, dot)
+	if want := `[label="Tows", taillabel="tower", headlabel="trailer", dir=none];`; !strings.Contains(dot, want) {
+		t.Errorf("DOT lacks the plain line, its ends named without the multiplicity left out by default %s:\n%s", want, dot)
+	}
+	full, err := rendering.DOTWith(fullNotation)
+	if err != nil {
+		t.Fatalf("DOT: %v", err)
+	}
+	if want := `[label="Tows", taillabel="tower", headlabel="trailer[0..1]", dir=none];`; !strings.Contains(full, want) {
+		t.Errorf("DOT with every element lacks the plain line, the def's name along it %s:\n%s", want, full)
 	}
 }
 
