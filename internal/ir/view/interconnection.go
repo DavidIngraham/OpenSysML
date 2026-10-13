@@ -565,9 +565,8 @@ func isFlowUsage(sym *symbols.Symbol) bool {
 	return ok && usage.Kind == ast.UsageFlow && usage.FlowEnds != nil
 }
 
-// featureLike reports whether an element is a feature an interconnection rendering shows as
-// a node: structures, and the constraints and analysis cases bound to their values; behaviors,
-// views and namespaces are reported rather than drawn.
+// featureLike reports whether an interconnection rendering shows sym as a node: structures and the
+// constraints and analysis cases bound to their values; behaviors, views and namespaces are reported.
 func featureLike(sym *symbols.Symbol) bool {
 	switch sym.Kind {
 	case symbols.SymbolPartDef, symbols.SymbolPartUsage,
