@@ -178,9 +178,8 @@ func inheritedIdentifier(
 // its identifiers from: what a member named by its reference references, else
 // the first feature it redefines, by clause or by position (KerML 1.1 §8.3.3.3;
 // SysML ConstraintUsage::namingFeature for assume/require/verify members).
-// NamingFeatureOf returns the feature sym takes its name and short name from
-// when it declares neither (KerML 8.3.3.3 Feature::namingFeature): the feature
-// it references, or else the first it redefines; nil when there is none.
+// NamingFeatureOf is the feature sym takes its name and short name from when it
+// declares neither (KerML 8.3.3.3 namingFeature): referenced, else first redefined.
 func (m *Model) NamingFeatureOf(sym *symbols.Symbol) *symbols.Symbol {
 	return m.namingFeature(sym)
 }

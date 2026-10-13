@@ -775,9 +775,8 @@ func (w *Workspace) MembersOnPath(scope *symbols.Scope, path []string) []*symbol
 	return out
 }
 
-// ShortNameOf returns the short name sym is referable by: the one it declares,
-// or the one a feature declaring neither name nor short name takes from its
-// naming feature (KerML Feature::effectiveShortName).
+// ShortNameOf is the short name sym is referable by: the declared one, or the
+// one a feature declaring no name takes from its naming feature.
 func (w *Workspace) ShortNameOf(sym *symbols.Symbol) string {
 	if sym == nil || sym.ShortName != "" {
 		return symbolShortName(sym)

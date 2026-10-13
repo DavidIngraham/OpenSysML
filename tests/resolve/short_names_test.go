@@ -52,6 +52,33 @@ func TestEffectiveShortNameOfARedefiningFeatureResolves(t *testing.T) {
 	}
 }
 
+// An import surfaces a membership under its short name (KerML 8.3.2.4
+// Membership::memberShortName), the derived one included: a namespace import,
+// a membership import naming the short name and a recursive import all bring
+// the redefining feature in as `tms`.
+func TestImportsSurfaceTheDerivedShortName(t *testing.T) {
+	const model = `package Q {
+		part def A { part <tms> t; }
+		part def B :> A { part :>> t; }
+	`
+	cases := []struct{ name, body string }{
+		{"namespace import", `package Use { private import B::*; part x :> tms; }`},
+		{"membership import", `package Use { private import B::tms; part x :> tms; }`},
+		{"recursive import", `package Use { private import Q::**; part x :> tms; }`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r, root, scope := resolvedDoc(t, model+tc.body+"\n}")
+			if got := bindingOf(t, r, root, scope, "tms"); got != "Q::B::t" {
+				t.Errorf("tms binds %q, want Q::B::t", got)
+			}
+			if _, errs := diagnosticsOf(r); len(errs) != 0 {
+				t.Errorf("unexpected errors: %v", errs)
+			}
+		})
+	}
+}
+
 // A redefining feature that declares a short name of its own has that short
 // name, not the redefined feature's (effectiveShortName returns the
 // declaredShortName when one is given), and the redefinition hides the

@@ -118,12 +118,8 @@ func (r *Resolver) LocalBindings(scope *symbols.Scope, name string) []*symbols.S
 	return out
 }
 
-// shortNamedMembers returns the members of scope that answer to name as the
-// short name they take from their naming feature (KerML Element::shortName =
-// effectiveShortName()): `part :>> t;` redefining `part <tms> t;` is also
-// `tms`. A scope registers declared identifiers only, the naming feature being
-// known once its reference resolves, so the derived short name is asked for
-// here, and only where no declared identifier binds name.
+// shortNamedMembers returns the members of scope that answer to name as the short
+// name they take from their naming feature, which the scope does not register.
 func (r *Resolver) shortNamedMembers(scope *symbols.Scope, name string, hide *refFilter) []*symbols.Symbol {
 	if scope == nil || name == "" {
 		return nil
@@ -137,10 +133,23 @@ func (r *Resolver) shortNamedMembers(scope *symbols.Scope, name string, hide *re
 	return out
 }
 
-// derivedShortName returns the short name sym takes from its naming feature
-// (KerML 8.3.3.3 Feature::effectiveShortName): that feature's declared short
-// name, or the one it derives in turn; none while a feature on the way declares
-// a name of its own, or while its naming is being decided (see BindsName).
+// derivedShortName is the short name sym takes from its naming feature (KerML
+// 8.3.3.3 effectiveShortName): none past a declared name or a naming under way.
+// shortNameOf is the short name sym is referable by: declared, or derived.
+func (r *Resolver) shortNameOf(sym *symbols.Symbol) string {
+	if sym == nil || sym.ShortName != "" {
+		return symbolShortName(sym)
+	}
+	return r.derivedShortName(sym)
+}
+
+func symbolShortName(sym *symbols.Symbol) string {
+	if sym == nil {
+		return ""
+	}
+	return sym.ShortName
+}
+
 func (r *Resolver) derivedShortName(sym *symbols.Symbol) string {
 	seen := map[*symbols.Symbol]bool{}
 	for sym != nil && !seen[sym] {
@@ -159,9 +168,8 @@ func (r *Resolver) derivedShortName(sym *symbols.Symbol) string {
 	return ""
 }
 
-// namingFeatureOf resolves the feature sym takes its name from, the way
-// BindsName does: the feature it references or the first it redefines, through
-// aliases; a feature chain names it, so it has no naming feature.
+// namingFeatureOf resolves the feature sym takes its name from as BindsName
+// does: the one referenced or first redefined, through aliases; a chain names none.
 func (r *Resolver) namingFeatureOf(sym *symbols.Symbol) *symbols.Symbol {
 	if sym.Recorded() {
 		model, ok := r.model.(shortNamer)
@@ -617,7 +625,7 @@ func (r *Resolver) eachImportMatch(into, scope *symbols.Scope, imp *ast.Import, 
 		if idx := strings.LastIndex(targetName, "::"); idx >= 0 {
 			targetName = targetName[idx+2:]
 		}
-		if (targetName == name || (target.ShortName != "" && target.ShortName == name)) && admit(target) {
+		if (targetName == name || r.shortNameOf(target) == name) && admit(target) {
 			if !yield(target) {
 				return
 			}
@@ -631,6 +639,11 @@ func (r *Resolver) eachImportMatch(into, scope *symbols.Scope, imp *ast.Import, 
 	// Check scope first if available
 	if target.Scope != nil {
 		for _, sym := range symbols.PreferDeclared(target.Scope.LookupLocalAll(name)) {
+			if visibleThroughImport(imp, sym) && admit(sym) && !yield(sym) {
+				return
+			}
+		}
+		for _, sym := range r.shortNamedMembers(target.Scope, name, nil) {
 			if visibleThroughImport(imp, sym) && admit(sym) && !yield(sym) {
 				return
 			}
@@ -737,7 +750,7 @@ func (r *Resolver) eachSubtreeMatch(scope *symbols.Scope, target *symbols.Symbol
 	out := newElementList()
 	r.appendSubtree(out, scope, target, imp, admit, map[symbols.ElementKey]bool{}, false)
 	for _, sym := range out.elems {
-		if (localNameOf(sym) == name || sym.ShortName == name) && !yield(sym) {
+		if (localNameOf(sym) == name || r.shortNameOf(sym) == name) && !yield(sym) {
 			return
 		}
 	}
