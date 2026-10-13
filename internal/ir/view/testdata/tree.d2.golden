@@ -19,4 +19,4 @@ n0 -- n3: { class: edge }
 n4 -- n5: { class: edge }
 n5 -- n6: { class: edge }
 n5 -- n7: { class: edge }
-n0 <- n5: "engine" { class: composition }
+n0 <- n5: { class: composition; target-arrowhead: { label: "engine" } }

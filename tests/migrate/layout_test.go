@@ -427,7 +427,8 @@ func TestGoldenControlNodeLayout(t *testing.T) {
 // The routes a migrated view carries reach the DOT form as pinned edge splines for each
 // edge kind, labelled by name only where the edge has no text of its own and the name is
 // the source's: one the migration made up, and marked, labels nothing. An object flow
-// runs pin to pin, the pins named beside the action; a label sits inside the canvas.
+// runs pin to pin, the pins named beside the action; a label sits inside the canvas, and
+// two labels on one route, or a label and a parallel line, keep apart.
 func TestMigratedRoutesRenderPinned(t *testing.T) {
 	r := migrateLaidOut(t, "diagram_edges")
 	s := session(t, r)
@@ -444,10 +445,10 @@ func TestMigratedRoutesRenderPinned(t *testing.T) {
 			`"n1" -> "n2" [label="accept Go", pos="e,110,110 200,110 200,110 120,110 120,110", lp="155,98"];`,
 			`"n2" -> "n3" [label="accept Stop", pos="e,250,90 250,40 250,40 250,80 250,80", lp="203,65"];`,
 			`"n3" -> "n2" [label="accept Go", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="281,65"];`,
-			`"n3" -> "n2" [label="accept Resume", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="265.5,65"];`,
+			`"n3" -> "n2" [label="accept Resume", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="265.5,84.5"];`,
 		},
 		"Structure::Vehicle::'Vehicle Internals'": {
-			`[label="connection", arrowhead=none, penwidth=3, pos="200,100 200,100 120,100 120,100", lp="160,88"];`,
+			`[label="connection", arrowhead=none, penwidth=3, pos="200,100 200,100 120,100 120,100", lp="160,112"];`,
 			`[label="connection", arrowhead=none, penwidth=3, pos="200,80 200,80 160,60 160,60 160,60 120,80 120,80", lp="192.5,44.5"];`,
 			`[label="drive", arrowhead=none, penwidth=3, pos="200,90 200,90 120,90 120,90", lp="160,78"];`,
 			`[label="binding", arrowhead=none, pos="200,10 200,10 120,10 120,10", lp="160,22"];`,
@@ -703,6 +704,18 @@ func TestLayoutOfTableDiagram(t *testing.T) {
 		"returned 4 rows", "Plant::Inventory::r1", "Plant::Inventory::p1", "Plant::Spares::s1", "Plant::Spares::s2")
 }
 
+// edgeText is an edge's texts as the forms without a place at an end fold
+// them: the tail end's name, the edge's own, the head end's name.
+func edgeText(edge view.Edge) string {
+	var texts []string
+	for _, text := range []string{edge.FromLabel, edge.Label, edge.ToLabel} {
+		if text != "" {
+			texts = append(texts, text)
+		}
+	}
+	return strings.Join(texts, " ")
+}
+
 // An association end's role symbol — the 10×10 box Cameo keeps at the line's end,
 // inside the association's symbol — is the end's position on the line, which the
 // association's route carries, pinned to the member-end usage the tree rendering
@@ -773,7 +786,7 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 	}
 	var edges []string
 	for _, edge := range rendering.Edges {
-		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edgeText(edge)))
 	}
 	wantEdges := []string{"Blocks::Vehicle composition Blocks::Engine: engine"}
 	if !slices.Equal(edges, wantEdges) {
@@ -821,11 +834,11 @@ func TestGoldenAssociationEndPairPinsItsConnectionDef(t *testing.T) {
 		route []view.Point
 	}{
 		"Blocks::'Pair BDD'": {
-			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			edges: []string{"Blocks::Controller composition Blocks::Sensor: controller sensors"},
 			route: []view.Point{{X: 100, Y: 70}, {X: 100, Y: 130}, {X: 100, Y: 200}},
 		},
 		"Blocks::'Sensor BDD'": {
-			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			edges: []string{"Blocks::Controller composition Blocks::Sensor: controller sensors"},
 			route: []view.Point{{X: 300, Y: 70}, {X: 300, Y: 225}, {X: 160, Y: 225}},
 		},
 	} {
@@ -850,7 +863,7 @@ func TestGoldenAssociationEndPairPinsItsConnectionDef(t *testing.T) {
 		visit(rendering.Roots)
 		var edges []string
 		for _, edge := range rendering.Edges {
-			edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+			edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edgeText(edge)))
 		}
 		if !slices.Equal(edges, want.edges) {
 			t.Errorf("%s: edges = %q, want %q", name, edges, want.edges)
@@ -998,7 +1011,7 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 	}
 	var edges []string
 	for _, edge := range rendering.Edges {
-		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edgeText(edge)))
 	}
 	want := []string{"UI::Console composition UI::GUI: GUI", "UI::Console composition UI::Panel: panel"}
 	if !reflect.DeepEqual(edges, want) {

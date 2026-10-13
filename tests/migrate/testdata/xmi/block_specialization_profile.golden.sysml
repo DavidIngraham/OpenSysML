@@ -53,4 +53,5 @@ package Bench {
             calc rows : 'Segments Rows';
         }
     }
+    metadata MigrationMetadata::SynthesizedName about carries;
 }

@@ -21,7 +21,7 @@ package Operations {
     occurrence console : Console;
     connection 'panel to console' : PanelToConsole connect panel to console;
     connection 'Scan includes Focus' connect Scan to Focus;
-    metadata MigrationMetadata::SynthesizedName about PanelToConsole;
+    metadata MigrationMetadata::SynthesizedName about PanelToConsole, 'panel to console';
 }
 package Tables {
     view Classifiers {

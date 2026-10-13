@@ -395,7 +395,7 @@ func marshalRenderView(data view.Data) ([]byte, error) {
 	for _, edge := range data.Edges {
 		item := JRenderEdge{
 			From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
-			Label: edge.Label, Kind: edge.Kind.String(), Style: jRenderStyle(edge.Style),
+			Label: edge.Text(), Kind: edge.Kind.String(), Style: jRenderStyle(edge.Style),
 		}
 		for _, point := range edge.Route {
 			item.Route = append(item.Route, JRenderPoint{X: point.X, Y: point.Y})
