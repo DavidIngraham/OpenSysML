@@ -19,4 +19,4 @@ n0 -- n3: { class: edge }
 n4 -- n5: { class: edge }
 n5 -- n6: { class: edge }
 n5 -- n7: { class: edge }
-n0 <- n5: "engine" { class: composition; link: "https://example.test/src/tree.sysml#L12" }
+n0 <- n5: { class: composition; link: "https://example.test/src/tree.sysml#L12"; target-arrowhead: { label: "engine" } }

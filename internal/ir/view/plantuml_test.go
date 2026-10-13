@@ -600,8 +600,9 @@ func TestPlantUMLHeaderAndGeometryComments(t *testing.T) {
 
 var (
 	// plantumlArrowLine matches an arrow statement between two aliases, a
-	// port's being its node's dotted with its index.
-	plantumlArrowLine = regexp.MustCompile(`^\s*(\[\*\]|[\w.]+) (-\[[a-z=0-9]+\]->?|-->|->|--\|>|\.\.\|>|\.\.>|\*--|o--|\+--|--|\.\.) ([\w.]+)( : .*)?$`)
+	// port's being its node's dotted with its index, an end name quoted at
+	// its end.
+	plantumlArrowLine = regexp.MustCompile(`^\s*(\[\*\]|[\w.]+)( "[^"]*")? (-\[[a-z=0-9]+\]->?|-->|->|--\|>|\.\.\|>|\.\.>|\*--|o--|\+--|--|\.\.) ("[^"]*" )?([\w.]+)( : .*)?$`)
 	// plantumlDeclarationLine matches an element declaration with its alias.
 	plantumlDeclarationLine = regexp.MustCompile(`^\s*(class|rectangle|state|participant|port|usecase|actor|note|circle|package) ".*" as ([\w.]+)( <<[^>]+>>)*( #[0-9A-F]{6}(;line:[0-9A-F]{6})?)?( \{)?$`)
 	// dotFillLine and plantumlFillLine pick the fill a node is given in each form.
@@ -662,7 +663,7 @@ func checkPlantUMLSyntax(t *testing.T, puml string) {
 			continue
 		}
 		if m := plantumlArrowLine.FindStringSubmatch(line); m != nil {
-			arrows = append(arrows, arrow{m[1], m[3]})
+			arrows = append(arrows, arrow{m[1], m[5]})
 			continue
 		}
 		switch trimmed := strings.TrimSpace(line); {
