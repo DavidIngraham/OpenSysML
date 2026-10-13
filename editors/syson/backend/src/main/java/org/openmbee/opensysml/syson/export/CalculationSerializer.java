@@ -100,11 +100,17 @@ class CalculationSerializer extends SysMLElementSerializer {
                 .filter(ParameterMembership.class::isInstance).map(ParameterMembership.class::cast).toList();
         Specialization typing = expression.getOwnedRelationship().stream()
                 .filter(Specialization.class::isInstance).map(Specialization.class::cast).findFirst().orElse(null);
-        if (typing == null || arguments.isEmpty() || !arguments.stream().allMatch(CalculationSerializer::isNamed)) {
-            return super.caseInvocationExpression(expression);
-        }
+        long named = arguments.stream().filter(CalculationSerializer::isNamed).count();
+        if (typing == null || named == 0) return super.caseInvocationExpression(expression);
         String callee = typing.getGeneral() == null ? null : names.getDeresolvedName(typing.getGeneral(), typing);
         if (callee == null || callee.isBlank()) return super.caseInvocationExpression(expression);
+        // SysML allows either all-named or all-positional arguments; a mix only arises when the
+        // import could not resolve one argument's parameter, so the names are not silently dropped.
+        if (named < arguments.size()) {
+            report.accept(Status.error("Call of {0} in {1} names only some of its arguments; the parameter of an unnamed one was lost when the model was imported",
+                    callee, describe(owningNamedElement(expression))));
+            return super.caseInvocationExpression(expression);
+        }
         Appender builder = new Appender(lineSeparator, indentation);
         builder.append(callee).append("(");
         for (int i = 0; i < arguments.size(); i++) {

@@ -151,6 +151,26 @@ class CalculationSerializerTest {
     }
 
     @Test
+    void argumentWithoutAParameterIsReportedNotSilentlyUnnamed() {
+        CalculationDefinition constant = named(own(model, F.createCalculationDefinition()), "Constant");
+        InvocationExpression invocation = call(project, source, string("a"));
+        ParameterMembership membership = F.createParameterMembership();
+        Feature argument = F.createFeature();
+        FeatureValue value = F.createFeatureValue();
+        value.getOwnedRelatedElement().add(string("b"));
+        argument.getOwnedRelationship().add(value);
+        membership.getOwnedRelatedElement().add(argument);
+        invocation.getOwnedRelationship().add(membership);
+        result(constant, invocation);
+        List<Status> statuses = new ArrayList<>();
+        String text = new SysONElementSerializer().serialize(model, statuses::add).text();
+
+        assertThat(text).contains("DocumentQueries::Project(\"a\", \"b\")");
+        assertThat(statuses).filteredOn(status -> status.severity() == Severity.ERROR).singleElement()
+                .extracting(Status::message).asString().contains("DocumentQueries::Project").contains("Observatory::Constant");
+    }
+
+    @Test
     void argumentNamesNeedingQuotesAreQuoted() {
         ReferenceUsage spaced = parameter(project, "max depth", null);
         CalculationDefinition constant = named(own(model, F.createCalculationDefinition()), "Constant");
