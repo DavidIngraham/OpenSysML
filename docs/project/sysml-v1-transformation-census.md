@@ -34,7 +34,7 @@ that build one relationship of a target — share the verdict of the construct t
 <!-- census:end source -->
 
 <!-- census:begin summary -->
-**Census:** 783 mapping classes — 514 ✅ faithful, 47 ⚠️ approximate, 42 ❌ not implemented, 180 ⛔ deliberate, 0 🚧 known failure, 0 ❔ unknown.
+**Census:** 783 mapping classes — 515 ✅ faithful, 47 ⚠️ approximate, 42 ❌ not implemented, 179 ⛔ deliberate, 0 🚧 known failure, 0 ❔ unknown.
 
 | Package | Mappings | ✅ | ⚠️ | ❌ | ⛔ | 🚧 | ❔ |
 |---|---|---|---|---|---|---|---|
@@ -61,13 +61,13 @@ that build one relationship of a target — share the verdict of the construct t
 | UML4SysML::CommonStructure | 18 | 18 | 0 | 0 | 0 | 0 | 0 |
 | UML4SysML::InformationFlows | 9 | 8 | 0 | 0 | 1 | 0 | 0 |
 | UML4SysML::Interactions | 19 | 6 | 0 | 0 | 13 | 0 | 0 |
-| UML4SysML::Packages | 34 | 8 | 0 | 0 | 26 | 0 | 0 |
+| UML4SysML::Packages | 34 | 9 | 0 | 0 | 25 | 0 | 0 |
 | UML4SysML::SimpleClassifiers | 22 | 20 | 0 | 0 | 2 | 0 | 0 |
 | UML4SysML::StateMachines | 26 | 22 | 4 | 0 | 0 | 0 | 0 |
 | UML4SysML::StructuredClassifiers | 39 | 23 | 8 | 0 | 8 | 0 | 0 |
 | UML4SysML::UseCases | 14 | 8 | 1 | 4 | 1 | 0 | 0 |
 | UML4SysML::Values | 33 | 14 | 0 | 3 | 16 | 0 | 0 |
-| **Total** | 783 | 514 | 47 | 42 | 180 | 0 | 0 |
+| **Total** | 783 | 515 | 47 | 42 | 179 | 0 | 0 |
 <!-- census:end summary -->
 
 ## Census rows
@@ -808,15 +808,15 @@ that build one relationship of a target — share the verdict of the construct t
 | OMG mapping | v1 source | v2 target | Implementation | Test | Status | Reason |
 |---|---|---|---|---|---|---|
 | `ElementImport_Mapping` | `ElementImport` | `MembershipImport` | `internal/translate/migrate/migrate.go:imports`<br>`internal/translate/migrate/migrate.go:elementImport` | `tests/migrate/stereotype_metadata_test.go:TestElementImportIsWritten`<br>`tests/migrate/stereotype_metadata_test.go:TestElementImportReservesAliasNames` | ✅ faithful | candidate erratum: the mapping sets `importedMemberName` to the alias, which a MembershipImport does not have; an aliased element import is written as an alias membership `alias A for P::X` |
-| `ModelViewpointMetadataFeatureMembership_Mapping` | `Model` | `FeatureMembership` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointMetadataFeatureTyping_Mapping` | `Model` | `FeatureTyping` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointMetadataFeatureValue_Mapping` | `Model` | `FeatureValue` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointMetadataMembership_Mapping` | `Model` | `OwningMembership` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointMetadataRedefinition_Mapping` | `Model` | `Redefinition` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointMetadataReferenceUsage_Mapping` | `Model` | `ReferenceUsage` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointMetadataUsage_Mapping` | `Model` | `MetadataUsage` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `ModelViewpointValue_Mapping` | `Model` | `LiteralString` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
-| `Model_Mapping` | `Model` | `Package` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the root model's members are written at the top level rather than inside a package of the model's name, so a one-model export reads as the v2 model itself; viewpoint metadata is not written |
+| `ModelViewpointMetadataFeatureMembership_Mapping` | `Model` | `FeatureMembership` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointMetadataFeatureTyping_Mapping` | `Model` | `FeatureTyping` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointMetadataFeatureValue_Mapping` | `Model` | `FeatureValue` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointMetadataMembership_Mapping` | `Model` | `OwningMembership` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointMetadataRedefinition_Mapping` | `Model` | `Redefinition` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointMetadataReferenceUsage_Mapping` | `Model` | `ReferenceUsage` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointMetadataUsage_Mapping` | `Model` | `MetadataUsage` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `ModelViewpointValue_Mapping` | `Model` | `LiteralString` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ⛔ deliberate | the Model is written as the package of its name, as Model_Mapping says; viewpoint metadata is not written |
+| `Model_Mapping` | `Model` | `Package` | `internal/translate/migrate/migrate.go:root` | `tests/migrate/root_model_test.go:TestRootModelWrittenAsPackage` | ✅ faithful | — |
 | `PackageImport_Mapping` | `PackageImport` | `NamespaceImport` | `internal/translate/migrate/migrate.go:imports` | `tests/migrate/migrate_test.go:TestGoldenNotation` | ✅ faithful | — |
 | `PackageURIFeatureMembership_Mapping` | `Package` | `FeatureMembership` | `internal/translate/migrate/migrate.go:classifierBody` | `tests/migrate/stereotype_metadata_test.go:TestPackageURIIsNotWritten` | ⛔ deliberate | a package's URI would be written as `SysMLv1Library::PackageData` metadata: OMG names SysMLv1Library but does not publish it, so the URI is not written |
 | `PackageURIFeatureTyping_Mapping` | `Package` | `FeatureTyping` | `internal/translate/migrate/migrate.go:classifierBody` | `tests/migrate/stereotype_metadata_test.go:TestPackageURIIsNotWritten` | ⛔ deliberate | a package's URI would be written as `SysMLv1Library::PackageData` metadata: OMG names SysMLv1Library but does not publish it, so the URI is not written; candidate erratum: the mapping types the URI metadata usage by `PackageData`, an attribute definition, but a metadata usage must be typed by a metadata definition |
@@ -1090,7 +1090,7 @@ SysML profile namespace. The counts are elements affected, not effort.
 <!-- census:begin gaps -->
 | Rank | OMG mappings | Status | Scope | PSSM suite | Fixtures | Total | Reason |
 |---|---|---|---|---|---|---|---|
-| 1 | 1: `PropertyUntyped_Mapping` | ⚠️ approximate | `uml:Property` | 25 | 530 | 555 | an untyped property is written as the usage its tool's property-kind marker names, as a `ref` typed by its default individual, else as a `part` when composite and an `attribute` otherwise, rather than always as a reference usage; the scope counts every uml:Property, so it is an upper bound |
+| 1 | 1: `PropertyUntyped_Mapping` | ⚠️ approximate | `uml:Property` | 25 | 541 | 566 | an untyped property is written as the usage its tool's property-kind marker names, as a `ref` typed by its default individual, else as a `part` when composite and an `attribute` otherwise, rather than always as a reference usage; the scope counts every uml:Property, so it is an upper bound |
 | 2 | 2: `CommonPseudostate_Mapping`, `PseudoState_Mapping` | ⚠️ approximate | `uml:Pseudostate` | 289 | 71 | 360 | choice and junction are written as state usages with StateMachines metadata, fork and join as nodes, history and terminate partially; a few pseudostates are unmapped (PSSM: 6, fixtures: 5) |
 | 3 | 1: `Region_Mapping` | ⚠️ approximate | `uml:Region` | 248 | 54 | 302 | the region of a single-region state is flattened into its state rather than written as a state usage; orthogonal regions become the substates of a parallel state; empty regions are not written |
 | 4 | 1: `OpaqueAction_Mapping` | ⚠️ approximate | `uml:OpaqueAction` | 0 | 158 | 158 | the body is translated into action statements when its language is read; otherwise the action is a stub keeping its pins (fixtures: 78 of 109 approximated) |

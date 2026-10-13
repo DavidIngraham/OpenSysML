@@ -20,6 +20,18 @@ func session(t *testing.T, r *migrate.Result) *repl.Session {
 			t.Fatalf("migrated notation: %v\n%s", d, r.Notation)
 		}
 	}
+	// A root Model is written as a package; importing it lets a script name
+	// the model's members as the model does.
+	for _, e := range r.Report.Entries {
+		if e.Kind != "Model" || e.Target == "" {
+			continue
+		}
+		for _, d := range s.Submit("private import " + e.Target + "::*;").Diagnostics {
+			if d.Severity == diag.SeverityError {
+				t.Fatalf("import %s::*: %v", e.Target, d)
+			}
+		}
+	}
 	return s
 }
 
@@ -288,7 +300,7 @@ func TestWeightedDecisionReadsOnlyTheSysMLProfilesProbability(t *testing.T) {
 	wantNote(t, r, "_eReject", migrate.Approximated, "the edge carries no «Probability»: it is weighted 1.0 - (bias + 0.3)")
 	s := session(t, r)
 	meta(t, s, "%seed 1")
-	wantVerdict(t, s.RunAction("Sorter::route"))
+	wantVerdict(t, s.RunAction("Sorter::Sorter::route"))
 }
 
 // weightedChooser is a block whose value properties hold the probabilities the
@@ -505,7 +517,7 @@ func TestAcceptPayloadNameDoesNotShadowSignalType(t *testing.T) {
 
 func TestAcceptPayloadNameAnchorsShadowedSignalPath(t *testing.T) {
 	r := migrateFixtureFileOptions(t, "accept_payload_package_shadow", migrate.Options{Strict: true})
-	wantLine(t, r.Notation, "accept Alarm : $::Alarm::Alarm;")
+	wantLine(t, r.Notation, "accept Alarm : Model::Alarm::Alarm;")
 	if errs := errorsMode(t, "accept_payload_package_shadow.sysml", r.Notation, diag.ConformanceStrict); len(errs) > 0 {
 		t.Errorf("strict accept signal migration has errors: %v\n%s", errs, r.Notation)
 	}
@@ -513,7 +525,7 @@ func TestAcceptPayloadNameAnchorsShadowedSignalPath(t *testing.T) {
 
 func TestAcceptPayloadDoesNotShadowSignalPackagePath(t *testing.T) {
 	r := migrateFixtureFileOptions(t, "accept_payload_package_segment_shadow", migrate.Options{Strict: true})
-	wantLine(t, r.Notation, "accept Alarm : $::Alarm::Beep;")
+	wantLine(t, r.Notation, "accept Alarm : Model::Alarm::Beep;")
 	if errs := errorsMode(t, "accept_payload_package_segment_shadow.sysml", r.Notation, diag.ConformanceStrict); len(errs) > 0 {
 		t.Errorf("strict accept signal migration has errors: %v\n%s", errs, r.Notation)
 	}
@@ -860,7 +872,7 @@ func TestActivityWithSendAcceptAndOperationCalls(t *testing.T) {
 		"bind 'set azimuth'.value = az;",
 		"abstract action park;",
 		"action def Go {",
-		"action receive accept go : $::Go;",
+		"action receive accept go : Model::Go;",
 		"first receive then receive;",
 		"perform action go : Go;",
 		"calc def Twice {",

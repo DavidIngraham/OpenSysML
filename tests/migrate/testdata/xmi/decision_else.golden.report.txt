@@ -6,10 +6,10 @@
 OpaqueAction	Recovery::Retrier::Recover::retry	_de_retry	-> retry	(the body is kept as a comment: the body is empty)
 
 ## mapped (14)
-Model	Model	_m	(the root model's members are written at the top level)
-Package	Recovery	_pkg	-> Recovery
-«Block» Class	Recovery::Retrier	_blk_retrier	-> Recovery::Retrier
-Activity	Recovery::Retrier::Recover	_act_recover	-> Recovery::Retrier::recover	(written as an action usage every object of Recovery::Retrier performs from creation, so its body runs on the object and reaches its features)
+Model	Model	_m	-> Model	(written as package Model)
+Package	Recovery	_pkg	-> Model::Recovery
+«Block» Class	Recovery::Retrier	_blk_retrier	-> Model::Recovery::Retrier
+Activity	Recovery::Retrier::Recover	_act_recover	-> Model::Recovery::Retrier::recover	(written as an action usage every object of Recovery::Retrier performs from creation, so its body runs on the object and reaches its features)
 ActivityFinalNode	Recovery::Retrier::Recover::<ActivityFinalNode>	_de_final	-> final
 ControlFlow	Recovery::Retrier::Recover::<ControlFlow>	_de_e3
 ControlFlow	Recovery::Retrier::Recover::<ControlFlow>	_de_e2
@@ -19,4 +19,4 @@ InitialNode	Recovery::Retrier::Recover::<InitialNode>	_de_init	-> start
 DecisionNode	Recovery::Retrier::Recover::decide	_de_decide	-> 'decide'
 Comment	Recovery::Retrier::Recover::decide::<Comment>	_de_cmt
 MergeNode	Recovery::Retrier::Recover::merge	_de_merge	-> 'merge'
-Property	Recovery::Retrier::attempts	_attempts	-> Recovery::Retrier::attempts
+Property	Recovery::Retrier::attempts	_attempts	-> Model::Recovery::Retrier::attempts
