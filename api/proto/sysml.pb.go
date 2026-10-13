@@ -11476,9 +11476,12 @@ func (x *RenderDocumentRequest) GetForm() string {
 // byte-for-byte what the CLI's -render-document writes: markdown for the
 // Markdown form, html for the HTML form, the other left empty.
 type RenderDocumentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Markdown      string                 `protobuf:"bytes,1,opt,name=markdown,proto3" json:"markdown,omitempty"`
-	Html          string                 `protobuf:"bytes,2,opt,name=html,proto3" json:"html,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Markdown string                 `protobuf:"bytes,1,opt,name=markdown,proto3" json:"markdown,omitempty"`
+	Html     string                 `protobuf:"bytes,2,opt,name=html,proto3" json:"html,omitempty"`
+	// The file a rendered set writes this document to in the requested form
+	// (-render-documents), which the other documents' links to it name.
+	FileName      string `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11523,6 +11526,13 @@ func (x *RenderDocumentResponse) GetMarkdown() string {
 func (x *RenderDocumentResponse) GetHtml() string {
 	if x != nil {
 		return x.Html
+	}
+	return ""
+}
+
+func (x *RenderDocumentResponse) GetFileName() string {
+	if x != nil {
+		return x.FileName
 	}
 	return ""
 }
@@ -13523,10 +13533,11 @@ const file_sysml_proto_rawDesc = "" +
 	"model_hash\x18\x01 \x01(\tR\tmodelHash\x12\x1f\n" +
 	"\vdocument_id\x18\x02 \x01(\tR\n" +
 	"documentId\x12\x12\n" +
-	"\x04form\x18\x03 \x01(\tR\x04form\"H\n" +
+	"\x04form\x18\x03 \x01(\tR\x04form\"e\n" +
 	"\x16RenderDocumentResponse\x12\x1a\n" +
 	"\bmarkdown\x18\x01 \x01(\tR\bmarkdown\x12\x12\n" +
-	"\x04html\x18\x02 \x01(\tR\x04html\"\\\n" +
+	"\x04html\x18\x02 \x01(\tR\x04html\x12\x1b\n" +
+	"\tfile_name\x18\x03 \x01(\tR\bfileName\"\\\n" +
 	"\x11RenderViewRequest\x12\x1d\n" +
 	"\n" +
 	"model_hash\x18\x01 \x01(\tR\tmodelHash\x12\x12\n" +

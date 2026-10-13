@@ -362,6 +362,8 @@ RenderedDocument page = model.renderDocument("Observatory::MassReport");
 page.markdown();             // the rendered notation
 RenderedDocument html = model.renderDocument("Observatory::MassReport", DocumentForm.HTML);
 html.html();                 // the same document as HTML
+html.fileName();             // "Observatory-MassReport.html": the file a rendered set writes it
+                             // to, which the other documents' links to it name
 ```
 
 `model.renderView("Demo::Overview")` returns a typed `RenderedView` with

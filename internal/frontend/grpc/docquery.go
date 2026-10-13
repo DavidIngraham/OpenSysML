@@ -175,13 +175,13 @@ func (s *Service) RenderDocument(ctx context.Context, req *pb.RenderDocumentRequ
 		if err != nil {
 			return nil, documentStatus(err)
 		}
-		return &pb.RenderDocumentResponse{Html: page}, nil
+		return &pb.RenderDocumentResponse{Html: page, FileName: files[symbols.FQNOf(sym)]}, nil
 	}
 	markdown, err := docrender.Markdown(document, docrender.MarkdownOptions{Files: files})
 	if err != nil {
 		return nil, documentStatus(err)
 	}
-	return &pb.RenderDocumentResponse{Markdown: markdown}, nil
+	return &pb.RenderDocumentResponse{Markdown: markdown, FileName: files[symbols.FQNOf(sym)]}, nil
 }
 
 // documentSymbol resolves the query or document a request names, failing with

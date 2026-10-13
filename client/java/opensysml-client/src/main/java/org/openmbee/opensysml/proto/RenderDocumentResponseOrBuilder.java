@@ -33,4 +33,26 @@ public interface RenderDocumentResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getHtmlBytes();
+
+  /**
+   * <pre>
+   * The file a rendered set writes this document to in the requested form
+   * (-render-documents), which the other documents' links to it name.
+   * </pre>
+   *
+   * <code>string file_name = 3 [json_name = "fileName"];</code>
+   * @return The fileName.
+   */
+  java.lang.String getFileName();
+  /**
+   * <pre>
+   * The file a rendered set writes this document to in the requested form
+   * (-render-documents), which the other documents' links to it name.
+   * </pre>
+   *
+   * <code>string file_name = 3 [json_name = "fileName"];</code>
+   * @return The bytes for fileName.
+   */
+  com.google.protobuf.ByteString
+      getFileNameBytes();
 }
