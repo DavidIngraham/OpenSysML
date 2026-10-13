@@ -177,6 +177,42 @@ func TestCallOperationOnATargetLeavesUnpairedPinsUndeclared(t *testing.T) {
 	}
 }
 
+// loopOnExtraPin is motorNetwork with Turn's call of Spin, carrying an output pin
+// no parameter of Spin produces, as the test of a loop that pin decides.
+var loopOnExtraPin = strings.NewReplacer(
+	`<node xmi:type="uml:CallOperationAction" xmi:id="_call" name="spin" operation="_spin">
+          <argument xmi:type="uml:InputPin" xmi:id="_callTo" name="to"/>
+          <target xmi:type="uml:InputPin" xmi:id="_callTgt" name="target"/>
+        </node>`,
+	`<node xmi:type="uml:LoopNode" xmi:id="_loop" name="check" isTestedFirst="true" decider="_callEcho">
+          <test xmi:idref="_call"/>
+          <bodyPart xmi:idref="_lbody"/>
+          <node xmi:type="uml:CallOperationAction" xmi:id="_call" name="spin" operation="_spin">
+            <argument xmi:type="uml:InputPin" xmi:id="_callTo" name="to"/>
+            <result xmi:type="uml:OutputPin" xmi:id="_callEcho" name="echo"/>
+            <target xmi:type="uml:InputPin" xmi:id="_callTgt" name="target"/>
+          </node>
+          <node xmi:type="uml:OpaqueAction" xmi:id="_lbody" name="rest">
+            <language>JavaScript</language>
+            <body>x = 1;</body>
+          </node>
+        </node>`,
+	`<edge xmi:type="uml:ControlFlow" xmi:id="_te2" source="_call" target="_tf"/>`,
+	`<edge xmi:type="uml:ControlFlow" xmi:id="_te2" source="_loop" target="_tf"/>`,
+).Replace(motorNetwork)
+
+// A loop whose decider is a pin of a call on a handed-in object that no parameter
+// of the operation produces is not written as a loop: nothing declares the pin,
+// so the loop's test could not name it.
+func TestLoopDecidedByAnUnpairedPinOfACallOnATargetFallsBack(t *testing.T) {
+	r := migrateDocument(t, loopOnExtraPin, motorNetworkApplications)
+	wantNote(t, r, "_loop", migrate.Approximated, "the decider 'echo' stands for no out parameter of what 'spin' calls, so it is not written: the body is written once")
+	for _, line := range []string{"spin.echo", "loop {", "until"} {
+		wantNoLine(t, r.Notation, line)
+	}
+	session(t, r)
+}
+
 // A call on an object a CreateObjectAction creates keeps its target pin and the
 // flow into it, but CreateObjectAction is not migrated: the ledger says the pin
 // holds no object, and a run stops at the call rather than running it elsewhere.
