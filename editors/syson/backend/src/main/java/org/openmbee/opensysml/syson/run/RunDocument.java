@@ -55,25 +55,22 @@ public record RunDocument(RunDocumentForm form, String content, String fileName)
         return stem + extension;
     }
 
-    // Segments of a qualified name, quotes removed; a quoted segment may hold `::`.
+    // Segments of the raw qualified name the service splits, as a rendered set does: quotes removed,
+    // `\'` and `\\` unescaped, and then every `::`, a quoted one included, a separator.
     static List<String> splitQualifiedName(String qualifiedName) {
-        List<String> segments = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
+        StringBuilder raw = new StringBuilder();
         boolean quoted = false;
         for (int i = 0; i < qualifiedName.length(); i++) {
             char ch = qualifiedName.charAt(i);
             if (ch == '\'') {
                 quoted = !quoted;
-            } else if (!quoted && ch == ':' && i + 1 < qualifiedName.length() && qualifiedName.charAt(i + 1) == ':') {
-                segments.add(current.toString());
-                current.setLength(0);
-                i++;
+            } else if (quoted && ch == '\\' && i + 1 < qualifiedName.length()) {
+                raw.append(qualifiedName.charAt(++i));
             } else {
-                current.append(ch);
+                raw.append(ch);
             }
         }
-        segments.add(current.toString());
-        return segments;
+        return List.of(raw.toString().split("::", -1));
     }
 
     private static boolean isDeviceStem(String stem) {

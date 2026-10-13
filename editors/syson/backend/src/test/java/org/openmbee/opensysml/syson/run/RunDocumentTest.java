@@ -31,7 +31,8 @@ class RunDocumentTest {
     void namesTheDocumentFileAsTheServiceDoes() {
         assertThat(RunDocument.fileName("Observatory::'Mass Appendix'", ".html"))
                 .isEqualTo("Observatory-Mass.20Appendix.html");
-        assertThat(RunDocument.fileName("Ünïcode::'a::b'", ".md")).isEqualTo("_.C3.9Cn.C3.AFcode-a.3A.3Ab.md");
+        assertThat(RunDocument.fileName("Ünïcode::'a::b'", ".md")).isEqualTo("_.C3.9Cn.C3.AFcode-a-b.md");
+        assertThat(RunDocument.fileName("'it\\'s'::'back\\\\slash'", ".md")).isEqualTo("it.27s-back.5Cslash.md");
         assertThat(RunDocument.fileName("CON", ".md")).isEqualTo("_.43ON.md");
         String cut = RunDocument.fileName("A".repeat(300), ".md");
         assertThat(cut).hasSize(255).endsWith(".md").contains("~");
