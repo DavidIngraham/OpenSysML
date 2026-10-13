@@ -56,5 +56,5 @@ n5 -- n6
 class "**cylinder**" as n7 <<part>> <<usage>>
 n5 -- n7
 n4 -- n5
-n0 *-- n5 : engine
+n0 *-- "engine" n5
 @enduml
