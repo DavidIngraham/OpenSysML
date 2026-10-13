@@ -232,14 +232,14 @@ func pinLine(port Port, ports portView) string {
 	return strings.TrimSpace(port.Direction.String() + " " + port.Name)
 }
 
-// textEdgeLabel is the text after an edge's ends: its label, except that an
-// action edge attached to pins is labelled by its name, since the ends name the
-// pins already.
+// textEdgeLabel is the text after an edge's ends: its texts folded into one,
+// the end names about its own, except that an action edge attached to pins is
+// labelled by its name, since the ends name the pins already.
 func textEdgeLabel(edge Edge, ports portView) string {
 	if ports.action && (edge.FromPort != "" || edge.ToPort != "") {
 		return edge.Name
 	}
-	return edge.Label
+	return edge.text()
 }
 
 // writeTableText writes a tabular rendering as aligned columns, padding each
