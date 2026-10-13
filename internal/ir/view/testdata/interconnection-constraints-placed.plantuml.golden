@@ -53,16 +53,16 @@ hide stereotype
 ' route: n4->n5 400,67 500,52
 ' route: n2->n5 120,175 500,92
 ' route: n5->n3 700,67 780,55
-rectangle "**signal**" as n0 <<attribute>> <<usage>>
-rectangle "**gain**" as n1 <<attribute>> <<usage>>
-rectangle "**noise**" as n2 <<attribute>> <<usage>>
-rectangle "**output**" as n3 <<attribute>> <<usage>>
-rectangle "**amplify**" as n4 <<constraint>> <<usage>> {
+rectangle "<size:10>//«attribute»//</size>\n**signal**" as n0 <<attribute>> <<usage>>
+rectangle "<size:10>//«attribute»//</size>\n**gain**" as n1 <<attribute>> <<usage>>
+rectangle "<size:10>//«attribute»//</size>\n**noise**" as n2 <<attribute>> <<usage>>
+rectangle "<size:10>//«attribute»//</size>\n**output**" as n3 <<attribute>> <<usage>>
+rectangle "<size:10>//«constraint»//</size>\n**amplify**" as n4 <<constraint>> <<usage>> {
   port "input" as n4.0
   port "gain" as n4.1
   port "output" as n4.2
 }
-rectangle "**mix**" as n5 <<constraint>> <<usage>> {
+rectangle "<size:10>//«constraint»//</size>\n**mix**" as n5 <<constraint>> <<usage>> {
   port "a" as n5.0
   port "b" as n5.1
   port "total" as n5.2

@@ -40,17 +40,17 @@ note {
 </style>
 skinparam wrapWidth 300
 hide stereotype
-rectangle "**Amplifier**" as n0 <<part def>> {
-  rectangle "**signal**" as n1 <<attribute>> <<usage>>
-  rectangle "**gain**" as n2 <<attribute>> <<usage>>
-  rectangle "**noise**" as n3 <<attribute>> <<usage>>
-  rectangle "**output**" as n4 <<attribute>> <<usage>>
-  rectangle "**amplify**" as n5 <<constraint>> <<usage>> {
+rectangle "<size:10>//«part def»//</size>\n**Amplifier**" as n0 <<part def>> {
+  rectangle "<size:10>//«attribute»//</size>\n**signal**" as n1 <<attribute>> <<usage>>
+  rectangle "<size:10>//«attribute»//</size>\n**gain**" as n2 <<attribute>> <<usage>>
+  rectangle "<size:10>//«attribute»//</size>\n**noise**" as n3 <<attribute>> <<usage>>
+  rectangle "<size:10>//«attribute»//</size>\n**output**" as n4 <<attribute>> <<usage>>
+  rectangle "<size:10>//«constraint»//</size>\n**amplify**" as n5 <<constraint>> <<usage>> {
     port "input" as n5.0
     port "gain" as n5.1
     port "output" as n5.2
   }
-  rectangle "**mix**" as n6 <<constraint>> <<usage>> {
+  rectangle "<size:10>//«constraint»//</size>\n**mix**" as n6 <<constraint>> <<usage>> {
     port "a" as n6.0
     port "b" as n6.1
     port "total" as n6.2

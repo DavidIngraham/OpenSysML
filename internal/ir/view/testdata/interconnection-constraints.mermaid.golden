@@ -23,19 +23,23 @@ config:
 ---
 %% ParametricViews::amplifierView — interconnection rendering (render asInterconnectionDiagram)
 flowchart LR
-  subgraph n0 ["`**Amplifier**`"]
+  subgraph n0 ["`*«part def»* **Amplifier**`"]
     direction LR
-    n1("`**signal**`")
-    n2("`**gain**`")
-    n3("`**noise**`")
-    n4("`**output**`")
-    subgraph n5 ["`**amplify**`"]
+    n1("`*«attribute»*
+**signal**`")
+    n2("`*«attribute»*
+**gain**`")
+    n3("`*«attribute»*
+**noise**`")
+    n4("`*«attribute»*
+**output**`")
+    subgraph n5 ["`*«constraint»* **amplify**`"]
       direction LR
       n5.0["input"]
       n5.1["gain"]
       n5.2["output"]
     end
-    subgraph n6 ["`**mix**`"]
+    subgraph n6 ["`*«constraint»* **mix**`"]
       direction LR
       n6.0["a"]
       n6.1["b"]

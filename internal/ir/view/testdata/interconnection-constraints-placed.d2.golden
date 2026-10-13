@@ -17,17 +17,17 @@ classes: {
 # route: n4->n5 400,67 500,52
 # route: n2->n5 120,175 500,92
 # route: n5->n3 700,67 780,55
-n0: "signal" { class: usage }
-n1: "gain" { class: usage }
-n2: "noise" { class: usage }
-n3: "output" { class: usage }
-n4: "amplify" {
+n0: "«attribute»\nsignal" { class: usage }
+n1: "«attribute»\ngain" { class: usage }
+n2: "«attribute»\nnoise" { class: usage }
+n3: "«attribute»\noutput" { class: usage }
+n4: "«constraint»\namplify" {
   class: usage
   "n4.0": "input" { class: pin }
   "n4.1": "gain" { class: pin }
   "n4.2": "output" { class: pin }
 }
-n5: "mix" {
+n5: "«constraint»\nmix" {
   class: usage
   "n5.0": "a" { class: pin }
   "n5.1": "b" { class: pin }

@@ -35,17 +35,21 @@ config:
 %% route: n2->n5 120,175 500,92
 %% route: n5->n3 700,67 780,55
 flowchart LR
-  n0("`**signal**`")
-  n1("`**gain**`")
-  n2("`**noise**`")
-  n3("`**output**`")
-  subgraph n4 ["`**amplify**`"]
+  n0("`*«attribute»*
+**signal**`")
+  n1("`*«attribute»*
+**gain**`")
+  n2("`*«attribute»*
+**noise**`")
+  n3("`*«attribute»*
+**output**`")
+  subgraph n4 ["`*«constraint»* **amplify**`"]
     direction LR
     n4.0["input"]
     n4.1["gain"]
     n4.2["output"]
   end
-  subgraph n5 ["`**mix**`"]
+  subgraph n5 ["`*«constraint»* **mix**`"]
     direction LR
     n5.0["a"]
     n5.1["b"]
