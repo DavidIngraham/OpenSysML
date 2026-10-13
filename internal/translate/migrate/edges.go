@@ -373,6 +373,10 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 		}
 		return []string{m.exposure(el, scope)}, ""
 	}
+	if m.backedProperty(el) != nil {
+		// The line is the backed attribute's edge, which takes no route.
+		return nil, routeNotWritten
+	}
 	if nameableEdge(el) {
 		em, ok := m.edgeMembers[el]
 		switch {
