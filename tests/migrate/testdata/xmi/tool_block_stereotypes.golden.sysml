@@ -60,4 +60,5 @@ package Plant {
             calc rows : 'Subsystems Rows';
         }
     }
+    metadata MigrationMetadata::SynthesizedName about feeds;
 }
