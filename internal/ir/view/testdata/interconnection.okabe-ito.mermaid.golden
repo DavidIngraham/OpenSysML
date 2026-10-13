@@ -23,19 +23,20 @@ config:
 ---
 %% PlantViews::loopView — interconnection rendering (render asInterconnectionDiagram)
 flowchart LR
-  subgraph n0 ["`**Loop**`"]
+  subgraph n0 ["`*«part def»* **Loop**`"]
     direction LR
-    subgraph n1 ["`**pump**`"]
+    subgraph n1 ["`*«part»* **pump**`"]
       direction LR
       n1_anchor[" "]
       n1.0["outlet"]
     end
-    subgraph n2 ["`**tank**`"]
+    subgraph n2 ["`*«part»* **tank**`"]
       direction LR
       n2_anchor[" "]
       n2.0["inlet"]
     end
-    n3("`**sensor**`")
+    n3("`*«part»*
+**sensor**`")
   end
   n1.0 === n2.0
   n1_anchor -.-> n2_anchor
