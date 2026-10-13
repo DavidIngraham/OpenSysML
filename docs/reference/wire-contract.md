@@ -2000,9 +2000,9 @@ $ … /Migrate -d '{"filePath":"Vehicle.xmi","toFormat":"sysml"}'
   "report": {
     "source": "Vehicle.xmi",
     "exporter": "Example UML Tool",
-    "summary": "migrated 95 element(s): 76 mapped, 16 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)",
-    "mapped": 76,
-    "approximated": 16,
+    "summary": "migrated 95 element(s): 77 mapped, 15 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)",
+    "mapped": 77,
+    "approximated": 15,
     "unmapped": 3,
     "skipped": 2
   }

@@ -738,7 +738,7 @@ end
                 @test occursin("part def Vehicle", migrated.content)
                 @test migrated.from_format == "xmi"
                 @test (migrated.report.mapped, migrated.report.approximated,
-                       migrated.report.unmapped, migrated.report.skipped) == (76, 16, 3, 2)
+                       migrated.report.unmapped, migrated.report.skipped) == (77, 15, 3, 2)
                 @test length(migrated.report.entries) == 97
                 @test length(by_verdict(migrated.report, VERDICT_UNMAPPED)) == 3
                 @test migrated.source_path == abspath(vehicle)
