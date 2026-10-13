@@ -9,6 +9,7 @@ import (
 
 	"github.com/Open-MBEE/OpenSysML/internal/doc/docrender"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/repl"
+	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/migrate"
 )
 
@@ -86,7 +87,7 @@ func markdownSection(md, heading string) string {
 // markdown renders a migrated document through the Markdown backend.
 func markdown(t *testing.T, s *repl.Session, name string) string {
 	t.Helper()
-	out, err := s.RenderDocumentMarkdown(name, docrender.MarkdownOptions{})
+	out, err := s.RenderDocumentMarkdown(name, docrender.MarkdownOptions{Show: view.AllShown()})
 	if err != nil {
 		t.Fatalf("render %s as Markdown: %v", name, err)
 	}
@@ -96,7 +97,7 @@ func markdown(t *testing.T, s *repl.Session, name string) string {
 // html renders a migrated document through the HTML backend as a fragment.
 func html(t *testing.T, s *repl.Session, name string) string {
 	t.Helper()
-	out, err := s.RenderDocumentHTML(name, docrender.HTMLOptions{Fragment: true})
+	out, err := s.RenderDocumentHTML(name, docrender.HTMLOptions{Fragment: true, Show: view.AllShown()})
 	if err != nil {
 		t.Fatalf("render %s as HTML: %v", name, err)
 	}
