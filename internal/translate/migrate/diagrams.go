@@ -1114,9 +1114,12 @@ func (p *layoutPlan) route(ref string, points []float64) string {
 	return b.String()
 }
 
-// linePoints is the line's points as the Route of el lists them: a connection
-// def's run from its first end's type to its second's, as a tree reads them.
+// linePoints is the line's points as the Route of el lists them, run from the written
+// element's first end to its second as a rendering reads them.
 func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	if el.Type == "Connector" {
+		return m.connectorLinePoints(el, c)
+	}
 	if !m.associationDef(el) {
 		return c.Points
 	}
@@ -1132,6 +1135,29 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 		return reversePoints(c.Points)
 	}
 	return c.Points
+}
+
+// connectorLinePoints is connector el's line run as `bind a = b` names its ends: reversed when
+// the stream drew it from the second end's feature; as drawn when it names no end or one feature.
+func (m *migration) connectorLinePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	segs, note := m.connectorEnds(el, el.Parent)
+	if note != "" || c.Ends[0] == "" && c.Ends[1] == "" {
+		return c.Points
+	}
+	first, second := endFeature(segs[0]), endFeature(segs[1])
+	if first == second {
+		return c.Points
+	}
+	if c.Ends[0] == second || c.Ends[1] == first {
+		return reversePoints(c.Points)
+	}
+	return c.Points
+}
+
+// endFeature is the id of the feature a connector end's path names last, the element
+// the symbol at that end of the line stands for.
+func endFeature(seg []*sysmlv1.Element) string {
+	return seg[len(seg)-1].ID
 }
 
 // reversePoints is the flattened point list read from its last point to its first.

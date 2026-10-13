@@ -410,7 +410,7 @@ and `umlType` (`Class Diagram`) together — by the first family below a word of
 | Diagram kind | Rendering |
 |---|---|
 | a table or matrix: Generic, Instance and Requirement Tables, Dependency and Allocation Matrices, any kind named `… Table`/`… Matrix` | `Views::asElementTable` |
-| internal block, parametric, composite structure and interconnection diagrams | `Views::asInterconnectionDiagram`; a parametric diagram of a block of the [Monte Carlo pattern](#monte-carlo-analyses) exposes the block's analysis def in place of the pattern's `Mean` symbol and the def's returns in place of its other statistics, the `Mean` binding routed along the def's `observed` |
+| internal block, parametric, composite structure and interconnection diagrams | `Views::asInterconnectionDiagram`; a parametric diagram's constraint properties are drawn as constraint usages with their parameters as squares on the border, the binding connectors' lines ending at the squares; a parametric diagram of a block of the [Monte Carlo pattern](#monte-carlo-analyses) exposes the block's analysis def in place of the pattern's `Mean` symbol and the def's returns in place of its other statistics, the `Mean` binding routed along the def's `observed` |
 | block definition, class, package, object, component, deployment, profile and other structure diagrams | `Views::asTreeDiagram` |
 | an activity diagram whose owner is written as an `action def`, a state machine (or statechart) diagram whose owner is written as a `state def`, showing a node or edge of its graph | `view : StandardViewDefinitions::ActionFlowView` / `StateTransitionView`, rendered `Views::asInterconnectionDiagram` |
 | a use case diagram | `Views::asInterconnectionDiagram` over the actors' `part` usages, the `use case` and `requirement` usages and the connections written for the actor associations, includes, extends and «Refine»s it shows; the renderer draws a use case's subject and `actor` parameters as pins on its node, not as nested nodes, so an actor is one node and its association one line ending at the use case |
@@ -504,7 +504,9 @@ identifier both files share (the record's `id` is the model's `xmi:id`).
 
 A record's element placements become `metadata DiagramLayout::Layout about <ref> { x; y; width;
 height; }` in the view's body, and its connector routes `metadata DiagramLayout::Route about <ref>
-{ points = (…); }`, qualified `$::DiagramLayout::` where a member shadows the library — the
+{ points = (…); }` — a connector's points run from the feature its first written end names to its
+second's, as `bind a = b` and `connect a to b` name them, so a line the symbol stream drew from the
+second end's symbol is written reversed — qualified `$::DiagramLayout::` where a member shadows the library — the
 geometry form [DiagramLayout](../project/diagram-layout-annotations.md) already defines, so every
 rendering honors it. Cameo stores y negated (top at or below zero); the migration writes
 `x = left`, `y = -top`, `width = right - left`, `height = top - bottom`, pixels y-down from the top
