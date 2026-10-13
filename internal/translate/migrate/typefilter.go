@@ -256,6 +256,13 @@ func standardHref(href string) (doc, name string, ok bool) {
 	return doc, frag, frag != ""
 }
 
+// hrefNamespace is the profile namespace an href's document denotes: the OMG
+// SysML.xmi's stereotypes are applied under its path without the suffix.
+func hrefNamespace(href string) string {
+	path, _, _ := strings.Cut(href, "#")
+	return strings.TrimSuffix(path, ".xmi")
+}
+
 // typeFilter decides how the element type ref names filters rows.
 func (m *migration) typeFilter(ref sysmlv1.ElementRef) typeFilter {
 	e := ref.Element
@@ -269,10 +276,17 @@ func (m *migration) typeFilter(ref sysmlv1.ElementRef) typeFilter {
 		case stereotypeTypes[name].types != nil || stereotypeTypes[name].usages != nil:
 			return m.nameUsages(fromTypes("«"+name+"»", stereotypeTypes[name]))
 		case toolBlockStereotypes[name]:
-			return m.nameUsages(toolBlockFilter(name))
-		default:
-			return typeFilter{label: "«" + name + "»", refused: "no v2 metaclass stands for the elements of «" + name + "»"}
+			// A bundled snapshot of the profile says what the stereotype is;
+			// the tool table speaks only when none declares it.
+			ancestors, declared := m.model.ModuleStereotypeAncestors(hrefNamespace(e.Href), name)
+			if !declared {
+				return m.nameUsages(toolBlockFilter(name))
+			}
+			if f, ok := specializedFilter(name, ancestors); ok {
+				return m.nameUsages(f)
+			}
 		}
+		return typeFilter{label: "«" + name + "»", refused: "no v2 metaclass stands for the elements of «" + name + "»"}
 	}
 	if e.IsProxy() {
 		return m.proxyTypeFilter(e)
@@ -349,13 +363,14 @@ func specializedFilter(name string, ancestors []sysmlv1.StereotypeRef) (typeFilt
 }
 
 // standardAncestor names the standard stereotype an ancestor is: one the
-// document or tool table names in the SysML namespace, or a proxy whose href
-// points into the OMG profile, as classification reads it.
+// document or tool table names in the SysML namespace, or an element of a
+// standard profile, a proxy into the OMG one or a snapshot's declaration whose
+// profile nothing in the document names, as classification reads it.
 func standardAncestor(a sysmlv1.StereotypeRef) (string, bool) {
 	if a.Name != "" && isStandardNamespace(a.Namespace) {
 		return a.Name, true
 	}
-	if e := a.Element; e != nil && e.IsProxy() && e.Name != "" && isStandardDefinition(e) {
+	if e := a.Element; e != nil && e.Name != "" && isStandardDefinition(e) {
 		return e.Name, true
 	}
 	return "", false

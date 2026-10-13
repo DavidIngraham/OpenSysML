@@ -135,4 +135,14 @@ func TestSpecializedFilterFollowsModuleGenerals(t *testing.T) {
 	if _, ok := specializedFilter("Subsystem", []sysmlv1.StereotypeRef{user}); ok {
 		t.Error("a stereotype specializing an unbundled user «Block» filters as a standard block")
 	}
+	sysmlProfile := &sysmlv1.Element{ID: "_md_sysml", Type: "Profile", Name: "SysML", Attrs: map[string]string{}}
+	bundled := sysmlv1.StereotypeRef{ID: "_md_block", Element: &sysmlv1.Element{ID: "_md_block", Type: "Stereotype", Name: "Block", Parent: sysmlProfile}}
+	if got, ok := specializedFilter("Structural", []sysmlv1.StereotypeRef{bundled}); !ok || !slices.Equal(got.types, []string{typePartDef, typeOccurrenceDef}) {
+		t.Errorf("Structural :> a snapshot «Block» of the SysML profile nothing applies = %+v, %v; want the Block types", got, ok)
+	}
+	orgProfile := &sysmlv1.Element{ID: "_org", Type: "Profile", Name: "Org", Attrs: map[string]string{"URI": "http://example.com/schemas/Org.xmi"}}
+	orgBlock := sysmlv1.StereotypeRef{ID: "_org_block", Element: &sysmlv1.Element{ID: "_org_block", Type: "Stereotype", Name: "Block", Parent: orgProfile}}
+	if _, ok := specializedFilter("Structural", []sysmlv1.StereotypeRef{orgBlock}); ok {
+		t.Error("a stereotype specializing a user module's own «Block» filters as a standard block")
+	}
 }
