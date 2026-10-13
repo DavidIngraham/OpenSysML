@@ -38,7 +38,7 @@ func TestEndNamesAreSetAtTheirEnd(t *testing.T) {
 		FormMermaid:  {`◆ wheels[4]`},
 		FormText:     {`Fleet::Vehicle *-- Fleet::Wheel: wheels[4]`},
 	} {
-		out, err := rendering.Write(form)
+		out, err := rendering.WriteWith(form, fullNotation)
 		if err != nil {
 			t.Fatalf("write %s: %v", form, err)
 		}

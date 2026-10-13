@@ -2,23 +2,23 @@ MicroscopeViews::structure - tree rendering (the view states no rendering; a tre
 
 canvas size 1100×420 in px
 
-part def Microscope::ScanningElectronMicroscope at (400, 20) size 300×80
-  part imagingParameters : ImagingParameters
-  part focusSettings : FocusSettings
-  part backscatteredElectronDetector : ElectronDetector
-  part secondaryElectronDetector : ElectronDetector
-  part objectiveLens : ObjectiveLens
-  part stigmator : Stigmator
-part def Microscope::ImagingParameters at (20, 300) size 180×70
-part def Microscope::FocusSettings at (230, 300) size 160×70
-part def Microscope::ElectronDetector at (420, 300) size 200×70
-part def Microscope::ObjectiveLens at (660, 300) size 160×70
-part def Microscope::Stigmator at (860, 300) size 160×70
+part def ScanningElectronMicroscope at (400, 20) size 300×80
+  part imagingParameters
+  part focusSettings
+  part backscatteredElectronDetector
+  part secondaryElectronDetector
+  part objectiveLens
+  part stigmator
+part def ImagingParameters at (20, 300) size 180×70
+part def FocusSettings at (230, 300) size 160×70
+part def ElectronDetector at (420, 300) size 200×70
+part def ObjectiveLens at (660, 300) size 160×70
+part def Stigmator at (860, 300) size 160×70
 
 relationships:
-  Microscope::ScanningElectronMicroscope *-- Microscope::ImagingParameters: imagingParameters via (550, 100) (550, 200) (110, 200) (110, 300)
-  Microscope::ScanningElectronMicroscope *-- Microscope::FocusSettings: focusSettings via (550, 100) (550, 200) (310, 200) (310, 300)
-  Microscope::ScanningElectronMicroscope *-- Microscope::ElectronDetector: backscatteredElectronDetector via (550, 100) (550, 200) (480, 200) (480, 300)
-  Microscope::ScanningElectronMicroscope *-- Microscope::ElectronDetector: secondaryElectronDetector via (550, 100) (550, 200) (560, 200) (560, 300)
-  Microscope::ScanningElectronMicroscope *-- Microscope::ObjectiveLens: objectiveLens via (550, 100) (550, 200) (740, 200) (740, 300)
-  Microscope::ScanningElectronMicroscope *-- Microscope::Stigmator: stigmator via (550, 100) (550, 200) (940, 200) (940, 300)
+  ScanningElectronMicroscope *-- ImagingParameters: imagingParameters via (550, 100) (550, 200) (110, 200) (110, 300)
+  ScanningElectronMicroscope *-- FocusSettings: focusSettings via (550, 100) (550, 200) (310, 200) (310, 300)
+  ScanningElectronMicroscope *-- ElectronDetector: backscatteredElectronDetector via (550, 100) (550, 200) (480, 200) (480, 300)
+  ScanningElectronMicroscope *-- ElectronDetector: secondaryElectronDetector via (550, 100) (550, 200) (560, 200) (560, 300)
+  ScanningElectronMicroscope *-- ObjectiveLens: objectiveLens via (550, 100) (550, 200) (740, 200) (740, 300)
+  ScanningElectronMicroscope *-- Stigmator: stigmator via (550, 100) (550, 200) (940, 200) (940, 300)
