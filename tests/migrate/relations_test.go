@@ -48,9 +48,23 @@ func entriesFor(r *migrate.Result, id string) []migrate.Entry {
 
 func wantLine(t *testing.T, notation []byte, line string) {
 	t.Helper()
-	if !strings.Contains(string(notation), line) {
+	if !hasBlock(string(notation), line) {
 		t.Errorf("notation lacks %q:\n%s", line, notation)
 	}
+}
+
+// hasBlock reports whether notation holds want's lines consecutively, each at
+// one same indentation: a declaration reads alike at whatever depth its
+// package nests it.
+func hasBlock(notation, want string) bool {
+	for _, line := range strings.Split(notation, "\n") {
+		indent := line[:len(line)-len(strings.TrimLeft(line, " "))]
+		block := indent + strings.ReplaceAll(want, "\n", "\n"+indent)
+		if strings.Contains(notation, block) {
+			return true
+		}
+	}
+	return false
 }
 
 // flowModel is a system whose connector lists the flow's target end first,
@@ -213,7 +227,7 @@ func TestNamedBindingConnectorKeepsItsName(t *testing.T) {
     </packagedElement>`,
 		`<sysml:Block xmi:id="_s1" base_Class="_s"/><sysml:BindingConnector xmi:id="_s2" base_Connector="_bc"/>`)
 	wantLine(t, r.Notation, "binding tie bind x = y;")
-	if es := entriesFor(r, "_bc"); len(es) != 1 || es[0].Target != "S::tie" {
+	if es := entriesFor(r, "_bc"); len(es) != 1 || es[0].Target != "Model::S::tie" {
 		t.Errorf("entries = %+v", es)
 	}
 	for _, d := range errors(t, "binding.sysml", r.Notation) {
@@ -342,8 +356,8 @@ func TestShadowedReferencesAreGlobal(t *testing.T) {
   <sysml:Block xmi:id="_s3" base_Class="_qa"/>
   <sysml:Block xmi:id="_s4" base_Class="_qp"/>
   <sysml:Block xmi:id="_s5" base_Class="_h"/>`)
-	wantLine(t, r.Notation, "part x : $::A;")
-	wantLine(t, r.Notation, "part y : $::P::B;")
+	wantLine(t, r.Notation, "part x : Model::A;")
+	wantLine(t, r.Notation, "part y : Model::P::B;")
 	wantLine(t, r.Notation, "part z : A;")
 	for _, d := range errors(t, "shadow.sysml", r.Notation) {
 		t.Errorf("%v", d)
@@ -1413,12 +1427,12 @@ func TestNamedRelationshipsKeepTheirNames(t *testing.T) {
 		verdict migrate.Verdict
 		target  string
 	}{
-		"_sat":   {migrate.Mapped, "Thing::sat"},
-		"_ver":   {migrate.Mapped, "Check::ver"},
-		"_ref":   {migrate.Approximated, "'ref'"},
-		"_alloc": {migrate.Mapped, "alloc"},
-		"_trace": {migrate.Approximated, "trace"},
-		"_copy":  {migrate.Approximated, "copy"},
+		"_sat":   {migrate.Mapped, "Model::Thing::sat"},
+		"_ver":   {migrate.Mapped, "Model::Check::ver"},
+		"_ref":   {migrate.Approximated, "Model::'ref'"},
+		"_alloc": {migrate.Mapped, "Model::alloc"},
+		"_trace": {migrate.Approximated, "Model::trace"},
+		"_copy":  {migrate.Approximated, "Model::copy"},
 	} {
 		if es := entriesFor(r, id); len(es) != 1 || es[0].Verdict != want.verdict || es[0].Target != want.target {
 			t.Errorf("%s: entries = %+v, want %v %q", id, es, want.verdict, want.target)
@@ -1790,8 +1804,8 @@ func TestConnectionNameYieldsToAPackageMember(t *testing.T) {
 	wantLine(t, r.Notation, "use case Link;")
 	wantLine(t, r.Notation, "connection 'Link 2' connect Alpha to Req {")
 	wantNoLine(t, r.Notation, "connection Link ")
-	if got := entriesFor(r, "_ref"); len(got) != 1 || got[0].Verdict != migrate.Approximated || got[0].Target != "'Link 2'" {
-		t.Errorf("_ref: entries = %+v, want one approximated 'Link 2'", got)
+	if got := entriesFor(r, "_ref"); len(got) != 1 || got[0].Verdict != migrate.Approximated || got[0].Target != "Model::'Link 2'" {
+		t.Errorf("_ref: entries = %+v, want one approximated Model::'Link 2'", got)
 	}
 	// An association's connection def keeps its name; the usage typed by it yields.
 	r = migrateDocument(t, `

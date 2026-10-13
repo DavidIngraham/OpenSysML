@@ -465,8 +465,6 @@ func (m *migration) connHost(d, a, b *sysmlv1.Element) (host *sysmlv1.Element, o
 	for p := b.Parent; p != nil; p = p.Parent {
 		switch {
 		case !above[p]:
-		case isTopLevel(p):
-			return nil, true
 		case (p.Type == "Package" || p.Type == "Model") && m.written(p):
 			return p, true
 		}
