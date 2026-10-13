@@ -19,6 +19,15 @@ func TestMetaclassFiltersExcludeNewConformingTypes(t *testing.T) {
 			name: "Property",
 			want: `Except(source = WhereType(source = row, type = ("AttributeUsage", "PartUsage", "ItemUsage", "ReferenceUsage", "PortUsage", "ConstraintUsage", "RequirementUsage", "ActionUsage", "StateUsage", "CalculationUsage", "UseCaseUsage", "OccurrenceUsage")), exclude = Except(source = WhereType(source = row, type = ("EventOccurrenceUsage")), exclude = WhereType(source = row, type = ("AttributeUsage", "PartUsage", "ItemUsage", "ReferenceUsage", "PortUsage", "ConstraintUsage", "RequirementUsage", "ActionUsage", "StateUsage", "CalculationUsage", "UseCaseUsage"))))`,
 		},
+		{
+			// A state def and a calc def conform to ActionDefinition; an operation becomes neither.
+			name: "Operation",
+			want: `Except(source = WhereType(source = row, type = ("ActionDefinition")), exclude = WhereType(source = row, type = ("StateDefinition", "CalculationDefinition")))`,
+		},
+		{
+			name: "Activity",
+			want: `Except(source = WhereType(source = row, type = ("ActionDefinition", "CalculationDefinition")), exclude = Except(source = WhereType(source = row, type = ("StateDefinition")), exclude = WhereType(source = row, type = ("CalculationDefinition"))))`,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -76,6 +85,23 @@ func TestMergedTypeFiltersCombineExclusions(t *testing.T) {
 	}
 	if !slices.Equal(merged.excluding.keep, wantKeep) {
 		t.Errorf("merged exclusion keep = %v, want %v", merged.excluding.keep, wantKeep)
+	}
+}
+
+// An Operation table excludes calc defs, an OpaqueBehavior table admits them: together they keep them.
+func TestMergedBehaviorFiltersKeepTheDefinitionsOneAdmits(t *testing.T) {
+	merged := mergeTypeFilters([]typeFilter{
+		metaclassFilter("Operation"),
+		metaclassFilter("OpaqueBehavior"),
+	})
+	if merged.excluding == nil {
+		t.Fatal("merged filter has no exclusions")
+	}
+	if want := []string{typeStateDef, typeCalcDef}; !slices.Equal(merged.excluding.source, want) {
+		t.Errorf("merged exclusion source = %v, want %v", merged.excluding.source, want)
+	}
+	if want := []string{typeCalcDef}; !slices.Equal(merged.excluding.keep, want) {
+		t.Errorf("merged exclusion keep = %v, want %v", merged.excluding.keep, want)
 	}
 }
 
