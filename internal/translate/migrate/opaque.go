@@ -1848,7 +1848,8 @@ func mathScalarCall(fn, written string, args []translated, arity func(int) *refu
 	}
 }
 
-// mathAbs writes Math.abs through the library its argument's scalar picks.
+// mathAbs writes Math.abs through the library its argument's scalar picks; a Complex
+// has the Real modulus ComplexFunctions::abs answers.
 func mathAbs(arg translated) translated {
 	lib := "NumericalFunctions"
 	switch {
@@ -1856,6 +1857,8 @@ func mathAbs(arg translated) translated {
 		lib = "IntegerFunctions"
 	case realConformant(arg.scalar):
 		lib = "RealFunctions"
+	case arg.scalar == "Complex":
+		return translated{expr: "ComplexFunctions::abs(" + arg.expr + ")", scalar: "Real", atomic: true}
 	}
 	return translated{expr: lib + "::abs(" + arg.expr + ")", scalar: arg.scalar, atomic: true}
 }
@@ -1884,11 +1887,11 @@ func (p *opaqueParser) mathExtremum(fn, written string, args []translated, arity
 		return translated{}, &refusal{kind: refusedCall, token: written, why: written + " with no arguments yields an infinity, which has no v2 form in the subset"}
 	}
 	acc := args[0]
-	if err := numbersAt(written, acc); err != nil {
+	if err := orderedAt(written, acc); err != nil {
 		return translated{}, err
 	}
 	for _, arg := range args[1:] {
-		if err := numbersAt(written, acc, arg); err != nil {
+		if err := orderedAt(written, acc, arg); err != nil {
 			return translated{}, err
 		}
 		scalar := extremumScalar(acc.scalar, arg.scalar)
@@ -2004,8 +2007,8 @@ func stringEquals(recv translated, fn string, arg translated) (translated, *refu
 	return binary(recv, "==", arg, looseEquality, "Boolean"), nil
 }
 
-// extremumScalar is the scalar a max or min of numbers of the two scalars yields:
-// the Number the NumericalFunctions return unless both are Integers or both Reals.
+// extremumScalar is the scalar a max or min of ordered numbers of the two scalars
+// yields: the Number the NumericalFunctions return unless both are Integers or both Reals.
 func extremumScalar(a, b string) string {
 	switch {
 	case a == "" || b == "":
@@ -2090,6 +2093,20 @@ func realsAt(op string, sides ...translated) *refusal {
 	for _, s := range sides {
 		if s.scalar == "Complex" {
 			return &refusal{kind: refusedType, token: op, why: "an operand is a Complex, not a Real"}
+		}
+	}
+	return nil
+}
+
+// orderedAt refuses operands of op that are known not to be ordered numbers:
+// a Complex has no order for a max or min to pick by.
+func orderedAt(op string, sides ...translated) *refusal {
+	if err := numbersAt(op, sides...); err != nil {
+		return err
+	}
+	for _, s := range sides {
+		if s.scalar == "Complex" {
+			return &refusal{kind: refusedType, token: op, why: "an operand is a Complex, which has no order"}
 		}
 	}
 	return nil
