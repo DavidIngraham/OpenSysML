@@ -51,15 +51,18 @@ package 'Vehicle Design' {
         flow of 'Vehicle Design'::Interfaces::Fuel from fuelIn.fuel to engine.fuelPort.fuel;
         bind mass = massLimit.m;
         bind speedOut = engine.piston.p;
-        abstract action def start {
+        abstract action start {
             in key : ScalarValues::Integer[1];
         }
-        action 'start 2' : start;
         state def 'Vehicle States' {
             /* the region has no initial pseudostate: nothing enters it */
             state Off;
         }
-        assert constraint 'positive mass' { mass > 0 }
+        constraint def 'Positive mass' {
+            in ref context : Vehicle[1];
+            context.mass > 0
+        }
+        assert constraint 'positive mass' : 'Positive mass' { in ref :>> context = this; }
         part def Chassis {
             attribute mass : 'Vehicle Design'::'Value Types'::Mass;
         }
@@ -116,7 +119,7 @@ package 'Vehicle Design' {
         in attribute limit : 'Vehicle Design'::'Value Types'::Mass[1];
         m < limit
     }
-    individual part def myCar :> Vehicle {
+    part myCar : Vehicle {
         attribute :>> mass = 1350.5;
         attribute :>> color = 'Vehicle Design'::'Value Types'::Color::blue;
     }
