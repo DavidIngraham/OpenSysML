@@ -112,7 +112,7 @@
       },
       "uml:Association": {
         "pssm": 4,
-        "fixtures": 19
+        "fixtures": 18
       },
       "uml:BroadcastSignalAction": {
         "pssm": 0,
@@ -140,7 +140,7 @@
       },
       "uml:Class": {
         "pssm": 311,
-        "fixtures": 498
+        "fixtures": 499
       },
       "uml:ClearAssociationAction": {
         "pssm": 0,
@@ -156,7 +156,7 @@
       },
       "uml:Constraint": {
         "pssm": 59,
-        "fixtures": 25
+        "fixtures": 30
       },
       "uml:ControlFlow[weight]": {
         "pssm": 0,
@@ -248,7 +248,7 @@
       },
       "uml:Property": {
         "pssm": 25,
-        "fixtures": 484
+        "fixtures": 491
       },
       "uml:Property[qualifier]": {
         "pssm": 0,
