@@ -695,7 +695,8 @@ def _render_property(feature: Feature, names: Dict[str, str]) -> List[str]:
 
 
 def generate_source(
-    model, source_text: "Union[str, Sequence[str]]", packages: Sequence[str] = ()
+    model, source_text: "Union[str, Sequence[str]]", packages: Sequence[str] = (),
+    *, format: str = "view", selected: Optional[Sequence[str]] = None
 ) -> str:
     """Render the typed module for a loaded :class:`~opensysml.model.Model`.
 
@@ -707,6 +708,25 @@ def generate_source(
     """
     texts = [source_text] if isinstance(source_text, str) else list(source_text)
     definitions = select_packages(collect_definitions(*model.roots), packages)
+    if selected:
+        by_id = {d.id: d for d in definitions}
+        keep = set()
+        def include(name):
+            if name in keep:
+                return
+            if name not in by_id:
+                raise ValueError("Unknown definition: " + name)
+            keep.add(name)
+            for base in by_id[name].base_ids:
+                include(base)
+        for name in selected:
+            include(name)
+        definitions = [d for d in definitions if d.id in keep]
+    if format == "dataclass":
+        from opensysml.generate_records import render_dataclasses
+        return render_dataclasses(definitions, model_stamp(*texts))
+    if format != "view":
+        raise ValueError("Unknown generation format: " + format)
     return render_module(definitions, model_stamp(*texts))
 
 
@@ -747,6 +767,10 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         metavar="SOURCE",
         help="path to a .sysml/.kerml file, or a directory of them",
     )
+    parser.add_argument("--format", choices=("view", "dataclass"), default="view",
+                        help="live typed views or standalone scalar dataclasses")
+    parser.add_argument("--definition", action="append",
+                        help="generate this qualified definition and its bases; repeatable")
     parser.add_argument("-o", "--output", help="output .py path (default: stdout)")
     parser.add_argument(
         "--package",
@@ -817,7 +841,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             return 1
 
         try:
-            source = generate_source(model, source_texts, args.package)
+            source = generate_source(model, source_texts, args.package,
+                                     format=args.format, selected=args.definition)
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
@@ -836,6 +861,9 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             command.append(f"--host {args.host}")
         if args.port is not None:
             command.append(f"--port {args.port}")
+        if args.format != "view":
+            command.append("--format " + args.format)
+        command.extend("--definition " + name for name in args.definition or [])
         print(
             f"error: {args.output} {reason}; regenerate with: "
             f"{' '.join(command)} -o {args.output}",
