@@ -37,12 +37,18 @@ config:
 %% route: n0->n10 550,100 550,200 740,200 740,300
 %% route: n0->n11 550,100 550,200 940,200 940,300
 flowchart TD
-  n0["`**ScanningElectronMicroscope**`"]
-  n7["`**ImagingParameters**`"]
-  n8["`**FocusSettings**`"]
-  n9["`**ElectronDetector**`"]
-  n10["`**ObjectiveLens**`"]
-  n11["`**Stigmator**`"]
+  n0["`*«part def»*
+**ScanningElectronMicroscope**`"]
+  n7["`*«part def»*
+**ImagingParameters**`"]
+  n8["`*«part def»*
+**FocusSettings**`"]
+  n9["`*«part def»*
+**ElectronDetector**`"]
+  n10["`*«part def»*
+**ObjectiveLens**`"]
+  n11["`*«part def»*
+**Stigmator**`"]
   n0 ---|"◆ imagingParameters"| n7
   n0 ---|"◆ focusSettings"| n8
   n0 ---|"◆ backscatteredElectronDetector"| n9
