@@ -42,24 +42,24 @@ note {
 skinparam wrapWidth 300
 hide stereotype
 left to right direction
-usecase "**'Provide Transportation'**" as n0 <<use case>> <<usage>>
-rectangle "**vehicle**" as n1 <<subject>> <<usage>>
-actor "**driver**" as n2 <<actor>> <<usage>>
+usecase "<size:10>//«use case»//</size>\n**'Provide Transportation'**" as n0 <<use case>> <<usage>>
+rectangle "<size:10>//«subject»//</size>\n**vehicle**" as n1 <<subject>> <<usage>>
+actor "<size:10>//«actor»//</size>\n**driver**" as n2 <<actor>> <<usage>>
 note "**objective**\nTransport the vehicle and its passengers safely." as n3
-usecase "**'Add Fuel'**" as n4 <<use case def>>
-rectangle "**vehicle**" as n5 <<subject>> <<usage>>
-actor "**fueler**" as n6 <<actor>> <<usage>>
-usecase "**'enter vehicle'**" as n7 <<include use case>> <<usage>>
-rectangle "**vehicle**" as n8 <<subject>> <<usage>>
-actor "**driver**" as n9 <<actor>> <<usage>>
-usecase "**'Drive Vehicle'**" as n10 <<use case>> <<usage>>
-rectangle "**vehicle**" as n11 <<subject>> <<usage>>
-actor "**driver**" as n12 <<actor>> <<usage>>
-usecase "**FuelAnalysis**" as n13 <<analysis def>>
-rectangle "**vehicle**" as n14 <<subject>> <<usage>>
+usecase "<size:10>//«use case def»//</size>\n**'Add Fuel'**" as n4 <<use case def>>
+rectangle "<size:10>//«subject»//</size>\n**vehicle**" as n5 <<subject>> <<usage>>
+actor "<size:10>//«actor»//</size>\n**fueler**" as n6 <<actor>> <<usage>>
+usecase "<size:10>//«include use case»//</size>\n**'enter vehicle'**" as n7 <<include use case>> <<usage>>
+rectangle "<size:10>//«subject»//</size>\n**vehicle**" as n8 <<subject>> <<usage>>
+actor "<size:10>//«actor»//</size>\n**driver**" as n9 <<actor>> <<usage>>
+usecase "<size:10>//«use case»//</size>\n**'Drive Vehicle'**" as n10 <<use case>> <<usage>>
+rectangle "<size:10>//«subject»//</size>\n**vehicle**" as n11 <<subject>> <<usage>>
+actor "<size:10>//«actor»//</size>\n**driver**" as n12 <<actor>> <<usage>>
+usecase "<size:10>//«analysis def»//</size>\n**FuelAnalysis**" as n13 <<analysis def>>
+rectangle "<size:10>//«subject»//</size>\n**vehicle**" as n14 <<subject>> <<usage>>
 note "**objective**\nEstimate the fuel remaining after a journey." as n15
-usecase "**FuelVerification**" as n16 <<verification def>>
-rectangle "**vehicle**" as n17 <<subject>> <<usage>>
+usecase "<size:10>//«verification def»//</size>\n**FuelVerification**" as n16 <<verification def>>
+rectangle "<size:10>//«subject»//</size>\n**vehicle**" as n17 <<subject>> <<usage>>
 note "**objective**" as n18
 n0 -- n1 : <U+00AB>subject<U+00BB>
 n2 -- n0
