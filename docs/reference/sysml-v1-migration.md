@@ -563,7 +563,11 @@ the diagram's layout note and the summary's `streamSupplemented` count say when 
 from its own stream alone. A symbol the stream keeps but does not draw (`visible` false), with
 every symbol nested in it and every part, region or compartment row it lists, shows nothing: the
 view does not expose its element for it, it takes no position or style, and a hidden frame does
-not bound the diagram. A symbol's position and style go to the element it names itself, not to
+not bound the diagram. The shapes Cameo lists under a part shape's `parts` or a state shape's
+`regions` rather than its `mdOwnedViews` — the parts, constraint usages, connectors and comments
+drawn inside a part — are symbols of their own, parented to the enclosing shape, so they are
+placed inside it and routed between its contents while the enclosing part keeps its own
+placement. A symbol's position and style go to the element it names itself, not to
 the last part or region listed under it. A route the export gives an edge the migration wrote
 as several members — a control flow written as a succession into a join the migrator made up,
 and from that join on — is pinned to the members whose both ends a diagram symbol stands at, so
