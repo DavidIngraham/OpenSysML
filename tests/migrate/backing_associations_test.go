@@ -8,12 +8,8 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/translate/migrate"
 )
 
-// An anonymous association whose member ends are a value property or
-// constraint parameter and an end the association owns, typed by the
-// property's owner, only backs the property's type: it is skipped as notation
-// only, with its owned end, and no connection def or connection is written.
-// The same shape backing a part property is a composition and stays a
-// connection def, drawn as a line whose route the diagram pins.
+// The association backing a value property or constraint parameter is skipped
+// with its owned end; the same shape backing a part stays a connection def.
 func TestBackingAssociationOfValuePropertyIsSkipped(t *testing.T) {
 	r := migrateStream(t, "backing_associations")
 	checkGolden(t, "testdata/xmi/backing_associations.golden.sysml", r.Notation)

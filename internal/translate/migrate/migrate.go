@@ -2150,10 +2150,8 @@ func (m *migration) associationAsConnectionDef(e *sysmlv1.Element) bool {
 	return false
 }
 
-// backedProperty is the value property or constraint parameter anonymous
-// association e only backs, or nil. A tool backs a feature's type with an
-// association whose other end it owns, typed by the feature's owner; one to a
-// value type links nothing, as a value is not a referent, so it is notation only.
+// backedProperty is the value property or constraint parameter the anonymous
+// association e only backs (its other end typed by the owner), or nil.
 func (m *migration) backedProperty(e *sysmlv1.Element) *sysmlv1.Element {
 	if e.Type != "Association" || e.Name != "" || len(e.Stereotypes) > 0 {
 		return nil
