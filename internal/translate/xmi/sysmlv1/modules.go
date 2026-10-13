@@ -176,6 +176,17 @@ func (m *Model) moduleDefinition(s *Stereotype) (moduleStereotype, bool) {
 	return found, any
 }
 
+// ModuleStereotypeAncestors is StereotypeAncestors for the stereotype name
+// a module snapshot declares in the profile namespace denotes, as an
+// application under that namespace resolves it.
+func (m *Model) ModuleStereotypeAncestors(namespace, name string) ([]StereotypeRef, bool) {
+	decl, ok := m.moduleDefinition(&Stereotype{Namespace: namespace, Name: name})
+	if !ok {
+		return nil, false
+	}
+	return m.StereotypeAncestors(decl.id)
+}
+
 // moduleGeneral finds the snapshot declaration a general of a document's
 // classifier names when it is a proxy whose href fragment is a snapshot id.
 func (m *Model) moduleGeneral(g *Element) (moduleStereotype, bool) {
