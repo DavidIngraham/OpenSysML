@@ -307,6 +307,21 @@ the source had none (`MigrationMetadata::SynthesizedName`) never becomes a label
 text of its own and such a name is drawn unlabelled, as its source drew it. The rule is one place,
 so the text, Mermaid, DOT and PlantUML forms label an edge alike.
 
+An association end's name is not the edge's text but the name of one end of it: a composite
+part's name and multiplicity on the composition from its owner to its type, `wheels[4]`, and a
+`ref`'s on the reference edge, belong at the type's end, where the graphical notation and the
+v1 tools draw an end name. The edge records them as `Edge.ToLabel` (`Edge.FromLabel` for the
+end at the owner; neither is set today, the graphs name only the type's end), apart from
+`Edge.Label`, and each writer sets them at the end where its grammar has such a place: DOT as
+`headlabel`/`taillabel` — Graphviz sets them by the head and tail of a laid-out edge, and a
+routed edge places them itself ([Geometry](#geometry)) — PlantUML in quotes before the end's
+alias (`n0 *-- "wheels[4]" n16`), D2 as the arrowhead's label (`target-arrowhead: { label:
+"wheels[4]" }`). Mermaid's flowchart and the text form have no place at an end, so they fold the
+names into the edge's text about its own (`Edge.text`), `◆ wheels[4]`, as they read before; the
+render JSON of the LSP does the same (`EdgeData.Text`), since it carries no label positions.
+A connection's own name stays the edge's text, mid-edge. A `connection def` drawn as an edge
+through the same path would name its `end` features the same way, one at each end.
+
 A trigger names its signal or operation the way a node's type is named, by the name the reference
 ends in (`triggerLabel` in `behavior.go`): `accept Signals::'APS Internal'::'Go Now'` reads
 `accept 'Go Now'`, a named payload keeps its name (`accept msg : Halt`) and a call trigger its
@@ -484,7 +499,9 @@ digraph "VehicleViews::vehicleView" {
   notice; it states a value, not a wire. A boxed node's pins are nodes of their own,
   `"n5.0" [shape=box, label="", xlabel="mask", fontsize=8, width=0.1667, height=0.1667,
   fixedsize=true, pos="…!"]`, 12 px squares set on the node's border with the name in small type
-  beside them (`writePins` in `dot_ports.go`): a pin a route meets sits where the route's end
+  beside them (`writePins` in `dot_ports.go`): a pin a `Layout` places (`Port.Geometry`) sits
+  outside the side of the border nearest the Layout, level with the Layout's centre; a pin a
+  route meets sits where the route's end
   waypoint leaves or reaches the box, outside the border and touching it — a pin several routes
   meet, at the mean of their ends, and each route's end waypoint is brought onto that pin's
   border, facing its next waypoint, so every spline touches the one square (`pinnedRoute`); the
@@ -540,6 +557,20 @@ digraph "VehicleViews::vehicleView" {
   `minimal`, `n1.0["durationIn"]`) with the connector between the pins
   (`n2.0 ---|"durationInterface"| n1.0`), so no edge ends on a subgraph — which ELK, the layout
   the pinned `mermaid-cli` applies, refuses.
+- **Constraint parameters.** A constraint usage or def is a node of an interconnection rendering
+  as a part is (`featureLike`), nested under its owner, and carries as its `Ports` its parameters:
+  the directed (`in`/`out`/`inout`) attribute and reference usages its constraint def declares
+  and what that specializes (`featureWalk.pinParameters`, `Renderer.typedParameters`), and any
+  the usage declares itself (`constraintParameter`), each with its direction and labelled by
+  name. A binding end that names a parameter — `amplify.input`, a chain over the usage — ends at
+  the pin. A view that exposes the def's parameters beside the usage, as a migrated parametric
+  diagram does, draws them as the pins alone, not as nodes of their own (`nestedFeatures`), and
+  a `DiagramLayout::Layout` about a parameter is the pin's `Port.Geometry`, resolved per usage as
+  an inherited member's is (`memberGeometryOf`: `about first::input` places first's square,
+  `about Law::input` every usage's); a pin's Layout places it only on a node a Layout places
+  too. The parameters are shown and hidden with the port symbols (`port-symbols`), not the
+  parameter symbols a case's actors are. A mixed rendering draws constraints the same way
+  (`mixedStructural`).
 - **Edges.** The `EdgeKind` styles parallel the Mermaid arrows so the two forms read alike:
 
   | `EdgeKind` | Mermaid | DOT |
@@ -645,7 +676,7 @@ horizontal gradient, sampled at the left and right of a box. The constants live 
 | Lines: `#424242`, 1 px, open arrowheads on transitions and flows | edge default `color="#424242"`, `penwidth=1`, `arrowhead=open`; a routed edge's spline keeps both stated ends — `e,x,y` before the curve for an arrowhead, `s,x,y` for a tail arrow — the curve stopping an arrow's length short so Graphviz draws the arrow between, and the box a routed node is drawn in is never grown beyond its stated one, so the drawn end is the stated end (`dotSpline`, `TestDOTRoutedEdgesEndAtTheirRoutes`, which runs Graphviz when `OPENSYSML_DOT` names it and asserts every drawn endpoint within 3 px of its route's) |
 | Pins: 12 px squares on an action's border, the pin name in ~8 px type beside it, object flows pin to pin | each `Port` a node `shape=box, label="", xlabel="<name>", fontsize=8, fixedsize=true`, `fillcolor="#FFFFFF"`, at the route's end on the border, or spread along the top (inputs) and bottom (outputs); the flow edge runs between the pin nodes ([Action pins](#what-the-dot-writer-emits)) |
 | Pseudo-states and control nodes: initial a 10 px filled dot, final a 15 px bull's-eye, decision, merge and choice a diamond, fork and join a thin filled bar (10×60 px or 60×10 px), junction a dot, history a ring lettered H or H* | `shape=circle`/`doublecircle` with `fillcolor=black, label=""` at the stated box, or 0.2 in when none is stated; `shape=diamond`, 24×12 px when none is stated; a bar `shape=box, fillcolor=black, fixedsize=true` at the stated box's width and height, so a 10×60 box stands and a 60×10 box lies, 60×5 px when none is stated; `shape=circle, fillcolor=white, label="H"` (`"H*"`) for a history — drawn as symbols with no text inside even when no Layout sizes them, where the Pilot style needs a stated box; a name the model gave is set beside the symbol as `xlabel`, a synthesized one not at all |
-| Transition and edge labels: `trigger [guard] / effect` beside the line, not on it, the `accept` keyword and quotes off | one `label` per edge, never an `xlabel` beside it: the `EdgeKind` label text with `accept ` removed and every name bare (`Finished / diffTime`), placed with `lp` beside one of the route's segments — the candidates are the normals of every segment, scored for the state boxes and notes the label box would cover and for leaving the canvas, the least covered wins — so a label never sits on a box a route hugs ([Geometry](#geometry)) |
+| Transition and edge labels: `trigger [guard] / effect` beside the line, not on it, the `accept` keyword and quotes off | one `label` per edge, never an `xlabel` beside it: the `EdgeKind` label text with `accept ` removed and every name bare (`Finished / diffTime`), placed with `lp` beside the route's longest segment — the candidates step out from its midpoint on both sides, scored for the state boxes, notes and other routes' lines the label box would cover, for leaving the canvas and for the labels already placed, the least covered wins — so a label never sits on a box a route hugs, nor on another label ([Geometry](#geometry)) |
 | Notes: white box with a folded corner, `«comment»` above the text, a dashed anchor to the element | `shape=note`, `fillcolor="#FFFFFF"`, `color="#5B5B59"`, label `«comment»` at 9 pt over the text — left off a stated box too narrow for the word or too short for a body line below it — pinned at the Note's box; the anchor `style=dashed, arrowhead=none` |
 | Drop shadow: a 2 px light grey shadow under every box | dropped; Graphviz draws no shadow |
 | Corner radius: ~20 px on states and actions | Graphviz's fixed radius, as in the Pilot style |
@@ -818,7 +849,18 @@ digraph "PlantViews::placedView" {
   a corner and no positioned member has no box to state and pins its anchor at the corner.
 - **Edges.** A `Route` becomes `pos` as the cubic B-spline Graphviz reads: each segment's ends
   are its own control points, so the spline is the polyline through the waypoints. A route of
-  one waypoint draws no line; it is left out and noticed as `// not represented:`. Every edge a
+  one waypoint draws no line; it is left out and noticed as `// not represented:`. The edge's
+  texts are placed too (`labelPlacer` in `edge_labels.go`): its own label as `lp` beside the
+  midpoint of the route's longest segment, an end's name as `head_lp`/`tail_lp` beside the last
+  segment before that end, clear of the arrowhead there, or beside the middle of that segment
+  when the route is too short to hold the name beside any; each label is measured at the font
+  size it is drawn in (its `Style`'s when that sets one, else the skin's), centred clear of its
+  line by its half-extent and a 4 px gap, and takes the first of its candidate spots — the nearest,
+  the other side of the line, then a step farther along — that covers no drawn box, note or
+  routed line, stays on the canvas and overlaps no label placed before it, else the least
+  covered; an end name leaves its last segment for the ones before only when every spot beside
+  it lies on a box, a note or a label, bearing a line across it rather than straying from its
+  end; labels are placed in edge order, so the placement is the same on every run. Every edge a
   kind draws takes a route: a connection, binding or flow of an interconnection, a transition
   of a state rendering, a succession or flow of an action rendering — the annotation names the
   member (`metadata DiagramLayout::Route about 'a to b'`), so only a named edge can carry one.
@@ -1136,16 +1178,17 @@ a `distinguished-parameter-link` or the actor joined to the case node directly, 
 ports drawn or not, an edge's label, the `«keyword»` and the name's qualification, a
 multiplicity, a feature's `: Type`. A rendering draws the required notation and, of the
 optional, what it is told to show. `view.DefaultShown` is the default, one named constant:
-port symbols and compartments. Each element has a name every surface uses and a Boolean
+port symbols, compartments and keywords, the three the notation's own examples draw on every
+node. Each element has a name every surface uses and a Boolean
 attribute a rendering in the model chooses it by:
 
 | Element | Attribute | What it draws | Optional by |
 | --- | --- | --- | --- |
 | `parameter-symbols` | `showParameterSymbols` | A case's `actor`, `subject` and `stakeholder` parameters and an action's parameter pins as squares on the node's boundary. Without them a connection that ended at a parameter ends at the node that declares it: one line per connection, one node per actor. A tree lists a case's parameters as members, which stay. | §7.26.5; §8.2.3 `distinguished-parameter`, `distinguished-parameter-link` |
-| `port-symbols` | `showPortSymbols` | A part's ports as pins on its boundary. Without them a connection that ended at a port ends at the part; a port drawn as a nested member of a tree is model structure and stays. Default. | §7.26.5; §8.2.3 `port-node` |
+| `port-symbols` | `showPortSymbols` | A part's ports, and a constraint's parameters, as pins on its boundary. Without them a connection that ended at a port ends at the part, a binding that ended at a parameter at the constraint; a port drawn as a nested member of a tree is model structure and stays. Default. | §7.26.5; §8.2.3 `port-node` |
 | `compartments` | `showCompartments` | The lists of nested features inside a node. Default. | §7.26.5; §8.2.3 `compartment` |
 | `edge-labels` | `showEdgeLabels` | The names of connections, flows, bindings and allocations along their lines. Without them no label box is left. A sequence diagram's message lines keep their labels: the label is the message. | §8.2.3 `edge-label` |
-| `keywords` | `showKeywords` | The `«keyword»` over each name. | §8.2.3 `keyword-list` |
+| `keywords` | `showKeywords` | The `«keyword»` over each name (`«part def»`, `«part»`, `«enum def»`, …), as the notation's examples, the pilot and SysON draw every node. Default. | §8.2.3 `keyword-list` |
 | `multiplicities` | `showMultiplicities` | A feature's `[m..n]` after its name and at a composition's part end. | §8.2.3 `multiplicity` |
 | `typings` | `showTypings` | The `: Type` and `:> general` text after a name. | §8.2.3 `feature-typing-text` |
 | `qualifiers` | `showQualifiers` | The qualified-name prefix of each name, in the text form as in the diagram forms; without it a name is the shortest suffix of its qualified name that is its own in the rendering. | §8.2.3 `qualified-name` |

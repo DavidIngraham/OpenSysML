@@ -131,7 +131,7 @@ package 'Vehicle Design' {
     part wheel : Wheel;
     connection 'wheel to vehicle' : WheelToVehicle connect wheel to vehicle;
     action drive : Drive;
-    metadata MigrationMetadata::SynthesizedName about EngineToVehicle, WheelToVehicle;
+    metadata MigrationMetadata::SynthesizedName about EngineToVehicle, WheelToVehicle, drives, 'engine to vehicle', 'wheel to vehicle';
 }
 package RequirementsModel {
     requirement <R1> 'Mass Requirement' {

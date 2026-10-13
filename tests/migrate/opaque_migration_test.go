@@ -566,3 +566,24 @@ func TestMigratedActivityPerformedOnPartDeclaredElsewhere(t *testing.T) {
 		}
 	}
 }
+
+// The english_math_calls fixture holds constraint blocks whose English bodies call
+// mathematical functions by bare name: the table's words are written as the library's
+// functions, while a dotted name, a wrong number of arguments and a name of several
+// words stay refused.
+func TestEnglishMathCalls(t *testing.T) {
+	r := migrateXMI(t, "english_math_calls")
+	for _, line := range []string{
+		"constraint def 'Sine Wave' {",
+		"sine_wave == TrigFunctions::sin(t)",
+		"amplitude == RealFunctions::sqrt(x ** 2 + y ** 2) * OpenSysMLMathFunctions::exp(-RealFunctions::abs(t)) and RealFunctions::floor(t) <= RealFunctions::max(x, y)",
+	} {
+		wantLine(t, r.Notation, line)
+	}
+	wantNote(t, r, "_sineRule", migrate.Mapped, "the English body is translated to v2")
+	wantNote(t, r, "_decayRule", migrate.Mapped, "the English body is translated to v2")
+	wantNote(t, r, "_clampDotted", migrate.Unmapped, `the construct "Math.max(" is outside the translated subset: a call is not English; the subset reads names, literals, comparisons, not/and/or and the functions abs, acos, arccos, arcsin, arctan, asin, atan, atan2, ceil, ceiling, cos, cot, exp, floor, ln, log, max, min, pow, round, sin, sqrt, tan`)
+	wantNote(t, r, "_clampArity", migrate.Unmapped, `the call "sin" is not in the translated function table: sin takes 1 argument(s), not 2`)
+	wantNote(t, r, "_clampWords", migrate.Unmapped, `the name "sin phase" resolves to nothing readable`)
+	wantClean(t, "english_math_calls.sysml", r)
+}

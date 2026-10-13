@@ -88,7 +88,7 @@ package Structure {
         expose Pairing;
         render Views::asTreeDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about WheelToVehicle, 'Vehicle to Engine', 'Engine to Component', 'Wheel to Component';
+    metadata MigrationMetadata::SynthesizedName about WheelToVehicle, 'Vehicle to Engine', 'Engine to Component', 'Wheel to Component', 'wheel to vehicle', pairing;
 }
 package Behavior {
     item def Go;

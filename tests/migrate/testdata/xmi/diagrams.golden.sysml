@@ -88,7 +88,7 @@ package Structure {
         expose engine;
         render Views::asInterconnectionDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about EngineToVehicle;
+    metadata MigrationMetadata::SynthesizedName about EngineToVehicle, 'engine to vehicle';
 }
 package Behavior {
     action def Drive {
@@ -136,6 +136,7 @@ package Usage {
         expose 'Driver to Drive Vehicle';
         render Views::asInterconnectionDiagram;
     }
+    metadata MigrationMetadata::SynthesizedName about 'Driver to Drive Vehicle';
 }
 package Reports {
     view 'Vehicle Overview' {

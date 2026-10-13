@@ -71,7 +71,11 @@ type EdgeData struct {
 	// FromPort and ToPort are the ports the edge ends at, "" for the node itself.
 	FromPort string
 	ToPort   string
-	Label    string
+	// Label is the edge's own text; FromLabel and ToLabel name its ends, drawn
+	// beside them, "" for an unnamed end.
+	Label     string
+	FromLabel string
+	ToLabel   string
 	// Name is the edge's own name, "" for one anonymous or named by a migration.
 	Name   string
 	Kind   EdgeKind
@@ -125,7 +129,8 @@ func (r *Rendering) data(ports *portView) Data {
 	}
 	for _, edge := range r.Edges {
 		out.Edges = append(out.Edges, EdgeData{From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
-			Label: edge.Label, Name: edge.Name, Kind: edge.Kind, Origin: edge.Origin, Route: edge.Route, Style: edge.Style})
+			Label: edge.Label, FromLabel: edge.FromLabel, ToLabel: edge.ToLabel, Name: edge.Name, Kind: edge.Kind, Origin: edge.Origin,
+			Route: edge.Route, Style: edge.Style})
 	}
 	for i, cells := range r.Rows {
 		var origin Origin

@@ -38,5 +38,5 @@ package UI {
         metadata DiagramLayout::Route about PanelToConsole { points = (290, 200, 285, 100); }
         render Views::asTreeDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about GUIToConsole, PanelToConsole;
+    metadata MigrationMetadata::SynthesizedName about GUIToConsole, PanelToConsole, 'gUI to console', 'panel to console';
 }

@@ -1399,8 +1399,8 @@ func TestRenderShowsOptionalNotationElements(t *testing.T) {
 	if err != nil {
 		t.Fatalf("render: %v", err)
 	}
-	if !slices.Equal(plain.Shown, []string{"port-symbols", "compartments"}) {
-		t.Errorf("shown = %v, want the default, port-symbols then compartments", plain.Shown)
+	if !slices.Equal(plain.Shown, []string{"port-symbols", "compartments", "keywords"}) {
+		t.Errorf("shown = %v, want the default, port-symbols, compartments then keywords", plain.Shown)
 	}
 	if strings.Contains(plain.Artifact, `label="wire"`) {
 		t.Errorf("the default drew an edge label:\n%s", plain.Artifact)
@@ -1409,7 +1409,7 @@ func TestRenderShowsOptionalNotationElements(t *testing.T) {
 	if err != nil {
 		t.Fatalf("render show=edge-labels: %v", err)
 	}
-	if !slices.Equal(shown.Shown, []string{"port-symbols", "compartments", "edge-labels"}) {
+	if !slices.Equal(shown.Shown, []string{"port-symbols", "compartments", "edge-labels", "keywords"}) {
 		t.Errorf("shown = %v, want the default and edge-labels", shown.Shown)
 	}
 	if !strings.Contains(shown.Artifact, `label="wire"`) {
