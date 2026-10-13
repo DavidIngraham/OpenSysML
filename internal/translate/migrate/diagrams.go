@@ -1004,8 +1004,9 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 			p.dangling++
 			continue
 		}
-		if c := m.connOf(el); p.form.useCases && c != nil && c.of != el {
-			// An association end's label lies on the connection's route.
+		if c := m.connOf(el); pl.OnPath || p.form.useCases && c != nil && c.of != el {
+			// An end's symbol lies on the connection's route, which carries the end.
+			s.PlacementsOnEdges++
 			p.onEdges++
 			continue
 		}
@@ -1055,13 +1056,18 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 			continue
 		}
 		kind := routeKindName(c.Type, el)
-		refs, why := m.routeTarget(el, v.host, p.form)
+		var refs []string
+		var points [][]float64
+		why := ""
+		if refs, why = m.routeTarget(el, v.host, p.form); why == "" {
+			if !m.draws(p.x, p.form, el, refs[0]) {
+				why = routeNotExposed
+			}
+			refs = []string{strings.Join(refs, ", ")}
+			points = [][]float64{m.linePoints(el, c)}
+		}
 		ref := strings.Join(refs, ", ")
-		switch {
-		case why != "":
-		case !m.draws(p.x, p.form, el, refs[0]):
-			why = routeNotExposed
-		case pinned[ref]:
+		if why == "" && pinned[ref] {
 			p.refOf[c.ID] = ref
 			why = routeDuplicate
 		}
@@ -1076,24 +1082,60 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 		s.RoutesWritten++
 		p.reasons[routeWritten]++
 		m.routeKinds.add(kind, routeWritten)
-		var b strings.Builder
-		b.WriteString("metadata " + p.prefix + "Route about " + ref + " { ")
-		b.WriteString(m.diagramLayoutAttributeForHost(p.prefix, "Route", "points", "(", v.host, p.x))
-		for i, n := range c.Points {
-			if i > 0 {
-				b.WriteString(", ")
-			}
-			b.WriteString(layoutNumber(n))
-			if i%2 == 0 {
-				p.grow(n, p.maxY)
-			} else {
-				p.grow(p.maxX, n)
-			}
+		for i, r := range refs {
+			routes = append(routes, p.route(r, points[i]))
 		}
-		b.WriteString("); }")
-		routes = append(routes, b.String())
 	}
 	return routes
+}
+
+// route writes a Route pinning points, x then y per point, to the member ref names.
+func (p *layoutPlan) route(ref string, points []float64) string {
+	var b strings.Builder
+	b.WriteString("metadata " + p.prefix + "Route about " + ref + " { ")
+	b.WriteString(p.m.diagramLayoutAttributeForHost(p.prefix, "Route", "points", "(", p.v.host, p.x))
+	for i, n := range points {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(layoutNumber(n))
+		if i%2 == 0 {
+			p.grow(n, p.maxY)
+		} else {
+			p.grow(p.maxX, n)
+		}
+	}
+	b.WriteString("); }")
+	return b.String()
+}
+
+// linePoints is the line's points as the Route of el lists them: a connection
+// def's run from its first end's type to its second's, as a tree reads them.
+func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	if !m.associationDef(el) {
+		return c.Points
+	}
+	ends := m.model.Refs(el, "memberEnd")
+	if len(ends) != 2 {
+		return c.Points
+	}
+	first, second := m.model.Ref(ends[0], "type"), m.model.Ref(ends[1], "type")
+	if first == nil || second == nil || first == second {
+		return c.Points
+	}
+	if c.Ends[0] == second.ID || c.Ends[1] == first.ID {
+		return reversePoints(c.Points)
+	}
+	return c.Points
+}
+
+// reversePoints is the flattened point list read from its last point to its first.
+func reversePoints(points []float64) []float64 {
+	out := make([]float64, 0, len(points))
+	for i := len(points) - 2; i >= 0; i -= 2 {
+		out = append(out, points[i], points[i+1])
+	}
+	return out
 }
 
 // drawnRef names the element id as the view of form f exposing x draws it, as a
