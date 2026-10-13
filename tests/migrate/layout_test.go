@@ -704,6 +704,18 @@ func TestLayoutOfTableDiagram(t *testing.T) {
 		"returned 4 rows", "Plant::Inventory::r1", "Plant::Inventory::p1", "Plant::Spares::s1", "Plant::Spares::s2")
 }
 
+// edgeText is an edge's texts as the forms without a place at an end fold
+// them: the tail end's name, the edge's own, the head end's name.
+func edgeText(edge view.Edge) string {
+	var texts []string
+	for _, text := range []string{edge.FromLabel, edge.Label, edge.ToLabel} {
+		if text != "" {
+			texts = append(texts, text)
+		}
+	}
+	return strings.Join(texts, " ")
+}
+
 // An association end's role symbol — the 10×10 box Cameo keeps at the line's end,
 // inside the association's symbol — is the end's position on the line, which the
 // association's route carries, pinned to the member-end usage the tree rendering
@@ -774,7 +786,7 @@ func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
 	}
 	var edges []string
 	for _, edge := range rendering.Edges {
-		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edgeText(edge)))
 	}
 	wantEdges := []string{"Blocks::Vehicle composition Blocks::Engine: engine"}
 	if !slices.Equal(edges, wantEdges) {
@@ -822,11 +834,11 @@ func TestGoldenAssociationEndPairPinsItsConnectionDef(t *testing.T) {
 		route []view.Point
 	}{
 		"Blocks::'Pair BDD'": {
-			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			edges: []string{"Blocks::Controller composition Blocks::Sensor: controller sensors"},
 			route: []view.Point{{X: 100, Y: 70}, {X: 100, Y: 130}, {X: 100, Y: 200}},
 		},
 		"Blocks::'Sensor BDD'": {
-			edges: []string{"Blocks::Controller composition Blocks::Sensor: sensors / controller"},
+			edges: []string{"Blocks::Controller composition Blocks::Sensor: controller sensors"},
 			route: []view.Point{{X: 300, Y: 70}, {X: 300, Y: 225}, {X: 160, Y: 225}},
 		},
 	} {
@@ -851,7 +863,7 @@ func TestGoldenAssociationEndPairPinsItsConnectionDef(t *testing.T) {
 		visit(rendering.Roots)
 		var edges []string
 		for _, edge := range rendering.Edges {
-			edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+			edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edgeText(edge)))
 		}
 		if !slices.Equal(edges, want.edges) {
 			t.Errorf("%s: edges = %q, want %q", name, edges, want.edges)
@@ -999,7 +1011,7 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 	}
 	var edges []string
 	for _, edge := range rendering.Edges {
-		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edgeText(edge)))
 	}
 	want := []string{"UI::Console composition UI::GUI: GUI", "UI::Console composition UI::Panel: panel"}
 	if !reflect.DeepEqual(edges, want) {
