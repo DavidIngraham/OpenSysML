@@ -69,12 +69,8 @@ func (m *migration) usageName(b *sysmlv1.Element) string {
 	return name
 }
 
-// operationUsageOwner reports whether b is an operation a block owns, which is
-// written as the block's composite action usage whatever its body reads: a call
-// on an object performs the usage through a feature chain, so no def is needed.
-// It keeps a def when a state or transition runs it, from whose member no
-// usage of the block is reachable, or when its method acts on another block
-// through its ports, which a usage's this cannot stand for.
+// operationUsageOwner reports whether b is an operation written as its block's composite
+// action usage, which calls chain to; one a state runs or whose method acts through ports keeps a def.
 func (m *migration) operationUsageOwner(b *sysmlv1.Element) bool {
 	if b.Type != "Operation" || !m.blockOwner(b.Parent) || !m.written(b) {
 		return false
