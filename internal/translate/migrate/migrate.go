@@ -2142,9 +2142,56 @@ func (m *migration) associationAsConnectionDef(e *sysmlv1.Element) bool {
 	case "AssociationClass":
 		return true
 	case "Association":
+		if m.backedProperty(e) != nil {
+			return false
+		}
 		return e.Name != "" || m.actors[e] == nil
 	}
 	return false
+}
+
+// backedProperty is the value property or constraint parameter the anonymous
+// association e only backs (its other end typed by the owner), or nil.
+func (m *migration) backedProperty(e *sysmlv1.Element) *sysmlv1.Element {
+	if e.Type != "Association" || e.Name != "" || len(e.Stereotypes) > 0 {
+		return nil
+	}
+	ends := m.model.Refs(e, "memberEnd")
+	if len(ends) != 2 {
+		return nil
+	}
+	for _, c := range e.Children {
+		if c.Role != "ownedEnd" || !slices.Contains(ends, c) || len(c.Children) > 0 {
+			return nil
+		}
+	}
+	for i, prop := range ends {
+		own := ends[1-i]
+		owner := prop.Parent
+		if prop.Role != "ownedAttribute" || owner == nil || own.Parent != e || m.model.Ref(own, "type") != owner ||
+			toolContent(prop) != "" || !m.written(prop) {
+			continue
+		}
+		t := m.model.Ref(prop, "type")
+		if t == nil || !m.valueType(t) {
+			continue
+		}
+		cat, _ := m.classify(owner)
+		if kw, _, _ := m.featureKeyword(prop, cat); kw == "attribute" {
+			return prop
+		}
+	}
+	return nil
+}
+
+// valueType reports whether t is a type whose instances are values: a library
+// scalar, a value type or an enumeration.
+func (m *migration) valueType(t *sysmlv1.Element) bool {
+	if m.scalarValue(t) != "" {
+		return true
+	}
+	cat, _ := m.classify(t)
+	return cat == catAttributeDef || cat == catEnumDef
 }
 
 // association writes an association or association block as a connection def
@@ -2152,6 +2199,16 @@ func (m *migration) associationAsConnectionDef(e *sysmlv1.Element) bool {
 // planAssociations wrote as its one usage.
 func (m *migration) association(e *sysmlv1.Element) {
 	ends := m.model.Refs(e, "memberEnd")
+	if prop := m.backedProperty(e); prop != nil {
+		backs := "the association only backs " + qualifiedName(prop) + ", which is written as a feature"
+		m.add(e, Skipped, "", backs)
+		for _, end := range ends {
+			if end.Parent == e {
+				m.add(end, Skipped, "", "the end types the owner of "+qualifiedName(prop)+"; "+backs)
+			}
+		}
+		return
+	}
 	name := m.nameOf(e)
 	link := m.actors[e]
 	if e.Name == "" {
