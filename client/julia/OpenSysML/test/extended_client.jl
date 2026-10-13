@@ -743,7 +743,7 @@ end
                 @test length(by_verdict(migrated.report, VERDICT_UNMAPPED)) == 3
                 @test migrated.source_path == abspath(vehicle)
                 inline = migrate_source(conn, read(vehicle), "ttl"; from_format=" XMI ")
-                @test inline.to_format == "ttl" && inline.report.mapped == 76
+                @test inline.to_format == "ttl" && inline.report.mapped == 77
                 @test isempty(inline.report.entries) && inline.source_path === nothing
                 mktempdir() do directory
                     output = joinpath(directory, "Vehicle.sysml")

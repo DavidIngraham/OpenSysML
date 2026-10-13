@@ -315,7 +315,7 @@ fn a_v1_model_is_migrated_and_refused_by_convert() {
     assert_eq!(inline.to_format, "ttl");
     assert!(inline.source_path.is_none());
     assert!(inline.report.entries.is_empty());
-    assert_eq!(inline.report.mapped, 76);
+    assert_eq!(inline.report.mapped, 77);
 
     let refused = connection.convert(
         "sysml",
