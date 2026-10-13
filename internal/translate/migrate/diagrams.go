@@ -1114,10 +1114,8 @@ func (p *layoutPlan) route(ref string, points []float64) string {
 	return b.String()
 }
 
-// linePoints is the line's points as the Route of el lists them, run from the
-// written element's first end to its second as a rendering reads them: a
-// connection def's from its first end's type to its second's, a connector's
-// from the feature its first end names to its second's.
+// linePoints is the line's points as the Route of el lists them, run from the written
+// element's first end to its second as a rendering reads them.
 func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
 	if el.Type == "Connector" {
 		return m.connectorLinePoints(el, c)
@@ -1139,11 +1137,8 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 	return c.Points
 }
 
-// connectorLinePoints is connector el's line as its Route lists it: reversed
-// when the stream names the feature of the second written end at the line's
-// first end, or the first's at its second, so the points run as `connect a to
-// b` and `bind a = b` name their ends. The points stay as drawn when the stream
-// names no end or both ends name one feature.
+// connectorLinePoints is connector el's line run as `bind a = b` names its ends: reversed when
+// the stream drew it from the second end's feature; as drawn when it names no end or one feature.
 func (m *migration) connectorLinePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
 	segs, note := m.connectorEnds(el, el.Parent)
 	if note != "" || c.Ends[0] == "" && c.Ends[1] == "" {
@@ -1159,8 +1154,8 @@ func (m *migration) connectorLinePoints(el *sysmlv1.Element, c mtip.Connector) [
 	return c.Points
 }
 
-// endFeature is the id of the feature a connector end's path names last: the
-// element the symbol at that end of the line stands for.
+// endFeature is the id of the feature a connector end's path names last, the element
+// the symbol at that end of the line stands for.
 func endFeature(seg []*sysmlv1.Element) string {
 	return seg[len(seg)-1].ID
 }

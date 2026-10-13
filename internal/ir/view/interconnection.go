@@ -144,19 +144,16 @@ func (w *featureWalk) pinPorts(node *Node, sym *symbols.Symbol) {
 	}
 }
 
-// pinParameters draws on node's border the parameters sym has from its
-// constraint def without declaring them, as the parametric notation draws a
-// constraint usage's parameters: `constraint c : Law` shows the `in x` Law
-// declares, and a binding ending at `c.x` ends at that square.
+// pinParameters draws on node's border the parameters sym has from its constraint
+// def without declaring them: `constraint c : Law` shows the `in x` Law declares.
 func (w *featureWalk) pinParameters(node *Node, sym *symbols.Symbol) {
 	for _, parameter := range w.r.typedParameters(sym) {
 		w.pin(node, parameter, pinDirection(parameter), false, w.r.memberGeometryOf(w.view, sym, localName(parameter), w.out))
 	}
 }
 
-// pin draws sym as a port on node's border, with the given direction, at the
-// geometry a Layout in the view gives it; a parameter pin stands for a case's
-// subject or attribute, not a port.
+// pin draws sym as a port on node's border, with the given direction and the geometry
+// a Layout gives it; a parameter pin stands for a case's subject or attribute, not a port.
 func (w *featureWalk) pin(node *Node, sym *symbols.Symbol, direction PortDirection, parameter bool, geometry *Geometry) {
 	id := portID(node.ID, len(node.Ports))
 	node.Ports = append(node.Ports, Port{ID: id, Name: localName(sym), NameSynthesized: w.r.model.NameSynthesized(sym),
@@ -203,9 +200,8 @@ func casePin(owner, member *symbols.Symbol) bool {
 	return ok && (usage.Kind == ast.UsageSubject || usage.Kind == ast.UsageActor || usage.Kind == ast.UsageStakeholder)
 }
 
-// constraintParameter reports whether member, a member of a constraint drawn as
-// a node, is one of its parameters, drawn as a square on its border the way the
-// parametric notation draws them: a directed attribute or reference usage.
+// constraintParameter reports whether member is a parameter of the constraint owner —
+// a directed attribute or reference usage — drawn as a square on the constraint's border.
 func constraintParameter(owner, member *symbols.Symbol) bool {
 	return isConstraintKind(owner) && isParameterKind(member) && pinDirection(member) != PortUndirected
 }
@@ -260,10 +256,8 @@ func (r *Renderer) typedPorts(sym *symbols.Symbol) []*symbols.Symbol {
 	return out
 }
 
-// typedParameters is the parameters a constraint usage has without declaring
-// them: those of the constraint def typing it and of what that specializes,
-// less any a parameter of its own redefines. The library's own features of
-// every constraint are not among them. Empty for anything but a constraint.
+// typedParameters is the parameters a constraint has from its def and what that specializes
+// without declaring them, less any it redefines and the library's own features of every constraint.
 func (r *Renderer) typedParameters(sym *symbols.Symbol) []*symbols.Symbol {
 	if !isConstraintKind(sym) {
 		return nil
@@ -289,10 +283,8 @@ func (r *Renderer) libraryDeclared(sym *symbols.Symbol) bool {
 	return idx != nil && idx.Library(sym)
 }
 
-// nestedFeatures is the members featureNode draws under sym: the features this
-// walk draws as nested nodes, connectors being edges, and the parameters it
-// pins on a constraint's border from its def, which a view exposing them beside
-// the constraint does not draw a second time.
+// nestedFeatures is what featureNode draws under sym: its nested feature nodes and the
+// parameters pinned from its def, which a view exposing them beside it does not draw again.
 func (w *featureWalk) nestedFeatures(sym *symbols.Symbol) []*symbols.Symbol {
 	var out []*symbols.Symbol
 	for _, member := range w.r.containedMembers(sym) {
@@ -573,11 +565,9 @@ func isFlowUsage(sym *symbols.Symbol) bool {
 	return ok && usage.Kind == ast.UsageFlow && usage.FlowEnds != nil
 }
 
-// featureLike reports whether an element is a feature an interconnection
-// rendering shows as a node: the structural elements a system is built from, and
-// the constraints and analysis cases bound to their values, which a parametric
-// view draws beside them. Behaviors, views and namespaces are not, and are
-// reported rather than drawn.
+// featureLike reports whether an element is a feature an interconnection rendering shows as
+// a node: structures, and the constraints and analysis cases bound to their values; behaviors,
+// views and namespaces are reported rather than drawn.
 func featureLike(sym *symbols.Symbol) bool {
 	switch sym.Kind {
 	case symbols.SymbolPartDef, symbols.SymbolPartUsage,
