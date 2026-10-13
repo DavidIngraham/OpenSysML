@@ -224,7 +224,8 @@ func TestRenderViewRendersCaseAndMixed(t *testing.T) {
 	}
 
 	// An association end's name, drawn at the type's end, reaches the wire as
-	// the edge's label, the response placing no label.
+	// the edge's label, the response placing no label; multiplicities are an
+	// optional element, off by default.
 	structure, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{
 		ModelHash: parsed.ModelHash, View: "RenderViewKinds::structure",
 	})
@@ -233,10 +234,10 @@ func TestRenderViewRendersCaseAndMixed(t *testing.T) {
 	}
 	var wheels bool
 	for _, edge := range structure.Edges {
-		wheels = wheels || edge.Kind == "composition" && edge.Label == "wheels[4]"
+		wheels = wheels || edge.Kind == "composition" && edge.Label == "wheels"
 	}
 	if !wheels {
-		t.Errorf("structure view has no composition labelled wheels[4]: %+v", structure.Edges)
+		t.Errorf("structure view has no composition labelled wheels: %+v", structure.Edges)
 	}
 
 	casePseudo, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{

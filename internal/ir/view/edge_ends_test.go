@@ -288,3 +288,32 @@ func TestEndNamesAreMeasuredAtTheirStyledSize(t *testing.T) {
 		t.Errorf("edgePts(styled) = %v, want %v", got, 3*w.skin.edgePts)
 	}
 }
+
+// A usage's name stays at its end under the default notation, which leaves
+// out multiplicities and the labels of connectors, and when edge labels are
+// shown: an end name is no connector label, so narrowing never strips it.
+func TestEndNamesSurviveTheNotationDefaults(t *testing.T) {
+	rendering := render(t, "tree-edges.sysml", "FleetViews::structure")
+	for name, options := range map[string]Options{
+		"default":     {},
+		"edge-labels": {Show: Shown{ElementEdgeLabels: true}},
+	} {
+		dot, err := rendering.DOTWith(options)
+		if err != nil {
+			t.Fatalf("%s: DOT: %v", name, err)
+		}
+		if !strings.Contains(dot, `"n0" -> "n16" [headlabel="wheels", dir=back, arrowtail=diamond];`) {
+			t.Errorf("%s: DOT lacks the end name, without its multiplicity, at its end:\n%s", name, dot)
+		}
+		if strings.Contains(dot, `label="wheels`) && !strings.Contains(dot, `headlabel="wheels"`) {
+			t.Errorf("%s: DOT sets the end's name along the edge:\n%s", name, dot)
+		}
+		var wheels bool
+		for _, edge := range rendering.DataWith(options).Edges {
+			wheels = wheels || edge.Kind == EdgeComposition && edge.ToLabel == "wheels"
+		}
+		if !wheels {
+			t.Errorf("%s: no composition in the data carries wheels as its end name", name)
+		}
+	}
+}

@@ -785,9 +785,10 @@ in each form:
 | `d2` | `n1: "«part»\npump : Pump" { class: usage }` — a quoted label with the keyword line over the name, the class the B&W rule the node takes |
 
 An association end's name — a composite part's name and multiplicity on the composition from its
-owner to its type, a `ref`'s on its reference edge — is drawn at the end it names, as the
-graphical notation draws an end name, not along the edge; a connection's own name stays along the
-edge. Each form sets it where its grammar has a place at an end: `dot` as `headlabel` (set by
+owner to its type, a `ref`'s on its reference edge, each end of a connection def drawn as a line
+between its end types — is drawn at the end it names, as the graphical notation draws an end name,
+not along the edge; a connection's own name stays along the edge. Each form sets it where its
+grammar has a place at an end: `dot` as `headlabel` (`taillabel` at the tail; set by
 Graphviz beside the head of a laid-out edge, and by `head_lp` beside the last segment of a routed
 edge before that end, clear of the line, the boxes and the other labels), `plantuml` in quotes
 before the end's alias (`n0 *-- "wheels[4]" n16`), `d2` as the arrowhead's label

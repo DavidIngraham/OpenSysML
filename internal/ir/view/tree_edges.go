@@ -2,7 +2,6 @@ package view
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
@@ -91,8 +90,9 @@ func (r *Renderer) treeEdges(out *Rendering) {
 
 // associationLines redraws each connection def the tree would show as a box
 // as a line between the nodes of its two end types, the way a block definition
-// diagram draws an association, and drops its node. Its ends are labelled on
-// the line; its own name is, unless a migration made the name up.
+// diagram draws an association, and drops its node. Each end is named at its
+// end of the line; the def's own name is the line's, unless a migration made
+// the name up.
 func (g *treeGraph) associationLines() {
 	var prune func(nodes []*Node) []*Node
 	prune = func(nodes []*Node) []*Node {
@@ -106,9 +106,9 @@ func (g *treeGraph) associationLines() {
 				if !g.r.model.NameSynthesized(def) {
 					name = localName(def)
 				}
-				edge := Edge{From: line.from.ID, To: line.to.ID, Kind: EdgeAssociation, Name: name, Origin: symbolOrigin(def),
+				edge := Edge{From: line.from.ID, To: line.to.ID, Kind: EdgeAssociation, Name: name, Label: name, Origin: symbolOrigin(def),
 					Route: g.r.routeOf(site.view, def, g.out), Style: node.Style}
-				var labels []string
+				var labels [2]string
 				for i, end := range line.ends {
 					label := ""
 					if p := line.crossed[i]; p != nil {
@@ -131,11 +131,12 @@ func (g *treeGraph) associationLines() {
 					} else if !g.r.model.NameSynthesized(end) {
 						label = g.r.usageLabel(end)
 					}
-					if label != "" {
-						labels = append(labels, label)
-					}
+					labels[i] = label
 				}
-				edge.Label = associationLabel(name, labels)
+				edge.FromLabel, edge.ToLabel = labels[0], labels[1]
+				if g.node(line.types[0]).ID == edge.To && g.node(line.types[1]).ID != edge.To {
+					edge.FromLabel, edge.ToLabel = labels[1], labels[0]
+				}
 				g.add(edge, def)
 				for i := range g.out.Notes {
 					if n := &g.out.Notes[i]; n.Anchor == node.ID {
@@ -219,19 +220,6 @@ func (g *treeGraph) associationLine(node *Node, site treeSite) (line association
 	}
 	line.from, line.to = typed[0], typed[1]
 	return line, true
-}
-
-// associationLabel labels the line a connection def is drawn as: its name, if
-// it has one of its own, and the labels of its ends.
-func associationLabel(name string, ends []string) string {
-	label := strings.Join(ends, " / ")
-	switch {
-	case name == "":
-		return label
-	case label == "":
-		return name
-	}
-	return name + ": " + label
 }
 
 // edgesOf draws what the element of node states of itself and of the usages
