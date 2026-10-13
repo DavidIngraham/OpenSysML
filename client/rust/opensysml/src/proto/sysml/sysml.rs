@@ -2903,6 +2903,7 @@ pub struct RenderDocumentResponse {
     pub html: ::prost::alloc::string::String,
     /// The file a rendered set writes this document to in the requested form
     /// (-render-documents), which the other documents' links to it name.
+    /// Populated under the render_document_file_name capability.
     #[prost(string, tag="3")]
     pub file_name: ::prost::alloc::string::String,
 }

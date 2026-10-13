@@ -137,6 +137,7 @@ private static final long serialVersionUID = 0L;
    * <pre>
    * The file a rendered set writes this document to in the requested form
    * (-render-documents), which the other documents' links to it name.
+   * Populated under the render_document_file_name capability.
    * </pre>
    *
    * <code>string file_name = 3 [json_name = "fileName"];</code>
@@ -159,6 +160,7 @@ private static final long serialVersionUID = 0L;
    * <pre>
    * The file a rendered set writes this document to in the requested form
    * (-render-documents), which the other documents' links to it name.
+   * Populated under the render_document_file_name capability.
    * </pre>
    *
    * <code>string file_name = 3 [json_name = "fileName"];</code>
@@ -676,6 +678,7 @@ private static final long serialVersionUID = 0L;
      * <pre>
      * The file a rendered set writes this document to in the requested form
      * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
      * </pre>
      *
      * <code>string file_name = 3 [json_name = "fileName"];</code>
@@ -697,6 +700,7 @@ private static final long serialVersionUID = 0L;
      * <pre>
      * The file a rendered set writes this document to in the requested form
      * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
      * </pre>
      *
      * <code>string file_name = 3 [json_name = "fileName"];</code>
@@ -719,6 +723,7 @@ private static final long serialVersionUID = 0L;
      * <pre>
      * The file a rendered set writes this document to in the requested form
      * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
      * </pre>
      *
      * <code>string file_name = 3 [json_name = "fileName"];</code>
@@ -737,6 +742,7 @@ private static final long serialVersionUID = 0L;
      * <pre>
      * The file a rendered set writes this document to in the requested form
      * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
      * </pre>
      *
      * <code>string file_name = 3 [json_name = "fileName"];</code>
@@ -752,6 +758,7 @@ private static final long serialVersionUID = 0L;
      * <pre>
      * The file a rendered set writes this document to in the requested form
      * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
      * </pre>
      *
      * <code>string file_name = 3 [json_name = "fileName"];</code>

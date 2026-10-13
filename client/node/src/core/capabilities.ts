@@ -129,6 +129,8 @@ export const CAPABILITY_CONVERT_DOCUMENTS = "convert_documents";
 export const CAPABILITY_CONVERT_COMPACT = "convert_compact";
 /** `ParseSourcesRequest.baseModelHash` and `ParseSourcesResponse.affected`: the documents whose results may differ from the base model's, so a client re-reads only those after an edit. */
 export const CAPABILITY_PARSE_SOURCES_AFFECTED = "parse_sources_affected";
+/** `RenderDocumentResponse.fileName`: the file a rendered set writes the document to, which the other documents' links to it name. */
+export const CAPABILITY_RENDER_DOCUMENT_FILE_NAME = "render_document_file_name";
 
 /**
  * Orders capability names by code unit, the order the service reports them in.

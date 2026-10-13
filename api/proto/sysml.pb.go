@@ -11481,6 +11481,7 @@ type RenderDocumentResponse struct {
 	Html     string                 `protobuf:"bytes,2,opt,name=html,proto3" json:"html,omitempty"`
 	// The file a rendered set writes this document to in the requested form
 	// (-render-documents), which the other documents' links to it name.
+	// Populated under the render_document_file_name capability.
 	FileName      string `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
