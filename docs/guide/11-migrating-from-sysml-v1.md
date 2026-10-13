@@ -143,15 +143,14 @@ Requirement'` and a v1 qualified name can be searched for in the v2 file as it s
 
 Open `Vehicle.sysml`. The operation `start` and the state machine `Vehicle States` that an
 earlier reader might have expected to find as comments are written out — an operation is an
-`action def` its owner performs, and a state machine a `state def`:
+`action` usage of its owner, which every call chains to, and a state machine a `state def`:
 
 ```sysml
 part def Vehicle :> System {
     …
-    abstract action def start {
-        in key : ScalarValues::Integer;
+    abstract action start {
+        in key : ScalarValues::Integer[1];
     }
-    action 'start 2' : start;
     state def 'Vehicle States' {
         /* the region has no initial pseudostate: nothing enters it */
         state Off;
@@ -319,7 +318,7 @@ $ sysml Vehicle.sysml -eval "'Vehicle Design'::myCar::mass"
 Findings on the migrated file are read as on any model, and point at what to revise in the v2
 notation; OpenSysML raises none on this model, its `Drives` end carrying the v1 multiplicity `0..1`
 on the end it subsets, `end [0..1] ref driver :> Driver;`. The OMG pilot validator does warn on it:
-the v1 operation `start` becomes `action def start` inside `Vehicle`, which shadows the inherited
+the v1 operation `start` becomes `abstract action start` inside `Vehicle`, which shadows the inherited
 `Part::start`, a collision OpenSysML's inherited-name check does not yet report; rename the v1
 operation, or the v2 action, if the pilot's silence matters. From this point `%save` in the REPL, `-convert ttl`, the
 LSP and the clients all take the file as they take any other; nothing remembers that it was

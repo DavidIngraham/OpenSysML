@@ -17,6 +17,15 @@ func TestMetaclassFiltersExcludeNewConformingTypes(t *testing.T) {
 			name: "Property",
 			want: `Except(source = WhereType(source = row, type = ("AttributeUsage", "PartUsage", "ItemUsage", "ReferenceUsage", "PortUsage", "ConstraintUsage", "RequirementUsage", "ActionUsage", "StateUsage", "CalculationUsage", "UseCaseUsage", "OccurrenceUsage")), exclude = Except(source = WhereType(source = row, type = ("EventOccurrenceUsage")), exclude = WhereType(source = row, type = ("AttributeUsage", "PartUsage", "ItemUsage", "ReferenceUsage", "PortUsage", "ConstraintUsage", "RequirementUsage", "ActionUsage", "StateUsage", "CalculationUsage", "UseCaseUsage"))))`,
 		},
+		{
+			// A state def and a calc def conform to ActionDefinition; an operation becomes neither.
+			name: "Operation",
+			want: `Except(source = WhereType(source = row, type = ("ActionDefinition")), exclude = WhereType(source = row, type = ("StateDefinition", "CalculationDefinition")))`,
+		},
+		{
+			name: "Activity",
+			want: `Except(source = WhereType(source = row, type = ("ActionDefinition", "CalculationDefinition")), exclude = WhereType(source = row, type = ("StateDefinition")))`,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

@@ -5,10 +5,19 @@ package Plant {
             attribute mass : ScalarValues::Real;
             part valve : Valve;
             abstract action prime;
+            action def halt {
+                first start then final;
+                action final terminate;
+                metadata MigrationMetadata::SynthesizedName about final;
+            }
+            action 'halt 2' : halt;
             state def Cycle {
+                in ref context : Pump[1];
                 entry; then Idle;
                 state Idle;
-                state Running;
+                state Running {
+                    entry action : halt { in ref :>> context = Cycle::context; }
+                }
                 transition first Idle then Running;
             }
         }
@@ -83,12 +92,17 @@ package Tables {
         render Views::asElementTable;
     }
     calc def 'Namespaces Rows' :> DocumentQueries::Query {
+        in candidates : KerML::Root::Element[0..*] ordered = DocumentQueries::Descendants(
+            source = DocumentQueries::Named(qualifiedName = ("Plant")));
         DocumentQueries::Project(
             source = DocumentQueries::OrderBy(
-                source = DocumentQueries::WhereType(
-                    source = DocumentQueries::Descendants(
-                        source = DocumentQueries::Named(qualifiedName = ("Plant"))),
-                    type = ("Package", "Definition", "ViewUsage", "ViewpointUsage", "StateUsage")),
+                source = DocumentQueries::Union(
+                    source = DocumentQueries::WhereType(source = candidates, type = ("Package", "Definition", "ViewUsage", "ViewpointUsage", "StateUsage")),
+                    other = DocumentQueries::Except(
+                        source = DocumentQueries::Named(qualifiedName = ("Plant::Structure::Pump::prime")),
+                        exclude = DocumentQueries::Except(
+                            source = DocumentQueries::Named(qualifiedName = ("Plant::Structure::Pump::prime")),
+                            exclude = candidates))),
                 property = "qualifiedName",
                 direction = "ascending",
                 missing = "last",
@@ -150,6 +164,38 @@ package Tables {
         part rows : DocumentQueries::Table {
             attribute redefines caption = "Classifiers";
             calc rows : 'Classifiers Rows';
+        }
+    }
+    view Operations {
+        expose Plant::Structure::Pump;
+        expose 'Operations Document';
+        render Views::asElementTable;
+    }
+    calc def 'Operations Rows' :> DocumentQueries::Query {
+        in candidates : KerML::Root::Element[0..*] ordered = DocumentQueries::Descendants(
+            source = DocumentQueries::Named(qualifiedName = ("Plant")));
+        DocumentQueries::Project(
+            source = DocumentQueries::OrderBy(
+                source = DocumentQueries::Union(
+                    source = DocumentQueries::Except(
+                        source = DocumentQueries::WhereType(source = candidates, type = ("ActionDefinition")),
+                        exclude = DocumentQueries::WhereType(source = candidates, type = ("StateDefinition", "CalculationDefinition"))),
+                    other = DocumentQueries::Except(
+                        source = DocumentQueries::Named(qualifiedName = ("Plant::Structure::Pump::prime")),
+                        exclude = DocumentQueries::Except(
+                            source = DocumentQueries::Named(qualifiedName = ("Plant::Structure::Pump::prime")),
+                            exclude = candidates))),
+                property = "qualifiedName",
+                direction = "ascending",
+                missing = "last",
+                multiple = "first"),
+            properties = ("qualifiedName"))
+    }
+    part def 'Operations Document' :> DocumentQueries::Document {
+        attribute redefines title = "Operations";
+        part rows : DocumentQueries::Table {
+            attribute redefines caption = "Operations";
+            calc rows : 'Operations Rows';
         }
     }
     view Diagrams {

@@ -22,6 +22,8 @@ type typeFilter struct {
 	// table lists by name; usages are the plain names of those written.
 	usageKinds []category
 	usages     []string
+	// operations admits the action usages block-owned operations become, listed by name.
+	operations bool
 	// instances admits the usages a package owns, which instance
 	// specifications are written as.
 	instances bool
@@ -40,6 +42,8 @@ type v2Types struct {
 	types     []string
 	excluding *typeFilterExclusion
 	usages    []category
+	// operations admits the action usages block-owned operations become, by name.
+	operations bool
 	// instances admits the usages a package owns: the instance specifications.
 	instances bool
 	note      string
@@ -47,7 +51,8 @@ type v2Types struct {
 
 type typeFilterExclusion struct {
 	source []string
-	keep   []string
+	// keep are the types whose elements stay although they are of a source type; none keeps nothing.
+	keep []string
 }
 
 // The v2 metaclass names the migrator's declarations report as @type.
@@ -117,6 +122,13 @@ func occurrenceAwareTypes(types []string, include, exclude, note string) v2Types
 	}
 }
 
+// withoutSubtypes leaves out of t the v2 definitions that conform to its types
+// but stand for other v1 behaviors: a state def or calc def is an action def too.
+func withoutSubtypes(t v2Types, subtypes ...string) v2Types {
+	t.excluding = &typeFilterExclusion{source: subtypes}
+	return t
+}
+
 // withUsages adds to t the categories whose classifiers are written as usages.
 func withUsages(t v2Types, usages ...category) v2Types {
 	t.usages = append(t.usages, usages...)
@@ -147,7 +159,7 @@ var packageableTypes = []string{typePackage, typeDefinition, typeViewUsage, type
 // Notes on what the broad UML metaclasses list once migrated.
 const (
 	noteDiagramViews    = "the views diagrams became are listed too"
-	noteClassifierExtra = "the views diagrams became and the action defs operations became are listed too"
+	noteClassifierExtra = "the views diagrams became and the action defs the operations states run became are listed too"
 	elementTypeSubject  = "the element type "
 )
 
@@ -158,22 +170,24 @@ var metaclassTypes = map[string]v2Types{
 	"NamedElement": {note: "every migrated element is named, so a NamedElement filter admits all of them"},
 	"PackageableElement": {types: packageableTypes, usages: classifierUsages, instances: true,
 		note: noteClassifierExtra + "; instance specifications are listed, but not links, which a query cannot tell from the connections of a use case diagram"},
-	"Namespace": {types: namespaceTypes, usages: classifierUsages, note: noteDiagramViews +
+	"Namespace": {types: namespaceTypes, usages: classifierUsages, operations: true, note: noteDiagramViews +
 		"; transitions and structured activity nodes are not"},
-	"Package":            {types: []string{typePackage}},
-	"Model":              {types: []string{typePackage}, note: "a model is a package once migrated"},
-	"Type":               {types: classifierTypes, usages: classifierUsages, note: noteClassifierExtra},
-	"Classifier":         {types: classifierTypes, usages: classifierUsages, note: noteClassifierExtra},
-	"Class":              withUsages(occurrenceAwareTypes(classTypes, typeOccurrenceDef, typeItemDef, ""), catRequirement),
-	"Component":          occurrenceAwareTypes([]string{typePartDef}, typeOccurrenceDef, typeItemDef, "a component is a part def once migrated, as a block is"),
-	"Actor":              {usages: []category{catActor}},
-	"Behavior":           {types: behaviorTypes},
-	"Activity":           {types: []string{typeActionDef, typeCalcDef}},
-	"OpaqueBehavior":     {types: []string{typeActionDef, typeCalcDef}},
-	"FunctionBehavior":   {types: []string{typeCalcDef}},
-	"Interaction":        {types: []string{typeActionDef}},
-	"StateMachine":       {types: []string{typeStateDef}},
-	"Operation":          {types: []string{typeActionDef}, note: "an operation is an action def once migrated, as an activity is"},
+	"Package":          {types: []string{typePackage}},
+	"Model":            {types: []string{typePackage}, note: "a model is a package once migrated"},
+	"Type":             {types: classifierTypes, usages: classifierUsages, note: noteClassifierExtra},
+	"Classifier":       {types: classifierTypes, usages: classifierUsages, note: noteClassifierExtra},
+	"Class":            withUsages(occurrenceAwareTypes(classTypes, typeOccurrenceDef, typeItemDef, ""), catRequirement),
+	"Component":        occurrenceAwareTypes([]string{typePartDef}, typeOccurrenceDef, typeItemDef, "a component is a part def once migrated, as a block is"),
+	"Actor":            {usages: []category{catActor}},
+	"Behavior":         {types: behaviorTypes},
+	"Activity":         withoutSubtypes(v2Types{types: []string{typeActionDef, typeCalcDef}}, typeStateDef),
+	"OpaqueBehavior":   withoutSubtypes(v2Types{types: []string{typeActionDef, typeCalcDef}}, typeStateDef),
+	"FunctionBehavior": {types: []string{typeCalcDef}},
+	"Interaction":      withoutSubtypes(v2Types{types: []string{typeActionDef}}, typeStateDef, typeCalcDef),
+	"StateMachine":     {types: []string{typeStateDef}},
+	"Operation": withoutSubtypes(v2Types{types: []string{typeActionDef}, operations: true,
+		note: "an operation is its block's action usage once migrated, listed by name, or the action def one a state runs keeps"},
+		typeStateDef, typeCalcDef),
 	"UseCase":            {usages: []category{catUseCase}},
 	"DataType":           {types: []string{typeAttributeDef, typeEnumDef}},
 	"PrimitiveType":      {types: []string{typeAttributeDef}},
@@ -197,7 +211,7 @@ var metaclassTypes = map[string]v2Types{
 	"Usage":       {types: []string{typeDependency}, note: "every dependency is listed, not only usages"},
 	"Diagram":     {types: []string{typeViewUsage}, note: "views a «View» class became are listed with the diagrams' views"},
 	"State":       {types: []string{typeStateUsage}},
-	"Action":      {types: []string{typeActionUsage}},
+	"Action":      {types: []string{typeActionUsage}, note: "the action usages operations became are listed too"},
 	"Region":      {types: []string{typeStateUsage}, note: "a region is written into its state, so states are listed for regions"},
 }
 
@@ -362,26 +376,33 @@ func isCustomizationHref(href string) bool {
 func metaclassFilter(name string) typeFilter {
 	t, ok := metaclassTypes[name]
 	if actionMetaclasses[name] {
-		t, ok = v2Types{types: []string{typeActionUsage}, note: "every action usage is listed, whatever kind of activity node it was"}, true
+		t, ok = v2Types{types: []string{typeActionUsage}, note: "every action usage is listed, whatever kind of activity node it was, the operations that became one too"}, true
 	}
 	if !ok {
 		return typeFilter{label: name, refused: "no v2 metaclass stands for the elements of a UML " + name}
 	}
-	if t.types == nil && t.usages == nil && !t.instances {
+	if t.types == nil && t.usages == nil && !t.operations && !t.instances {
 		return typeFilter{label: name, all: true, note: t.note}
 	}
 	return fromTypes(name, t)
 }
 
-// nameUsages fills in the written classifiers of the filter's usage kinds,
-// which the query lists by name since their type is a property's too.
+// nameUsages fills in the written classifiers of the filter's usage kinds and
+// the operations written as usages, which the query lists by name since their type is a property's too.
 func (m *migration) nameUsages(f typeFilter) typeFilter {
-	if len(f.usageKinds) == 0 {
+	if len(f.usageKinds) == 0 && !f.operations {
 		return f
+	}
+	listed := func(e *sysmlv1.Element) bool {
+		if f.operations && e.Type == "Operation" {
+			return m.asUsage[e]
+		}
+		cat, _ := m.classify(e)
+		return slices.Contains(f.usageKinds, cat)
 	}
 	var walk func(e *sysmlv1.Element)
 	walk = func(e *sysmlv1.Element) {
-		if cat, _ := m.classify(e); slices.Contains(f.usageKinds, cat) && m.written(e) {
+		if listed(e) && m.written(e) {
 			f.usages = append(f.usages, m.plainName(e))
 		}
 		for _, c := range e.Children {
@@ -397,7 +418,7 @@ func (m *migration) nameUsages(f typeFilter) typeFilter {
 }
 
 func fromTypes(label string, t v2Types) typeFilter {
-	return typeFilter{label: label, types: t.types, excluding: t.excluding, usageKinds: t.usages, instances: t.instances, note: t.note}
+	return typeFilter{label: label, types: t.types, excluding: t.excluding, usageKinds: t.usages, operations: t.operations, instances: t.instances, note: t.note}
 }
 
 // query selects from src the rows of the filter's types, less the excluded
@@ -408,9 +429,10 @@ func (f typeFilter) query(src qx) qx {
 	if typed {
 		rows = whereType(src, f.types...)
 		if f.excluding != nil {
-			outside := qcall("Except",
-				qarg1("source", whereType(src, f.excluding.source...)),
-				qarg1("exclude", whereType(src, f.excluding.keep...)))
+			outside := whereType(src, f.excluding.source...)
+			if len(f.excluding.keep) > 0 {
+				outside = qcall("Except", qarg1("source", outside), qarg1("exclude", whereType(src, f.excluding.keep...)))
+			}
 			rows = qcall("Except", qarg1("source", rows), qarg1("exclude", outside))
 		}
 	}
