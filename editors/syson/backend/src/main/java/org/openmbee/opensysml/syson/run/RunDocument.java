@@ -55,8 +55,8 @@ public record RunDocument(RunDocumentForm form, String content, String fileName)
         return stem + extension;
     }
 
-    // Segments of the raw qualified name the service splits, as a rendered set does: quotes removed,
-    // `\'` and `\\` unescaped, and then every `::`, a quoted one included, a separator.
+    // Segments of the raw qualified name the service splits, as a rendered set does: delimiting quotes
+    // removed, escapes kept as the parser keeps them, and every `::`, a quoted one included, a separator.
     static List<String> splitQualifiedName(String qualifiedName) {
         StringBuilder raw = new StringBuilder();
         boolean quoted = false;
@@ -65,7 +65,7 @@ public record RunDocument(RunDocumentForm form, String content, String fileName)
             if (ch == '\'') {
                 quoted = !quoted;
             } else if (quoted && ch == '\\' && i + 1 < qualifiedName.length()) {
-                raw.append(qualifiedName.charAt(++i));
+                raw.append(ch).append(qualifiedName.charAt(++i));
             } else {
                 raw.append(ch);
             }
