@@ -94,14 +94,27 @@ func (a *activity) callOnTargetLine(n, t, op *sysmlv1.Element, name string, note
 // callOnUsageTarget writes a call of an operation written as its block's usage on
 // the object its target pin holds, as the mapping's action usage: the pin is its
 // parameter, from which a nested perform chains to the operation, and its other
-// pins are bound to the operation's parameters by position. It records the call,
-// returning the note on any pin left unbound.
+// pins are bound to the operation's parameters by position. A pin past the
+// parameters of its direction is not declared, as in a typed call, and is recorded
+// unmapped. It records the call, returning the note on any such pin.
 func (a *activity) callOnUsageTarget(n, t, op *sysmlv1.Element, name string, ins, outs []*sysmlv1.Element) string {
 	used := inheritedActionNamesSet()
 	pname, typ := a.targetPin(n, t, op, used)
 	usage := a.m.operationUsage(op)
 	inParams, outParams := a.m.directedParameters(op)
 	var notes []string
+	paired := func(pins, params []*sysmlv1.Element, dir string) []*sysmlv1.Element {
+		if len(pins) <= len(params) {
+			return pins
+		}
+		for _, pin := range pins[len(params):] {
+			why := a.unparametered(pin, dir, op, params)
+			a.m.add(pin, Unmapped, "", why)
+			notes = append(notes, why)
+		}
+		return pins[:len(params)]
+	}
+	ins, outs = paired(ins, inParams, "in"), paired(outs, outParams, "out")
 	a.m.w.block(actionKw+name, func() {
 		a.m.w.line("in " + writeName(pname) + " : " + typ + "[1];")
 		a.declarePinsReserving(n, ins, outs, nil, nil, used)
@@ -112,18 +125,10 @@ func (a *activity) callOnUsageTarget(n, t, op *sysmlv1.Element, name string, ins
 		step := writeName(freshIn(used, base))
 		a.m.w.line("perform action " + step + " ::> " + writeName(pname) + "." + writeName(usage) + ";")
 		for i, pin := range ins {
-			if i < len(inParams) {
-				a.m.w.line("bind " + step + "." + writeName(a.m.nameFor(inParams[i])) + " = " + writeName(a.names[pin]) + ";")
-			} else {
-				notes = append(notes, a.unparametered(pin, "in", op, inParams))
-			}
+			a.m.w.line("bind " + step + "." + writeName(a.m.nameFor(inParams[i])) + " = " + writeName(a.names[pin]) + ";")
 		}
 		for i, pin := range outs {
-			if i < len(outParams) {
-				a.m.w.line("bind " + writeName(a.names[pin]) + " = " + step + "." + writeName(a.m.nameFor(outParams[i])) + ";")
-			} else {
-				notes = append(notes, a.unparametered(pin, "out", op, outParams))
-			}
+			a.m.w.line("bind " + writeName(a.names[pin]) + " = " + step + "." + writeName(a.m.nameFor(outParams[i])) + ";")
 		}
 		a.m.w.line("first start then " + step + ";")
 		a.m.w.line("first " + step + " then done;")
