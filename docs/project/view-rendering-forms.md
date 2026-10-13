@@ -499,7 +499,9 @@ digraph "VehicleViews::vehicleView" {
   notice; it states a value, not a wire. A boxed node's pins are nodes of their own,
   `"n5.0" [shape=box, label="", xlabel="mask", fontsize=8, width=0.1667, height=0.1667,
   fixedsize=true, pos="…!"]`, 12 px squares set on the node's border with the name in small type
-  beside them (`writePins` in `dot_ports.go`): a pin a route meets sits where the route's end
+  beside them (`writePins` in `dot_ports.go`): a pin a `Layout` places (`Port.Geometry`) sits
+  outside the side of the border nearest the Layout, level with the Layout's centre; a pin a
+  route meets sits where the route's end
   waypoint leaves or reaches the box, outside the border and touching it — a pin several routes
   meet, at the mean of their ends, and each route's end waypoint is brought onto that pin's
   border, facing its next waypoint, so every spline touches the one square (`pinnedRoute`); the
@@ -555,6 +557,20 @@ digraph "VehicleViews::vehicleView" {
   `minimal`, `n1.0["durationIn"]`) with the connector between the pins
   (`n2.0 ---|"durationInterface"| n1.0`), so no edge ends on a subgraph — which ELK, the layout
   the pinned `mermaid-cli` applies, refuses.
+- **Constraint parameters.** A constraint usage or def is a node of an interconnection rendering
+  as a part is (`featureLike`), nested under its owner, and carries as its `Ports` its parameters:
+  the directed (`in`/`out`/`inout`) attribute and reference usages its constraint def declares
+  and what that specializes (`featureWalk.pinParameters`, `Renderer.typedParameters`), and any
+  the usage declares itself (`constraintParameter`), each with its direction and labelled by
+  name. A binding end that names a parameter — `amplify.input`, a chain over the usage — ends at
+  the pin. A view that exposes the def's parameters beside the usage, as a migrated parametric
+  diagram does, draws them as the pins alone, not as nodes of their own (`nestedFeatures`), and
+  a `DiagramLayout::Layout` about a parameter is the pin's `Port.Geometry`, resolved per usage as
+  an inherited member's is (`memberGeometryOf`: `about first::input` places first's square,
+  `about Law::input` every usage's); a pin's Layout places it only on a node a Layout places
+  too. The parameters are shown and hidden with the port symbols (`port-symbols`), not the
+  parameter symbols a case's actors are. A mixed rendering draws constraints the same way
+  (`mixedStructural`).
 - **Edges.** The `EdgeKind` styles parallel the Mermaid arrows so the two forms read alike:
 
   | `EdgeKind` | Mermaid | DOT |
@@ -1162,16 +1178,17 @@ a `distinguished-parameter-link` or the actor joined to the case node directly, 
 ports drawn or not, an edge's label, the `«keyword»` and the name's qualification, a
 multiplicity, a feature's `: Type`. A rendering draws the required notation and, of the
 optional, what it is told to show. `view.DefaultShown` is the default, one named constant:
-port symbols and compartments. Each element has a name every surface uses and a Boolean
+port symbols, compartments and keywords, the three the notation's own examples draw on every
+node. Each element has a name every surface uses and a Boolean
 attribute a rendering in the model chooses it by:
 
 | Element | Attribute | What it draws | Optional by |
 | --- | --- | --- | --- |
 | `parameter-symbols` | `showParameterSymbols` | A case's `actor`, `subject` and `stakeholder` parameters and an action's parameter pins as squares on the node's boundary. Without them a connection that ended at a parameter ends at the node that declares it: one line per connection, one node per actor. A tree lists a case's parameters as members, which stay. | §7.26.5; §8.2.3 `distinguished-parameter`, `distinguished-parameter-link` |
-| `port-symbols` | `showPortSymbols` | A part's ports as pins on its boundary. Without them a connection that ended at a port ends at the part; a port drawn as a nested member of a tree is model structure and stays. Default. | §7.26.5; §8.2.3 `port-node` |
+| `port-symbols` | `showPortSymbols` | A part's ports, and a constraint's parameters, as pins on its boundary. Without them a connection that ended at a port ends at the part, a binding that ended at a parameter at the constraint; a port drawn as a nested member of a tree is model structure and stays. Default. | §7.26.5; §8.2.3 `port-node` |
 | `compartments` | `showCompartments` | The lists of nested features inside a node. Default. | §7.26.5; §8.2.3 `compartment` |
 | `edge-labels` | `showEdgeLabels` | The names of connections, flows, bindings and allocations along their lines. Without them no label box is left. A sequence diagram's message lines keep their labels: the label is the message. | §8.2.3 `edge-label` |
-| `keywords` | `showKeywords` | The `«keyword»` over each name. | §8.2.3 `keyword-list` |
+| `keywords` | `showKeywords` | The `«keyword»` over each name (`«part def»`, `«part»`, `«enum def»`, …), as the notation's examples, the pilot and SysON draw every node. Default. | §8.2.3 `keyword-list` |
 | `multiplicities` | `showMultiplicities` | A feature's `[m..n]` after its name and at a composition's part end. | §8.2.3 `multiplicity` |
 | `typings` | `showTypings` | The `: Type` and `:> general` text after a name. | §8.2.3 `feature-typing-text` |
 | `qualifiers` | `showQualifiers` | The qualified-name prefix of each name, in the text form as in the diagram forms; without it a name is the shortest suffix of its qualified name that is its own in the rendering. | §8.2.3 `qualified-name` |
