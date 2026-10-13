@@ -22,7 +22,7 @@
       },
       {
         "name": "fixtures",
-        "files": 104
+        "files": 112
       }
     ],
     "counts": {
@@ -112,7 +112,7 @@
       },
       "uml:Association": {
         "pssm": 4,
-        "fixtures": 23
+        "fixtures": 34
       },
       "uml:BroadcastSignalAction": {
         "pssm": 0,
@@ -140,7 +140,7 @@
       },
       "uml:Class": {
         "pssm": 311,
-        "fixtures": 500
+        "fixtures": 530
       },
       "uml:ClearAssociationAction": {
         "pssm": 0,
@@ -156,7 +156,7 @@
       },
       "uml:Constraint": {
         "pssm": 59,
-        "fixtures": 25
+        "fixtures": 31
       },
       "uml:ControlFlow[weight]": {
         "pssm": 0,
@@ -208,7 +208,7 @@
       },
       "uml:InstanceSpecification": {
         "pssm": 0,
-        "fixtures": 55
+        "fixtures": 56
       },
       "uml:InterfaceRealization": {
         "pssm": 0,
@@ -248,7 +248,7 @@
       },
       "uml:Property": {
         "pssm": 25,
-        "fixtures": 493
+        "fixtures": 530
       },
       "uml:Property[qualifier]": {
         "pssm": 0,
@@ -336,7 +336,7 @@
       },
       "uml:Stereotype": {
         "pssm": 0,
-        "fixtures": 50
+        "fixtures": 60
       },
       "uml:TestIdentityAction": {
         "pssm": 14,
@@ -7367,7 +7367,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7377,7 +7378,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -7401,7 +7402,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7411,7 +7413,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -7435,7 +7437,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7445,7 +7448,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -7469,7 +7472,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7479,7 +7483,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -7503,7 +7507,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7513,7 +7518,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -7537,7 +7542,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7547,7 +7553,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -7608,7 +7614,8 @@
       "implementation": [
         "internal/translate/migrate/activity.go:callOperation",
         "internal/translate/migrate/activity.go:receiverOf",
-        "internal/translate/migrate/call_target.go:callOnTarget",
+        "internal/translate/migrate/context.go:performUsage",
+        "internal/translate/migrate/call_target.go:callOnUsageTarget",
         "internal/translate/migrate/call_target.go:targetPin",
         "internal/translate/migrate/call_target.go:targetNote"
       ],
@@ -7618,7 +7625,7 @@
         "tests/migrate/call_port_test.go:TestCallOperationOverPortsReachesTheConnectedPart",
         "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
       ],
-      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the class owning the operation and binds the operation's `context` to it, `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op` for an operation written as a def, which no feature chain reaches (an operation is written as a usage only where every call of it names its target as a feature of `this`, so every call on a handed-in object meets the def form); a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; the per-call residual stays in the ledger under its own reason: a call on `this` where v1 types `this` as an Alf body activity lacking the operation runs in the caller's context, which would need a context the v1 model does not give (PSSM: 873 mapped, 59 approximated of 932; of the approximated, 31 calls on such a `this`, 18 calls on a created object reached through a join, 3 with edge notes only, 7 renamed beside a sibling of the same name)",
+      "reason": "a call is written `perform action n ::> target.op;` when its target pin holds `this` or a feature of it whose type has the operation, or a port a connector of the caller's block joins to a part owning it; a call whose target pin a flow feeds with another object (an activity parameter, a fork, another action's output) declares the pin as a parameter typed by the block and chains through it, `action n { in target : Owner; perform action op ::> target.op; }`, the valid v2 form of OMG's `in target : Owner;` with `perform target.op`, the call's other pins bound to the operation's parameters by position; an operation kept as an `action def` (one a state runs, or whose method acts through ports) is called as `action n : Owner::Op { in ref :>> context = target; in target : Owner[1]; }`; a run performs the operation on the object the pin holds; calls whose target is an object a CreateObjectAction creates act on an empty pin, because CreateObjectAction is not migrated, and the ledger says so; when no object receives the call (no flow feeds the target pin, the target's type has no such operation, a port no connector resolves) an empty step declaring the call's pins stands for it, reported under its own reason, while a call of a def-kept operation stays `action n : Owner::Op;` in the caller's context; the per-call residual: a call on `this` where v1 types `this` as an Alf body activity lacking the operation, which would need a context the v1 model does not give (PSSM: 881 mapped, 51 approximated of 932; of the approximated, 23 calls on such a `this`, 21 with edge notes only, 6 renamed beside a sibling of the same name, 1 whose input pin never holds a value)",
       "scope": [
         "uml:CallOperationAction"
       ]
@@ -13640,14 +13647,20 @@
       "ocl": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "status": "deliberate",
       "implementation": [
+        "internal/translate/migrate/usage.go:operationUsageOwner",
+        "internal/translate/migrate/usage.go:usageHeader",
         "internal/translate/migrate/behavior.go:operationBody",
-        "internal/translate/migrate/behavior.go:operationConditions"
+        "internal/translate/migrate/behavior.go:operationConditions",
+        "internal/translate/migrate/behavior.go:operationDirection"
       ],
       "tests": [
         "tests/migrate/reception_test.go:TestReceptionsAcceptAndPerformTheirMethod",
-        "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
+        "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls",
+        "tests/migrate/stereotype_metadata_test.go:TestDirectedOperationKeepsItsDirection",
+        "tests/migrate/call_target_test.go:TestCallOperationRunsOnTheObjectItsTargetPinHolds",
+        "tests/migrate/operation_state_reference_test.go:TestOperationRunByAStateKeepsItsDef"
       ],
-      "reason": "an operation is written as an `action def <Op>` holding its parameters, pre/postconditions as `assert constraint` and its method as body, which a call performs; not as a perform action usage, which would leave no definition a call action could type",
+      "reason": "OMG's `perform action <op>` on the block is one performance the object itself enacts (`Parts::Part::performedActions`, multiplicity 1), which a caller's `perform ::> target.op` joins instead of invoking afresh with its own arguments; so the operation is written as the block's composite `action <op>` usage holding its parameters, pre/postconditions as `assert constraint` and its method as body, with no `perform` keyword and no synthesized `action def`, and every call chains to it; an operation a state runs, or whose method acts on another block through its ports, keeps an `action def` with a context parameter, as a state def's member reaches no usage of the block",
       "scope": []
     },
     {
@@ -13956,18 +13969,19 @@
         "type"
       ],
       "ocl": "sha256:1dccb46c9bc0a7890050c0106cef1e6cae9e56d81b39d16ac07c1a847e2516a1",
-      "status": "deliberate",
+      "status": "faithful",
       "implementation": [
         "internal/translate/migrate/classify.go:classifyInstance",
-        "internal/translate/migrate/migrate.go:individualBody",
-        "internal/translate/migrate/migrate.go:valueSlot"
+        "internal/translate/migrate/classify.go:instanceKind",
+        "internal/translate/migrate/migrate.go:instanceHeader"
       ],
       "tests": [
         "tests/migrate/classify_test.go:TestInstanceWithSeveralClassifiers",
         "tests/migrate/classify_test.go:TestInstanceOfUnwritableClassifierIsUnmapped",
-        "tests/migrate/migrate_test.go:TestGoldenNotation"
+        "tests/migrate/classify_test.go:TestRequirementsAreUsages",
+        "tests/migrate/values_test.go:TestInstanceTakesTheKindOfItsClassifier"
       ],
-      "reason": "an instance specification is written as an `individual part def` specializing its classifiers, its slots as redefining attributes, so its values are defaults a simulation reads; not as a part usage typed by them",
+      "reason": "the instance's usage is typed by every classifier that can type a usage of its kind; a classifier of another kind is noted, and a classifier written as a usage (an actor, a use case, a requirement) is subsetted, since a usage types nothing",
       "scope": []
     },
     {
@@ -13986,17 +14000,18 @@
         "ownedRelationship"
       ],
       "ocl": "sha256:fd10393457831dbb2a1a86a41ec95f8aa9f79922264c7f47491fbc38b86acecb",
-      "status": "deliberate",
+      "status": "faithful",
       "implementation": [
         "internal/translate/migrate/classify.go:classifyInstance",
-        "internal/translate/migrate/migrate.go:individualBody",
-        "internal/translate/migrate/migrate.go:instanceConnectionEnd"
+        "internal/translate/migrate/migrate.go:linkHeader",
+        "internal/translate/migrate/migrate.go:linkEnds",
+        "internal/translate/migrate/migrate.go:linkEnd"
       ],
       "tests": [
         "tests/migrate/instance_links_test.go:TestInstanceSpecificationLink",
         "tests/migrate/instance_links_test.go:TestInstanceSpecificationLinkOfAnonymousAssociationSpecializesItsConnectionDef"
       ],
-      "reason": "a link is written as an individual connection def specializing its association with its ends redefined by the linked instances' individual defs, matching how instances are written (see InstanceSpecification); the mapping's connection usage would connect part usages the migration does not write; neither the PSSM suite nor the TMT model has a link",
+      "reason": "a link is written as a `connection` usage joining the usages its two end slots name, typed by the `connection def` its association became; an association written only as its member-end properties leaves the connection untyped, which is noted; neither the PSSM suite nor the TMT model has a link",
       "scope": [
         "uml:InstanceSpecification"
       ]
@@ -14021,15 +14036,24 @@
       "status": "deliberate",
       "implementation": [
         "internal/translate/migrate/classify.go:classifyInstance",
-        "internal/translate/migrate/migrate.go:individualBody",
+        "internal/translate/migrate/classify.go:instanceKind",
+        "internal/translate/migrate/migrate.go:instanceHeader",
+        "internal/translate/migrate/migrate.go:instanceBody",
+        "internal/translate/migrate/migrate.go:slotForm",
+        "internal/translate/migrate/migrate.go:instanceSlot",
         "internal/translate/migrate/migrate.go:valueSlot"
       ],
       "tests": [
         "tests/migrate/classify_test.go:TestInstanceWithSeveralClassifiers",
         "tests/migrate/classify_test.go:TestInstanceOfUnwritableClassifierIsUnmapped",
+        "tests/migrate/classify_test.go:TestRequirementsAreUsages",
+        "tests/migrate/values_test.go:TestInstanceTakesTheKindOfItsClassifier",
+        "tests/migrate/values_test.go:TestPartSlotsRedefineThePartByItsInstance",
+        "tests/migrate/values_test.go:TestInstanceOfValueTypeIsAnAttributeUsage",
+        "tests/migrate/values_test.go:TestInstanceOfActorSubsetsTheUsage",
         "tests/migrate/migrate_test.go:TestGoldenNotation"
       ],
-      "reason": "an instance specification is written as an `individual part def` specializing its classifiers, its slots as redefining attributes, so its values are defaults a simulation reads; not as a part usage typed by them",
+      "reason": "an instance specification is written as one usage typed by its classifiers with its slots as nested features bound to their values — a `part` usage for a block, as the mapping writes; the usage kind follows the classifier where a part usage would not validate (a `constraint`, `item`, `occurrence`, `port` or `attribute` usage for a constraint block, an item, a plain class, an interface block or a value type), and an instance of an actor, use case or requirement, which are usages once migrated, subsets the classifier's usage instead of being typed by it",
       "scope": []
     },
     {
@@ -14231,14 +14255,20 @@
       "ocl": "sha256:e45096d73b0ad7969fe570662881a6056191bd0320a9553e744706ca9b2f530f",
       "status": "deliberate",
       "implementation": [
+        "internal/translate/migrate/usage.go:operationUsageOwner",
+        "internal/translate/migrate/usage.go:usageHeader",
         "internal/translate/migrate/behavior.go:operationBody",
-        "internal/translate/migrate/behavior.go:operationConditions"
+        "internal/translate/migrate/behavior.go:operationConditions",
+        "internal/translate/migrate/behavior.go:operationDirection"
       ],
       "tests": [
         "tests/migrate/reception_test.go:TestReceptionsAcceptAndPerformTheirMethod",
-        "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls"
+        "tests/migrate/behavior_test.go:TestActivityWithSendAcceptAndOperationCalls",
+        "tests/migrate/stereotype_metadata_test.go:TestDirectedOperationKeepsItsDirection",
+        "tests/migrate/call_target_test.go:TestCallOperationRunsOnTheObjectItsTargetPinHolds",
+        "tests/migrate/operation_state_reference_test.go:TestOperationRunByAStateKeepsItsDef"
       ],
-      "reason": "an operation is written as an `action def <Op>` holding its parameters, pre/postconditions as `assert constraint` and its method as body, which a call performs; not as a perform action usage, which would leave no definition a call action could type",
+      "reason": "OMG's `perform action <op>` on the block is one performance the object itself enacts (`Parts::Part::performedActions`, multiplicity 1), which a caller's `perform ::> target.op` joins instead of invoking afresh with its own arguments; so the operation is written as the block's composite `action <op>` usage holding its parameters, pre/postconditions as `assert constraint` and its method as body, with no `perform` keyword and no synthesized `action def`, and every call chains to it; an operation a state runs, or whose method acts on another block through its ports, keeps an `action def` with a context parameter, as a state def's member reaches no usage of the block",
       "scope": []
     },
     {
@@ -16662,14 +16692,16 @@
       "ocl": "sha256:7726b130b0be57088502bd3fe54e900ca36fe5ccb74c2ed4c9f7a80e3720ede0",
       "status": "faithful",
       "implementation": [
-        "internal/translate/migrate/migrate.go:rule"
+        "internal/translate/migrate/migrate.go:rule",
+        "internal/translate/migrate/migrate.go:ruleAsDef"
       ],
       "tests": [
         "tests/migrate/constraint_rule_test.go:TestOwnedRuleIsAsserted",
+        "tests/migrate/constraint_rule_test.go:TestOwnedRuleDefNameAvoidsItsSiblings",
         "tests/migrate/migrate_test.go:TestGoldenNotation",
         "tests/migrate/values_test.go:TestNonBooleanConstraintSpecificationIsNotWritten"
       ],
-      "reason": "the owned rule is written `assert constraint N { expr }` in its context, keeping the rule's name rather than OMG's `assert_N`, since no def is written for it to be distinguished from; a non-Boolean spec stays unmapped",
+      "reason": "the owned rule is written as a constraint def and an asserted usage typed by it, both members of the constrained block; the usage keeps the rule's name rather than OMG's `assert_N` and the def takes the name capitalized (or a fresh one when a member already bears it); a non-Boolean spec stays unmapped",
       "scope": [
         "uml:Constraint"
       ]
@@ -16689,16 +16721,18 @@
         "type"
       ],
       "ocl": "sha256:fd4db7dfc78dee71d4bc4970759862d56ea79c07c151e06000220b4d06f1da98",
-      "status": "deliberate",
+      "status": "faithful",
       "implementation": [
-        "internal/translate/migrate/migrate.go:rule"
+        "internal/translate/migrate/migrate.go:rule",
+        "internal/translate/migrate/migrate.go:ruleAsDef"
       ],
       "tests": [
         "tests/migrate/constraint_rule_test.go:TestOwnedRuleIsAsserted",
+        "tests/migrate/constraint_rule_test.go:TestOwnedRuleDefNameAvoidsItsSiblings",
         "tests/migrate/migrate_test.go:TestGoldenNotation",
         "tests/migrate/values_test.go:TestNonBooleanConstraintSpecificationIsNotWritten"
       ],
-      "reason": "no constraint def is written: a def used by exactly one asserted usage adds nothing, so the expression is written in the usage itself",
+      "reason": "the asserted usage is typed by the constraint def written for the rule, `assert constraint N : N';`, binding the def's context parameter to `this` when the specification reads the block's features; a rule of a constraint def or of a behavior, whose parameters no context parameter reaches, stays `assert constraint N { expr }`",
       "scope": [
         "uml:Constraint"
       ]
@@ -16721,14 +16755,16 @@
       "ocl": "sha256:ffb52e84aa7547cd83b8e7ecbc25891bea6462826baffc697e1fff4cce00a888",
       "status": "faithful",
       "implementation": [
-        "internal/translate/migrate/migrate.go:rule"
+        "internal/translate/migrate/migrate.go:rule",
+        "internal/translate/migrate/migrate.go:ruleAsDef"
       ],
       "tests": [
         "tests/migrate/constraint_rule_test.go:TestOwnedRuleIsAsserted",
+        "tests/migrate/constraint_rule_test.go:TestOwnedRuleDefNameAvoidsItsSiblings",
         "tests/migrate/migrate_test.go:TestGoldenNotation",
         "tests/migrate/values_test.go:TestNonBooleanConstraintSpecificationIsNotWritten"
       ],
-      "reason": "the owned rule is written `assert constraint N { expr }` in its context, keeping the rule's name rather than OMG's `assert_N`, since no def is written for it to be distinguished from; a non-Boolean spec stays unmapped",
+      "reason": "the owned rule is written `assert constraint N : N';` typed by its def, keeping the rule's name rather than OMG's `assert_N`; a non-Boolean spec stays unmapped",
       "scope": [
         "uml:Constraint"
       ]
@@ -16748,16 +16784,18 @@
         "ownedRelationship"
       ],
       "ocl": "sha256:9ccda0864213c15e8892700538b1eb3ac90b7e02a960e6340bb40b3923964e95",
-      "status": "deliberate",
+      "status": "faithful",
       "implementation": [
-        "internal/translate/migrate/migrate.go:rule"
+        "internal/translate/migrate/migrate.go:rule",
+        "internal/translate/migrate/migrate.go:ruleAsDef"
       ],
       "tests": [
         "tests/migrate/constraint_rule_test.go:TestOwnedRuleIsAsserted",
+        "tests/migrate/constraint_rule_test.go:TestOwnedRuleDefNameAvoidsItsSiblings",
         "tests/migrate/migrate_test.go:TestGoldenNotation",
         "tests/migrate/values_test.go:TestNonBooleanConstraintSpecificationIsNotWritten"
       ],
-      "reason": "no constraint def is written: a def used by exactly one asserted usage adds nothing, so the expression is written in the usage itself; candidate erratum: the mapping puts the specification in an owned calc feature with a return parameter (ElementFeatureMembership + CommonReturnParameterReferenceUsageMembership) rather than as the def's result expression, so a def written literally would not test the specification",
+      "reason": "the owned rule is written as `constraint def N' { expr }` whose result expression is the specification, the block's features read through an `in ref context` parameter the asserted usage binds to `this`; candidate erratum: the mapping puts the specification in an owned calc feature with a return parameter (ElementFeatureMembership + CommonReturnParameterReferenceUsageMembership) rather than as the def's result expression, so a def written literally would test nothing; the specification is written as the def's result, which the asserted usage typed by it evaluates",
       "scope": [
         "uml:Constraint"
       ]

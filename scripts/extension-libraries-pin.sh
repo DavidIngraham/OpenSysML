@@ -8,4 +8,4 @@
 # verifies, because a ref is mutable. Change them together.
 EXTENSIONS_REPO="${EXTENSIONS_REPO:-https://github.com/Open-MBEE/OpenSysML-Extensions-Library.git}"
 EXTENSIONS_REF="${EXTENSIONS_REF:-main}"
-EXTENSIONS_COMMIT="${EXTENSIONS_COMMIT:-c9257394b42d517056cb8b35c390629291007e40}"
+EXTENSIONS_COMMIT="${EXTENSIONS_COMMIT:-73bed354e7bed2829d3e4c779ab77dd1b3aa5aaf}"

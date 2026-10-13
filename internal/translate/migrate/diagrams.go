@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/mtip"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/xmi/sysmlv1"
 )
@@ -336,6 +337,8 @@ func (m *migration) shadows(scopes []*sysmlv1.Element, name string) bool {
 type exposures struct {
 	refs  []string
 	names map[string]bool
+	// by lists the refs importing each name, in shown order.
+	by map[string][]string
 	// drawn counts shown members of the form's subject, drawn by its graph.
 	drawn int
 	// unwritten counts shown elements nothing written stands for.
@@ -357,6 +360,20 @@ func (x exposures) exposed(ref string) bool {
 // shadows reports whether a view exposure uses name.
 func (x exposures) shadows(name string) bool {
 	return x.names[name]
+}
+
+// hides lists the exposed names a reference written in the view's body cannot
+// use as the host would: all but a name one expose imports by its simple
+// spelling, which denotes inside the view what it does outside it.
+func (x exposures) hides() columnNames {
+	hidden := columnNames{}
+	for name := range x.names {
+		if refs := x.by[name]; len(refs) == 1 && refs[0] == writeName(name) {
+			continue
+		}
+		hidden[name] = true
+	}
+	return hidden
 }
 
 // diagramLayoutAttribute qualifies an attribute when its name is shadowed in the view.
@@ -522,6 +539,22 @@ func (m *migration) writeView(v *view) {
 	d, host := v.d, v.host
 	form := m.formOf(d)
 	x := m.exposures(d, host, form)
+	// The exposes import their names into the view, where every reference in
+	// its body resolves first: the writer avoids those that hide what it means.
+	hidden := x.hides()
+	for _, scope := range scopeChain(host) {
+		for name := range m.viewNames[scope] {
+			hidden[name] = true
+		}
+	}
+	m.inside(hidden, func() { m.writeViewBody(v, form) })
+}
+
+// writeViewBody writes v's declaration and body, with references resolving
+// through the names its exposes import.
+func (m *migration) writeViewBody(v *view, form viewForm) {
+	d, host := v.d, v.host
+	x := m.exposures(d, host, form)
 	for _, scope := range scopeChain(host) {
 		for name := range m.viewNames[scope] {
 			x.names[name] = true
@@ -633,7 +666,7 @@ func (m *migration) viewShownNote(d *sysmlv1.Diagram, x exposures, geo viewGeome
 // scope of the view's host. A view of a form drawing a graph exposes the
 // behavior whose graph it is in place of the shown nodes and edges it draws.
 func (m *migration) exposures(d *sysmlv1.Diagram, host *sysmlv1.Element, form viewForm) exposures {
-	x := exposures{names: map[string]bool{}}
+	x := exposures{names: map[string]bool{}, by: map[string][]string{}}
 	seen := map[string]bool{}
 	add := func(ref string) {
 		if !seen[ref] {
@@ -641,6 +674,7 @@ func (m *migration) exposures(d *sysmlv1.Diagram, host *sysmlv1.Element, form vi
 			x.refs = append(x.refs, ref)
 			if name := exposureName(ref); name != "" {
 				x.names[name] = true
+				x.by[name] = append(x.by[name], ref)
 			}
 		}
 	}
@@ -683,11 +717,11 @@ func exposureName(ref string) string {
 	quoted := false
 	for i := 0; i < len(ref); i++ {
 		switch {
-		case ref[i] == '\'' && quoted && i+1 < len(ref) && ref[i+1] == '\'':
+		case quoted && ref[i] == '\\':
 			i++
 		case ref[i] == '\'':
 			quoted = !quoted
-		case !quoted && i+1 < len(ref) && ref[i:i+2] == "::":
+		case !quoted && strings.HasPrefix(ref[i:], "::"):
 			start = i + 2
 			i++
 		}
@@ -697,7 +731,7 @@ func exposureName(ref string) string {
 		return ""
 	}
 	if len(name) >= 2 && name[0] == '\'' && name[len(name)-1] == '\'' {
-		name = strings.ReplaceAll(name[1:len(name)-1], "''", "'")
+		name = source.Unescape(name[1 : len(name)-1])
 	}
 	return name
 }
@@ -788,7 +822,7 @@ func (m *migration) exposable(e *sysmlv1.Element) *sysmlv1.Element {
 // shadowsLibrary reports whether a member named like a standard library
 // package hides it from scope: one of a scope on the chain, or a top-level one.
 func (m *migration) shadowsLibrary(lib string, scope *sysmlv1.Element) bool {
-	return m.shadows(scopeChain(scope), lib) || m.nameTaken(nil, lib)
+	return m.hidden(lib) || m.shadows(scopeChain(scope), lib) || m.nameTaken(nil, lib)
 }
 
 // diagramEntry builds the report row of a diagram: named under its owner, as
@@ -975,8 +1009,9 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 			p.dangling++
 			continue
 		}
-		if c := m.connOf(el); p.form.useCases && c != nil && c.of != el {
-			// An association end's label lies on the connection's route.
+		if c := m.connOf(el); pl.OnPath || p.form.useCases && c != nil && c.of != el {
+			// An end's symbol lies on the connection's route, which carries the end.
+			s.PlacementsOnEdges++
 			p.onEdges++
 			continue
 		}
@@ -1026,13 +1061,18 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 			continue
 		}
 		kind := routeKindName(c.Type, el)
-		refs, why := m.routeTarget(el, v.host, p.form)
+		var refs []string
+		var points [][]float64
+		why := ""
+		if refs, why = m.routeTarget(el, v.host, p.form); why == "" {
+			if !m.draws(p.x, p.form, el, refs[0]) {
+				why = routeNotExposed
+			}
+			refs = []string{strings.Join(refs, ", ")}
+			points = [][]float64{m.linePoints(el, c)}
+		}
 		ref := strings.Join(refs, ", ")
-		switch {
-		case why != "":
-		case !m.draws(p.x, p.form, el, refs[0]):
-			why = routeNotExposed
-		case pinned[ref]:
+		if why == "" && pinned[ref] {
 			p.refOf[c.ID] = ref
 			why = routeDuplicate
 		}
@@ -1047,24 +1087,86 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 		s.RoutesWritten++
 		p.reasons[routeWritten]++
 		m.routeKinds.add(kind, routeWritten)
-		var b strings.Builder
-		b.WriteString("metadata " + p.prefix + "Route about " + ref + " { ")
-		b.WriteString(m.diagramLayoutAttributeForHost(p.prefix, "Route", "points", "(", v.host, p.x))
-		for i, n := range c.Points {
-			if i > 0 {
-				b.WriteString(", ")
-			}
-			b.WriteString(layoutNumber(n))
-			if i%2 == 0 {
-				p.grow(n, p.maxY)
-			} else {
-				p.grow(p.maxX, n)
-			}
+		for i, r := range refs {
+			routes = append(routes, p.route(r, points[i]))
 		}
-		b.WriteString("); }")
-		routes = append(routes, b.String())
 	}
 	return routes
+}
+
+// route writes a Route pinning points, x then y per point, to the member ref names.
+func (p *layoutPlan) route(ref string, points []float64) string {
+	var b strings.Builder
+	b.WriteString("metadata " + p.prefix + "Route about " + ref + " { ")
+	b.WriteString(p.m.diagramLayoutAttributeForHost(p.prefix, "Route", "points", "(", p.v.host, p.x))
+	for i, n := range points {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(layoutNumber(n))
+		if i%2 == 0 {
+			p.grow(n, p.maxY)
+		} else {
+			p.grow(p.maxX, n)
+		}
+	}
+	b.WriteString("); }")
+	return b.String()
+}
+
+// linePoints is the line's points as the Route of el lists them, run from the written
+// element's first end to its second as a rendering reads them.
+func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	if el.Type == "Connector" {
+		return m.connectorLinePoints(el, c)
+	}
+	if !m.associationDef(el) {
+		return c.Points
+	}
+	ends := m.model.Refs(el, "memberEnd")
+	if len(ends) != 2 {
+		return c.Points
+	}
+	first, second := m.model.Ref(ends[0], "type"), m.model.Ref(ends[1], "type")
+	if first == nil || second == nil || first == second {
+		return c.Points
+	}
+	if c.Ends[0] == second.ID || c.Ends[1] == first.ID {
+		return reversePoints(c.Points)
+	}
+	return c.Points
+}
+
+// connectorLinePoints is connector el's line run as `bind a = b` names its ends: reversed when
+// the stream drew it from the second end's feature; as drawn when it names no end or one feature.
+func (m *migration) connectorLinePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	segs, note := m.connectorEnds(el, el.Parent)
+	if note != "" || c.Ends[0] == "" && c.Ends[1] == "" {
+		return c.Points
+	}
+	first, second := endFeature(segs[0]), endFeature(segs[1])
+	if first == second {
+		return c.Points
+	}
+	if c.Ends[0] == second || c.Ends[1] == first {
+		return reversePoints(c.Points)
+	}
+	return c.Points
+}
+
+// endFeature is the id of the feature a connector end's path names last, the element
+// the symbol at that end of the line stands for.
+func endFeature(seg []*sysmlv1.Element) string {
+	return seg[len(seg)-1].ID
+}
+
+// reversePoints is the flattened point list read from its last point to its first.
+func reversePoints(points []float64) []float64 {
+	out := make([]float64, 0, len(points))
+	for i := len(points) - 2; i >= 0; i -= 2 {
+		out = append(out, points[i], points[i+1])
+	}
+	return out
 }
 
 // drawnRef names the element id as the view of form f exposing x draws it, as a

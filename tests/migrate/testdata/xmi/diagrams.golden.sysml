@@ -22,13 +22,13 @@ package Structure {
     part def Engine {
         attribute power : ScalarValues::Real;
         part wheel : Wheel;
-        action def Crank {
+        action crank {
             view Cranking : StandardViewDefinitions::ActionFlowView {
-                expose Crank;
+                expose crank;
                 render Views::asInterconnectionDiagram;
             }
             view Ignition : StandardViewDefinitions::ActionFlowView {
-                expose Crank;
+                expose crank;
                 render Views::asInterconnectionDiagram;
             }
             succession 'start to ignite' first start then ignite;
@@ -40,10 +40,9 @@ package Structure {
             action final terminate;
             metadata MigrationMetadata::SynthesizedName about 'start to ignite', 'ignite to final', final;
         }
-        action crank : Crank;
-        action def Halt {
+        action halt {
             view Halting {
-                expose Halt;
+                expose halt;
                 expose Engine;
                 render Views::asTextualNotation;
             }
@@ -54,7 +53,6 @@ package Structure {
             }
             first body then done;
         }
-        action halt : Halt;
         metadata MigrationMetadata::SynthesizedName about wheel;
     }
     part def Wheel;
@@ -88,7 +86,7 @@ package Structure {
         expose engine;
         render Views::asInterconnectionDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about EngineToVehicle;
+    metadata MigrationMetadata::SynthesizedName about EngineToVehicle, 'engine to vehicle';
 }
 package Behavior {
     action def Drive {
@@ -135,6 +133,7 @@ package Usage {
         expose 'Driver to Drive Vehicle';
         render Views::asInterconnectionDiagram;
     }
+    metadata MigrationMetadata::SynthesizedName about 'Driver to Drive Vehicle';
 }
 package Reports {
     view 'Vehicle Overview' {

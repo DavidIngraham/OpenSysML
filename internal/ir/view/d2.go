@@ -37,10 +37,10 @@ func (r *Rendering) D2With(options Options) (string, error) {
 	if err := options.Ports.check(); err != nil {
 		return "", err
 	}
-	r = r.settleUnplaced(options.Unplaced, FormD2)
+	r = r.showing(options.Show).settleUnplaced(options.Unplaced, FormD2)
 	w := &d2Writer{
 		fills:   familyFills{palette: options.Palette, tree: r.Kind == KindTree},
-		labels:  labelsOf(r.Roots, false, nil),
+		labels:  labelsOf(r.Roots, false, nil, r.Shown),
 		ports:   r.portView(options.Ports),
 		nested:  r.Kind != KindTree,
 		glyphs:  r.Kind == KindState || r.Kind == KindAction,
@@ -512,18 +512,33 @@ func (w *d2Writer) writeEdge(indent string, edge Edge) {
 	case EdgeImport, EdgeSatisfy, EdgeVerify, EdgeDerive, EdgeRefine, EdgeAllocate:
 		class = "dependency"
 	}
-	w.writeArrow(indent, w.end(edge.From, edge.FromPort), w.end(edge.To, edge.ToPort), arrow, edge.Label, class, edge.Style, edge.Origin)
+	w.writeArrow(indent, w.end(edge.From, edge.FromPort), w.end(edge.To, edge.ToPort), arrow, edge.Label, class, edge.Style, edge.Origin, d2EndLabels(edge)...)
+}
+
+// d2EndLabels are the labels D2 sets at a connection's ends for the edge's end
+// names: the source arrowhead's for the end at From, the target's for the end
+// at To.
+func d2EndLabels(edge Edge) []string {
+	var attrs []string
+	if edge.FromLabel != "" {
+		attrs = append(attrs, "source-arrowhead: { label: "+d2Quote(edge.FromLabel)+" }")
+	}
+	if edge.ToLabel != "" {
+		attrs = append(attrs, "target-arrowhead: { label: "+d2Quote(edge.ToLabel)+" }")
+	}
+	return attrs
 }
 
 // writeArrow writes one connection statement between two paths, with its
-// label when it carries one, its source link and the colours and font of its
-// Style.
-func (w *d2Writer) writeArrow(indent, from, to, arrow, label, class string, style *Style, origin Origin) {
+// label when it carries one, its source link, the colours and font of its
+// Style and any further attributes, as the labels at its ends.
+func (w *d2Writer) writeArrow(indent, from, to, arrow, label, class string, style *Style, origin Origin, further ...string) {
 	w.classes[class] = true
 	attrs := []string{"class: " + class}
 	if link := w.link(origin); link != "" {
 		attrs = append(attrs, link)
 	}
+	attrs = append(attrs, further...)
 	if style != nil {
 		if own := slices.Concat(d2Colors(style, false), d2Font(style)); len(own) > 0 {
 			attrs = append(attrs, "style: { "+strings.Join(own, "; ")+" }")

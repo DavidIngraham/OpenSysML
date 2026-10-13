@@ -128,7 +128,7 @@ func TestSynthesizedNamesAreReadFromTheModel(t *testing.T) {
 	if !labels["drive"] || !labels["connection"] {
 		t.Errorf("connection labels = %v, want the authored name drive and the keyword for the synthesized one", slices.Sorted(maps.Keys(labels)))
 	}
-	dot, err := vehicle.DOT()
+	dot, err := vehicle.DOTWith(fullNotation)
 	if err != nil {
 		t.Fatal(err)
 	}

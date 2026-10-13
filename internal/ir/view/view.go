@@ -337,9 +337,15 @@ type Port struct {
 	// Direction is the pin's direction: `in`, `out` or `inout`; PortUndirected
 	// for a part's port, whose features carry the directions.
 	Direction PortDirection
+	// Parameter marks a pin standing for a parameter — a case's subject or
+	// attribute, an action's pin — rather than for a port the part declares.
+	Parameter bool
 	// Origin is where the pin was declared, the zero Origin for one with no
 	// locatable declaration.
 	Origin Origin
+	// Geometry is where the pin is drawn, from the Layout annotation that
+	// positions it in this view; nil leaves the placement to the writer.
+	Geometry *Geometry `json:",omitempty"`
 }
 
 // PortDirection is which way a port's values flow.
@@ -393,6 +399,12 @@ type Edge struct {
 	// Label is what the edge carries: a connector's name, a transition's
 	// trigger, guard and effect, a succession's guard, a flow's pins. It may be empty.
 	Label string
+	// FromLabel and ToLabel name the edge's ends — the association or
+	// connector end at From and the one at To, a composite part usage's name
+	// and multiplicity on the composition to its type — drawn beside that end,
+	// not along the edge; empty for an unnamed end.
+	FromLabel string
+	ToLabel   string
 	// Name is the edge's own name, for a writer whose drawing shows the rest
 	// of its Label another way; empty for one anonymous or named by a migration.
 	Name string
@@ -441,6 +453,9 @@ type Rendering struct {
 	Lanes []Lane
 	// RowOrigins is where each row's element was declared, one entry per row.
 	RowOrigins []Origin
+	// Shown is the optional notation elements the view's rendering shows, read
+	// from the rendering the view states; nil is DefaultShown.
+	Shown Shown
 	// Canvas is the drawing surface the view states, nil for a view stating
 	// none.
 	Canvas *Canvas
@@ -459,6 +474,8 @@ type Rendering struct {
 	emptyReason string
 	// drawn collects the elements drawn while rendering, nil when no one asked.
 	drawn *Drawn
+	// narrowed marks a rendering showing() already narrowed to its Shown.
+	narrowed bool
 	// sites records, while a tree renders, what each of its nodes draws; nil
 	// once its edges are drawn and for every other kind.
 	sites map[*Node]treeSite
@@ -535,7 +552,7 @@ func (r *Renderer) render(view *symbols.Symbol, drawn *Drawn) (*Rendering, error
 	if err != nil {
 		return nil, err
 	}
-	out := &Rendering{View: r.notationName(view), Kind: kind, Stated: stated, drawn: drawn}
+	out := &Rendering{View: r.notationName(view), Kind: kind, Stated: stated, Shown: r.shownOf(view), drawn: drawn}
 	switch kind {
 	case KindTree:
 		r.renderTree(view, exposed, out)
