@@ -27,5 +27,5 @@ package Blocks {
         metadata DiagramLayout::Route about EngineToVehicle { points = (100, 160, 100, 70); }
         render Views::asTreeDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about EngineToVehicle;
+    metadata MigrationMetadata::SynthesizedName about EngineToVehicle, 'engine to vehicle';
 }

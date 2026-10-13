@@ -70,9 +70,10 @@ package 'Use Cases' {
     connection 'Wait For Space extends Park Car' connect 'Wait For Space' to 'Park Car' {
         doc /* extends at extension point(s) 'garage full' when {English} no bay is free */
     }
-    metadata MigrationMetadata::SynthesizedName about ParkCarToWaitForSpace;
+    metadata MigrationMetadata::SynthesizedName about ParkCarToWaitForSpace, 'Park Car to Wait For Space';
 }
 attribute def Real;
 connection 'Driver to Park Car' connect Context::Driver to 'Use Cases'::'Park Car'.driver;
 connection 'Attendant to Park Car' connect Context::Attendant to 'Use Cases'::'Park Car'.attendant;
 connection settlement : 'Use Cases'::Settlement connect Context::Bank to 'Use Cases'::'Pay Fee';
+metadata MigrationMetadata::SynthesizedName about 'Driver to Park Car', 'Attendant to Park Car', settlement;

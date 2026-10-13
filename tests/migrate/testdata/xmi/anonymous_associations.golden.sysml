@@ -76,5 +76,5 @@ package Fleet {
         expose WheelToCar;
         render Views::asTreeDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about WheelToCar, CarToGarage, DriverToCar, ReadingToSource, SinkToLogger, PumpToTank;
+    metadata MigrationMetadata::SynthesizedName about WheelToCar, CarToGarage, DriverToCar, ReadingToSource, SinkToLogger, PumpToTank, operates, 'wheel to car', 'car to garage', 'driver to car', 'pump to tank';
 }

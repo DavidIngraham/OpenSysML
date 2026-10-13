@@ -35,5 +35,5 @@ package Blocks {
         metadata DiagramLayout::Route about SensorToController { points = (160, 225, 300, 225, 300, 70); }
         render Views::asTreeDiagram;
     }
-    metadata MigrationMetadata::SynthesizedName about SensorToController;
+    metadata MigrationMetadata::SynthesizedName about SensorToController, 'sensor to controller';
 }

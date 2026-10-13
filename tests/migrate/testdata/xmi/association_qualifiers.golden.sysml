@@ -14,3 +14,4 @@ connection def Link {
 occurrence a : A;
 occurrence b : B;
 connection link : Link connect a to b;
+metadata MigrationMetadata::SynthesizedName about link;

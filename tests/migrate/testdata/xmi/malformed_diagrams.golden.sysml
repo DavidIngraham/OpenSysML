@@ -52,7 +52,7 @@ package ViewsModel {
         expose Valve;
         render Views::asTextualNotation;
     }
-    metadata MigrationMetadata::SynthesizedName about ValveToPump;
+    metadata MigrationMetadata::SynthesizedName about ValveToPump, 'valve to pump', supplies;
 }
 package Spares {
     occurrence def Seal;
