@@ -80,6 +80,7 @@ const (
 )
 
 // fixtureModel is the tool block stereotypes fixture with its table's row type
+// pointing where rowType says (the OMG href it has when rowType is empty)
 // pointing at rowType, and each pair of replacements applied once.
 func fixtureModel(t *testing.T, rowType string, replacements ...string) string {
 	t.Helper()
@@ -87,11 +88,14 @@ func fixtureModel(t *testing.T, rowType string, replacements ...string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	model := strings.Replace(string(data),
-		`<rowElementType href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML.Subsystem"/>`,
-		`<rowElementType href="`+rowType+`"/>`, 1)
-	if model == string(data) {
-		t.Fatal("the fixture's table no longer names «Subsystem» by the OMG href")
+	model := string(data)
+	if rowType != "" {
+		model = strings.Replace(model,
+			`<rowElementType href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML.Subsystem"/>`,
+			`<rowElementType href="`+rowType+`"/>`, 1)
+		if model == string(data) {
+			t.Fatal("the fixture's table no longer names «Subsystem» by the OMG href")
+		}
 	}
 	for i := 0; i+1 < len(replacements); i += 2 {
 		if !strings.Contains(model, replacements[i]) {
@@ -340,6 +344,78 @@ func TestUserModuleStereotypeFiltersTableRows(t *testing.T) {
 		t.Fatal(err)
 	}
 	if text := report.String(); strings.Contains(text, "outside the document") || !strings.Contains(text, "«Structural» specializes «Block» as the archive's module snapshot declares") {
+		t.Errorf("the table typed by the user module's «Structural» is not filtered as blocks:\n%s", text)
+	}
+}
+
+// A table naming «Subsystem» by the OMG href follows the archive's snapshot of
+// the SysML module, which says what the stereotype is; the tool table speaks
+// only when no snapshot declares it.
+func TestOMGHrefTableFollowsModuleSnapshot(t *testing.T) {
+	for _, tc := range []struct{ name, snapshot, class, filter, note, rejected string }{
+		{"specializing Block", moduleSnapshot, "part def 'Beam Column' {", `type = ("PartDefinition", "OccurrenceDefinition")`,
+			"«Subsystem» specializes «Block» as the archive's module snapshot declares", "modeling tool's specialization"},
+		{"without generals", plainSnapshot, "occurrence def 'Beam Column' {", "",
+			"no v2 metaclass stands for the elements of «Subsystem»", "rows are filtered as blocks"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r, err := migrate.Migrate("tool_block_stereotypes.mdzip", moduleArchive(t, fixtureModel(t, ""), [][2]string{{sysmlSnapshotEntry, tc.snapshot}}))
+			if err != nil {
+				t.Fatalf("Migrate(.mdzip): %v", err)
+			}
+			out := string(r.Notation)
+			if !strings.Contains(out, tc.class) {
+				t.Errorf("migration lacks %q:\n%s", tc.class, out)
+			}
+			if tc.filter != "" && !strings.Contains(out, tc.filter) {
+				t.Errorf("the table typed by the OMG href is not filtered as blocks:\n%s", out)
+			}
+			if tc.filter == "" && strings.Contains(out, `type = ("PartDefinition"`) {
+				t.Errorf("the table typed by the OMG href is filtered as blocks against the snapshot:\n%s", out)
+			}
+			var report bytes.Buffer
+			if err := r.Report.WriteText(&report); err != nil {
+				t.Fatal(err)
+			}
+			if text := report.String(); !strings.Contains(text, tc.note) || strings.Contains(text, tc.rejected) {
+				t.Errorf("the table typed by the OMG href is not read from the snapshot:\n%s", text)
+			}
+		})
+	}
+}
+
+// The user module's «Structural» :> «Block» filters rows as blocks when nothing
+// in the document applies the SysML module itself, so the snapshot's «Block»
+// is known only as a declaration of its profile.
+func TestUserModuleStereotypeFiltersTableRowsWithoutSysMLApplications(t *testing.T) {
+	model := fixtureModel(t, orgHref,
+		`xmlns:Tailoring="http://example.com/schemas/Tailoring.xmi"`,
+		`xmlns:Tailoring="http://example.com/schemas/Tailoring.xmi" xmlns:Org="http://example.com/schemas/Org.xmi"`,
+		`<sysml:Subsystem xmi:id="_app_sub_column" base_Class="_sub_column"/>`,
+		`<Org:Structural xmi:id="_app_sub_column" base_Class="_sub_column"/>`,
+		`<sysml:InterfaceBlock xmi:id="_app_ib_power" base_Class="_ib_power"/>`, "",
+		`<sysml:Block xmi:id="_app_blk_source" base_Class="_blk_source"/>`, "",
+		`<sysml:System xmi:id="_app_sys_microscope" base_Class="_sys_microscope"/>`, "",
+		`<sysml:External xmi:id="_app_ext_lab" base_Class="_ext_lab"/>`, "",
+		`<sysml:Domain xmi:id="_app_dom_imaging" base_Class="_dom_imaging"/>`, "")
+	if strings.Contains(model, "<sysml:") {
+		t.Fatalf("the model still applies the SysML profile:\n%s", model)
+	}
+	r, err := migrate.Migrate("tool_block_stereotypes.mdzip", moduleArchive(t, model, [][2]string{{sysmlSnapshotEntry, moduleSnapshot}, {orgSnapshotEntry, orgSnapshot}}))
+	if err != nil {
+		t.Fatalf("Migrate(.mdzip): %v", err)
+	}
+	out := string(r.Notation)
+	for _, want := range []string{"part def 'Beam Column' {", `stereotype = "Structural";`, "occurrence def Microscope {", `type = ("PartDefinition", "OccurrenceDefinition")`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("migration lacks %q:\n%s", want, out)
+		}
+	}
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	if text := report.String(); !strings.Contains(text, "«Structural» specializes «Block» as the archive's module snapshot declares") {
 		t.Errorf("the table typed by the user module's «Structural» is not filtered as blocks:\n%s", text)
 	}
 }
