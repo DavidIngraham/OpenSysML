@@ -122,10 +122,16 @@ func occurrenceAwareTypes(types []string, include, exclude, note string) v2Types
 	}
 }
 
-// withoutSubtypes leaves out of t the v2 definitions that conform to its types
-// but stand for other v1 behaviors: a state def or calc def is an action def too.
+// withoutSubtypes leaves out of t the state or calc defs, which conform to
+// ActionDefinition alone, that stand for other v1 behaviors; t's other types stay whole.
 func withoutSubtypes(t v2Types, subtypes ...string) v2Types {
-	t.excluding = &typeFilterExclusion{source: subtypes}
+	var keep []string
+	for _, ty := range t.types {
+		if ty != typeActionDef {
+			keep = append(keep, ty)
+		}
+	}
+	t.excluding = &typeFilterExclusion{source: subtypes, keep: keep}
 	return t
 }
 
