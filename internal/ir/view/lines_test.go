@@ -59,7 +59,7 @@ func TestDOTRoutesItsEdgesAsAsked(t *testing.T) {
 			}
 		}
 		for lines, want := range map[Lines]string{LinesOrtho: "splines=ortho", LinesPolyline: "splines=polyline"} {
-			got, err := rendering.DOTWith(Options{Lines: lines})
+			got, err := rendering.DOTWith(Options{Lines: lines, Show: Shown{ElementEdgeLabels: true}})
 			if err != nil {
 				t.Fatal(err)
 			}

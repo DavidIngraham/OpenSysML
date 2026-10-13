@@ -59,6 +59,20 @@ const RenderPortsCapability = "openSysmlRenderPorts"
 // the first the default; a server without it routes every edge as splines.
 const RenderLinesCapability = "openSysmlRenderLines"
 
+// RenderElementsCapability is the experimental capability whose value lists the
+// optional notation elements a render request's `show` names, in the order the
+// writer defines them, then "all", every one of them.
+const RenderElementsCapability = "openSysmlRenderElements"
+
+// renderElementNames lists the optional notation elements, then "all".
+func renderElementNames() []string {
+	names := make([]string, 0, len(view.Elements())+1)
+	for _, element := range view.Elements() {
+		names = append(names, string(element))
+	}
+	return append(names, view.ElementAll)
+}
+
 // RenderOverlaysCapability is the experimental capability whose value lists the
 // overlays a render request's `overlay` draws over a requirement rendering.
 const RenderOverlaysCapability = "openSysmlRenderOverlays"
@@ -116,7 +130,9 @@ func renderFormNames() []string {
 // Style names the drawing style the DOT and Mermaid forms draw in; empty is the default, pilot.
 // Ports names how much of a part's ports an interconnection or mixed rendering
 // draws; empty is the default, minimal. Lines names how the DOT and PlantUML
-// forms route their edges; empty is the default, splines.
+// forms route their edges; empty is the default, splines. Show names the
+// optional notation elements drawn besides the ones the view's rendering
+// shows, or "all".
 type renderParams struct {
 	TextDocument protocol.TextDocumentIdentifier `json:"textDocument"`
 	View         string                          `json:"view,omitempty"`
@@ -125,6 +141,7 @@ type renderParams struct {
 	Style        string                          `json:"style,omitempty"`
 	Ports        string                          `json:"ports,omitempty"`
 	Lines        string                          `json:"lines,omitempty"`
+	Show         []string                        `json:"show,omitempty"`
 	Overlay      string                          `json:"overlay,omitempty"`
 	LinkTemplate string                          `json:"linkTemplate,omitempty"`
 }
@@ -137,6 +154,7 @@ type renderResult struct {
 	Kind     string        `json:"kind"`
 	Style    string        `json:"style"`
 	Stated   string        `json:"stated"`
+	Shown    []string      `json:"shown"`
 	Form     string        `json:"form"`
 	Artifact string        `json:"artifact"`
 	Nodes    []renderNode  `json:"nodes"`
@@ -406,8 +424,12 @@ func (s *Server) Render(params *renderParams) (*renderResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	shown, err := renderShown(params.Show)
+	if err != nil {
+		return nil, err
+	}
 	artifact, err := rendering.WriteWith(form, view.Options{
-		Palette: colors, Style: style, Ports: ports, Lines: lines,
+		Palette: colors, Style: style, Ports: ports, Lines: lines, Show: shown,
 		Links: view.Links{Template: params.LinkTemplate, Sites: snapshot.Sites()},
 	})
 	if err != nil {
@@ -417,12 +439,13 @@ func (s *Server) Render(params *renderParams) (*renderResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := rendering.DataFor(ports)
+	data := rendering.DataWith(view.Options{Ports: ports, Show: shown})
 	out := &renderResult{
 		View:     data.View,
 		Kind:     string(data.Kind),
 		Style:    string(style),
 		Stated:   data.Stated,
+		Shown:    data.Shown,
 		Form:     string(form),
 		Artifact: artifact,
 		Nodes:    make([]renderNode, 0, len(data.Nodes)),
@@ -599,6 +622,12 @@ func renderLines(asked string) (view.Lines, error) {
 		return "", &view.UnknownLinesError{Name: asked}
 	}
 	return lines, nil
+}
+
+// renderShown is the optional notation elements a request's show names,
+// each of which must be one there is; nil when it names none.
+func renderShown(asked []string) (view.Shown, error) {
+	return view.ShownOf(asked)
 }
 
 // wireStyle is a node's or edge's Style as the wire carries it; nil for none.

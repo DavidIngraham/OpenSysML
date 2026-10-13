@@ -205,6 +205,9 @@ type Options struct {
 	// Lines is how the DOT and PlantUML forms route their edges; empty leaves
 	// each engine's curved default, as LinesSplines does.
 	Lines Lines
+	// Show is the optional notation elements drawn besides those the rendering
+	// shows of itself (its Shown, the model's choice or DefaultShown); nil adds none.
+	Show Shown
 }
 
 // Write is the rendering in form, with the default options: no particular
