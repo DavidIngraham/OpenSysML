@@ -550,9 +550,12 @@ digraph "VehicleViews::vehicleView" {
   name. A binding end that names a parameter — `amplify.input`, a chain over the usage — ends at
   the pin. A view that exposes the def's parameters beside the usage, as a migrated parametric
   diagram does, draws them as the pins alone, not as nodes of their own (`nestedFeatures`), and
-  a `DiagramLayout::Layout` about a parameter is the pin's `Port.Geometry`. The parameters are
-  shown and hidden with the port symbols (`port-symbols`), not the parameter symbols a case's
-  actors are.
+  a `DiagramLayout::Layout` about a parameter is the pin's `Port.Geometry`, resolved per usage as
+  an inherited member's is (`memberGeometryOf`: `about first::input` places first's square,
+  `about Law::input` every usage's); a pin's Layout places it only on a node a Layout places
+  too. The parameters are shown and hidden with the port symbols (`port-symbols`), not the
+  parameter symbols a case's actors are. A mixed rendering draws constraints the same way
+  (`mixedStructural`).
 - **Edges.** The `EdgeKind` styles parallel the Mermaid arrows so the two forms read alike:
 
   | `EdgeKind` | Mermaid | DOT |

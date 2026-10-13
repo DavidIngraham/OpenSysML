@@ -34,6 +34,16 @@ package Parametrics {
 		binding noiseIn bind noise = mix.b;
 		binding mixed bind mix.total = output;
 	}
+
+	// Two usages of one constraint def: each draws the def's parameters as its own.
+	part def Stereo {
+		attribute left : Real;
+		attribute right : Real;
+		constraint leftGain : Amplify;
+		constraint rightGain : Amplify;
+		binding leftIn bind left = leftGain.input;
+		binding rightIn bind right = rightGain.input;
+	}
 }
 
 package ParametricViews {
@@ -87,5 +97,24 @@ package ParametricViews {
 		metadata Route about Parametrics::Amplifier::amplified { points = (400, 67, 500, 52); }
 		metadata Route about Parametrics::Amplifier::noiseIn { points = (120, 175, 500, 92); }
 		metadata Route about Parametrics::Amplifier::mixed { points = (700, 67, 780, 55); }
+	}
+
+	// The def's parameter placed once per usage, as the usage's: each square
+	// sits where its own Layout says, not where the first usage's does.
+	view stereoView {
+		expose Parametrics::Stereo::**;
+		render asInterconnectionDiagram;
+		metadata Layout about Parametrics::Stereo::left { x = 20; y = 40; width = 100; height = 30; }
+		metadata Layout about Parametrics::Stereo::right { x = 20; y = 140; width = 100; height = 30; }
+		metadata Layout about Parametrics::Stereo::leftGain { x = 200; y = 20; width = 200; height = 60; }
+		metadata Layout about Parametrics::Stereo::rightGain { x = 200; y = 120; width = 200; height = 60; }
+		metadata Layout about Parametrics::Stereo::leftGain::input { x = 200; y = 30; width = 15; height = 15; }
+		metadata Layout about Parametrics::Stereo::rightGain::input { x = 200; y = 160; width = 15; height = 15; }
+	}
+
+	// Constraints in a mixed rendering draw as in an interconnection one.
+	view mixedView {
+		expose Parametrics::Amplifier;
+		render OpenSysMLRenderings::asMixedDiagram;
 	}
 }

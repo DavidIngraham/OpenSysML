@@ -153,3 +153,86 @@ func TestDOTPlacesConstraintParametersWhereTheirLayoutsSay(t *testing.T) {
 		}
 	}
 }
+
+// Two usages of one constraint def each draw the def's parameter as their own:
+// a Layout about `leftGain::input` places leftGain's square and one about
+// `rightGain::input` rightGain's, as a Layout about an inherited state is the
+// usage's; the DOT sets each square level with its own Layout.
+func TestConstraintParameterLayoutsResolvePerUsage(t *testing.T) {
+	rendering := render(t, "interconnection-constraints.sysml", "ParametricViews::stereoView")
+	byName := nodesByName(rendering)
+	wantY := map[string]float64{"leftGain": 30, "rightGain": 160}
+	for name, y := range wantY {
+		node := byName[name]
+		if node == nil {
+			t.Fatalf("%s is not drawn", name)
+		}
+		for _, port := range node.Ports {
+			if port.Name == "input" && (port.Geometry == nil || port.Geometry.Y != y) {
+				t.Errorf("%s.input geometry = %+v, want its own Layout at y=%v", name, port.Geometry, y)
+			}
+		}
+	}
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatalf("DOT: %v", err)
+	}
+	for _, want := range []string{`xlabel="input", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="194,`} {
+		if strings.Count(dot, want) != 2 {
+			t.Errorf("DOT does not place both input squares on the left border:\n%s", dot)
+		}
+	}
+	clone := rendering.Clone()
+	nodesByName(clone)["leftGain"].Ports[0].Geometry.Y = -1
+	if byName["leftGain"].Ports[0].Geometry.Y == -1 {
+		t.Errorf("the clone shares pin geometry with the original")
+	}
+}
+
+// A parameter's Layout places its square only on a node a Layout places too:
+// where the node has no place of its own, the square is placed as a routed or
+// free pin is, and the rendering is positioned by nothing but the pins.
+func TestPinLayoutAloneLeavesTheNodeUnplaced(t *testing.T) {
+	rendering := render(t, "interconnection-constraints.sysml", "ParametricViews::amplifierView")
+	byName := nodesByName(rendering)
+	byName["amplify"].Ports[0].Geometry = &Geometry{X: 200, Y: 45, Width: 15, Height: 15, HasSize: true}
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatalf("DOT: %v", err)
+	}
+	if !strings.Contains(dot, "// layout: dot\n") || strings.Contains(dot, "pin=true") {
+		t.Errorf("a pin's Layout alone positions the rendering:\n%s", dot)
+	}
+}
+
+// A mixed rendering draws a constraint usage as an interconnection one does,
+// with its parameters as pins and the bindings ending at them.
+func TestMixedDrawsConstraintUsagesWithTheirParameters(t *testing.T) {
+	rendering := render(t, "interconnection-constraints.sysml", "ParametricViews::mixedView")
+	if rendering.Kind != KindMixed {
+		t.Fatalf("kind = %q, want mixed", rendering.Kind)
+	}
+	byName := nodesByName(rendering)
+	amplify, mix := byName["amplify"], byName["mix"]
+	if amplify == nil || mix == nil || len(amplify.Ports) != 3 || len(mix.Ports) != 4 {
+		t.Fatalf("constraint nodes: amplify = %+v, mix = %+v, want their parameters as pins", amplify, mix)
+	}
+	bindings := 0
+	for _, edge := range rendering.Edges {
+		if edge.Kind != EdgeBinding {
+			continue
+		}
+		bindings++
+		if edge.FromPort == "" && edge.ToPort == "" {
+			t.Errorf("%s ends at no pin: %+v", edge.Label, edge)
+		}
+	}
+	if bindings != 5 {
+		t.Errorf("%d bindings drawn, want 5", bindings)
+	}
+	for _, notice := range rendering.Notices {
+		if strings.Contains(notice, "no place") {
+			t.Errorf("a constraint is reported as having no place: %s", notice)
+		}
+	}
+}

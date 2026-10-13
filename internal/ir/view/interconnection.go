@@ -87,13 +87,7 @@ func (w *featureWalk) drawsFeature(sym *symbols.Symbol) bool {
 	if !w.mixed {
 		return true
 	}
-	switch sym.Kind {
-	case symbols.SymbolPartDef, symbols.SymbolPartUsage, symbols.SymbolItemDef, symbols.SymbolItemUsage,
-		symbols.SymbolPortDef, symbols.SymbolPortUsage, symbols.SymbolConnectionDef, symbols.SymbolConnectionUsage,
-		symbols.SymbolInterfaceDef, symbols.SymbolInterfaceUsage, symbols.SymbolAllocationDef, symbols.SymbolAllocationUsage:
-		return true
-	}
-	return false
+	return mixedStructural(sym)
 }
 
 // featureNode renders one exposed feature and the features nested in it,
@@ -126,9 +120,9 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 		case r.drawsConnector(member):
 			w.connectors = append(w.connectors, member)
 		case casePin(sym, member):
-			w.pin(node, member, pinDirection(member), true)
+			w.pin(node, member, pinDirection(member), true, r.geometryOf(w.view, member, w.out))
 		case constraintParameter(sym, member):
-			w.pin(node, member, pinDirection(member), false)
+			w.pin(node, member, pinDirection(member), false, r.geometryOf(w.view, member, w.out))
 		case isReferencedIncludedCase(member):
 			// an `include u;` is drawn by the connection to the case it names
 		case w.drawsFeature(member):
@@ -146,7 +140,7 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 // at `heating.durationIn` ends at that pin.
 func (w *featureWalk) pinPorts(node *Node, sym *symbols.Symbol) {
 	for _, port := range w.r.typedPorts(sym) {
-		w.pin(node, port, PortUndirected, false)
+		w.pin(node, port, PortUndirected, false, w.r.memberGeometryOf(w.view, sym, localName(port), w.out))
 	}
 }
 
@@ -156,18 +150,17 @@ func (w *featureWalk) pinPorts(node *Node, sym *symbols.Symbol) {
 // declares, and a binding ending at `c.x` ends at that square.
 func (w *featureWalk) pinParameters(node *Node, sym *symbols.Symbol) {
 	for _, parameter := range w.r.typedParameters(sym) {
-		w.pin(node, parameter, pinDirection(parameter), false)
+		w.pin(node, parameter, pinDirection(parameter), false, w.r.memberGeometryOf(w.view, sym, localName(parameter), w.out))
 	}
 }
 
-// pin draws sym as a port on node's border, with the given direction, where a
-// Layout in the view places it; a parameter pin stands for a case's subject or
-// attribute, not a port.
-func (w *featureWalk) pin(node *Node, sym *symbols.Symbol, direction PortDirection, parameter bool) {
+// pin draws sym as a port on node's border, with the given direction, at the
+// geometry a Layout in the view gives it; a parameter pin stands for a case's
+// subject or attribute, not a port.
+func (w *featureWalk) pin(node *Node, sym *symbols.Symbol, direction PortDirection, parameter bool, geometry *Geometry) {
 	id := portID(node.ID, len(node.Ports))
 	node.Ports = append(node.Ports, Port{ID: id, Name: localName(sym), NameSynthesized: w.r.model.NameSynthesized(sym),
-		Type: declType(sym), Direction: direction, Parameter: parameter, Origin: symbolOrigin(sym),
-		Geometry: w.r.geometryOf(w.view, sym, w.out)})
+		Type: declType(sym), Direction: direction, Parameter: parameter, Origin: symbolOrigin(sym), Geometry: geometry})
 	if w.pins[node] == nil {
 		w.pins[node] = map[*symbols.Symbol]string{}
 	}
