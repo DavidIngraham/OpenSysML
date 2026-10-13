@@ -1,0 +1,1 @@
+- Generate standalone frozen Python dataclasses from resolved scalar SysML definitions, with explicit multiplicity checks, evaluated-instance snapshots and deterministic regeneration checks.
