@@ -1802,9 +1802,22 @@ Expression Language`, `ECMAScript for XML`, `JSON`:
 `TRUE` / `FALSE` / `true` / `false`; a property name, spaces and all; `not X`; `X and Y`;
 `X or Y`; comparisons written with `=` or `==`, `<`, `>`, `<=`, `>=`, `!=`; parentheses. A run
 of words between operators is one name (`not Guide Star Lost and i < Retries` reads the
-property `Guide Star Lost`), refused whole when nothing visible is called that. English has no
-calls: `Math.sqrt(t) > 3` or `name.equals(other)` in an English body is refused as a construct
-outside the subset, never run as the script functions of the same name.
+property `Guide Star Lost`), refused whole when nothing visible is called that. The one call
+English reads is of a mathematical function by its bare name, in any case, followed by `(`:
+`sin` `cos` `tan` `cot` `arcsin` `arccos` `arctan` (also spelled `asin` `acos` `atan`) are
+`TrigFunctions::sin` … `TrigFunctions::arctan`; `sqrt` `abs` `min` `max` `floor` `ceil` (or
+`ceiling`) `pow` are written as the script table's `Math.sqrt` … `Math.pow` above, `abs`, `min`
+and `max` through the library of the arguments' scalar (`IntegerFunctions::abs(i)`), `min` and
+`max` taking exactly two arguments as the library's do; `round` is `RealFunctions::round`;
+`exp` `ln` `log` `atan2` are the extension library's `OpenSysMLMathFunctions::exp(x)`, `ln(x)`,
+`log(x, base)` and `atan2(y, x)`, refused in a strict migration, which writes the standard
+library alone. Each takes the number of arguments the library function takes, all of them
+numbers, and answers the function's result type (`sine_wave = sin(t)` is
+`sine_wave == TrigFunctions::sin(t)`, a `Real`). Any other call — a name outside the table
+(`Ready(x)`), a dotted one (`Math.sqrt(t) > 3`, `name.equals(other)`), a run of several words
+before the `(` (`Guide Star sin(t)`) — is refused as a construct outside the subset, the reason
+listing the names the dialect does read, never run as the script functions of the same name; and
+`sin t`, with no parenthesis, is the two-word name `sin t`, refused when nothing is called that.
 
 **Refusals.** Anything else is refused, and the report line carries the reason with the token
 that caused it: a language not in the table (`the language "Groovy" is not translated`), text
