@@ -26,6 +26,7 @@ func TestGoldenDOT(t *testing.T) {
 		{"tree-trunk", "tree-trunk.sysml", "MicroscopeViews::structure", KindTree, true},
 		{"interconnection", "interconnection.sysml", "PlantViews::loopView", KindInterconnection, false},
 		{"interconnection-ports", "interconnection-ports.sysml", "ToasterViews::toasterView", KindInterconnection, false},
+		{"interconnection-constraints", "interconnection-constraints.sysml", "ParametricViews::amplifierView", KindInterconnection, false},
 		{"state", "state.sysml", "MachineViews::vehicleStates", KindState, false},
 		{"state-entry", "state-entry.sysml", "MachineViews::thermostat", KindState, false},
 		{"action", "action.sysml", "FlowViews::driveView", KindAction, false},
