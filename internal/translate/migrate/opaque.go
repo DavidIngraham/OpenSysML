@@ -1810,7 +1810,7 @@ func (p *opaqueParser) libraryCall(fn, written string, args []translated, arity 
 	if err := arity(lib.arity); err != nil {
 		return translated{}, err
 	}
-	if err := numbersAt(written, args...); err != nil {
+	if err := realsAt(written, args...); err != nil {
 		return translated{}, err
 	}
 	exprs := make([]string, len(args))
@@ -1833,6 +1833,11 @@ func mathScalarCall(fn, written string, args []translated, arity func(int) *refu
 	if err := numbersAt(written, args[0], args[n-1]); err != nil {
 		return translated{}, err
 	}
+	if fn == mathSqrtFn {
+		if err := realsAt(written, args[0]); err != nil {
+			return translated{}, err
+		}
+	}
 	switch fn {
 	case mathAbsFn:
 		return mathAbs(args[0]), nil
@@ -1849,7 +1854,7 @@ func mathAbs(arg translated) translated {
 	switch {
 	case wholeScalar(arg.scalar):
 		lib = "IntegerFunctions"
-	case arg.scalar != "":
+	case realConformant(arg.scalar):
 		lib = "RealFunctions"
 	}
 	return translated{expr: lib + "::abs(" + arg.expr + ")", scalar: arg.scalar, atomic: true}
@@ -1886,7 +1891,7 @@ func (p *opaqueParser) mathExtremum(fn, written string, args []translated, arity
 		if err := numbersAt(written, acc, arg); err != nil {
 			return translated{}, err
 		}
-		scalar := arithmeticScalar("+", acc.scalar, arg.scalar)
+		scalar := extremumScalar(acc.scalar, arg.scalar)
 		acc = translated{expr: extremum(fn[5:], scalar) + "(" + acc.expr + ", " + arg.expr + ")", scalar: scalar, atomic: true}
 	}
 	return acc, nil
@@ -1898,7 +1903,7 @@ func (p *opaqueParser) mathRoundish(fn, written string, args []translated, arity
 	if err := arity(1); err != nil {
 		return translated{}, err
 	}
-	if err := numbersAt(written, args[0], args[0]); err != nil {
+	if err := realsAt(written, args[0]); err != nil {
 		return translated{}, err
 	}
 	yields := "Integer"
@@ -1999,12 +2004,26 @@ func stringEquals(recv translated, fn string, arg translated) (translated, *refu
 	return binary(recv, "==", arg, looseEquality, "Boolean"), nil
 }
 
+// extremumScalar is the scalar a max or min of numbers of the two scalars yields:
+// the Number the NumericalFunctions return unless both are Integers or both Reals.
+func extremumScalar(a, b string) string {
+	switch {
+	case a == "" || b == "":
+		return ""
+	case wholeScalar(a) && wholeScalar(b):
+		return "Integer"
+	case realConformant(a) && realConformant(b):
+		return "Real"
+	}
+	return "Number"
+}
+
 // extremum names the library max or min function for numbers of the given scalar.
 func extremum(which, scalar string) string {
 	switch {
 	case wholeScalar(scalar):
 		return "IntegerFunctions::" + which
-	case scalar != "":
+	case realConformant(scalar):
 		return "RealFunctions::" + which
 	}
 	return "NumericalFunctions::" + which
@@ -2061,6 +2080,25 @@ func numbersAt(op string, sides ...translated) *refusal {
 
 // isNumeric reports whether the scalar is a kind of number.
 func isNumeric(s string) bool { return numericScalar[s] }
+
+// realsAt refuses operands of op that are known not to be Reals, which the
+// function's Real parameter cannot hold; a Number may be one, so it passes.
+func realsAt(op string, sides ...translated) *refusal {
+	if err := numbersAt(op, sides...); err != nil {
+		return err
+	}
+	for _, s := range sides {
+		if s.scalar == "Complex" {
+			return &refusal{kind: refusedType, token: op, why: "an operand is a Complex, not a Real"}
+		}
+	}
+	return nil
+}
+
+// realConformant reports whether the scalar's values are Reals.
+func realConformant(s string) bool {
+	return wholeScalar(s) || s == "Real" || s == "Rational"
+}
 
 // wholeScalar reports whether the scalar holds integers.
 func wholeScalar(s string) bool {
