@@ -164,7 +164,7 @@ func TestTreeEdgesReachNestedViews(t *testing.T) {
 // The text form lists a tree's edges as the relationships they are, in the
 // class-diagram arrows the general graphs use.
 func TestTreeTextListsRelationships(t *testing.T) {
-	text := render(t, "tree-edges.sysml", "FleetViews::structure").Text()
+	text := render(t, "tree-edges.sysml", "FleetViews::structure").textWith(fullNotation)
 	for _, want := range []string{
 		"\nrelationships:\n",
 		"  Fleet::Vehicle *-- Fleet::Wheel: wheels[4]\n",
