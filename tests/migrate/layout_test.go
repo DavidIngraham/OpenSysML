@@ -1005,3 +1005,16 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 		t.Errorf("edges = %q, want %q", edges, want)
 	}
 }
+
+// A connector's line is pinned with its points run from the feature its first
+// written end names to its second's however the stream drew it: a binding
+// Cameo drew from the second end's property is written reversed, so a rendering
+// that reads the Route from `bind mass = limit`'s first end follows the line.
+func TestGoldenBindingRouteRunsFromItsFirstEnd(t *testing.T) {
+	r := migrateStream(t, "binding_route")
+	checkGolden(t, "testdata/xmi/binding_route.golden.sysml", r.Notation)
+	for _, d := range errors(t, "binding_route.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	wantLine(t, r.Notation, "metadata DiagramLayout::Route about 'mass = limit' { points = (120, 110, 200, 110); }")
+}
