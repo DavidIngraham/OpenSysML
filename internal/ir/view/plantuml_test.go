@@ -23,6 +23,8 @@ var plantumlGoldenCases = []struct {
 	{"tree-edges", "tree-edges.sysml", "FleetViews::structure", KindTree},
 	{"interconnection", "interconnection.sysml", "PlantViews::loopView", KindInterconnection},
 	{"interconnection-ports", "interconnection-ports.sysml", "ToasterViews::toasterView", KindInterconnection},
+	{"interconnection-constraints", "interconnection-constraints.sysml", "ParametricViews::amplifierView", KindInterconnection},
+	{"interconnection-constraints-placed", "interconnection-constraints.sysml", "ParametricViews::placedView", KindInterconnection},
 	{"layout", "layout.sysml", "PlantViews::placedView", KindInterconnection},
 	{"state", "state.sysml", "MachineViews::vehicleStates", KindState},
 	{"state-entry", "state-entry.sysml", "MachineViews::thermostat", KindState},

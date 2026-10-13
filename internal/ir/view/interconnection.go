@@ -115,6 +115,7 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 	w.nodes[sym] = node
 	w.drawn = append(w.drawn, sym)
 	w.pinPorts(node, sym)
+	w.pinParameters(node, sym)
 	r.notesOf(w.view, sym, node.ID, w.out)
 	if seen[sym] || depth >= r.treeDepth() {
 		return node
@@ -126,6 +127,8 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 			w.connectors = append(w.connectors, member)
 		case casePin(sym, member):
 			w.pin(node, member, pinDirection(member), true)
+		case constraintParameter(sym, member):
+			w.pin(node, member, pinDirection(member), false)
 		case isReferencedIncludedCase(member):
 			// an `include u;` is drawn by the connection to the case it names
 		case w.drawsFeature(member):
@@ -147,12 +150,24 @@ func (w *featureWalk) pinPorts(node *Node, sym *symbols.Symbol) {
 	}
 }
 
-// pin draws sym as a port on node's border, with the given direction; a
-// parameter pin stands for a case's subject or attribute, not a port.
+// pinParameters draws on node's border the parameters sym has from its
+// constraint def without declaring them, as the parametric notation draws a
+// constraint usage's parameters: `constraint c : Law` shows the `in x` Law
+// declares, and a binding ending at `c.x` ends at that square.
+func (w *featureWalk) pinParameters(node *Node, sym *symbols.Symbol) {
+	for _, parameter := range w.r.typedParameters(sym) {
+		w.pin(node, parameter, pinDirection(parameter), false)
+	}
+}
+
+// pin draws sym as a port on node's border, with the given direction, where a
+// Layout in the view places it; a parameter pin stands for a case's subject or
+// attribute, not a port.
 func (w *featureWalk) pin(node *Node, sym *symbols.Symbol, direction PortDirection, parameter bool) {
 	id := portID(node.ID, len(node.Ports))
 	node.Ports = append(node.Ports, Port{ID: id, Name: localName(sym), NameSynthesized: w.r.model.NameSynthesized(sym),
-		Type: declType(sym), Direction: direction, Parameter: parameter, Origin: symbolOrigin(sym)})
+		Type: declType(sym), Direction: direction, Parameter: parameter, Origin: symbolOrigin(sym),
+		Geometry: w.r.geometryOf(w.view, sym, w.out)})
 	if w.pins[node] == nil {
 		w.pins[node] = map[*symbols.Symbol]string{}
 	}
@@ -195,6 +210,23 @@ func casePin(owner, member *symbols.Symbol) bool {
 	return ok && (usage.Kind == ast.UsageSubject || usage.Kind == ast.UsageActor || usage.Kind == ast.UsageStakeholder)
 }
 
+// constraintParameter reports whether member, a member of a constraint drawn as
+// a node, is one of its parameters, drawn as a square on its border the way the
+// parametric notation draws them: a directed attribute or reference usage.
+func constraintParameter(owner, member *symbols.Symbol) bool {
+	return isConstraintKind(owner) && isParameterKind(member) && pinDirection(member) != PortUndirected
+}
+
+// isConstraintKind reports whether sym is a constraint def or usage.
+func isConstraintKind(sym *symbols.Symbol) bool {
+	return sym.Kind == symbols.SymbolConstraintDef || sym.Kind == symbols.SymbolConstraintUsage
+}
+
+// isParameterKind reports whether sym is a usage a constraint's parameter is declared as.
+func isParameterKind(sym *symbols.Symbol) bool {
+	return sym.Kind == symbols.SymbolAttributeUsage || sym.Kind == symbols.SymbolReferenceUsage
+}
+
 // pinDirection is the direction a parameter is declared with: `return` and
 // `out` give values out, `in` takes them in; a subject or attribute has none.
 func pinDirection(sym *symbols.Symbol) PortDirection {
@@ -235,14 +267,39 @@ func (r *Renderer) typedPorts(sym *symbols.Symbol) []*symbols.Symbol {
 	return out
 }
 
+// typedParameters is the parameters a constraint usage has without declaring
+// them: those of the constraint def typing it and of what that specializes,
+// less any a parameter of its own redefines. The library's own features of
+// every constraint are not among them. Empty for anything but a constraint.
+func (r *Renderer) typedParameters(sym *symbols.Symbol) []*symbols.Symbol {
+	if !isConstraintKind(sym) {
+		return nil
+	}
+	owned := map[*symbols.Symbol]bool{}
+	for _, member := range r.containedMembers(sym) {
+		owned[member] = true
+	}
+	var out []*symbols.Symbol
+	for _, member := range r.model.MembersOf(sym) {
+		if !isParameterKind(member) || pinDirection(member) == PortUndirected || owned[member] || member.Owner() == sym ||
+			!r.contentKind(member) || r.libraryDeclared(member) {
+			continue
+		}
+		out = append(out, member)
+	}
+	return out
+}
+
 // libraryDeclared reports whether the bundled standard library declares sym.
 func (r *Renderer) libraryDeclared(sym *symbols.Symbol) bool {
 	idx := r.resolver.Index()
 	return idx != nil && idx.Library(sym)
 }
 
-// nestedFeatures is the members featureNode draws as nested nodes of sym:
-// the features this walk draws, connectors being edges.
+// nestedFeatures is the members featureNode draws under sym: the features this
+// walk draws as nested nodes, connectors being edges, and the parameters it
+// pins on a constraint's border from its def, which a view exposing them beside
+// the constraint does not draw a second time.
 func (w *featureWalk) nestedFeatures(sym *symbols.Symbol) []*symbols.Symbol {
 	var out []*symbols.Symbol
 	for _, member := range w.r.containedMembers(sym) {
@@ -250,7 +307,7 @@ func (w *featureWalk) nestedFeatures(sym *symbols.Symbol) []*symbols.Symbol {
 			out = append(out, member)
 		}
 	}
-	return out
+	return append(out, w.r.typedParameters(sym)...)
 }
 
 // connectionEdges adds the edges one connector or flow contributes. A binary
@@ -525,11 +582,13 @@ func isFlowUsage(sym *symbols.Symbol) bool {
 
 // featureLike reports whether an element is a feature an interconnection
 // rendering shows as a node: the structural elements a system is built from, and
-// the analysis cases bound to their values, which a parametric view draws beside
-// them. Behaviors, views and namespaces are not, and are reported rather than drawn.
+// the constraints and analysis cases bound to their values, which a parametric
+// view draws beside them. Behaviors, views and namespaces are not, and are
+// reported rather than drawn.
 func featureLike(sym *symbols.Symbol) bool {
 	switch sym.Kind {
 	case symbols.SymbolPartDef, symbols.SymbolPartUsage,
+		symbols.SymbolConstraintDef, symbols.SymbolConstraintUsage,
 		symbols.SymbolItemDef, symbols.SymbolItemUsage,
 		symbols.SymbolPortDef, symbols.SymbolPortUsage,
 		symbols.SymbolOccurrenceDef, symbols.SymbolOccurrenceUsage,

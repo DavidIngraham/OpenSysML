@@ -112,6 +112,8 @@ func TestGoldenRenderings(t *testing.T) {
 		{"tree-edges", "tree-edges.sysml", "FleetViews::structure", KindTree},
 		{"interconnection", "interconnection.sysml", "PlantViews::loopView", KindInterconnection},
 		{"interconnection-ports", "interconnection-ports.sysml", "ToasterViews::toasterView", KindInterconnection},
+		{"interconnection-constraints", "interconnection-constraints.sysml", "ParametricViews::amplifierView", KindInterconnection},
+		{"interconnection-constraints-placed", "interconnection-constraints.sysml", "ParametricViews::placedView", KindInterconnection},
 		{"state", "state.sysml", "MachineViews::vehicleStates", KindState},
 		{"state-entry", "state-entry.sysml", "MachineViews::thermostat", KindState},
 		{"state-pseudostates", "cameo-behavior.sysml", "NotationViews::alignmentView", KindState},

@@ -77,8 +77,9 @@ func (b nodeBox) holds(p Point) bool {
 }
 
 // placePorts finds the box of every port of a boxed node, under it: a port a
-// route meets sits outside the border where the route ends, touching it; the
-// rest are spread along the top edge and the bottom, by portSide; pins that
+// Layout places sits outside the nearest side of the border, level with the
+// Layout's centre; a port a route meets sits outside the border where the route
+// ends, touching it; the rest are spread along the top edge and the bottom, by portSide; pins that
 // would lie over one another are then moved apart along their side.
 func (w *dotWriter) placePorts(node *Node, ends map[string]routeEnd) {
 	for _, child := range node.Children {
@@ -93,13 +94,20 @@ func (w *dotWriter) placePorts(node *Node, ends map[string]routeEnd) {
 	var sides [4][]boundarySymbol
 	for _, port := range ports {
 		end, ok := ends[port.ID]
-		if !ok {
+		switch {
+		case port.Geometry != nil:
+			at := port.Geometry.centre()
+			centre := box.centre()
+			side := box.nearestSide(at, Point{X: at.X - centre.X, Y: at.Y - centre.Y})
+			w.pins[port.ID] = pinBox(box, side, at)
+			sides[side] = append(sides[side], boundarySymbol{id: port.ID, box: w.pins[port.ID], at: at, from: at})
+		case ok:
+			side := box.pinSide(end.at, end.next)
+			w.pins[port.ID] = pinBox(box, side, end.at)
+			sides[side] = append(sides[side], boundarySymbol{id: port.ID, box: w.pins[port.ID], at: end.at, from: end.next})
+		default:
 			free[w.portSide(port)] = append(free[w.portSide(port)], port)
-			continue
 		}
-		side := box.pinSide(end.at, end.next)
-		w.pins[port.ID] = pinBox(box, side, end.at)
-		sides[side] = append(sides[side], boundarySymbol{id: port.ID, box: w.pins[port.ID], at: end.at, from: end.next})
 	}
 	for i, ports := range free {
 		side, y := topSide, box.low.Y-dotPinSize/2
