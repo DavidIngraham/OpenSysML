@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 	"sort"
-	"strings"
 
 	"github.com/Open-MBEE/OpenSysML/internal/ir/lower"
 )
@@ -122,10 +121,12 @@ func (ctx *Context) futureFootprints() *futureFootprints {
 }
 
 // touchesFeature reports whether the choice may have left the feature's value
-// order-dependent: a touch naming it, alone or as the last segment of a path.
+// order-dependent: a touch naming it, alone or as the last segment of a path,
+// against the name's own last segment (`this.mark`, `machine.state.mark`).
 func (c ChoicePoint) touchesFeature(name string) bool {
+	leaf := lastSegment(name)
 	for _, t := range c.Touches {
-		if t == name || strings.HasSuffix(t, "."+name) {
+		if t == name || lastSegment(t) == leaf {
 			return true
 		}
 	}

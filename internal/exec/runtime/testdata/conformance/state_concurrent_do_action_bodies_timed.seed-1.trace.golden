@@ -1,4 +1,4 @@
-choice do round at t=0.0: states rwork, lwork react (unordered; took rwork first; independent)
+choice do round at t=0.0: states rwork, lwork react (unordered; took rwork first; order-dependent: seq)
 do: rwork
 stmt action body
 enter action node: state behavior rpoll

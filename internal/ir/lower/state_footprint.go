@@ -60,12 +60,15 @@ func (g *StateGraph) lowerFootprints() {
 			}
 		}
 		g.transitionFootprints = make(map[*Transition]Footprint)
+		g.branchFootprints = make(map[*Transition]Footprint)
 		for source, transitions := range g.Transitions {
-			if _, isState := source.(*ast.StateNode); !isState {
-				continue
-			}
+			_, isState := source.(*ast.StateNode)
 			for _, trans := range transitions {
-				g.transitionFootprints[trans] = transitionFootprint(g, trans)
+				if isState {
+					g.transitionFootprints[trans] = transitionFootprint(g, trans)
+				} else {
+					g.branchFootprints[trans] = branchFootprint(g, trans)
+				}
 			}
 		}
 	})
@@ -90,6 +93,36 @@ func (g *StateGraph) activity(state *ast.StateNode) Place {
 // transitionFootprint projects the footprint of a transition out of a state.
 func transitionFootprint(graph *StateGraph, trans *Transition) Footprint {
 	return transitionBuilder(graph, trans, false).footprint
+}
+
+// BranchFootprints is segment out of a pseudostate → what taking that branch of
+// a junction or choice may touch, computed on first use as TransitionFootprints
+// is; a pseudostate's branches are segments of the transitions into it, so they
+// are not among TransitionFootprints.
+func (g *StateGraph) BranchFootprints() map[*Transition]Footprint {
+	g.lowerFootprints()
+	return g.branchFootprints
+}
+
+// branchFootprint projects a segment out of a pseudostate — a branch of a
+// junction or choice — taken by whichever transition routed there: what its
+// guard, probability and effects touch and the state it enters; a further
+// pseudostate is not followed and leaves the footprint dynamic.
+func branchFootprint(graph *StateGraph, seg *Transition) Footprint {
+	b := &stateFootprintBuilder{footprintBuilder: &footprintBuilder{resolver: graph.resolver}, graph: graph, crossed: make(map[*ast.PseudostateNode]bool)}
+	b.reads(seg.BodyScope, seg.Guard)
+	if seg.Probability != nil {
+		b.reads(seg.BodyScope, seg.Probability.Expr)
+	}
+	for _, effect := range seg.Effect {
+		b.statements(effect.Body)
+	}
+	if target, ok := seg.Target.(*ast.StateNode); ok {
+		b.enters(target)
+	} else {
+		b.footprint.Dynamic = true
+	}
+	return b.footprint
 }
 
 // transitionBuilder projects a transition out of a state, without the do

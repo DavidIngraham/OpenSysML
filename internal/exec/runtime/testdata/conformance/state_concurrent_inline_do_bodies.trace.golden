@@ -19,7 +19,7 @@ enter action node: state behavior <anonymous>
 exit: rstart
 enter: rwork
 transition: rstart -> rwork
-choice do round at t=0.0: states lwork, rwork react (unordered; took lwork first; independent)
+choice do round at t=0.0: states lwork, rwork react (unordered; took lwork first; order-dependent: seq)
 do: lwork
     iteration 2
       stmt assign seq
@@ -37,7 +37,7 @@ enter action node: state behavior <anonymous>
       eval operator * -> 120
       eval literal 4 -> 4
     eval operator + -> 124
-choice do round at t=0.0: states lwork, rwork react (unordered; took lwork first; independent)
+choice do round at t=0.0: states lwork, rwork react (unordered; took lwork first; order-dependent: seq)
 do: lwork
   stmt assign seq
         eval feature seq -> 124

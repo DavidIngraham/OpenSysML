@@ -1594,7 +1594,7 @@ func (e *StateExecutor) drawTransition(choice *ChoicePoint, whereOf func(i int) 
 
 // regionOrderChoice is the choice among the states of several regions acting on
 // one occasion, the one the policy picks first.
-func (e *StateExecutor) regionOrderChoice(where string, states []*ast.StateNode) ChoicePoint {
+func (e *StateExecutor) regionOrderChoice(where string, states []*ast.StateNode, footprint func(*ast.StateNode) lower.Footprint) ChoicePoint {
 	choice := ChoicePoint{
 		Kind:         ChoiceRegionOrder,
 		Where:        where,
@@ -1603,7 +1603,7 @@ func (e *StateExecutor) regionOrderChoice(where string, states []*ast.StateNode)
 	}
 	fps := make([]lower.Footprint, len(states))
 	for i, state := range states {
-		fps[i] = e.stateFootprint(state)
+		fps[i] = footprint(state)
 	}
 	classifyChoice(&choice, fps, nil)
 	choice.Taken = e.ctx.scheduling().choose(choice, nil)
@@ -2038,10 +2038,15 @@ func (e *StateExecutor) transitionChoice(state *ast.StateNode, transitions []*lo
 
 // transitionFootprints is what each transition at the enabled positions may touch.
 func (e *StateExecutor) transitionFootprints(transitions []*lower.Transition, enabled []int) []lower.Footprint {
-	footprints := e.graph.TransitionFootprints()
+	footprints, branches := e.graph.TransitionFootprints(), e.graph.BranchFootprints()
 	fps := make([]lower.Footprint, len(enabled))
 	for i, pos := range enabled {
-		fps[i] = footprints[transitions[pos]]
+		trans := transitions[pos]
+		if _, fromState := trans.Source.(*ast.StateNode); fromState {
+			fps[i] = footprints[trans]
+		} else {
+			fps[i] = branches[trans]
+		}
 	}
 	return fps
 }
@@ -3394,7 +3399,7 @@ func (e *StateExecutor) fireJoinIncoming(join *ast.PseudostateNode, plan *lower.
 			for i, trans := range pending {
 				sources[i] = trans.Source.(*ast.StateNode)
 			}
-			choice := e.regionOrderChoice("join "+join.Name, sources)
+			choice := e.regionOrderChoice("join "+join.Name, sources, e.stateFootprint)
 			if err := e.ctx.scheduling().refusal(); err != nil {
 				return err
 			}
@@ -4651,7 +4656,9 @@ func (e *StateExecutor) chooseDoAction(due []*doAction) (int, error) {
 	for i, act := range due {
 		states[i] = act.state
 	}
-	choice := e.regionOrderChoice("do round at t="+semantics.FormatReal(e.ctx.clock.now), states)
+	choice := e.regionOrderChoice("do round at t="+semantics.FormatReal(e.ctx.clock.now), states, func(state *ast.StateNode) lower.Footprint {
+		return doStepFootprint(e, state)
+	})
 	if err := e.ctx.scheduling().refusal(); err != nil {
 		return 0, err
 	}

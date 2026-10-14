@@ -53,6 +53,26 @@ func TestRuntimeRobustnessOrderDependence(t *testing.T) {
 	t.Run("commuting_branches_mark_nothing", testCommutingBranchesMarkNothing)
 	t.Run("marker_text_counts_unresolved_choice_points", testMarkerTextCountsUnresolvedChoicePoints)
 	t.Run("replay_of_an_invalid_choice_is_the_typed_error", testReplayOfAnInvalidChoiceIsTheTypedError)
+	t.Run("qualified_names_are_matched_by_their_last_segment", testQualifiedNamesAreMatchedByTheirLastSegment)
+}
+
+// A value reported under a qualified key (`this.x`, a state path) is marked as
+// the bare feature the choice touched is.
+func testQualifiedNamesAreMatchedByTheirLastSegment(t *testing.T) {
+	ctx, _, err := runOrderDependence(t, "Writers", nil)
+	if err != nil {
+		t.Fatalf("RunToCompletion: %v", err)
+	}
+	for _, name := range []string{"x", "this.x", "Writers.x"} {
+		if n := ctx.OrderDependent(name); n != 2 {
+			t.Errorf("order-dependent %s = %d choice points, want 2", name, n)
+		}
+	}
+	for _, name := range []string{"this.aRan", "y"} {
+		if n := ctx.OrderDependent(name); n != 0 {
+			t.Errorf("order-dependent %s = %d choice points, want 0", name, n)
+		}
+	}
 }
 
 // runOrderDependence runs the named action of orderDependenceModel under policy.

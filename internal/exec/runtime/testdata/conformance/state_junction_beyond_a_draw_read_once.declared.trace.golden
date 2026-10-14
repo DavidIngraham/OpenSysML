@@ -14,7 +14,7 @@ stmt assign d
   eval literal 0 -> 0
 enter: a2
 transition: a1 -> a2 (event: accept Go)
-choice junction split: transitions 1->again, 2->again (unordered; took 1->again; order-dependent)
+choice junction split: transitions 1->again, 2->again (unordered; took 1->again; order-dependent: route)
 exit: b1
 stmt assign route
   eval literal 1 -> 1
