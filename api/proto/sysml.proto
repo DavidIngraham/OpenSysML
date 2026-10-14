@@ -2328,6 +2328,10 @@ message RenderDocumentRequest {
 message RenderDocumentResponse {
   string markdown = 1;
   string html = 2;
+  // The file a rendered set writes this document to in the requested form
+  // (-render-documents), which the other documents' links to it name.
+  // Populated under the render_document_file_name capability.
+  string file_name = 3;
 }
 
 // RenderViewRequest names a declared view or targeted pseudo-view to render.
