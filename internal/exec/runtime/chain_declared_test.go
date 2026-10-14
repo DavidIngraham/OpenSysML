@@ -16,7 +16,7 @@ package test {
 		attribute maximum : Real;
 		attribute margin : Real = 5.0;
 		attribute unset : Real;
-		attribute details : Details { :>> limit = 4.0; }
+		attribute details : Details { :>> limit default = 4.0; }
 		attribute deep : Details;
 		require constraint { maximum > 0.0 }
 	}
@@ -24,6 +24,10 @@ package test {
 	requirement optionalReq : Limit [0..1] { :>> maximum = 7.0; }
 	requirement bareReq : Limit;
 	requirement inherit : Limit { attribute kept :>> margin; attribute :>> deep { :>> other = 6.0; } }
+	requirement chained : Limit { attribute :>> details.limit = 9.0; }
+	requirement def Tight :> Limit { attribute :>> details.limit = 7.0; }
+	requirement tight : Tight;
+	requirement bodyWins : Limit { attribute :>> details { :>> limit = 3.0; } attribute :>> details.limit = 5.0; }
 
 	attribute def Dims { attribute w : Real; attribute h : Real = 2.0; }
 	part def Product { attribute mass : Real = 3.0; attribute dims : Dims { :>> w = 4.0; } }
@@ -55,6 +59,9 @@ func TestChainThroughPackageUsageReadsBoundMember(t *testing.T) {
 		"inherit.kept":                              "5.0",
 		"costReq.details.limit":                     "4.0",
 		"inherit.deep.other":                        "6.0",
+		"chained.details.limit":                     "9.0",
+		"tight.details.limit":                       "7.0",
+		"bodyWins.details.limit":                    "3.0",
 		"product.mass":                              "3.0",
 		"product.dims.w":                            "4.0",
 		"product.dims.h":                            "2.0",
@@ -90,6 +97,7 @@ func TestChainThroughPackageUsageWithoutBoundMemberIsUndetermined(t *testing.T) 
 		"product.dims.w + bareReq.maximum": "[1]",
 		"costReq.details.other":            "[1]",
 		"inherit.deep.limit":               "[1]",
+		"tight.details.other":              "[1]",
 	} {
 		val, err := ctx.EvalWithScope(parseExpr(t, src), pkg.Scope)
 		wantUndetermined(t, src, val, err, count)
