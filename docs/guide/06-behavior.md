@@ -3,7 +3,11 @@
 Actions and state machines are executed, not just parsed. A debugger steps through
 them, and the non-interactive `-action` and `-state` flags run them to completion and report the
 values they produce. A behavior can be performed by an object, in which case the messages it sends
-are routed over that object's connections.
+are routed over that object's connections. What a run reports is one linearization of the partial
+order the model states — the default `reverse` policy picks it, deterministically — so when more
+than one order is valid, the values are *a* result, not *the* result; `explore` and `check` are
+how to see the whole set, up to their run and depth budgets — a result that hit one says so
+([below](#when-a-model-has-more-than-one-valid-run)).
 
 **Action execution (step-by-step):**
 ```sysml
@@ -1778,8 +1782,8 @@ $ sysml -analysis L::checkSlow landing.sysml
 ```
 
 The two verdicts are independent: an objective stating no condition of its own —
-`objective { verify touchdown; }` alone — stays `undecided` and leaves the case unresolved, while
-the body verdict beside it still reports what the body answered.
+`objective { verify touchdown; }` alone — is `satisfied`, so the case's status is the body verdict
+beside it, which reports what the body answered.
 
 A verification case's objective checks the case's subject, not its verdict: the library binds it
 so (`VerificationCases::VerificationCase::obj` redefines `Cases::Case::obj` with `subject subj =
