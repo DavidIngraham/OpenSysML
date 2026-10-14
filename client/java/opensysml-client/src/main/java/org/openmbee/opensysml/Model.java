@@ -1649,7 +1649,9 @@ public final class Model {
                 .build(),
             RenderDocumentResponse.getDefaultInstance());
     return new RenderedDocument(
-        form, form == DocumentForm.HTML ? response.getHtml() : response.getMarkdown());
+        form,
+        form == DocumentForm.HTML ? response.getHtml() : response.getMarkdown(),
+        response.getFileName());
   }
 
   /**
