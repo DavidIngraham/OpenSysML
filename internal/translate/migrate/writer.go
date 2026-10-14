@@ -50,7 +50,7 @@ func (w *writer) hole(fill func()) {
 	w.holes = append(w.holes, hole{indent: w.indent, fill: fill})
 }
 
-// holeLast defers owner aliases until view holes have discovered them.
+// holeLast defers owner aliases until the view holes have been written.
 func (w *writer) holeLast(fill func()) {
 	_, _ = w.buf().WriteString(holeMark + strconv.Itoa(len(w.holes)) + holeMark + "\n")
 	w.holes = append(w.holes, hole{indent: w.indent, fill: fill, last: true})

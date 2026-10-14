@@ -235,7 +235,9 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 	}
 	m.privateAliases = map[*sysmlv1.Element]*privateLayoutAlias{}
 	m.privateAliasesByOwner = map[*sysmlv1.Element][]*privateLayoutAlias{}
+	m.privateAliasPlacements = map[privateLayoutPlacement]*privateLayoutAlias{}
 	m.privateAliasOwners = map[*sysmlv1.Element]bool{}
+	m.privateAliasHoles = map[*sysmlv1.Element]bool{}
 	m.w.marker = m.synthesizedNames
 	m.w.standInMarker = m.standInNames
 	m.imageBase, _ = imageBaseURL(opts.ImageBaseURL)
@@ -273,6 +275,7 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 	for _, extra := range m.extras[nil] {
 		extra()
 	}
+	m.planPrivateLayoutAliases()
 	m.views(nil)
 	m.flushFlows()
 	m.placeholderEnds()
@@ -388,7 +391,12 @@ type migration struct {
 	// privateAliases names private members through aliases in their owners' bodies.
 	privateAliases        map[*sysmlv1.Element]*privateLayoutAlias
 	privateAliasesByOwner map[*sysmlv1.Element][]*privateLayoutAlias
-	privateAliasOwners    map[*sysmlv1.Element]bool
+	// privateAliasPlacements records the aliases used by individual view placements.
+	privateAliasPlacements map[privateLayoutPlacement]*privateLayoutAlias
+	// privateAliasOwners records owners that may need deferred alias declarations.
+	privateAliasOwners map[*sysmlv1.Element]bool
+	// privateAliasHoles records owners whose deferred alias hole was added.
+	privateAliasHoles map[*sysmlv1.Element]bool
 	// opened holds the member names of each synthesized declaration being
 	// written, outermost first; a reference written inside them avoids those names.
 	opened []columnNames

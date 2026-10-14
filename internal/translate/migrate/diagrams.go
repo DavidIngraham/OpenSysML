@@ -128,9 +128,9 @@ func (m *migration) planViews() {
 		}
 		m.hosted[v.host] = append(m.hosted[v.host], v)
 	}
+	m.planPrivateLayoutAliasHoles()
 	m.planTables()
 	m.planDocuments()
-	m.planPrivateLayoutAliases()
 }
 
 // viewName reserves the name a view takes in host's body, or at the top level
@@ -256,8 +256,9 @@ func (m *migration) views(host *sysmlv1.Element) {
 	for _, v := range m.hosted[host] {
 		m.w.hole(func() { m.writeView(v) })
 	}
-	if m.privateAliasOwners[host] {
+	if m.privateAliasOwners[host] && !m.privateAliasHoles[host] {
 		m.w.holeLast(func() { m.writePrivateLayoutAliases(host) })
+		m.privateAliasHoles[host] = true
 	}
 }
 
@@ -546,18 +547,22 @@ func freeSymbols(free map[string]int) string {
 // writeView writes a diagram as a view usage exposing each shown element the
 // document writes, rendered by the diagram's kind, and records its report row.
 func (m *migration) writeView(v *view) {
-	d, host := v.d, v.host
-	form := m.formOf(d)
-	x := m.exposures(d, host, form)
+	hidden := m.viewHiddenNames(v)
+	m.inside(hidden, func() { m.writeViewBody(v, m.formOf(v.d)) })
+}
+
+// viewHiddenNames lists the names hidden inside v by its exposes or nested views.
+func (m *migration) viewHiddenNames(v *view) columnNames {
+	x := m.exposures(v.d, v.host, m.formOf(v.d))
 	// The exposes import their names into the view, where every reference in
 	// its body resolves first: the writer avoids those that hide what it means.
 	hidden := x.hides()
-	for _, scope := range scopeChain(host) {
+	for _, scope := range scopeChain(v.host) {
 		for name := range m.viewNames[scope] {
 			hidden[name] = true
 		}
 	}
-	m.inside(hidden, func() { m.writeViewBody(v, form) })
+	return hidden
 }
 
 // writeViewBody writes v's declaration and body, with references resolving
@@ -733,6 +738,12 @@ type privateLayoutAlias struct {
 	name   string
 }
 
+// privateLayoutPlacement identifies a view's layout placement of a private member.
+type privateLayoutPlacement struct {
+	view   *view
+	target *sysmlv1.Element
+}
+
 // privateLayoutMember reports whether the element is written as a private feature.
 func (m *migration) privateLayoutMember(e *sysmlv1.Element) bool {
 	if e == nil || e.Type != "Property" && e.Type != "Port" {
@@ -742,13 +753,35 @@ func (m *migration) privateLayoutMember(e *sysmlv1.Element) bool {
 	return m.written(e) && prefix == privatePrefix
 }
 
-// privateLayoutNameShadowed reports whether a private member's simple name is unusable in a view.
-func (m *migration) privateLayoutNameShadowed(owner, target, scope *sysmlv1.Element) bool {
-	return m.privateLayoutNameShadowedWith(owner, target, scope, m.hidden(m.nameFor(target)))
+// planPrivateLayoutAliasHoles marks owners that may need a deferred alias declaration.
+func (m *migration) planPrivateLayoutAliasHoles() {
+	for i := range m.model.Diagrams {
+		v := m.viewOf[&m.model.Diagrams[i]]
+		if v == nil || !v.placed {
+			continue
+		}
+		rec, _ := m.layoutRecord(v)
+		if rec == nil {
+			continue
+		}
+		scopes := scopeChain(v.host)
+		for _, placement := range rec.Placements {
+			if placement.OnPath {
+				continue
+			}
+			target := m.model.Lookup(placement.ID)
+			if !m.privateLayoutMember(target) {
+				continue
+			}
+			if owner := target.Parent; containsElement(scopes, owner) {
+				m.privateAliasOwners[owner] = true
+			}
+		}
+	}
 }
 
-// privateLayoutNameShadowedWith checks member-name shadowing with a precomputed hidden state.
-func (m *migration) privateLayoutNameShadowedWith(owner, target, scope *sysmlv1.Element, hidden bool) bool {
+// privateLayoutNameShadowed reports whether a private member's simple name is unusable in a view.
+func (m *migration) privateLayoutNameShadowed(owner, target, scope *sysmlv1.Element, hidden bool) bool {
 	name := m.nameFor(target)
 	chain := scopeChain(scope)
 	for i, enclosing := range chain {
@@ -768,7 +801,7 @@ func (m *migration) privateLayoutNameShadowedWith(owner, target, scope *sysmlv1.
 	return false
 }
 
-// planPrivateLayoutAliases records owners of private members shown by enclosed views.
+// planPrivateLayoutAliases chooses aliases for shadowed private layout placements.
 func (m *migration) planPrivateLayoutAliases() {
 	for i := range m.model.Diagrams {
 		d := &m.model.Diagrams[i]
@@ -780,7 +813,7 @@ func (m *migration) planPrivateLayoutAliases() {
 		if rec == nil {
 			continue
 		}
-		scopes := scopeChain(v.host)
+		hidden := m.viewHiddenNames(v)
 		for _, placement := range rec.Placements {
 			if placement.OnPath {
 				continue
@@ -790,20 +823,28 @@ func (m *migration) planPrivateLayoutAliases() {
 				continue
 			}
 			owner := target.Parent
-			if containsElement(scopes, owner) {
-				m.privateAliasOwners[owner] = true
+			if !containsElement(scopeChain(v.host), owner) ||
+				!m.privateLayoutNameShadowed(owner, target, v.host, hidden[m.nameFor(target)]) {
+				continue
 			}
+			alias := m.privateAliases[target]
+			if alias == nil {
+				alias = m.planPrivateLayoutAlias(target, owner)
+			}
+			m.privateAliasPlacements[privateLayoutPlacement{view: v, target: target}] = alias
 		}
 	}
 }
 
-// privateLayoutAlias names a private target without colliding with visible view names.
-func (m *migration) privateLayoutAlias(target, owner *sysmlv1.Element, current *view) string {
-	if !m.privateAliasOwners[owner] {
-		panic("private layout alias owner was not planned")
-	}
+// privateLayoutAlias returns the alias planned for a private layout placement, if any.
+func (m *migration) privateLayoutAlias(v *view, target *sysmlv1.Element) *privateLayoutAlias {
+	return m.privateAliasPlacements[privateLayoutPlacement{view: v, target: target}]
+}
+
+// planPrivateLayoutAlias chooses an owner-local name that resolves in each view of target.
+func (m *migration) planPrivateLayoutAlias(target, owner *sysmlv1.Element) *privateLayoutAlias {
 	if alias := m.privateAliases[target]; alias != nil {
-		return alias.name
+		return alias
 	}
 	base := m.nameFor(target) + " (" + m.nameFor(owner) + ")"
 	for i := 1; ; i++ {
@@ -811,19 +852,19 @@ func (m *migration) privateLayoutAlias(target, owner *sysmlv1.Element, current *
 		if i > 1 {
 			name = fmt.Sprintf("%s %d", base, i)
 		}
-		if m.nameTaken(owner, name) || !m.privateLayoutAliasAvailable(target, owner, name, current) {
+		if m.nameTaken(owner, name) || !m.privateLayoutAliasAvailable(target, owner, name) {
 			continue
 		}
 		alias := &privateLayoutAlias{owner: owner, target: target, name: name}
 		m.take(owner, name)
 		m.privateAliases[target] = alias
 		m.privateAliasesByOwner[owner] = append(m.privateAliasesByOwner[owner], alias)
-		return name
+		return alias
 	}
 }
 
 // privateLayoutAliasAvailable reports whether the alias resolves unambiguously in every view that uses it.
-func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, name string, current *view) bool {
+func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, name string) bool {
 	available := func(v *view) bool {
 		if v == nil {
 			return true
@@ -839,14 +880,8 @@ func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, 
 		if ownerIndex < 0 {
 			return true
 		}
-		x := m.exposures(v.d, v.host, m.formOf(v.d))
-		if x.shadows(name) {
+		if m.viewHiddenNames(v)[name] {
 			return false
-		}
-		for _, scope := range chain {
-			if m.viewNames[scope][name] {
-				return false
-			}
 		}
 		for _, table := range v.tables {
 			if table.doc == name && table.written() {
@@ -858,14 +893,11 @@ func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, 
 				return false
 			}
 		}
-		return v != current || !m.hidden(name)
-	}
-	if !available(current) {
-		return false
+		return true
 	}
 	for i := range m.model.Diagrams {
 		v := m.viewOf[&m.model.Diagrams[i]]
-		if v == current || v == nil {
+		if v == nil {
 			continue
 		}
 		rec, _ := m.layoutRecord(v)
@@ -1219,8 +1251,8 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 			p.unexposed++
 			continue
 		}
-		if privateOwner != nil && m.privateLayoutNameShadowed(privateOwner, el, v.host) {
-			ref = writeName(m.privateLayoutAlias(el, privateOwner, v))
+		if alias := m.privateLayoutAlias(v, el); alias != nil {
+			ref = writeName(alias.name)
 		}
 		p.refOf[pl.ID] = ref
 		if seen[ref] {

@@ -152,14 +152,30 @@ func TestPrivateLayoutPlacementInEnclosingOwnerKeepsExistingExposure(t *testing.
 	}
 }
 
-func TestPrivateLayoutAliasRequiresPlannedOwner(t *testing.T) {
-	m := &migration{}
-	defer func() {
-		if got := recover(); got != "private layout alias owner was not planned" {
-			t.Fatalf("panic = %v", got)
-		}
-	}()
-	m.privateLayoutAlias(nil, nil, nil)
+func TestPrivateLayoutAliasHoleIsWrittenInAncestorOwner(t *testing.T) {
+	owner := &sysmlv1.Element{Type: "Class", Name: "A"}
+	target := &sysmlv1.Element{Type: "Property", Name: "x", Parent: owner}
+	m := &migration{
+		w:                     &writer{},
+		strict:                true,
+		scope:                 owner,
+		privateAliasOwners:    map[*sysmlv1.Element]bool{owner: true},
+		privateAliasHoles:     map[*sysmlv1.Element]bool{},
+		privateAliasesByOwner: map[*sysmlv1.Element][]*privateLayoutAlias{owner: {{owner: owner, target: target, name: "x (A)"}}},
+	}
+	m.w.block("part def A", func() {
+		m.w.block("part def B", func() {
+			m.w.line("view Nested;")
+		})
+		m.views(owner)
+	})
+	m.w.fill()
+	notation := m.w.String()
+	viewAt := strings.Index(notation, "view Nested;")
+	aliasAt := strings.Index(notation, "private alias 'x (A)' for x;")
+	if viewAt < 0 || aliasAt < viewAt {
+		t.Fatalf("ancestor owner alias was not deferred until after nested views:\n%s", notation)
+	}
 }
 
 // machineMembers is a state machine Modes (_sm) whose region enters Idle
