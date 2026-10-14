@@ -93,6 +93,9 @@ type Context struct {
 	// bindingStack holds the namespace-level usages whose values are being evaluated, innermost
 	// last, so a value reaching back to its own usage is a cycle, and an extent finds no object of it yet.
 	bindingStack []*symbols.Symbol
+	// chainStack holds the members whose declared values a chain through a valueless
+	// package-level usage is reading, so a value reaching back to itself is a cycle.
+	chainStack []*symbols.Symbol
 	// bindingReads holds, per bound usage, the declarations its value read to arrive at the binding,
 	// so a re-analysis carries the binding only while every one of them still reads the same.
 	bindingReads map[*symbols.Symbol]*bindingReads
