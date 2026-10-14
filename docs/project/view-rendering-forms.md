@@ -896,11 +896,14 @@ digraph "PlantViews::placedView" {
   first-seen order, and the rows of a compartment keep declaration order. A row is the member's
   textual notation, as the label shows it: a modifier of its keyword (`ref`), its name, `: Type`
   when typings are shown, `= value` when the usage is bound (`gain : dB = 15.0`,
-  `constraint1 : 'Signal Output'`). No edge is written to a member drawn as a row, and the
+  `constraint1 : 'Signal Output'`; a value the renderer does not spell, such as an invocation,
+  is its source text). No edge is written to a member drawn as a row, and the
   notice counts them (`4 node(s) without a position, drawn as compartment rows of the node
-  above them`). A member with a `Layout` of its own stays a node (a compartment row by its box
-  when inside the owner's, an edge when outside), as does an unplaced member with a positioned
-  node under it, so that node keeps its owner. An unpositioned tree is unchanged: every member
+  above them`); a row shows the member alone, so the members nested under a row are left undrawn
+  and the notice counts them apart (`, and 1 node(s) under them left undrawn`). A member with a
+  `Layout` of its own stays a node (a compartment row by its box when inside the owner's, an edge
+  when outside), as does an unplaced member with a positioned node under it, so that node keeps
+  its owner. An unpositioned tree is unchanged: every member
   stays a node of its own. Nothing folds when `compartments` is not shown (`ElementCompartments`
   off, `showCompartments = false`): the layout-less members are left undrawn as before. DOT keeps
   the owner's box at its `Layout` size and fits the compartments into its headroom after the
@@ -909,7 +912,8 @@ digraph "PlantViews::placedView" {
   over the border; a compartment with no row that fits is dropped with its name, and once a row is
   clipped every later row is, so the box reads in order. A `// not represented:` notice counts the
   rows clipped (`2 compartment row(s) with no room in the stated size of their node's box, left
-  unwritten`). Mermaid, PlantUML and D2 write every row as a label line, as they write detail
+  unwritten`); a box whose `Layout` has a corner and no size is sized to its rows
+  (`dotLabelExtent`). Mermaid, PlantUML and D2 write every row as a label line, as they write detail
   lines, and size the box to it. The text form never settled the unplaced nodes and lists the
   members as before; the data form is unchanged too — a row is a child `Node` with no `Geometry`
   under a parent with one, and the VS Code webview (`editors/vscode/src/webview/layout.ts`),

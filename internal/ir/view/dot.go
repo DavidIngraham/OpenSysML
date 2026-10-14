@@ -1463,6 +1463,16 @@ func (l labeller) dotLabelExtent(node *Node) (width, height float64) {
 	for _, detail := range l.details(node) {
 		line(detail, base, dotGlyphEm)
 	}
+	if compartments := l.compartments(node); len(compartments) > 0 {
+		for _, compartment := range compartments {
+			line(compartment.Name, l.keywordSize(), dotGlyphEm)
+			for _, row := range compartment.Rows {
+				line(l.rowText(row), base, dotGlyphEm)
+			}
+			height += dotCompartmentChrome
+		}
+		width += dotCompartmentPadding
+	}
 	return width, height
 }
 

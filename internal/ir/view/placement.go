@@ -150,11 +150,14 @@ func foldCompartments(r *Rendering) *Rendering {
 	out := *r
 	out.Roots = cloneNodes(r.Roots)
 	rows := map[string]bool{}
-	p.foldNodes(out.Roots, rows)
-	if len(rows) == 0 {
+	drawn, nested := p.foldNodes(out.Roots, rows)
+	if drawn == 0 {
 		return r
 	}
-	notice := fmt.Sprintf("%d node(s) without a position, drawn as compartment rows of the node above them", len(rows))
+	notice := fmt.Sprintf("%d node(s) without a position, drawn as compartment rows of the node above them", drawn)
+	if nested > 0 {
+		notice += fmt.Sprintf(", and %d node(s) under them left undrawn", nested)
+	}
 	out.Edges = make([]Edge, 0, len(r.Edges))
 	for _, edge := range r.Edges {
 		if rows[edge.From] || rows[edge.To] {
@@ -181,19 +184,25 @@ func foldCompartments(r *Rendering) *Rendering {
 
 // foldNodes folds the unplaced members of each placed node under nodes into
 // its compartments, in place, recording the IDs of the rows and of every
-// node under them in rows.
-func (p *placement) foldNodes(nodes []*Node, rows map[string]bool) {
+// node under them in rows; it counts the rows drawn and the nodes under
+// them, which a row does not show.
+func (p *placement) foldNodes(nodes []*Node, rows map[string]bool) (drawn, nested int) {
 	for _, node := range nodes {
 		if p.placed[node.ID] {
 			var folded []*Node
 			node.Children, folded = p.rowsOf(node)
 			node.Compartments = compartmentsOf(folded)
 			for _, row := range folded {
+				before := len(rows)
 				recordIDs(row, rows)
+				drawn++
+				nested += len(rows) - before - 1
 			}
 		}
-		p.foldNodes(node.Children, rows)
+		d, n := p.foldNodes(node.Children, rows)
+		drawn, nested = drawn+d, nested+n
 	}
+	return drawn, nested
 }
 
 // recordIDs records the ID of node and of every node under it in ids.

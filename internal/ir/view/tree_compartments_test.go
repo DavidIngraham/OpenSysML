@@ -22,7 +22,7 @@ func TestGoldenTreeCompartments(t *testing.T) {
 		t.Fatalf("DOTWith(cameo): %v", err)
 	}
 	checkGolden(t, filepath.Join("testdata", "tree-compartments.cameo.dot.golden"), cameo)
-	for _, view := range []string{"cramped", "bare"} {
+	for _, view := range []string{"cornered", "cramped", "bare"} {
 		dot, err := render(t, "tree-compartments.sysml", "AmplifierViews::"+view).Write(FormDot)
 		if err != nil {
 			t.Fatalf("write %s: %v", view, err)
@@ -146,16 +146,19 @@ func TestTreeCompartmentsClipped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(dot, "// not represented: 8 compartment row(s) with no room in the stated size of their node's box, left unwritten") {
+	if !strings.Contains(dot, "// not represented: 10 node(s) without a position, drawn as compartment rows of the node above them, and 1 node(s) under them left undrawn\n") {
+		t.Errorf("the notice does not count the rows and the member under one apart:\n%s", dot)
+	}
+	if !strings.Contains(dot, "// not represented: 9 compartment row(s) with no room in the stated size of their node's box, left unwritten") {
 		t.Errorf("no clipping notice in:\n%s", dot)
 	}
 	if !strings.Contains(dot, `width=2.2222222222222223, height=1.25, fixedsize=true`) {
 		t.Errorf("the Stage box is not kept at its 160x90 Layout size:\n%s", dot)
 	}
-	if !strings.Contains(dot, `<tr><td align="left">gain = 15.0<br/>noiseFigure</td></tr></table>>`) {
-		t.Errorf("the attributes compartment is not the last written:\n%s", dot)
+	if !strings.Contains(dot, `<tr><td align="left">gain = 15.0</td></tr></table>>`) {
+		t.Errorf("the attributes compartment, with the one row that fits, is not the last written:\n%s", dot)
 	}
-	for _, absent := range []string{">parts<", ">ports<", "heatsink", "calibrate"} {
+	for _, absent := range []string{"noiseFigure", ">parts<", ">ports<", "heatsink", "calibrate"} {
 		if strings.Contains(dot, absent) {
 			t.Errorf("%q written though it has no room:\n%s", absent, dot)
 		}
@@ -165,9 +168,16 @@ func TestTreeCompartmentsClipped(t *testing.T) {
 		t.Fatal(err)
 	}
 	if strings.Count(wide, "<hr/>") != 4+1 {
-		t.Errorf("want the title rule and four compartments in the 240x260 box, got:\n%s", wide)
+		t.Errorf("want four compartments in Stage's 240x260 box and one in Band's, each under a rule, got:\n%s", wide)
 	}
 	if !strings.Contains(wide, "// not represented: 2 compartment row(s)") {
 		t.Errorf("want the two remaining rows of Stage clipped:\n%s", wide)
+	}
+	cornered, err := render(t, "tree-compartments.sysml", "AmplifierViews::cornered").Write(FormDot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(cornered, "compartment row(s) with no room") || strings.Count(cornered, "<hr/>") != 6 {
+		t.Errorf("want a box with a corner and no size sized to all six compartments:\n%s", cornered)
 	}
 }

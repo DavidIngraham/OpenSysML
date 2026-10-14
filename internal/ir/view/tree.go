@@ -156,7 +156,7 @@ func (r *Renderer) treeNodeWithMembers(view, sym *symbols.Symbol, ids *nodeIDs, 
 		name = localName(sym)
 	}
 	node := &Node{ID: ids.take(), Kind: declKind(sym), Name: name, NameSynthesized: r.model.NameSynthesized(sym),
-		Type: declType(sym), Typings: r.declTypings(sym), Value: declValue(sym), Origin: symbolOrigin(sym), Geometry: r.geometryOf(view, sym, out),
+		Type: declType(sym), Typings: r.declTypings(sym), Value: r.declValue(sym), Origin: symbolOrigin(sym), Geometry: r.geometryOf(view, sym, out),
 		Style: r.styleOf(view, sym, out)}
 	out.noteTreeSite(node, view, sym)
 	if seen[sym] {
@@ -242,11 +242,15 @@ func detailWith(detail, note string) string {
 }
 
 // declValue is the value a usage is bound to, as the notation writes it
-// after the `=`, or "" when it declares none.
-func declValue(sym *symbols.Symbol) string {
+// after the `=`, or "" when it declares none: the expression spelled out, or
+// its source text for a form (an invocation, a constructor) nothing spells.
+func (r *Renderer) declValue(sym *symbols.Symbol) string {
 	usage, ok := sym.Decl.(*ast.Usage)
 	if !ok || usage.Value == nil {
 		return ""
 	}
-	return expressionText(usage.Value)
+	if text := expressionText(usage.Value); text != "" {
+		return text
+	}
+	return r.nodeText(sym.Origin().Doc, usage.Value)
 }

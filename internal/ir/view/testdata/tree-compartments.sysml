@@ -16,8 +16,8 @@ package Amplifier {
 
     part def Stage {
         attribute gain : dB = 15.0;
-        attribute noiseFigure : Real;
-        ref part heatsink : Heatsink;
+        attribute noiseFigure : Real = RealFunctions::sqrt(4.0);
+        ref part heatsink : Heatsink { attribute fins : Real = 2 * 6; }
         part housing : Housing;
         part shield : Housing;
         port input : SignalPort;
@@ -45,6 +45,13 @@ package AmplifierViews {
         metadata Layout about Amplifier::Stage::housing { x = 300; y = 400; width = 120; height = 40; }
         metadata Layout about Amplifier::Housing { x = 300; y = 10; width = 120; height = 40; }
         metadata Layout about Amplifier::Band { x = 500; y = 10; width = 100; height = 100; }
+        render asTreeDiagram;
+    }
+
+    // A Layout with a corner and no size: the box is sized to its rows.
+    view cornered {
+        expose Amplifier::Stage;
+        metadata Layout about Amplifier::Stage { x = 10; y = 10; }
         render asTreeDiagram;
     }
 
