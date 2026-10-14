@@ -109,4 +109,7 @@ instantiation, action execution, verification, diagnostics and stored results. F
 cover the registry, explorer menu and palette tool, operation dialog, toast errors, mapped selection, outputs,
 traces, verdicts, instances and diagnostics.
 
+SysON files every uploaded document under an unnamed root namespace; the exporter walks that
+namespace's members as the document's roots.
+
 Diagnostics that name a qualified name select that element; span-only diagnostics select the root element of the exported document containing the line. The serializer emits no source map.

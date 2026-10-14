@@ -22,7 +22,8 @@ public class FakeElement extends MinimalEObjectImpl.Container implements Element
 
     public FakeElement(String qualifiedName) {
         this.qualifiedName = qualifiedName;
-        this.declaredName = qualifiedName == null ? null : qualifiedName.substring(qualifiedName.lastIndexOf("::") + 2);
+        this.declaredName = qualifiedName == null ? null
+                : qualifiedName.substring(qualifiedName.contains("::") ? qualifiedName.lastIndexOf("::") + 2 : 0);
         this.elementId = qualifiedName == null ? null : "id-" + qualifiedName;
     }
 

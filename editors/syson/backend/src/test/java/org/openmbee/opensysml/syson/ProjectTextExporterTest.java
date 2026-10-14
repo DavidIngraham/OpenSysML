@@ -244,6 +244,37 @@ class ProjectTextExporterTest {
                 });
     }
 
+    @Test
+    void exportsTheMembersOfSysONsRootNamespaceAsTheDocumentsRoots() {
+        ResourceSet set = new ResourceSetImpl();
+        FakeElement vocabulary = new FakeElement("Vocabulary");
+        FakeElement model = new FakeElement("Observatory");
+        Resource project = new ResourceImpl(URI.createURI("sirius:///model.sysml"));
+        project.getContents().add(new FakeNamespace().member(vocabulary).member(model));
+        set.getResources().add(project);
+        IEMFEditingContext context = context(set);
+        ElementSerializer serializer = (element, report) -> ElementSerializer.Serialization
+                .of("package " + declared(element).getName() + " {}");
+
+        var result = new ProjectTextExporter(serializer, mock(IIdentityService.class)).export(context);
+
+        assertThat(result.documents()).singleElement().satisfies(document -> {
+            assertThat(document.name()).contains("model.sysml");
+            assertThat(document.content().orElse("")).isEqualTo("package Vocabulary {}\npackage Observatory {}");
+        });
+        assertThat(result.index().byQualifiedName("Vocabulary")).isPresent();
+        assertThat(result.index().byQualifiedName("Observatory")).isPresent();
+        assertThat(result.ranges()).extracting(range -> range.element()).containsExactly(vocabulary, model);
+        assertThat(result.ranges()).extracting(ProjectTextExporterTest::startLine).containsExactly(1, 2);
+    }
+
+    // A root namespace's member reaches the serializer through its owning membership, as SysON prints it.
+    private static org.eclipse.syson.sysml.Element declared(org.eclipse.emf.ecore.EObject root) {
+        return root instanceof org.eclipse.syson.sysml.Relationship relationship
+                ? relationship.getOwnedRelatedElement().get(0)
+                : (org.eclipse.syson.sysml.Element) root;
+    }
+
     private static IEMFEditingContext context(ResourceSet set) {
         AdapterFactoryEditingDomain domain = new AdapterFactoryEditingDomain(new ComposedAdapterFactory(),
                 new BasicCommandStack(), set);
