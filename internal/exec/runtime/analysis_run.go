@@ -346,14 +346,15 @@ func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Ins
 			return nil, args, fmt.Errorf("%w: %s is a feature of %s, which object #%d is not an object of",
 				ErrNotCarried, shape.Label, ctx.qualifiedSymbolName(owner), self.ID)
 		}
-		// The object also binds a subject the case declares but leaves unbound.
-		if subject, ok := shape.subjectParameter(); !ok || subject.Default != nil {
-			args.Subject = nil
-		}
 	}
 	reached, err := ctx.conditionSubject(shape.Sym, self)
 	if err != nil {
 		return nil, args, fmt.Errorf("%s %s: %w", shape.Kind, shape.Name, err)
+	}
+	// The object also binds a subject the case declares but leaves unbound.
+	args.Subject = nil
+	if subject, ok := shape.subjectParameter(); ok && subject.Default == nil && reached.instance != nil {
+		args.Subject = reached.instance
 	}
 	return reached.instance, args, nil
 }

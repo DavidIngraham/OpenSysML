@@ -30,6 +30,11 @@ const definitionOwnedCaseModel = `package Cost {
 
 	part cheap : Definition { attribute :>> cost = 80.0; }
 	part dear : Definition { attribute :>> cost = 120.0; }
+
+	part checks {
+		assert satisfy costReq by cheap;
+		assert satisfy costReq by dear;
+	}
 }`
 
 // TestRunAnalysisRunsADefinitionOwnedCaseOnTheSubjectGiven verifies the object
@@ -86,4 +91,19 @@ func TestValidateInstanceRunsADefinitionOwnedCaseOnTheObject(t *testing.T) {
 		t.Fatalf("VerifyRequirement: %v", err)
 	}
 	wantVerdicts(t, "VerifyRequirement on dear", resp.VerificationVerdicts, "Cost::Definition::costTest=fail")
+
+	// Two assertions of one requirement about two objects: the case answers
+	// about each object, not once for the requirement.
+	satisfied, err := srv.VerifySatisfaction(context.Background(), &pb.VerifySatisfactionRequest{
+		ModelHash: hash,
+		SymbolId:  "Cost::checks",
+	})
+	if err != nil {
+		t.Fatalf("VerifySatisfaction: %v", err)
+	}
+	if satisfied.Error != "" {
+		t.Fatalf("VerifySatisfaction reported %q", satisfied.Error)
+	}
+	wantVerdicts(t, "VerifySatisfaction of checks", satisfied.VerificationVerdicts,
+		"Cost::Definition::costTest=pass", "Cost::Definition::costTest=fail")
 }

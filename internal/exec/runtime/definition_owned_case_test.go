@@ -114,6 +114,10 @@ func TestDefinitionOwnedCaseWithoutAnObject(t *testing.T) {
 	if got := runOn(t, idx, ctx, "test::Definition::costTest", nil); got.Kind != VerdictFail || got.Subject != objects[0] {
 		t.Errorf("costTest with one object = %s about %v, want fail about it", got.Kind, got.Subject)
 	}
+	// The one object found binds the unbound declared subject too.
+	if got := runOn(t, idx, ctx, "test::Definition::subjectTest", nil); got.Kind != VerdictFail {
+		t.Errorf("subjectTest with one object = %s (%s), want fail", got.Kind, got.Detail)
+	}
 
 	idx, ctx, _ = definitionOwnedCase(t, "test::cheap", "test::dear")
 	got = runOn(t, idx, ctx, "test::Definition::costTest", nil)
@@ -159,6 +163,15 @@ func TestVerificationVerdictsOfADefinitionOwnedCaseRunPerObject(t *testing.T) {
 	about := spell(ctx.VerificationVerdictsOn([]*symbols.Scope{root}, req, objects[1]))
 	if want := "costTest=fail@" + strconv.FormatInt(objects[1].ID, 10); about != want {
 		t.Errorf("VerificationVerdictsOn(dear) = %s, want %s", about, want)
+	}
+	// An object neither of the definition nor holding one gets no verdict of
+	// the case: it is not borrowed from another object.
+	other, err := ctx.Instantiate(oneSymbol(t, idx, "test::other"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := spell(ctx.VerificationVerdictsOn([]*symbols.Scope{root}, req, other)); got != "" {
+		t.Errorf("VerificationVerdictsOn(other) = %s, want none", got)
 	}
 }
 

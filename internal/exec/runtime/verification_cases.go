@@ -167,7 +167,8 @@ func (ctx *Context) verificationVerdictsOn(sym *symbols.Symbol, self *Instance) 
 }
 
 // caseCarriers are the objects a type-owned case runs on for a verdict about subject: subject when
-// of that type, else each object of the type under it (under every root when nil); nil alone for none.
+// of that type, else each object of the type under it (none when it holds none), or under every
+// root when subject is nil, where no carrier leaves the case to run on no object.
 func (ctx *Context) caseCarriers(sym *symbols.Symbol, subject *Instance) []*Instance {
 	owner := declaringType(sym)
 	if owner == nil {
@@ -181,6 +182,9 @@ func (ctx *Context) caseCarriers(sym *symbols.Symbol, subject *Instance) []*Inst
 	}
 	carriers := ctx.carriersUnder(roots, owner)
 	if len(carriers) == 0 {
+		if subject != nil {
+			return nil
+		}
 		return []*Instance{nil}
 	}
 	out := make([]*Instance, len(carriers))
