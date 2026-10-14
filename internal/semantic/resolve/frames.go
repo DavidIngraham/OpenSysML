@@ -354,6 +354,9 @@ func (r *Resolver) ReadName(fqn string) {
 		}
 		f.names[fqn] = true
 	}
+	for _, c := range r.captures {
+		c.names = append(c.names, fqn)
+	}
 }
 
 func (r *Resolver) ReadNamespace(fqn string) {
@@ -365,6 +368,9 @@ func (r *Resolver) ReadNamespace(fqn string) {
 			f.namespaces = map[string]bool{}
 		}
 		f.namespaces[fqn] = true
+	}
+	for _, c := range r.captures {
+		c.namespaces = append(c.namespaces, fqn)
 	}
 }
 
@@ -378,6 +384,9 @@ func (r *Resolver) ReadDocument(name string) {
 		}
 		f.docs[name] = true
 	}
+	for _, c := range r.captures {
+		c.docs = append(c.docs, name)
+	}
 }
 
 func (r *Resolver) ReadAllNames() {
@@ -386,6 +395,9 @@ func (r *Resolver) ReadAllNames() {
 	}
 	if f := r.cur; f != nil {
 		f.all = true
+	}
+	for _, c := range r.captures {
+		c.all = true
 	}
 }
 
@@ -398,6 +410,9 @@ func (r *Resolver) ReadSpellings() {
 	}
 	if f := r.cur; f != nil {
 		f.spellings = true
+	}
+	for _, c := range r.captures {
+		c.spellings = true
 	}
 }
 
@@ -412,6 +427,9 @@ func (r *Resolver) ReadSegment(name string) {
 			f.segments = map[string]bool{}
 		}
 		f.segments[name] = true
+	}
+	for _, c := range r.captures {
+		c.segments = append(c.segments, name)
 	}
 }
 
