@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+const (
+	solidStrokeClose  = "; stroke-width: 1 }"
+	styleOpen         = "style: { "
+	dashedStrokeClose = "; stroke-width: 1; stroke-dash: 3 }"
+	fontSizeClose     = "; font-size: 14 }"
+)
+
 // D2 is the D2 form of a graph-shaped or sequence rendering, in black and
 // white with each kind's default direction.
 func (r *Rendering) D2() (string, error) {
@@ -188,26 +195,26 @@ const d2Arrow = `stroke: "#181818"; font-size: 13; font-color: black`
 // they are declared: the shapes by element kind, the pseudostate glyphs, and
 // the edges by their kind.
 var d2Classes = []struct{ name, body string }{
-	{"definition", "style: { " + d2Element + "; font-size: 14 }"},
-	{"usage", "style: { " + d2Element + "; font-size: 14; border-radius: 8 }"},
-	{"package", "style: { " + d2Element + "; font-size: 14; stroke-width: 2 }"},
-	{"region", "style: { " + d2Element + "; font-size: 14; stroke-dash: 3 }"},
-	{"pin", "style: { " + d2Element + "; font-size: 10 }"},
+	{"definition", styleOpen + d2Element + fontSizeClose},
+	{"usage", styleOpen + d2Element + "; font-size: 14; border-radius: 8 }"},
+	{"package", styleOpen + d2Element + "; font-size: 14; stroke-width: 2 }"},
+	{"region", styleOpen + d2Element + "; font-size: 14; stroke-dash: 3 }"},
+	{"pin", styleOpen + d2Element + "; font-size: 10 }"},
 	{"initial", "shape: oval; width: 18; height: 18; style: { fill: black; stroke: black }"},
 	{"final", "shape: oval; width: 22; height: 22; style: { fill: black; stroke: black; double-border: true }"},
 	{"terminate", "shape: text; style: { font-size: 24; bold: true; font-color: black }"},
 	{"bar", "shape: rectangle; width: 80; height: 8; style: { fill: black; stroke: black }"},
-	{"choice", "shape: diamond; style: { " + d2Element + "; font-size: 14 }"},
-	{"history", "shape: oval; width: 26; height: 26; style: { " + d2Element + "; font-size: 14 }"},
-	{"edge", "style: { " + d2Arrow + "; stroke-width: 1 }"},
-	{"connection", "style: { " + d2Arrow + "; stroke-width: 3 }"},
-	{"flow", "style: { " + d2Arrow + "; stroke-width: 1; stroke-dash: 3 }"},
-	{"specialization", "target-arrowhead: { shape: triangle; style: { filled: false } }; style: { " + d2Arrow + "; stroke-width: 1 }"},
-	{"typing", "target-arrowhead: { shape: triangle; style: { filled: false } }; style: { " + d2Arrow + "; stroke-width: 1; stroke-dash: 3 }"},
-	{"composition", "source-arrowhead: { shape: diamond; style: { filled: true } }; style: { " + d2Arrow + "; stroke-width: 1 }"},
-	{"reference", "source-arrowhead: { shape: diamond; style: { filled: false } }; style: { " + d2Arrow + "; stroke-width: 1 }"},
-	{"containment", "source-arrowhead: { shape: circle; style: { filled: false } }; style: { " + d2Arrow + "; stroke-width: 1 }"},
-	{"dependency", "style: { " + d2Arrow + "; stroke-width: 1; stroke-dash: 3 }"},
+	{"choice", "shape: diamond; style: { " + d2Element + fontSizeClose},
+	{"history", "shape: oval; width: 26; height: 26; style: { " + d2Element + fontSizeClose},
+	{"edge", styleOpen + d2Arrow + solidStrokeClose},
+	{"connection", styleOpen + d2Arrow + "; stroke-width: 3 }"},
+	{"flow", styleOpen + d2Arrow + dashedStrokeClose},
+	{"specialization", "target-arrowhead: { shape: triangle; style: { filled: false } }; style: { " + d2Arrow + solidStrokeClose},
+	{"typing", "target-arrowhead: { shape: triangle; style: { filled: false } }; style: { " + d2Arrow + dashedStrokeClose},
+	{"composition", "source-arrowhead: { shape: diamond; style: { filled: true } }; style: { " + d2Arrow + solidStrokeClose},
+	{"reference", "source-arrowhead: { shape: diamond; style: { filled: false } }; style: { " + d2Arrow + solidStrokeClose},
+	{"containment", "source-arrowhead: { shape: circle; style: { filled: false } }; style: { " + d2Arrow + solidStrokeClose},
+	{"dependency", styleOpen + d2Arrow + dashedStrokeClose},
 }
 
 // writeClasses declares the classes the body uses, so the file stands alone.
@@ -308,7 +315,7 @@ func (w *d2Writer) writeNode(node *Node, scope, indent string) {
 		attrs = append(attrs, link)
 	}
 	if style := w.nodeStyle(node); style != "" {
-		attrs = append(attrs, "style: { "+style+" }")
+		attrs = append(attrs, styleOpen+style+" }")
 	}
 	pins := w.pins(node)
 	var children []*Node
@@ -526,7 +533,7 @@ func (w *d2Writer) writeArrow(indent, from, to, arrow, label, class string, styl
 	}
 	if style != nil {
 		if own := slices.Concat(d2Colors(style, false), d2Font(style)); len(own) > 0 {
-			attrs = append(attrs, "style: { "+strings.Join(own, "; ")+" }")
+			attrs = append(attrs, styleOpen+strings.Join(own, "; ")+" }")
 		}
 	}
 	if label == "" {
