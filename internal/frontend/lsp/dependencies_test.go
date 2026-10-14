@@ -204,3 +204,116 @@ func TestOpeningAFileInAnInstalledProjectIndexesWhatItUses(t *testing.T) {
 		t.Errorf("diagnostics for Widgets = %v, want none", msgs)
 	}
 }
+
+// twoProjectWorkspace writes project A, whose model imports Shared from
+// project B installed beside it, and project B as a folder of its own, and
+// returns both directories; B is reached through a library root naming root.
+func twoProjectWorkspace(t *testing.T) (a, b, root string) {
+	t.Helper()
+	root = t.TempDir()
+	a = filepath.Join(root, "a")
+	b = filepath.Join(root, "b")
+	writeFile(t, filepath.Join(a, ".project.json"), `{"name": "a", "publisher": "acme", "version": "1", "usage": [{"resource": "pkg:r/acme/b"}]}`)
+	writeFile(t, filepath.Join(a, "model", "main.sysml"), "package Main {\n    private import Shared::*;\n    part s : Thing;\n}\n")
+	writeFile(t, filepath.Join(a, "common", "local.sysml"), "package Local {\n    part def L;\n}\n")
+	writeFile(t, filepath.Join(b, ".project.json"), `{"name": "b", "publisher": "acme", "version": "1"}`)
+	writeFile(t, filepath.Join(b, "Shared.sysml"), "package Shared {\n    part def Thing;\n}\n")
+	return a, b, root
+}
+
+func writeFile(t *testing.T, path, text string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRemovingAFolderKeepsTheSourcesAnotherFoldersProjectUses(t *testing.T) {
+	a, b, root := twoProjectWorkspace(t)
+	s := NewServer(model.NewWorkspace())
+	s.client = &fakeClient{}
+	ctx := context.Background()
+	if _, err := s.Initialize(ctx, &protocol.InitializeParams{
+		WorkspaceFolders:      []protocol.WorkspaceFolder{{URI: string(uri.File(a)), Name: "a"}, {URI: string(uri.File(b)), Name: "b"}},
+		InitializationOptions: map[string]any{"libraryRoots": []any{root}},
+	}); err != nil {
+		t.Fatalf("Initialize err = %v", err)
+	}
+	if err := s.Initialized(ctx, &protocol.InitializedParams{}); err != nil {
+		t.Fatalf("Initialized err = %v", err)
+	}
+	shared := filepath.Join(b, "Shared.sysml")
+	if s.ws.Document(shared) == nil {
+		t.Fatalf("%s not indexed", shared)
+	}
+
+	if err := s.DidChangeWorkspaceFolders(ctx, &protocol.DidChangeWorkspaceFoldersParams{
+		Event: protocol.WorkspaceFoldersChangeEvent{Removed: []protocol.WorkspaceFolder{{URI: string(uri.File(b)), Name: "b"}}},
+	}); err != nil {
+		t.Fatalf("DidChangeWorkspaceFolders err = %v", err)
+	}
+	if s.ws.Document(shared) == nil {
+		t.Errorf("%s dropped with folder b, though folder a's project uses it", shared)
+	}
+	if err := s.DidChangeWorkspaceFolders(ctx, &protocol.DidChangeWorkspaceFoldersParams{
+		Event: protocol.WorkspaceFoldersChangeEvent{Removed: []protocol.WorkspaceFolder{{URI: string(uri.File(a)), Name: "a"}}},
+	}); err != nil {
+		t.Fatalf("DidChangeWorkspaceFolders err = %v", err)
+	}
+	if s.ws.Document(shared) != nil {
+		t.Errorf("%s still indexed once no folder uses it", shared)
+	}
+}
+
+func TestChangedProjectFileFindsTheProjectsAgain(t *testing.T) {
+	a, b, root := twoProjectWorkspace(t)
+	writeFile(t, filepath.Join(a, ".project.json"), `{"name": "a", "publisher": "acme", "version": "1"}`)
+	s, fc := projectWorkspace(t, a, map[string]any{"libraryRoots": []any{root}})
+	ctx := context.Background()
+	main := filepath.Join(a, "model", "main.sysml")
+	openFile(t, s, main, "package Main {\n    private import Shared::*;\n    part s : Thing;\n}\n")
+	shared := filepath.Join(b, "Shared.sysml")
+	if s.ws.Document(shared) != nil || len(diagnosticsFor(fc, main)) == 0 {
+		t.Fatalf("%s indexed before the project used it", shared)
+	}
+
+	// Adding the usage, as a package manager does, is a change to the project
+	// file the editor watches.
+	writeFile(t, filepath.Join(a, ".project.json"), `{"name": "a", "publisher": "acme", "version": "1", "usage": [{"resource": "pkg:r/acme/b"}]}`)
+	if err := s.DidChangeWatchedFiles(ctx, &protocol.DidChangeWatchedFilesParams{
+		Changes: []*protocol.FileEvent{{URI: uri.File(filepath.Join(a, ".project.json")), Type: protocol.FileChangeTypeChanged}},
+	}); err != nil {
+		t.Fatalf("DidChangeWatchedFiles err = %v", err)
+	}
+	if s.ws.Document(shared) == nil {
+		t.Errorf("%s not indexed after the project file named its project", shared)
+	}
+	if msgs := diagnosticsFor(fc, main); len(msgs) != 0 {
+		t.Errorf("diagnostics for main = %v after the usage was added, want none", msgs)
+	}
+}
+
+func TestOpeningAFileInAProjectOutsideFoldersIndexesTheWholeProject(t *testing.T) {
+	a, _, _ := twoProjectWorkspace(t)
+	s := NewServer(model.NewWorkspace())
+	s.client = &fakeClient{}
+	if _, err := s.Initialize(context.Background(), &protocol.InitializeParams{}); err != nil {
+		t.Fatalf("Initialize err = %v", err)
+	}
+	main := filepath.Join(a, "model", "main.sysml")
+	openFile(t, s, main, "package Main {\n    private import Local::*;\n    part l : L;\n}\n")
+
+	local := filepath.Join(a, "common", "local.sysml")
+	if s.ws.Document(local) == nil {
+		t.Fatalf("%s not indexed: the opened document's project is its workspace", local)
+	}
+	if err := s.DidClose(context.Background(), &protocol.DidCloseTextDocumentParams{TextDocument: protocol.TextDocumentIdentifier{URI: uri.File(main)}}); err != nil {
+		t.Fatalf("DidClose err = %v", err)
+	}
+	if s.ws.Document(local) != nil {
+		t.Errorf("%s still indexed after the last document of its project closed", local)
+	}
+}

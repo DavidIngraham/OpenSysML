@@ -262,7 +262,7 @@ func rootIndex(dirs []string, loaded map[string]bool) map[string][]*fileSummary 
 	budget := maxDependencyDirs
 	visited := map[string]bool{}
 	for _, dir := range dirs {
-		walkTolerant(dir, visited, &budget, &candidates)
+		walkTolerant(dir, visited, &budget, IsModelFile, &candidates)
 	}
 	sort.Strings(candidates)
 	byRoot := map[string][]*fileSummary{}
@@ -284,9 +284,10 @@ func rootIndex(dirs []string, loaded map[string]bool) map[string][]*fileSummary 
 	return byRoot
 }
 
-// walkTolerant appends the model files under dir to out as walk does, but
-// passes over whatever cannot be read and stops once budget directories are visited.
-func walkTolerant(dir string, visited map[string]bool, budget *int, out *[]string) {
+// walkTolerant appends the files under dir that accept admits to out as walk
+// does, but passes over whatever cannot be read and stops once budget
+// directories are visited.
+func walkTolerant(dir string, visited map[string]bool, budget *int, accept func(string) bool, out *[]string) {
 	resolved, err := filepath.EvalSymlinks(dir)
 	if err != nil || visited[resolved] || *budget == 0 {
 		return
@@ -306,9 +307,9 @@ func walkTolerant(dir string, visited map[string]bool, budget *int, out *[]strin
 		switch {
 		case info.IsDir():
 			if !strings.HasPrefix(e.Name(), ".") {
-				walkTolerant(path, visited, budget, out)
+				walkTolerant(path, visited, budget, accept, out)
 			}
-		case IsModelFile(path):
+		case accept(path):
 			*out = append(*out, path)
 		}
 	}

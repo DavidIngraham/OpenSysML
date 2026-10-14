@@ -147,36 +147,46 @@ func (d Discovery) libraryRoots(projectDirs []string) []string {
 	return out
 }
 
-// installedProjects lists the projects under the roots: every directory below
-// a root that holds a project interchange file, read once and sorted by
-// directory. The walk stops at a project, passes over hidden directories and
-// whatever cannot be read, and is bounded.
+// installedProjects lists the projects under the roots: a root that is itself
+// a project, else every directory below it that holds a project interchange
+// file; each project once however many paths lead to it, sorted by directory.
+// The walk stops at a project, passes over hidden directories and whatever
+// cannot be read, and is bounded.
 func installedProjects(roots []string) []*Interchange {
 	var out []*Interchange
 	seen := map[string]bool{}
+	found := func(dir string) {
+		key := resolvedKey(dir)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		if project, err := ReadInterchange(dir); err == nil {
+			out = append(out, project)
+		}
+	}
 	for _, root := range roots {
+		if IsProjectDir(root) {
+			found(root)
+			continue
+		}
 		budget := maxLibraryDirs
-		walkInstalled(root, &budget, func(dir string) {
-			key := absKey(dir)
-			if seen[key] {
-				return
-			}
-			seen[key] = true
-			if project, err := ReadInterchange(dir); err == nil {
-				out = append(out, project)
-			}
-		})
+		walkInstalled(root, map[string]bool{}, &budget, found)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Dir < out[j].Dir })
 	return out
 }
 
 // walkInstalled calls found for every project directory under dir, not
-// descending into one found, into hidden directories or past the budget.
-func walkInstalled(dir string, budget *int, found func(dir string)) {
-	if *budget == 0 {
+// descending into one found, into hidden directories or past the budget. A
+// linked directory is walked, as a project walk does — an installation may be
+// a link into a store — each resolved directory once, so a cycle terminates.
+func walkInstalled(dir string, visited map[string]bool, budget *int, found func(dir string)) {
+	resolved, err := filepath.EvalSymlinks(dir)
+	if err != nil || visited[resolved] || *budget == 0 {
 		return
 	}
+	visited[resolved] = true
 	*budget--
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -195,7 +205,7 @@ func walkInstalled(dir string, budget *int, found func(dir string)) {
 			found(path)
 			continue
 		}
-		walkInstalled(path, budget, found)
+		walkInstalled(path, visited, budget, found)
 	}
 }
 
@@ -245,16 +255,26 @@ func pickInstalled(installed []*Interchange, u Usage) *Interchange {
 	return pick
 }
 
-// projectFiles lists the model files of each project, each walk tolerant of
-// what it cannot read and sorted by path, the projects in the order given.
+// projectFiles lists the loadable files of each project — model files and
+// notebooks, as a directory named on the command line contributes — each walk
+// tolerant of what it cannot read and sorted by path, the projects in order.
 func projectFiles(projects []*Interchange) []string {
 	var out []string
 	for _, project := range projects {
 		var files []string
 		budget := maxDependencyDirs
-		walkTolerant(project.Dir, map[string]bool{}, &budget, &files)
+		walkTolerant(project.Dir, map[string]bool{}, &budget, IsLoadable, &files)
 		sort.Strings(files)
 		out = append(out, files...)
 	}
 	return out
+}
+
+// resolvedKey is the identity a directory is counted under: its path with
+// every link resolved, so a project reached by two paths is one project.
+func resolvedKey(dir string) string {
+	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
+		return resolved
+	}
+	return absKey(dir)
 }

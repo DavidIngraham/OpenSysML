@@ -241,28 +241,47 @@ func (s *Server) reloadDependencies(ctx context.Context) {
 	s.refreshOpenDiagnostics(ctx, "")
 }
 
-// dropDependencies forgets the dependency sources recorded against the keys —
-// folders or opened directories — that no other key contributed, keeping an
-// open buffer and a source under a remaining folder.
-func (s *Server) dropDependencies(keys, kept []string) {
+// forgetDependencies drops the dependency records of the keys — folders or
+// opened directories — and returns the sources they listed and the set of
+// sources the remaining records still hold, which must stay indexed.
+func (s *Server) forgetDependencies(keys []string) (dropped []string, still map[string]bool) {
 	s.mu.Lock()
-	var dropped []string
+	defer s.mu.Unlock()
 	for _, key := range keys {
 		dropped = append(dropped, s.dependencies[key]...)
 		delete(s.dependencies, key)
 	}
-	still := map[string]bool{}
+	still = map[string]bool{}
 	for _, paths := range s.dependencies {
 		for _, path := range paths {
 			still[path] = true
 		}
 	}
-	s.mu.Unlock()
+	return dropped, still
+}
+
+// dropDependencies forgets the dependency sources recorded against the keys
+// that no other key contributed, keeping an open buffer and a source under a
+// remaining folder, and returns what the remaining records still hold.
+func (s *Server) dropDependencies(keys, kept []string) map[string]bool {
+	dropped, still := s.forgetDependencies(keys)
 	for _, name := range dropped {
 		if !still[name] && !s.ws.IsOpen(name) && !underAnyFolder(name, kept) {
 			s.ws.DeleteOnDisk(name)
 		}
 	}
+	return still
+}
+
+// projectOrDir is the directory an opened document's siblings are scanned
+// from: its project's directory when it lies in one, so an import of a
+// declaration elsewhere in the project resolves as it does on the command
+// line, else its own directory.
+func projectOrDir(name string) string {
+	if projects := project.EnclosingProjects(name); len(projects) > 0 {
+		return projects[0]
+	}
+	return filepath.Dir(name)
 }
 
 // walkFolder lists the model sources under folder, visiting at most budget
@@ -432,13 +451,23 @@ func (s *Server) readFromDisk(path string) ([]byte, bool) {
 }
 
 // DidChangeWatchedFiles reindexes model files changed outside the editor.
-// A deletion leaves an open buffer alone; it is still authoritative.
+// A deletion leaves an open buffer alone; it is still authoritative. A project
+// interchange file changed — a usage added, a project installed or removed —
+// has the projects the folders use found again.
 func (s *Server) DidChangeWatchedFiles(ctx context.Context, params *protocol.DidChangeWatchedFilesParams) error {
 	var sources []*protocol.FileEvent
+	projects := false
 	for _, event := range params.Changes {
-		if model.IsModelSource(uriToName(event.URI)) {
+		name := uriToName(event.URI)
+		switch {
+		case model.IsModelSource(name):
 			sources = append(sources, event)
+		case filepath.Base(name) == project.ProjectFile:
+			projects = true
 		}
+	}
+	if projects {
+		s.reloadDependencies(ctx)
 	}
 	if len(sources) == 0 {
 		return nil
@@ -493,7 +522,7 @@ func (s *Server) indexOpenedDirectory(name string) {
 	if !filepath.IsAbs(name) {
 		return
 	}
-	dir := filepath.Dir(name)
+	dir := projectOrDir(name)
 	if dir == filepath.VolumeName(name)+string(filepath.Separator) {
 		return
 	}
@@ -531,12 +560,12 @@ func (s *Server) releaseOpenedDirectories(closed string) {
 	if len(released) == 0 {
 		return
 	}
+	still := s.dropDependencies(released, folders)
 	for _, name := range s.ws.DocumentNames() {
-		if name != closed && underAnyFolder(name, released) && !underAnyFolder(name, folders) && !s.ws.IsOpen(name) {
+		if name != closed && underAnyFolder(name, released) && !underAnyFolder(name, folders) && !s.ws.IsOpen(name) && !still[name] {
 			s.ws.DeleteOnDisk(name)
 		}
 	}
-	s.dropDependencies(released, folders)
 }
 
 // underAnyOpen reports whether one of the open documents lies inside dir.
@@ -582,12 +611,13 @@ func (s *Server) dropFolder(folder string) {
 	s.folders = kept
 	s.mu.Unlock()
 
+	// A source another folder's project uses stays, wherever it lies.
+	still := s.dropDependencies([]string{folder}, kept)
 	for _, name := range s.ws.DocumentNames() {
-		if underFolder(name, folder) && !underAnyFolder(name, kept) {
+		if underFolder(name, folder) && !underAnyFolder(name, kept) && !still[name] {
 			s.ws.DeleteOnDisk(name)
 		}
 	}
-	s.dropDependencies([]string{folder}, kept)
 }
 
 // underAnyFolder reports whether name lies inside one of the folders.

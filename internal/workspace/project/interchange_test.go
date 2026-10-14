@@ -297,3 +297,77 @@ func TestSplitLibraryRootsDropsEmptyEntries(t *testing.T) {
 		t.Errorf("EnvLibraryRoots = %v", got)
 	}
 }
+
+func TestNewerVersionFollowsSemanticVersioning(t *testing.T) {
+	newer := [][2]string{
+		{"2.0.0", "1.9.9"}, {"1.10.0", "1.9.0"}, {"1.0.0", "1.0.0-beta"}, {"1.0.0-rc.1", "1.0.0-beta.2"},
+		{"1.0.0-beta.2", "1.0.0-beta.1"}, {"1.0.0-beta.11", "1.0.0-beta.2"}, {"1.0.0-beta", "1.0.0-alpha"},
+		{"1.0.0-rc.1", "1.0.0-rc"}, {"1.0.0-beta", "1.0.0-1"}, {"v1.1", "1.0.5"}, {"1.0.0.1", "1.0.0"}, {"b", "a"},
+	}
+	for _, c := range newer {
+		if !newerVersion(c[0], c[1]) {
+			t.Errorf("newerVersion(%q, %q) = false", c[0], c[1])
+		}
+		if newerVersion(c[1], c[0]) {
+			t.Errorf("newerVersion(%q, %q) = true", c[1], c[0])
+		}
+	}
+	for _, same := range [][2]string{{"1.0.0", "1.0"}, {"1.0.0+build.7", "1.0.0"}, {"v2.1.0", "2.1.0"}} {
+		if newerVersion(same[0], same[1]) || newerVersion(same[1], same[0]) {
+			t.Errorf("newerVersion orders %q and %q, want equal", same[0], same[1])
+		}
+	}
+}
+
+func TestUsesKeepsADotInTheNameAndStripsOnlyTheArchiveExtension(t *testing.T) {
+	core := &Interchange{Publisher: "acme", Name: "Model Core"}
+	if !core.Uses(Usage{Resource: "pkg:registry/acme/model.core"}) {
+		t.Error("model.core does not match Model Core: a dot in a name is no extension")
+	}
+	if !core.Uses(Usage{Resource: "https://example.org/acme/model.core.KPAR"}) {
+		t.Error("model.core.KPAR does not match Model Core: only the archive extension is stripped")
+	}
+	if core.Uses(Usage{Resource: "pkg:registry/acme/model.json"}) {
+		t.Error("model.json matches Model Core")
+	}
+}
+
+func TestExpandOfAProjectIncludesTheNotebooksOfTheProjectsItUses(t *testing.T) {
+	proj, store := fixtureProject(t)
+	notebook := writeModel(t, filepath.Join(store, "acme", "Vendored Parts", "Guide.ipynb"), "{}")
+
+	got, err := Discovery{Roots: []string{store}}.Expand([]string{proj})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, path := range got {
+		found = found || path == notebook
+	}
+	if !found {
+		t.Errorf("Expand = %v, want the used project's notebook %s among them", got, notebook)
+	}
+	// The import-driven search still reads model files only.
+	if deps := (Discovery{Roots: []string{store}}).Dependencies([]string{filepath.Join(proj, "model", "main.sysml")}, nil); len(deps) != 3 {
+		t.Errorf("Dependencies = %v, want the three model files", deps)
+	}
+}
+
+func TestInstalledProjectsFollowLinksOnceSoACycleTerminates(t *testing.T) {
+	root := t.TempDir()
+	store := filepath.Join(root, "store")
+	vendored := writeProject(t, filepath.Join(store, "nested", "acme-parts"), `{"name": "Parts", "publisher": "acme", "version": "1.0.0"}`)
+	if err := os.Symlink(store, filepath.Join(store, "nested", "loop")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if err := os.Symlink(vendored, filepath.Join(root, "linked")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	got := installedProjects([]string{store, filepath.Join(root, "linked")})
+	if len(got) != 1 || got[0].Dir != vendored {
+		t.Errorf("installedProjects = %v, want the project once, though the store loops and a root links to it", projectDirs(got))
+	}
+	if got := installedProjects([]string{filepath.Join(root, "linked")}); len(got) != 1 || got[0].Dir != filepath.Join(root, "linked") {
+		t.Errorf("installedProjects of a root that is a project = %v, want the root itself", projectDirs(got))
+	}
+}

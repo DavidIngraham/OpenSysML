@@ -15,6 +15,10 @@ import (
 // its model files (KerML 1.0 §10.3): a directory holding one is a project.
 const ProjectFile = ".project.json"
 
+// archiveExt is the extension of a project interchange archive, which a
+// resource IRI may end in; it is no part of the project's name.
+const archiveExt = ".kpar"
+
 // Interchange is the InterchangeProject information a project's .project.json
 // carries (KerML 1.0 Table 12), with the directory it was read from.
 type Interchange struct {
@@ -151,8 +155,8 @@ func resourceSegments(resource string) []string {
 		if i := strings.IndexByte(last, '@'); i > 0 {
 			last = last[:i]
 		}
-		if ext := path.Ext(last); ext != "" && !strings.ContainsAny(ext[1:], "0123456789") {
-			last = strings.TrimSuffix(last, ext)
+		if strings.EqualFold(path.Ext(last), archiveExt) {
+			last = last[:len(last)-len(archiveExt)]
 		}
 		out[n-1] = last
 	}
@@ -187,21 +191,100 @@ func (p *Interchange) satisfies(constraint string) bool {
 	return want != "" && want == strings.TrimPrefix(p.Version, "v")
 }
 
-// newerVersion reports whether a is a later version than b, comparing the
-// dot-separated numeric segments numerically and anything else as text.
+// newerVersion reports whether a is a later version than b, in semantic
+// versioning's order: the dot-separated numeric core first, then a release
+// over a pre-release, then the pre-release identifiers (numeric ones
+// numerically, before alphanumeric ones); build metadata counts for nothing.
+// A segment that is not a number compares as text, so any string has a place.
 func newerVersion(a, b string) bool {
-	as := strings.Split(strings.TrimPrefix(a, "v"), ".")
-	bs := strings.Split(strings.TrimPrefix(b, "v"), ".")
-	for i := 0; i < len(as) && i < len(bs); i++ {
-		if as[i] == bs[i] {
+	coreA, preA := splitVersion(a)
+	coreB, preB := splitVersion(b)
+	if c := compareIdentifiers(coreA, coreB, true); c != 0 {
+		return c > 0
+	}
+	switch {
+	case len(preA) == 0 && len(preB) == 0:
+		return false
+	case len(preA) == 0 || len(preB) == 0:
+		return len(preA) == 0
+	}
+	return compareIdentifiers(preA, preB, false) > 0
+}
+
+// splitVersion separates a version into its dotted core and its dotted
+// pre-release identifiers, dropping build metadata and a leading v.
+func splitVersion(v string) (core, pre []string) {
+	v = strings.TrimPrefix(strings.TrimSpace(v), "v")
+	if i := strings.IndexByte(v, '+'); i >= 0 {
+		v = v[:i]
+	}
+	rest := ""
+	if i := strings.IndexByte(v, '-'); i >= 0 {
+		v, rest = v[:i], v[i+1:]
+	}
+	core = strings.Split(v, ".")
+	if rest != "" {
+		pre = strings.Split(rest, ".")
+	}
+	return core, pre
+}
+
+// compareIdentifiers orders two identifier lists segment by segment: numbers
+// numerically, a number before text, text as text; a missing segment counts as
+// zero in a core (1.0 is 1.0.0) and as earlier in a pre-release (1.0.0-rc is
+// before 1.0.0-rc.1).
+func compareIdentifiers(as, bs []string, core bool) int {
+	for i := 0; i < len(as) || i < len(bs); i++ {
+		a, b := "", ""
+		if i < len(as) {
+			a = as[i]
+		}
+		if i < len(bs) {
+			b = bs[i]
+		}
+		if a == b {
 			continue
 		}
-		an, aErr := strconv.Atoi(as[i])
-		bn, bErr := strconv.Atoi(bs[i])
-		if aErr == nil && bErr == nil {
-			return an > bn
+		if a == "" || b == "" {
+			if core {
+				a, b = zeroIfEmpty(a), zeroIfEmpty(b)
+				if a == b {
+					continue
+				}
+			} else if a == "" {
+				return -1
+			} else {
+				return 1
+			}
 		}
-		return as[i] > bs[i]
+		an, aErr := strconv.Atoi(a)
+		bn, bErr := strconv.Atoi(b)
+		switch {
+		case aErr == nil && bErr == nil:
+			if an != bn {
+				return cmpInt(an, bn)
+			}
+		case aErr == nil:
+			return -1
+		case bErr == nil:
+			return 1
+		default:
+			return strings.Compare(a, b)
+		}
 	}
-	return len(as) > len(bs)
+	return 0
+}
+
+func zeroIfEmpty(s string) string {
+	if s == "" {
+		return "0"
+	}
+	return s
+}
+
+func cmpInt(a, b int) int {
+	if a < b {
+		return -1
+	}
+	return 1
 }
