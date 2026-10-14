@@ -1,6 +1,7 @@
 package resolve
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
@@ -76,16 +77,31 @@ func (r *Resolver) ShareCollisions(shared *SharedCollisions) {
 	}
 }
 
-// readCapture gathers what the index answered while one computation ran, so
-// a shared result can be read again by whoever takes it (see Resolver.Read*).
+// readCapture gathers what the index answered while one computation ran, and
+// the documents it came to depend on (Resolver.Depend, EnterDoc: a memoized
+// answer it took depends on them in turn), so a shared result can be read
+// again by whoever takes it, with the provenance a frame taking the same
+// memoized answers would have.
 type readCapture struct {
-	names, namespaces, docs, segments []string
-	all, spellings                    bool
+	names, namespaces, docs, segments, deps []string
+	all, spellings                          bool
+}
+
+// settle sorts and dedupes the capture once its computation is over.
+func (c *readCapture) settle() *readCapture {
+	for _, list := range []*[]string{&c.names, &c.namespaces, &c.docs, &c.segments, &c.deps} {
+		slices.Sort(*list)
+		*list = slices.Compact(*list)
+	}
+	return c
 }
 
 func (c *readCapture) replay(r *Resolver) {
 	if c == nil {
 		return
+	}
+	for _, doc := range c.deps {
+		r.Depend(doc)
 	}
 	for _, fqn := range c.names {
 		r.ReadName(fqn)
@@ -114,5 +130,5 @@ func (r *Resolver) capturing(compute func()) *readCapture {
 	r.captures = append(r.captures, c)
 	defer func() { r.captures = r.captures[:len(r.captures)-1] }()
 	compute()
-	return c
+	return c.settle()
 }

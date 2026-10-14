@@ -236,6 +236,7 @@ func (r *Resolver) EnterDoc(doc string) {
 	if !r.Tracking() {
 		return
 	}
+	r.captureDep(doc)
 	cur := r.cur
 	if doc == "" && cur != nil {
 		// Unstamped state stays with whoever computed it.
@@ -306,6 +307,7 @@ func (r *Resolver) Depend(doc string) {
 	if r == nil {
 		return
 	}
+	r.captureDep(doc)
 	cur := r.cur
 	if cur == nil || doc == "" || doc == cur.doc || cur.entered(doc) != nil {
 		return
@@ -340,6 +342,16 @@ func (r *Resolver) depend(from *frame, doc string) {
 		r.dependents[doc] = back
 	}
 	back[from.doc] = true
+}
+
+// captureDep notes, for the captures open, that the computation depends on doc.
+func (r *Resolver) captureDep(doc string) {
+	if doc == "" {
+		return
+	}
+	for _, c := range r.captures {
+		c.deps = append(c.deps, doc)
+	}
 }
 
 // ReadName, ReadNamespace, ReadDocument, ReadAllNames and ReadSegment implement
