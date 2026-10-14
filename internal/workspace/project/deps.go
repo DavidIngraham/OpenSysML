@@ -52,11 +52,6 @@ func (d Discovery) Dependencies(files []string, known func(name string) bool) []
 // DependenciesOf is Dependencies over sources already read, so a notebook's
 // cells, or a file converted from another notation, are searched from as the
 // model text they load as. Standard input contributes nothing.
-func DependenciesOf(sources []Source, known func(name string) bool) []string {
-	return Discovery{}.DependenciesOf(sources, known)
-}
-
-// DependenciesOf is the package's DependenciesOf with the discovery's library roots.
 func (d Discovery) DependenciesOf(sources []Source, known func(name string) bool) []string {
 	loaded := map[string]bool{}
 	declared := map[string]bool{}
