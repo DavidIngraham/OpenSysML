@@ -224,8 +224,8 @@ func TestReadSymbolsIgnoresMalformedGeometryAndColour(t *testing.T) {
 
 // A symbol MagicDraw marks not visible is read but hidden: a hidden frame does not bound the
 // diagram, a hidden free symbol is not counted, and neither a hidden symbol, one nested in it nor
-// a hidden listed part shows its element, whichever of its visible flag and elementID comes
-// first, while a property's own visible flag is not the symbol's.
+// a hidden part listed under a shape's parts shows its element, whichever of its visible flag
+// and elementID comes first, while a property's own visible flag is not the symbol's.
 func TestReadSymbolsHidden(t *testing.T) {
 	stream := `<mdOwnedViews>
   <mdElement elementClass='DiagramFrame' xmi:id='_frame'>
@@ -285,14 +285,129 @@ func TestReadSymbolsHidden(t *testing.T) {
 		hidden[s.ID] = s.Hidden
 		stands[s.ID] = s.ElementID
 	}
-	if want := map[string]bool{"_frame": true, "_img": false, "_tb": true, "_s1": false, "_s2": true, "_s3": true, "_s4": true}; !reflect.DeepEqual(hidden, want) {
+	if want := map[string]bool{"_frame": true, "_img": false, "_tb": true, "_s1": false, "_s2": true, "_s3": true, "_s4": true,
+		"_p1": false, "_p2": true, "_p3": true, "_p4": false}; !reflect.DeepEqual(hidden, want) {
 		t.Errorf("hidden = %v, want %v", hidden, want)
 	}
-	if want := map[string]string{"_frame": "_diag", "_img": "", "_tb": "", "_s1": "_a", "_s2": "_b", "_s3": "_c", "_s4": "_f"}; !reflect.DeepEqual(stands, want) {
+	if want := map[string]string{"_frame": "_diag", "_img": "", "_tb": "", "_s1": "_a", "_s2": "_b", "_s3": "_c", "_s4": "_f",
+		"_p1": "_d", "_p2": "_e", "_p3": "_g", "_p4": "_h"}; !reflect.DeepEqual(stands, want) {
 		t.Errorf("element ids = %v, want %v", stands, want)
 	}
 	if want := []string{"_a", "_d", "_h"}; !reflect.DeepEqual(syms.shown, want) {
 		t.Errorf("shown = %q, want %q", syms.shown, want)
+	}
+}
+
+// A part shape lists the shapes drawn inside it under its parts, and a state shape its
+// regions, not under its mdOwnedViews: each is a symbol of its own whose parent is the
+// enclosing shape, with its own geometry, ends and nested symbols, so a connector listed
+// there is a path between the symbols its ends name and the enclosing part stays a node.
+func TestReadSymbolsNestedInParts(t *testing.T) {
+	stream := `<mdOwnedViews>
+  <mdElement elementClass='DiagramFrame' xmi:id='_frame'>
+    <elementID xmi:idref='_diag'/>
+    <geometry>0, 0, 600, 400</geometry>
+  </mdElement>
+  <mdElement elementClass='Part' xmi:id='_outer'>
+    <elementID xmi:idref='_engine'/>
+    <geometry>20, 20, 400, 300</geometry>
+    <mdOwnedViews>
+      <mdElement elementClass='Port' xmi:id='_outer_port'>
+        <elementID xmi:idref='_fuel_in'/>
+        <geometry>13, 100, 15, 15</geometry>
+      </mdElement>
+    </mdOwnedViews>
+    <parts>
+      <mdElement elementClass='Part' xmi:id='_inner'>
+        <elementID xmi:idref='_piston'/>
+        <properties>
+          <mdElement elementClass='BooleanProperty'><propertyID>SHOW_NAME</propertyID><value xmi:value='true'/></mdElement>
+        </properties>
+        <geometry>100, 100, 120, 60</geometry>
+        <mdOwnedViews>
+          <mdElement elementClass='Port' xmi:id='_inner_port'>
+            <elementID xmi:idref='_piston_in'/>
+            <geometry>93, 120, 15, 15</geometry>
+          </mdElement>
+        </mdOwnedViews>
+      </mdElement>
+      <mdElement elementClass='Connector' xmi:id='_link'>
+        <elementID xmi:idref='_conn'/>
+        <linkFirstEndID xmi:idref='_outer_port'/>
+        <linkSecondEndID xmi:idref='_inner_port'/>
+        <geometry>28, 107; 60, 107; 60, 127; 93, 127; </geometry>
+        <mdOwnedViews>
+          <mdElement elementClass='ConnectorEnd' xmi:id='_link_end'>
+            <elementID xmi:idref='_conn_end'/>
+            <geometry>80, 110, 10, 10</geometry>
+          </mdElement>
+        </mdOwnedViews>
+      </mdElement>
+      <mdElement elementClass='Comment' xmi:id='_note'>
+        <elementID xmi:idref='_comment'/>
+        <geometry>250, 200, 100, 40</geometry>
+      </mdElement>
+    </parts>
+  </mdElement>
+  <mdElement elementClass='State' xmi:id='_state'>
+    <elementID xmi:idref='_running'/>
+    <geometry>450, 20, 120, 80</geometry>
+    <regions>
+      <mdElement elementClass='Region' xmi:id='_state_region'>
+        <elementID xmi:idref='_region'/>
+        <geometry>450, 40, 120, 60</geometry>
+      </mdElement>
+    </regions>
+  </mdElement>
+</mdOwnedViews>`
+	syms, err := readSymbols([]byte(stream), "_diag")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var order []string
+	byID := map[string]*Symbol{}
+	for _, s := range syms.list {
+		order = append(order, s.ID)
+		byID[s.ID] = s
+	}
+	if want := []string{"_frame", "_outer", "_outer_port", "_inner", "_inner_port", "_link", "_link_end", "_note", "_state", "_state_region"}; !reflect.DeepEqual(order, want) {
+		t.Fatalf("symbols = %q, want %q", order, want)
+	}
+	if want := []string{"_engine", "_fuel_in", "_piston", "_piston_in", "_conn", "_conn_end", "_comment", "_running", "_region"}; !reflect.DeepEqual(syms.shown, want) {
+		t.Errorf("shown = %q, want %q", syms.shown, want)
+	}
+	parents := map[string]string{}
+	for id, s := range byID {
+		if s.Parent != nil {
+			parents[id] = s.Parent.ID
+		}
+	}
+	if want := map[string]string{"_outer_port": "_outer", "_inner": "_outer", "_inner_port": "_inner", "_link": "_outer", "_link_end": "_link", "_note": "_outer", "_state_region": "_state"}; !reflect.DeepEqual(parents, want) {
+		t.Errorf("parents = %v, want %v", parents, want)
+	}
+	outer := byID["_outer"]
+	if outer.IsPath() || outer.Ends != [2]string{} || !reflect.DeepEqual(outer.Bounds, &Bounds{20, 20, 400, 300}) {
+		t.Errorf("enclosing part = %+v", outer)
+	}
+	if inner := byID["_inner"]; inner.Class != "Part" || inner.IsPath() || !reflect.DeepEqual(inner.Bounds, &Bounds{100, 100, 120, 60}) || inner.Hidden {
+		t.Errorf("nested part = %+v", inner)
+	}
+	if p := byID["_inner_port"]; !reflect.DeepEqual(p.Bounds, &Bounds{93, 120, 15, 15}) {
+		t.Errorf("nested port = %+v", p)
+	}
+	link := byID["_link"]
+	if !link.IsPath() || link.Ends != [2]string{"_outer_port", "_inner_port"} || link.Bounds != nil ||
+		!reflect.DeepEqual(link.Points, []Point{{28, 107}, {60, 107}, {60, 127}, {93, 127}}) {
+		t.Errorf("nested connector = %+v", link)
+	}
+	if n := byID["_note"]; n.Class != "Comment" || n.IsPath() || n.Bounds == nil {
+		t.Errorf("nested comment = %+v", n)
+	}
+	if r := byID["_state_region"]; r.Class != "Region" || r.ElementID != "_region" || !reflect.DeepEqual(r.Bounds, &Bounds{450, 40, 120, 60}) {
+		t.Errorf("region = %+v", r)
+	}
+	if len(syms.free) != 0 {
+		t.Errorf("free = %v, want none", syms.free)
 	}
 }
 
