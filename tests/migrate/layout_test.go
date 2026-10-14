@@ -273,9 +273,9 @@ func TestGoldenEdgeLayout(t *testing.T) {
 	if !strings.Contains(string(r.Notation), "view 'Driving Sketch' {\n                    render Views::asTextualNotation;\n                }") {
 		t.Errorf("the empty activity diagram is not an empty textual view:\n%s", r.Notation)
 	}
-	// A transition, drawn as an edge, and an initial or final node written as start or done
-	// position no node; a declared final is placed.
-	if l.PlacementsUnexposed != 3 || strings.Contains(string(r.Notation), "Layout about halt") || !strings.Contains(string(r.Notation), "Layout about final {") {
+	// A transition, drawn as an edge, positions no node; a declared final is placed, and
+	// an initial node written as start is placed as the activity's start.
+	if l.PlacementsUnexposed != 2 || strings.Contains(string(r.Notation), "Layout about halt") || !strings.Contains(string(r.Notation), "Layout about final {") || !strings.Contains(string(r.Notation), "Layout about Drive::start {") {
 		t.Errorf("placements: %+v", l)
 	}
 	wantKinds := []migrate.RouteKind{
@@ -364,8 +364,8 @@ func TestStrictRefusedVertexLayoutHasNoPseudostateReferences(t *testing.T) {
 	}
 }
 
-// A control node the migrator declares as a member is placed; the initial and flow final nodes,
-// written as start and done, are the placements no Layout can name, positioned from their routes.
+// A control node the migrator declares as a member is placed; the initial and flow final
+// nodes, written as start and done, are placed as the activity's start and done.
 func TestGoldenControlNodeLayout(t *testing.T) {
 	r := migrateLaidOut(t, "control_nodes")
 	checkGolden(t, "testdata/xmi/control_nodes.layout.golden.sysml", r.Notation)
@@ -381,14 +381,14 @@ func TestGoldenControlNodeLayout(t *testing.T) {
 	if l == nil {
 		t.Fatal("no layout summary")
 	}
-	if l.Placements != 8 || l.PlacementsWritten != 6 || l.PlacementsUnexposed != 2 {
+	if l.Placements != 8 || l.PlacementsWritten != 8 || l.PlacementsUnexposed != 0 {
 		t.Errorf("placements: %+v", l)
 	}
 	if l.Routes != 8 || l.RoutesWritten != 8 {
 		t.Errorf("routes: %+v", l)
 	}
 	for _, want := range []string{
-		"Layout about 'fork' {", "Layout about 'join' {", "Layout about check {", "Layout about final {",
+		"Layout about Control::Controller::Run::start {", "Layout about 'fork' {", "Layout about 'join' {", "Layout about check {", "Layout about final {", "Layout about Control::Controller::Run::done {",
 	} {
 		if !strings.Contains(string(r.Notation), want) {
 			t.Errorf("a declared control node is not placed: %s\n%s", want, r.Notation)
@@ -413,8 +413,8 @@ func TestGoldenControlNodeLayout(t *testing.T) {
 		`"n1" [fillcolor=black, label="", pos="100,217!", pin=true, width=1.6666666666666667, height=0.08333333333333333, fixedsize=true];`,
 		`"n5" [shape=diamond, label="", xlabel="check", pos="100,70!", pin=true, width=0.2777777777777778, height=0.2777777777777778, fixedsize=true];`,
 		`"n6" [shape=doublecircle, fillcolor=black, label="", pos="50,10!", pin=true, width=0.2777777777777778, height=0.2777777777777778, fixedsize=true];`,
-		`"n7" [shape=circle, fillcolor=black, label="", pos="100,257.2!", pin=true, width=0.2, height=0.2];`,
-		`"n8" [shape=doublecircle, fillcolor=black, label="", pos="150,12.8`,
+		`"n7" [shape=circle, fillcolor=black, label="", pos="100,260!", pin=true, width=0.2777777777777778, height=0.2777777777777778, fixedsize=true];`,
+		`"n8" [shape=doublecircle, fillcolor=black, label="", pos="150,10!", pin=true, width=0.2777777777777778, height=0.2777777777777778, fixedsize=true];`,
 		`"n7" -> "n1" [pos="e,100,220 100,250 100,250 100,230 100,230"];`,
 		`"n5" -> "n8" [label="[false]", pos="e,150,20 110,70 110,70 150,70 150,70 150,70 150,30 150,30", lp="118.5,45"];`,
 	} {
@@ -425,27 +425,28 @@ func TestGoldenControlNodeLayout(t *testing.T) {
 }
 
 // The routes a migrated view carries reach the DOT form as pinned edge splines for each
-// edge kind, labelled by name only where the edge has no text of its own and the name is
-// the source's: one the migration made up, and marked, labels nothing. An object flow
-// runs pin to pin, the pins named beside the action; a label sits inside the canvas, and
-// two labels on one route, or a label and a parallel line, keep apart.
+// edge kind, run from source to target however the export listed the line's points, and
+// labelled by name only where the edge has no text of its own and the name is the
+// source's: one the migration made up, and marked, labels nothing. An object flow runs
+// pin to pin, the pins named beside the action; a label sits inside the canvas, and two
+// labels on one route, or a label and a parallel line, keep apart.
 func TestMigratedRoutesRenderPinned(t *testing.T) {
 	r := migrateLaidOut(t, "diagram_edges")
 	s := session(t, r)
 	everything := view.Options{Show: view.AllShown()}
 	for view, wants := range map[string][]string{
 		"Structure::Vehicle::Drive::Driving": {
-			`"n4" -> "n1" [pos="e,60,210 60,180 60,180 60,200 60,200"];`,
-			`"n2" -> "n3" [label="finish", pos="e,60,60 60,20 60,20 60,50 60,50", lp="32.5,40"];`,
+			`"n4" -> "n1" [pos="e,60,180 60,210 60,210 60,190 60,190"];`,
+			`"n2" -> "n3" [label="finish", pos="e,60,20 60,60 60,60 60,30 60,30", lp="87.5,40"];`,
 			`"n1.0" [shape=box, label="", xlabel="result", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="110,134!", pin=true];`,
 			`"n2.0" [shape=box, label="", xlabel="value", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="110,106!", pin=true];`,
 			`"n1.0" -> "n2.0" [style=dashed, pos="e,113.5,112 113.5,128 113.5,128 140,80 140,80 140,80 140,160 140,160 140,160 118.5,121 118.5,121"];`,
 		},
 		"Behavior::Modes::Modes": {
-			`"n1" -> "n2" [label="accept Go", pos="e,110,110 200,110 200,110 120,110 120,110", lp="155,98"];`,
-			`"n2" -> "n3" [label="accept Stop", pos="e,250,90 250,40 250,40 250,80 250,80", lp="203,65"];`,
-			`"n3" -> "n2" [label="accept Go", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="281,65"];`,
-			`"n3" -> "n2" [label="accept Resume", pos="e,280,40 280,90 280,90 320,90 320,90 320,90 320,40 320,40 320,40 290,40 290,40", lp="265.5,84.5"];`,
+			`"n1" -> "n2" [label="accept Go", pos="e,200,110 110,110 110,110 190,110 190,110", lp="155,122"];`,
+			`"n2" -> "n3" [label="accept Stop", pos="e,250,40 250,90 250,90 250,50 250,50", lp="203,65"];`,
+			`"n3" -> "n2" [label="accept Go", pos="e,280,90 280,40 280,40 320,40 320,40 320,40 320,90 320,90 320,90 290,90 290,90", lp="281,65"];`,
+			`"n3" -> "n2" [label="accept Resume", pos="e,280,90 280,40 280,40 320,40 320,40 320,40 320,90 320,90 320,90 290,90 290,90", lp="265.5,45.5"];`,
 		},
 		"Structure::Vehicle::'Vehicle Internals'": {
 			`[label="connection", arrowhead=none, penwidth=3, pos="200,100 200,100 120,100 120,100", lp="160,112"];`,
@@ -916,6 +917,7 @@ func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
 		{ID: "_blk_sensor", Type: "Class", X: 50, Y: 200, Width: 120, Height: 50},
 	}
 	// The export has moved the sensor above the controller, across the stream's ends.
+	// Without boxes of its own, the stream's, which the view draws, place the ends.
 	below := []mtip.Placement{
 		{ID: "_blk_controller", Type: "Class", X: 50, Y: 250, Width: 120, Height: 50},
 		{ID: "_blk_sensor", Type: "Class", X: 50, Y: 20, Width: 120, Height: 50},
@@ -928,7 +930,7 @@ func TestExportRouteOfAnAssociationPinsItsConnectionDef(t *testing.T) {
 		"drawn the stream's way":     {above, []float64{110, 70, 110, 200}, "(110, 200, 110, 70)"},
 		"drawn against the stream's": {above, []float64{110, 200, 110, 70}, "(110, 200, 110, 70)"},
 		"drawn between moved boxes":  {below, []float64{110, 250, 110, 70}, "(110, 70, 110, 250)"},
-		"drawn without boxes":        {nil, []float64{110, 70, 110, 200}, "(110, 70, 110, 200)"},
+		"drawn without boxes":        {nil, []float64{110, 70, 110, 200}, "(110, 200, 110, 70)"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			layout := &mtip.Export{Diagrams: []mtip.Diagram{{
@@ -1048,5 +1050,71 @@ func TestGoldenNestedPartsPlacedInsideTheirPart(t *testing.T) {
 	// Only the two connector-end shapes on the line lie on a connection; the nested parts are nodes.
 	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 3 || l.PlacementsOnEdges != 2 || l.RoutesWritten != 1 {
 		t.Errorf("layout report = %+v", l)
+	}
+}
+
+// An initial node's symbol, and a flow final's, is placed as the start or done of the
+// body it is drawn in, a nested action's included; a control flow the tool drew from
+// its target back to its source is routed the way its succession runs.
+func TestGoldenPseudoNodeLayout(t *testing.T) {
+	r := migrateStream(t, "pseudo_nodes")
+	checkGolden(t, "testdata/xmi/pseudo_nodes.golden.sysml", r.Notation)
+	for _, d := range errors(t, "pseudo_nodes.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	checkPseudoNodeLayout(t, r)
+}
+
+// The export record names no end of a line; its own boxes say which way the tool
+// drew it, so a flow recorded from its target is routed from its source all the same.
+func TestExportPseudoNodeLayout(t *testing.T) {
+	r := migrateLaidOut(t, "pseudo_nodes")
+	checkPseudoNodeLayout(t, r)
+}
+
+func checkPseudoNodeLayout(t *testing.T, r *migrate.Result) {
+	t.Helper()
+	l := r.Report.Layout
+	if l == nil {
+		t.Fatal("no layout summary")
+	}
+	if l.Placements != 10 || l.PlacementsWritten != 10 || l.PlacementsUnexposed != 0 || l.Routes != 7 || l.RoutesWritten != 7 {
+		t.Errorf("layout: %+v", l)
+	}
+	for _, want := range []string{
+		"metadata DiagramLayout::Layout about Imaging::Camera::Acquire::start { x = 85; y = 90; width = 15; height = 15; }",
+		"metadata DiagramLayout::Layout about 'Position Not Correct'::start { x = 379; y = 127; width = 15; height = 15; }",
+		"metadata DiagramLayout::Route about 'start to position' { points = (92, 105, 92, 117); }",
+		"metadata DiagramLayout::Route about Imaging::Camera::Acquire::'Position Not Correct'::'start to adjust' { points = (386, 142, 386, 152); }",
+		"metadata DiagramLayout::Route about 'position to Position Not Correct' { points = (92, 150, 92, 158, 300, 158); }",
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::start { x = 50; y = 50; width = 20; height = 20; }",
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::done { x = 50; y = 190; width = 20; height = 20; }",
+		"metadata DiagramLayout::Route about 'start then Idle' { points = (60, 70, 60, 100); }",
+		"metadata DiagramLayout::Route about 'Idle then done' { points = (60, 140, 60, 190); }",
+	} {
+		if !strings.Contains(string(r.Notation), want) {
+			t.Errorf("the migrated view lacks %s\n%s", want, r.Notation)
+		}
+	}
+	s := session(t, r)
+	rendering, err := s.ViewRendering("Imaging::Camera::Acquire::Acquire")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Each start is drawn at its Layout, 15 px wide, above the action its route leads to.
+	for _, x := range []string{"92.5", "386.5"} {
+		found := false
+		for _, line := range strings.Split(dot, "\n") {
+			if strings.Contains(line, "shape=circle") && strings.Contains(line, `pos="`+x+`,`) && strings.Contains(line, "width=0.20833333333333334, height=0.20833333333333334, fixedsize=true") {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("DOT of the activity view has no start placed at x = %s:\n%s", x, dot)
+		}
 	}
 }

@@ -812,6 +812,31 @@ func (m *migration) shownRef(e, scope *sysmlv1.Element, f viewForm) string {
 	return m.exposure(e, scope)
 }
 
+// inheritedNodeRef names the library member a graph draws el as — the start an
+// initial node or pseudostate is written as, the done a flow final or final state
+// ends at — qualified through the body it is drawn in, as `about Run::start` names
+// Run's start: a view is a part with a start and done of its own, which the bare
+// name would reach. "" for a node written as a member of its own.
+func (m *migration) inheritedNodeRef(el, scope *sysmlv1.Element) string {
+	var name string
+	switch {
+	case el.Type == "InitialNode", pseudoKind(el) == "initial":
+		name = "start"
+	case el.Type == "FlowFinalNode", el.Type == "FinalState":
+		name = "done"
+	default:
+		return ""
+	}
+	if el.Parent == nil {
+		return ""
+	}
+	owner := m.edgePlaceIn(el.Parent, nil, name).owner
+	if owner == nil || !m.reaches(owner) {
+		return ""
+	}
+	return m.memberRef(owner, scope) + "::" + name
+}
+
 // exposable is the declaration written for e that a view can expose: its own, the
 // operation a behavior is the method of, or a state's named inline action; nil for none.
 func (m *migration) exposable(e *sysmlv1.Element) *sysmlv1.Element {
@@ -1030,6 +1055,9 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 		if vertexBase(el) == "" || m.vertexWritten(el) {
 			ref = m.shownRef(el, v.host, p.form)
 		}
+		if ref == "" {
+			ref = m.inheritedNodeRef(el, v.host)
+		}
 		if ref == "" || !m.places(p.x, p.form, el, ref) {
 			s.PlacementsUnexposed++
 			p.unexposed++
@@ -1062,6 +1090,10 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 	var routes []string
 	p.reasons = map[string]int{}
 	pinned := map[string]bool{}
+	boxes := map[string]mtip.Placement{}
+	for _, pl := range rec.Placements {
+		boxes[pl.ID] = pl
+	}
 	for _, c := range rec.Connectors {
 		s.Routes++
 		el := m.model.Lookup(c.ID)
@@ -1080,7 +1112,7 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 				why = routeNotExposed
 			}
 			refs = []string{strings.Join(refs, ", ")}
-			points = [][]float64{m.linePoints(el, c)}
+			points = [][]float64{m.linePoints(el, c, boxes)}
 		}
 		ref := strings.Join(refs, ", ")
 		if why == "" && pinned[ref] {
@@ -1126,8 +1158,9 @@ func (p *layoutPlan) route(ref string, points []float64) string {
 }
 
 // linePoints is the line's points as the Route of el lists them, run from the written
-// element's first end to its second as a rendering reads them.
-func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+// element's first end to its second as a rendering reads them: the record's ends, or
+// failing those the boxes it places, say which way the tool drew the line.
+func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector, boxes map[string]mtip.Placement) []float64 {
 	if el.Type == "Connector" {
 		return m.connectorLinePoints(el, c)
 	}
@@ -1135,15 +1168,23 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 	if first == nil || second == nil || first == second {
 		return c.Points
 	}
-	if c.Ends[0] == second.ID || c.Ends[1] == first.ID {
+	ends := c.Ends
+	if ends == [2]string{} {
+		ends = endsAt(c.Points, [2]string{first.ID, second.ID}, boxes)
+	}
+	if ends[0] == second.ID || ends[1] == first.ID {
 		return reversePoints(c.Points)
 	}
 	return c.Points
 }
 
-// lineEnds are the elements at the ends of the line a tree draws for association el, in
-// drawing order: a connection def's end types, or a backed attribute's owner then its type.
+// lineEnds are the elements at the ends of the line el is drawn as, in the order its
+// member names them: a flow's or transition's source then target, a connection def's end
+// types, or a backed attribute's owner then its type.
 func (m *migration) lineEnds(el *sysmlv1.Element) (first, second *sysmlv1.Element) {
+	if el.Role == "edge" || el.Type == "Transition" {
+		return m.model.Ref(el, "source"), m.model.Ref(el, "target")
+	}
 	if prop := m.backedProperty(el); prop != nil {
 		return prop.Parent, m.model.Ref(prop, "type")
 	}

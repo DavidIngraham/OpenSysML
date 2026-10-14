@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mdOwnedViews>
+  <mdElement elementClass='DiagramFrame' xmi:id='_sym_modes_frame'>
+    <elementID xmi:idref='_diag_modes'></elementID>
+    <geometry>0, 0, 140, 220</geometry>
+  </mdElement>
+  <mdElement elementClass='Pseudostate' xmi:id='_sym_ps_init'>
+    <elementID xmi:idref='_ps_init'></elementID>
+    <geometry>50, 50, 20, 20</geometry>
+  </mdElement>
+  <mdElement elementClass='State' xmi:id='_sym_idle'>
+    <elementID xmi:idref='_st_idle'></elementID>
+    <geometry>10, 100, 100, 40</geometry>
+  </mdElement>
+  <mdElement elementClass='FinalState' xmi:id='_sym_st_done'>
+    <elementID xmi:idref='_st_done'></elementID>
+    <geometry>50, 190, 20, 20</geometry>
+  </mdElement>
+  <mdElement elementClass='Transition' xmi:id='_sym_t_init'>
+    <elementID xmi:idref='_t_init'></elementID>
+    <linkFirstEndID xmi:idref='_sym_idle'></linkFirstEndID>
+    <linkSecondEndID xmi:idref='_sym_ps_init'></linkSecondEndID>
+    <geometry>60, 100; 60, 70; </geometry>
+  </mdElement>
+  <mdElement elementClass='Transition' xmi:id='_sym_t_done'>
+    <elementID xmi:idref='_t_done'></elementID>
+    <linkFirstEndID xmi:idref='_sym_idle'></linkFirstEndID>
+    <linkSecondEndID xmi:idref='_sym_st_done'></linkSecondEndID>
+    <geometry>60, 140; 60, 190; </geometry>
+  </mdElement>
+</mdOwnedViews>
