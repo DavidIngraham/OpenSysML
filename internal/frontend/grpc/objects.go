@@ -80,6 +80,14 @@ type heldObjects struct {
 	runner func(context.Context) runtime.ToolRunner
 }
 
+// heldObjects is the population held for cached, and false when no Instantiate
+// has built one: a reader that would hold nothing need not build it.
+func (s *Service) heldObjects(cached *CachedModel) (*heldObjects, bool) {
+	cached.objectsMu.Lock()
+	defer cached.objectsMu.Unlock()
+	return cached.objects, cached.objects != nil
+}
+
 // objects is the population held for cached, built by the first Instantiate
 // over a runtime of its own so a request's worker never carries objects.
 func (s *Service) objects(cached *CachedModel) *heldObjects {

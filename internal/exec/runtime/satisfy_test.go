@@ -217,3 +217,100 @@ func TestReadInSatisfactionReadsThroughTheSubject(t *testing.T) {
 		t.Fatalf("ReadInSatisfaction = %+v, want 7.0", value)
 	}
 }
+
+// statedSatisfyModel states satisfactions with no `by`: one by a definition,
+// about every object of it, and one by a usage, about the usage's own object.
+const statedSatisfyModel = `
+package test {
+	part def Lander {
+		attribute verticalSpeed;
+	}
+
+	requirement def Touchdown {
+		subject lander : Lander;
+		require constraint { lander.verticalSpeed <= 1.5 }
+	}
+	requirement touchdown : Touchdown;
+
+	part def SafeLander :> Lander {
+		satisfy touchdown;
+	}
+	part slow : SafeLander {
+		attribute :>> verticalSpeed = 1.2;
+	}
+	part fast : SafeLander {
+		attribute :>> verticalSpeed = 2.4;
+	}
+
+	part gentle : Lander {
+		attribute :>> verticalSpeed = 0.5;
+		satisfy touchdown;
+	}
+}
+`
+
+// TestSatisfactionStatedByADefinitionIsAboutItsObjects checks that a definition's
+// `satisfy r;` is about the objects of the definition the runtime holds, asks for
+// one when there is none, and decides each object on its own values.
+func TestSatisfactionStatedByADefinitionIsAboutItsObjects(t *testing.T) {
+	ctx, idx := contextForSource(t, statedSatisfyModel)
+	var byDef *SatisfyAssertion
+	for _, a := range ctx.SatisfyAssertionsIn(idx.DocumentRoot("<test>")) {
+		if typ := a.StatingType(); typ != nil && typ.Name == "SafeLander" {
+			byDef = a
+		}
+	}
+	if byDef == nil {
+		t.Fatal("no assertion stated by SafeLander")
+	}
+	if got := ctx.SatisfactionSubjects(byDef); len(got) != 0 {
+		t.Fatalf("subjects before any object = %d, want none", len(got))
+	}
+	_, err := ctx.EvaluateSatisfaction(byDef)
+	if !errors.Is(err, ErrNoSubject) || !strings.Contains(err.Error(), "an object of test::SafeLander is needed") {
+		t.Fatalf("evaluated with no object: %v, want ErrNoSubject naming the definition", err)
+	}
+
+	slow, err := ctx.Instantiate(oneSymbol(t, idx, "test::slow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fast, err := ctx.Instantiate(oneSymbol(t, idx, "test::fast"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ctx.Instantiate(oneSymbol(t, idx, "test::gentle")); err != nil {
+		t.Fatal(err)
+	}
+	subjects := ctx.SatisfactionSubjects(byDef)
+	if len(subjects) != 2 || subjects[0].Object != slow || subjects[1].Object != fast {
+		t.Fatalf("subjects = %v, want slow then fast", subjects)
+	}
+	if subjects[0].Root != slow || len(subjects[0].Path) != 0 {
+		t.Errorf("slow reached from %v via %v, want itself", subjects[0].Root, subjects[0].Path)
+	}
+	if holds, err := ctx.EvaluateSatisfactionOn(byDef, slow); err != nil || !holds {
+		t.Errorf("slow: holds = %v, err = %v; want true", holds, err)
+	}
+	if holds, err := ctx.EvaluateSatisfactionOn(byDef, fast); holds || !errors.Is(err, ErrViolated) {
+		t.Errorf("fast: holds = %v, err = %v; want a violation", holds, err)
+	}
+}
+
+// TestSatisfactionStatedByAUsageIsAboutItsOwnObject checks that a usage's
+// `satisfy r;` instantiates the usage when no object is supplied, as `by p` does.
+func TestSatisfactionStatedByAUsageIsAboutItsOwnObject(t *testing.T) {
+	ctx, idx := contextForSource(t, statedSatisfyModel)
+	gentle := oneSymbol(t, idx, "test::gentle")
+	assertions := ctx.SatisfyAssertionsIn(gentle.Scope)
+	if len(assertions) != 1 || assertions[0].StatingType() != gentle {
+		t.Fatalf("assertions of gentle = %v", assertions)
+	}
+	inst, err := ctx.SatisfySubject(assertions[0])
+	if err != nil || inst.Type != gentle {
+		t.Fatalf("subject = %v, %v; want an object of gentle", inst, err)
+	}
+	if holds, err := ctx.EvaluateSatisfaction(assertions[0]); err != nil || !holds {
+		t.Errorf("holds = %v, err = %v; want true", holds, err)
+	}
+}
