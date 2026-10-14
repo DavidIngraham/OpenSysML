@@ -8,31 +8,31 @@ Pseudostate	Station::Cycle::main::Work::Through	_through	((_tThrough) leads from
 Transition	Station::Cycle::main::Work::steps::<Transition>	_tThrough	(the source 'Through' has no v2 form: (_tThrough) leads from the entry point straight to the exit point 'Leave' of the same state, crossing it without settling in it; the runtime would then run neither its entry nor its exit behavior)
 
 ## approximated (25)
-StateMachine	Station::Cycle	_cycle	-> Station::Cycle	(acts on its owner Station, which it takes as its parameter context, since its this is the def's own occurrence; the classifier behavior is run by every object of Station as its usage cycle)
-OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_goEff	-> Station::Cycle::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_diveEff	-> Station::Cycle::unnamed2::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_leaveEff	-> Station::Cycle::unnamed3::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_stopEff	-> Station::Cycle::unnamed4::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_gatherEff	-> Station::Cycle::unnamed5::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::<OpaqueBehavior>	_syncEntry	-> Station::Cycle::Sync::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::<OpaqueBehavior>	_syncExit	-> Station::Cycle::Sync::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::a::<Transition>::<OpaqueBehavior>	_agEff	-> Station::Cycle::Sync::regions::a::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::a::A1::<OpaqueBehavior>	_a1Entry	-> Station::Cycle::Sync::regions::a::A1::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::a::A1::<OpaqueBehavior>	_a1Exit	-> Station::Cycle::Sync::regions::a::A1::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::b::<Transition>::<OpaqueBehavior>	_bgEff	-> Station::Cycle::Sync::regions::b::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::b::B1::<OpaqueBehavior>	_b1Entry	-> Station::Cycle::Sync::regions::b::B1::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Sync::b::B1::<OpaqueBehavior>	_b1Exit	-> Station::Cycle::Sync::regions::b::B1::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::<OpaqueBehavior>	_workEntry	-> Station::Cycle::Work::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::<OpaqueBehavior>	_workExit	-> Station::Cycle::Work::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::<Transition>::<OpaqueBehavior>	_startEff	-> Station::Cycle::Work::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::<Transition>::<OpaqueBehavior>	_finishEff	-> Station::Cycle::Work::unnamed2::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::<Transition>::<OpaqueBehavior>	_outEff	-> Station::Cycle::Work::unnamed3::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::Prep::<OpaqueBehavior>	_prepEntry	-> Station::Cycle::Work::Prep::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::Run::<OpaqueBehavior>	_runEntry	-> Station::Cycle::Work::Run::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::Run::<OpaqueBehavior>	_runExit	-> Station::Cycle::Work::Run::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::Run::pace::<Transition>::<OpaqueBehavior>	_deepEff	-> Station::Cycle::Work::Run::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::Run::pace::<Transition>::<OpaqueBehavior>	_backEff	-> Station::Cycle::Work::Run::unnamed2::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
-OpaqueBehavior	Station::Cycle::main::Work::steps::Run::pace::Fast::<OpaqueBehavior>	_fastEntry	-> Station::Cycle::Work::Run::Fast::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+StateMachine	Station::Cycle	_cycle	-> Model::Station::Cycle	(acts on its owner Station, which it takes as its parameter context, since its this is the def's own occurrence; the classifier behavior is run by every object of Station as its usage cycle)
+OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_goEff	-> Model::Station::Cycle::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_diveEff	-> Model::Station::Cycle::unnamed2::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_leaveEff	-> Model::Station::Cycle::unnamed3::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_stopEff	-> Model::Station::Cycle::unnamed4::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::<Transition>::<OpaqueBehavior>	_gatherEff	-> Model::Station::Cycle::unnamed5::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::<OpaqueBehavior>	_syncEntry	-> Model::Station::Cycle::Sync::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::<OpaqueBehavior>	_syncExit	-> Model::Station::Cycle::Sync::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::a::<Transition>::<OpaqueBehavior>	_agEff	-> Model::Station::Cycle::Sync::regions::a::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::a::A1::<OpaqueBehavior>	_a1Entry	-> Model::Station::Cycle::Sync::regions::a::A1::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::a::A1::<OpaqueBehavior>	_a1Exit	-> Model::Station::Cycle::Sync::regions::a::A1::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::b::<Transition>::<OpaqueBehavior>	_bgEff	-> Model::Station::Cycle::Sync::regions::b::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::b::B1::<OpaqueBehavior>	_b1Entry	-> Model::Station::Cycle::Sync::regions::b::B1::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Sync::b::B1::<OpaqueBehavior>	_b1Exit	-> Model::Station::Cycle::Sync::regions::b::B1::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::<OpaqueBehavior>	_workEntry	-> Model::Station::Cycle::Work::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::<OpaqueBehavior>	_workExit	-> Model::Station::Cycle::Work::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::<Transition>::<OpaqueBehavior>	_startEff	-> Model::Station::Cycle::Work::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::<Transition>::<OpaqueBehavior>	_finishEff	-> Model::Station::Cycle::Work::unnamed2::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::<Transition>::<OpaqueBehavior>	_outEff	-> Model::Station::Cycle::Work::unnamed3::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::Prep::<OpaqueBehavior>	_prepEntry	-> Model::Station::Cycle::Work::Prep::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::Run::<OpaqueBehavior>	_runEntry	-> Model::Station::Cycle::Work::Run::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::Run::<OpaqueBehavior>	_runExit	-> Model::Station::Cycle::Work::Run::unnamed2	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::Run::pace::<Transition>::<OpaqueBehavior>	_deepEff	-> Model::Station::Cycle::Work::Run::unnamed::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::Run::pace::<Transition>::<OpaqueBehavior>	_backEff	-> Model::Station::Cycle::Work::Run::unnamed2::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
+OpaqueBehavior	Station::Cycle::main::Work::steps::Run::pace::Fast::<OpaqueBehavior>	_fastEntry	-> Model::Station::Cycle::Work::Run::Fast::unnamed	(the JavaScript body is translated to v2; the JavaScript body is written as v2 assignments)
 
 ## mapped (97)
 SignalEvent	<SignalEvent>	_backEv	(written where a trigger refers to it, as accept Back)
@@ -46,19 +46,19 @@ SignalEvent	<SignalEvent>	_resumeEv	(written where a trigger refers to it, as ac
 SignalEvent	<SignalEvent>	_stopEv	(written where a trigger refers to it, as accept Stop)
 SignalEvent	<SignalEvent>	_pairEv	(written where a trigger refers to it, as accept Pair)
 SignalEvent	<SignalEvent>	_splitEv	(written where a trigger refers to it, as accept Split)
-Signal	Back	_back	-> Back
-Signal	Bump	_bump	-> Bump
-Signal	Dive	_dive	-> Dive
-Signal	Enter	_enter	-> Enter
-Signal	Finish	_finish	-> Finish
-Signal	Go	_go	-> Go
-Model	Model	_m	(the root model's members are written at the top level)
-Signal	Next	_next	-> Next
-Signal	Pair	_pair	-> Pair
-Signal	Resume	_resume	-> Resume
-Signal	Skip	_skip	-> Skip
-Signal	Split	_split	-> Split
-Class	Station	_station	-> Station
+Signal	Back	_back	-> Model::Back
+Signal	Bump	_bump	-> Model::Bump
+Signal	Dive	_dive	-> Model::Dive
+Signal	Enter	_enter	-> Model::Enter
+Signal	Finish	_finish	-> Model::Finish
+Signal	Go	_go	-> Model::Go
+Model	Model	_m	-> Model	(written as package Model)
+Signal	Next	_next	-> Model::Next
+Signal	Pair	_pair	-> Model::Pair
+Signal	Resume	_resume	-> Model::Resume
+Signal	Skip	_skip	-> Model::Skip
+Signal	Split	_split	-> Model::Split
+Class	Station	_station	-> Model::Station
 Region	Station::Cycle::main	_main	(the one region is written as the body of its owner)
 Pseudostate	Station::Cycle::main::<Pseudostate>	_init0	(written as the entry of the region)
 Transition	Station::Cycle::main::<Transition>	_t0
@@ -130,5 +130,5 @@ Transition	Station::Cycle::main::Work::steps::Run::pace::<Transition>	_tBack	(th
 Trigger	Station::Cycle::main::Work::steps::Run::pace::<Transition>::<Trigger>	_trBack
 State	Station::Cycle::main::Work::steps::Run::pace::Fast	_fast	-> Fast
 State	Station::Cycle::main::Work::steps::Run::pace::Slow	_slow	-> Slow
-Property	Station::trace	_trace	-> Station::trace
-Signal	Stop	_stop	-> Stop
+Property	Station::trace	_trace	-> Model::Station::trace
+Signal	Stop	_stop	-> Model::Stop
