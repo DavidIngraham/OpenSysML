@@ -54,7 +54,7 @@ func (c *kermlSubsettingMetaclassChecker) check(sym *symbols.Symbol) {
 		if ast.IsReferenceSubsetting(usage, rel) {
 			continue
 		}
-		target, ok := c.ctx.Resolver().ResolveTarget(kit.DeclarationScope(sym), rel.Target)
+		target, ok := c.resolveTarget(sym, usage, rel)
 		if !ok || target == nil {
 			continue
 		}
@@ -74,4 +74,15 @@ func (c *kermlSubsettingMetaclassChecker) check(sym *symbols.Symbol) {
 			Source:   "type",
 		})
 	}
+}
+
+// resolveTarget resolves rel's target as the document walk does: a redefined
+// feature is one the owner inherits, which the redefining usage's own borrowed
+// name must not shadow (KerML 8.3.3.3.6), so it takes the redefinition route.
+func (c *kermlSubsettingMetaclassChecker) resolveTarget(sym *symbols.Symbol, usage *ast.Usage, rel *ast.Relationship) (*symbols.Symbol, bool) {
+	scope := kit.DeclarationScope(sym)
+	if rel.Kind == ast.RelRedefines {
+		return c.ctx.Resolver().ResolveRedefinitionTarget(scope, usage, rel.Target)
+	}
+	return c.ctx.Resolver().ResolveTarget(scope, rel.Target)
 }

@@ -130,9 +130,10 @@ func TestSubsettingMetaclassRejectsDefinitionTargetsInSysML(t *testing.T) {
 }
 
 // Valid SysML keeps passing: a feature named plainly, qualified, through a
-// chain or an alias, an inherited end, a library usage (`parts`, `items`), and
-// redefinitions in a variation, an occurrence and a `ref` usage. The pinned
-// pilot validator accepts this model without a diagnostic.
+// chain or an alias, an inherited end, a library usage (`parts`, `items`),
+// redefinitions in a variation, an occurrence and a `ref` usage, and an unnamed
+// redefinition whose borrowed name must not shadow the feature it redefines.
+// The pinned pilot validator accepts this model without a diagnostic.
 func TestSubsettingMetaclassAcceptsFeatureTargetsInSysML(t *testing.T) {
 	src := `package Pos {
     private import ScalarValues::*;
@@ -162,6 +163,7 @@ func TestSubsettingMetaclassAcceptsFeatureTargetsInSysML(t *testing.T) {
     part def Base { part b : Wheel; }
     part def Sub :> Base { part bb :> b; }
     part def Sub2 :> Base { part bbb :>> b; }
+    part v : Vehicle { part :>> wheels { attribute :>> mass; } }
 }`
 	if got := subsettingMetaclassPositions(t, "pos.sysml", src); len(got) != 0 {
 		t.Fatalf("expected no type diagnostics, got\n%s", strings.Join(got, "\n"))
