@@ -872,3 +872,22 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 		t.Errorf("edges = %q, want %q", edges, want)
 	}
 }
+
+// The shapes Cameo draws inside a part shape are listed under its parts, not its
+// mdOwnedViews: the nested parts are placed inside the enclosing part, which keeps a
+// placement of its own, and the connector between them is routed.
+func TestGoldenNestedPartsPlacedInsideTheirPart(t *testing.T) {
+	r := migrateStream(t, "nested_parts")
+	checkGolden(t, "testdata/xmi/nested_parts.golden.sysml", r.Notation)
+	for _, d := range errors(t, "nested_parts.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about engine { x = 20; y = 20; width = 440; height = 240; }")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 60; y = 100; width = 120; height = 60; }")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about Blocks::Engine::sensor { x = 300; y = 100; width = 120; height = 60; }")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Route about Blocks::Engine::'piston to sensor' { points = (180, 130, 300, 130); }")
+	// Only the two connector-end shapes on the line lie on a connection; the nested parts are nodes.
+	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 3 || l.PlacementsOnEdges != 2 || l.RoutesWritten != 1 {
+		t.Errorf("layout report = %+v", l)
+	}
+}
