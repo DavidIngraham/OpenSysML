@@ -1,0 +1,1 @@
+- An objective's `verify r;` is no longer reported as a satisfaction assertion by `-satisfy`, `%satisfy` and gRPC `VerifySatisfaction`, which answered it `could not be evaluated` with no subject to read; the verification surfaces report it.

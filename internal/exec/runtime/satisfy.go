@@ -142,13 +142,15 @@ func (ctx *Context) SatisfyAssertionOf(sym *symbols.Symbol) (*SatisfyAssertion, 
 }
 
 // satisfyAssertionOf resolves the assertion sym declares, or nil when sym is not
-// a satisfy usage.
+// a satisfy usage. An objective's `verify r;` is a requirement verification
+// (SysML v2 RequirementVerificationMembership), not a satisfaction: the
+// verification surfaces report it.
 func (ctx *Context) satisfyAssertionOf(sym *symbols.Symbol) *SatisfyAssertion {
 	if sym == nil {
 		return nil
 	}
 	usage, ok := sym.Decl.(*ast.Usage)
-	if !ok || usage.Kind != ast.UsageSatisfy {
+	if !ok || usage.Kind != ast.UsageSatisfy || usage.IsVerifiedRequirement() {
 		return nil
 	}
 	a := &SatisfyAssertion{Symbol: sym, Negated: usage.IsNegated}
