@@ -174,10 +174,10 @@ func TestExpressionTreeLowering(t *testing.T) {
 // by its bare name through the whole migration, beside the tree cases above.
 func TestEnglishConstraintCalls(t *testing.T) {
 	for _, tc := range []struct{ name, body, want string }{
-		{"a trigonometric function", "a = sin(b)", "context.a == TrigFunctions::sin(context.b)"},
-		{"functions of the script table", "abs(a) &lt;= sqrt(b) and floor(a) &lt; max(a, b)", "RealFunctions::abs(context.a) <= RealFunctions::sqrt(context.b) and RealFunctions::floor(context.a) < RealFunctions::max(context.a, context.b)"},
-		{"a power", "a = pow(b, 2)", "context.a == context.b ** 2"},
-		{"the extension library's functions", "a = exp(b) + ln(b) + log(b, 2)", "context.a == OpenSysMLMathFunctions::exp(context.b) + OpenSysMLMathFunctions::ln(context.b) + OpenSysMLMathFunctions::log(context.b, 2)"},
+		{"a trigonometric function", "a = sin(b)", "a == TrigFunctions::sin(b)"},
+		{"functions of the script table", "abs(a) &lt;= sqrt(b) and floor(a) &lt; max(a, b)", "RealFunctions::abs(a) <= RealFunctions::sqrt(b) and RealFunctions::floor(a) < RealFunctions::max(a, b)"},
+		{"a power", "a = pow(b, 2)", "a == b ** 2"},
+		{"the extension library's functions", "a = exp(b) + ln(b) + log(b, 2)", "a == OpenSysMLMathFunctions::exp(b) + OpenSysMLMathFunctions::ln(b) + OpenSysMLMathFunctions::log(b, 2)"},
 		{"a dotted name is refused", "a = Math.sin(b)", `the construct "Math.sin(" is outside the translated subset: a call is not English`},
 		{"a name outside the table is refused", "a = sinh(b)", `the construct "sinh(" is outside the translated subset: a call is not English`},
 		{"a name of several words is not a call", "a = sin b", `the name "sin b" resolves to nothing readable`},
