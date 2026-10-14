@@ -162,6 +162,10 @@ func (m *migration) nameTaken(owner *sysmlv1.Element, name string) bool {
 	return m.nameTakenBut(nil, owner, name)
 }
 
+func (m *migration) nameTakenExcept(owner *sysmlv1.Element, name string, except *sysmlv1.Element) bool {
+	return m.nameTakenBut(except, owner, name)
+}
+
 // nameTakenBut is nameTaken disregarding e, whose own name the declaration
 // written for it is free to keep.
 func (m *migration) nameTakenBut(e, owner *sysmlv1.Element, name string) bool {
@@ -308,9 +312,20 @@ func (m *migration) path(e *sysmlv1.Element) []segment {
 		if op := m.methodOf[cur]; op != nil {
 			cur = op
 		}
+		var wrappedPointRegion *sysmlv1.Element
+		if owner := pointOwner(cur); owner != nil && owner.Type == "State" {
+			if regions := m.populatedRegions(owner); len(regions) == 1 &&
+				m.regionWrittenAsState(regions[0]) && m.regionStates[regions[0]] == "" {
+				wrappedPointRegion = regions[0]
+			}
+		}
 		if cur.Type == "Region" && cur.Role == "region" {
-			if p, ok := m.parallel[cur]; ok {
-				segs = append([]segment{{name: p}, {name: m.nameFor(cur)}}, segs...)
+			if m.regionWrittenAsState(cur) {
+				if p := m.regionStates[cur]; p != "" {
+					segs = append([]segment{{name: p}, {name: m.nameFor(cur)}}, segs...)
+				} else {
+					segs = append([]segment{{name: m.nameFor(cur), feature: true, elem: cur}}, segs...)
+				}
 			}
 			continue
 		}
@@ -320,6 +335,9 @@ func (m *migration) path(e *sysmlv1.Element) []segment {
 		segs = append([]segment{{name: m.nameFor(cur), feature: m.isUsage(cur), elem: cur}}, segs...)
 		if within, ok := m.nestedIn[cur]; ok {
 			segs = append([]segment{{name: within, feature: true}}, segs...)
+		}
+		if wrappedPointRegion != nil {
+			segs = append([]segment{{name: m.nameFor(wrappedPointRegion), feature: true, elem: wrappedPointRegion}}, segs...)
 		}
 	}
 	return segs
