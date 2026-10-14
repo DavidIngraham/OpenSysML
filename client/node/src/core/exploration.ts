@@ -144,7 +144,7 @@ export class Exploration {
     if (this.unenumerated.length > 0) {
       status += `; not enumerated: ${this.unenumerated.join(", ")}`;
     }
-    return `${status}; probabilities are lower bounds`;
+    return this.probabilitiesLowerBound ? `${status}; probabilities are lower bounds` : status;
   }
 
   /** Raise an {@link ExecutionError} unless every linearization was run. */
