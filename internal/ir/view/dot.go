@@ -1467,7 +1467,9 @@ func (l labeller) dotLabelExtent(node *Node) (width, height float64) {
 		for _, compartment := range compartments {
 			line(compartment.Name, l.keywordSize(), dotGlyphEm)
 			for _, row := range compartment.Rows {
-				line(l.rowText(row), base, dotGlyphEm)
+				for _, text := range strings.Split(l.rowText(row), "\n") {
+					line(text, base, dotGlyphEm)
+				}
 			}
 			height += dotCompartmentChrome
 		}

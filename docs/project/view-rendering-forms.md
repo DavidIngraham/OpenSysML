@@ -916,8 +916,10 @@ digraph "PlantViews::placedView" {
   (`dotLabelExtent`). Mermaid, PlantUML and D2 write every row as a label line, as they write detail
   lines, and size the box to it. The text form never settled the unplaced nodes and lists the
   members as before; the data form is unchanged too — a row is a child `Node` with no `Geometry`
-  under a parent with one, and the VS Code webview (`editors/vscode/src/webview/layout.ts`),
-  which builds its tree from `Parent`, already auto-places such children.
+  under a parent with one. The VS Code webview (`editors/vscode/src/webview/layout.ts`) draws
+  no compartment rows: it builds its tree from `Parent` and places such a child as a box of its
+  own in a grid slot (`placeGrid`), so it never dropped the member; drawing it as a row there
+  is the webview's own change to make.
 - **Unplaced nodes.** A node counts as positioned however its box was found — by its
   `Layout`, round its members, or from a route. When some nodes are positioned and others are
   not, the drawing shows what its source showed: the unpositioned nodes are left undrawn (a

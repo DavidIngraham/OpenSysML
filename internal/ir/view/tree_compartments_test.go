@@ -1,6 +1,7 @@
 package view
 
 import (
+	"math"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -22,7 +23,7 @@ func TestGoldenTreeCompartments(t *testing.T) {
 		t.Fatalf("DOTWith(cameo): %v", err)
 	}
 	checkGolden(t, filepath.Join("testdata", "tree-compartments.cameo.dot.golden"), cameo)
-	for _, view := range []string{"cornered", "cramped", "bare"} {
+	for _, view := range []string{"cornered", "wrapped", "cramped", "bare"} {
 		dot, err := render(t, "tree-compartments.sysml", "AmplifierViews::"+view).Write(FormDot)
 		if err != nil {
 			t.Fatalf("write %s: %v", view, err)
@@ -179,5 +180,42 @@ func TestTreeCompartmentsClipped(t *testing.T) {
 	}
 	if strings.Contains(cornered, "compartment row(s) with no room") || strings.Count(cornered, "<hr/>") != 6 {
 		t.Errorf("want a box with a corner and no size sized to all six compartments:\n%s", cornered)
+	}
+	wrapped, err := render(t, "tree-compartments.sysml", "AmplifierViews::wrapped").Write(FormDot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`upper<br/>lower`, `length = StringFunctions::Length(&#34;a  b&#34;)`} {
+		if !strings.Contains(wrapped, want) {
+			t.Errorf("want %q in the rows of:\n%s", want, wrapped)
+		}
+	}
+}
+
+// TestTreeCompartmentExtent checks a corner-only box's extent counts every
+// line a row is displayed on.
+func TestTreeCompartmentExtent(t *testing.T) {
+	labels := labeller{shown: Shown{ElementCompartments: true}}
+	one := &Node{Kind: "part def", Name: "A", Compartments: []Compartment{{Name: "attributes", Rows: []*Node{{Kind: "attribute", Name: "upper"}}}}}
+	two := &Node{Kind: "part def", Name: "A", Compartments: []Compartment{{Name: "attributes", Rows: []*Node{{Kind: "attribute", Name: "upper\rlower"}}}}}
+	_, oneHeight := labels.dotLabelExtent(one)
+	_, twoHeight := labels.dotLabelExtent(two)
+	if math.Abs(twoHeight-oneHeight-labels.sizeOf(one)*dotLineEm) > 1e-9 {
+		t.Errorf("a two-line row adds %v to the extent, want one line of %v", twoHeight-oneHeight, labels.sizeOf(one)*dotLineEm)
+	}
+}
+
+// TestCollapseSpaceKeepsLiterals checks notation text collapses its formatting
+// whitespace and none inside a string literal or a quoted name.
+func TestCollapseSpaceKeepsLiterals(t *testing.T) {
+	for in, want := range map[string]string{
+		"f(\n\t1,  2)":            "f( 1, 2)",
+		`format("a  b",  'c  d')`: `format("a  b", 'c  d')`,
+		`"a \" b"  + x`:           `"a \" b" + x`,
+		"  lead and  trail  ":     "lead and trail",
+	} {
+		if got := collapseSpace(in); got != want {
+			t.Errorf("collapseSpace(%q) = %q, want %q", in, got, want)
+		}
 	}
 }

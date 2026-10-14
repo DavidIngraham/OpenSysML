@@ -14,6 +14,12 @@ package Amplifier {
 
     enum def Band { low; high; }
 
+    // A name written over two lines and a value with a string argument.
+    part def Label {
+        attribute 'upper\rlower' : Real;
+        attribute length : ScalarValues::Natural = StringFunctions::Length("a  b");
+    }
+
     part def Stage {
         attribute gain : dB = 15.0;
         attribute noiseFigure : Real = RealFunctions::sqrt(4.0);
@@ -52,6 +58,13 @@ package AmplifierViews {
     view cornered {
         expose Amplifier::Stage;
         metadata Layout about Amplifier::Stage { x = 10; y = 10; }
+        render asTreeDiagram;
+    }
+
+    // A corner-only Layout round a two-line row and a string argument.
+    view wrapped {
+        expose Amplifier::Label;
+        metadata Layout about Amplifier::Label { x = 10; y = 10; }
         render asTreeDiagram;
     }
 
