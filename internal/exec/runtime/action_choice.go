@@ -32,11 +32,12 @@ type stepWrite struct {
 // destWrites is what one step wrote to one destination: each token's last write,
 // in the order the tokens first wrote, and the write that stands.
 type destWrites struct {
-	label string // the destination as a trace names it: `x`, or `x of object #3`
-	file  string
-	span  source.Span
-	last  []stepWrite
-	stood stepWrite
+	label   string // the destination as a trace names it: `x`, or `x of object #3`
+	feature string // the feature written, as the write spelled it
+	file    string
+	span    source.Span
+	last    []stepWrite
+	stood   stepWrite
 }
 
 // stepWriteLedger is what the action step under way wrote so far, by destination.
@@ -88,7 +89,7 @@ func (e *performances) beginTokenStep(id int64) func() {
 func (e *performances) noteFrameWrite(f *actionFrame, name string, value Value) {
 	file, span := e.ctx.featureLocation(f.scope, name)
 	key := f.key(name)
-	e.ctx.noteWrite(writeDest{holder: f, name: key}, key, value, file, span)
+	e.ctx.noteWrite(writeDest{holder: f, name: key}, key, name, value, file, span)
 }
 
 // noteObjectWrite records a write the running token made to a feature obj holds,
@@ -103,12 +104,13 @@ func (ctx *Context) noteObjectWrite(obj *Instance, name string, value Value) {
 			file, span = fv.Feature.Symbol.DocName, fv.Feature.Symbol.DeclSpan
 		}
 	}
-	ctx.noteWrite(dest, fmt.Sprintf("%s of object #%d", name, obj.ID), value, file, span)
+	ctx.noteWrite(dest, fmt.Sprintf("%s of object #%d", name, obj.ID), name, value, file, span)
 }
 
 // noteWrite records a write the running token made to dest, labelled as a trace
-// names it; destinations several tokens wrote are reported once the step ends.
-func (ctx *Context) noteWrite(dest writeDest, label string, value Value, file string, span source.Span) {
+// names it and under the feature's name; destinations several tokens wrote are
+// reported once the step ends.
+func (ctx *Context) noteWrite(dest writeDest, label, feature string, value Value, file string, span source.Span) {
 	ledger := ctx.stepWrites
 	if ledger == nil || ledger.writer == 0 {
 		return
@@ -116,7 +118,7 @@ func (ctx *Context) noteWrite(dest writeDest, label string, value Value, file st
 	w := stepWrite{token: ledger.writer, value: value}
 	d := ledger.writes[dest]
 	if d == nil {
-		d = &destWrites{label: label, file: file, span: span}
+		d = &destWrites{label: label, feature: feature, file: file, span: span}
 		ledger.writes[dest] = d
 		ledger.order = append(ledger.order, dest)
 	}
@@ -153,7 +155,7 @@ func (l *stepWriteLedger) noteChoices(e *performances) {
 			Taken:        taken,
 			File:         d.file,
 			Span:         d.span,
-			Touches:      []string{d.label},
+			Touches:      []string{d.feature},
 		})
 	}
 }

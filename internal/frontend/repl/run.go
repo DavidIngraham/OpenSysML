@@ -23,9 +23,14 @@ type NamedValue struct {
 	Name  string
 	Value string
 	// OrderDependent counts the run's unresolved choice points touching the
-	// value, which Value then carries the marker of; 0 for a value nothing
-	// order-dependent wrote.
+	// value, which the prompt prints the marker of after it; 0 for a value
+	// nothing order-dependent wrote.
 	OrderDependent int
+}
+
+// Text is the value as the prompt prints it, marked when order-dependent.
+func (v NamedValue) Text() string {
+	return markOrderDependent(v.Value, v.OrderDependent)
 }
 
 // namedValues lists an executor's results in name order, so two reports of the
@@ -52,7 +57,6 @@ func namedValue(ctx *runtime.Context, name, text string) NamedValue {
 	v := NamedValue{Name: name, Value: text}
 	if ctx != nil {
 		v.OrderDependent = ctx.OrderDependent(name)
-		v.Value = markOrderDependent(text, v.OrderDependent)
 	}
 	return v
 }

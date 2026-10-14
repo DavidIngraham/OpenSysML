@@ -84,6 +84,9 @@ type diagnostic struct {
 type namedValue struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+	// OrderDependent counts the run's unresolved choice points touching the
+	// value; absent for a value nothing order-dependent wrote.
+	OrderDependent int `json:"orderDependent,omitempty"`
 }
 
 // namedValues converts what a verdict produced into the reported form.
@@ -93,7 +96,7 @@ func namedValues(values []repl.NamedValue) []namedValue {
 	}
 	out := make([]namedValue, 0, len(values))
 	for _, v := range values {
-		out = append(out, namedValue{Name: v.Name, Value: v.Value})
+		out = append(out, namedValue{Name: v.Name, Value: v.Value, OrderDependent: v.OrderDependent})
 	}
 	return out
 }

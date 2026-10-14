@@ -2748,7 +2748,7 @@ func renderResults(ctx *runtime.Context, results map[string]runtime.Value) []str
 	out := make([]string, 0, len(values)+1)
 	out = append(out, "  Results:")
 	for _, v := range values {
-		out = append(out, fmt.Sprintf("    %s = %s", v.Name, v.Value))
+		out = append(out, fmt.Sprintf("    %s = %s", v.Name, v.Text()))
 	}
 	return out
 }
@@ -2780,7 +2780,7 @@ func (s *Session) doTokens() ([]string, bool, error) {
 	if values := namedValues(s.actionExec.contextOf(), exec.Results()); len(values) > 0 {
 		out = append(out, "  Values:")
 		for _, v := range values {
-			out = append(out, fmt.Sprintf("    %s = %s", v.Name, v.Value))
+			out = append(out, fmt.Sprintf("    %s = %s", v.Name, v.Text()))
 		}
 	}
 
@@ -3351,7 +3351,7 @@ func (s *Session) invokeOperation(name, operation, args string) ([]string, error
 	if values := namedValues(ctx, results); len(values) > 0 {
 		out = append(out, "", "Results:")
 		for _, v := range values {
-			out = append(out, fmt.Sprintf("  %s = %s", v.Name, v.Value))
+			out = append(out, fmt.Sprintf("  %s = %s", v.Name, v.Text()))
 		}
 	}
 	return out, nil
@@ -3546,7 +3546,7 @@ func (s *Session) doCurrent() ([]string, bool, error) {
 	if values := namedValues(s.stateExec.contextOf(), stateData); len(values) > 0 {
 		out = append(out, "", "State data:")
 		for _, v := range values {
-			out = append(out, fmt.Sprintf("  %s = %s", v.Name, v.Value))
+			out = append(out, fmt.Sprintf("  %s = %s", v.Name, v.Text()))
 		}
 	}
 

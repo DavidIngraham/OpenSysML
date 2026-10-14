@@ -35,11 +35,12 @@ func (ctx *Context) channelsMeet(a, b *Instance) lower.ChannelsMeet {
 }
 
 // relation is what is known of executors a and b, which two moves belong to:
-// whether they are two, run for two objects, and which message operations meet.
+// whether they are two, run for two objects (two executors run for none hold
+// their own slots as two objects do), and which message operations meet.
 func (ctx *Context) relation(a, b clockWaiter) lower.Relation {
 	sa, sb := executorSelf(a), executorSelf(b)
 	rel := lower.Relation{Channels: ctx.channelsMeet(sa, sb), Apart: a != b}
-	if rel.Apart && objectsApart(sa, sb) {
+	if rel.Apart && (objectsApart(sa, sb) || sa == nil && sb == nil) {
 		rel.Objects = true
 		rel.Held = func(p, q lower.Place) bool {
 			x, y := ctx.slotHolder(a, p.Sym), ctx.slotHolder(b, q.Sym)
