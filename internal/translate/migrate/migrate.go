@@ -275,7 +275,9 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 	for _, extra := range m.extras[nil] {
 		extra()
 	}
-	m.planPrivateLayoutAliases()
+	if !m.strict {
+		m.planPrivateLayoutAliases()
+	}
 	m.views(nil)
 	m.flushFlows()
 	m.placeholderEnds()

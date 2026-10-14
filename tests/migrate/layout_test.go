@@ -1054,6 +1054,97 @@ func TestGoldenPrivateLayoutAlias(t *testing.T) {
 	}
 }
 
+func TestPrivateLayoutAliasMarkerResolvesToLibraryWithShadowedName(t *testing.T) {
+	const docName = "private_layout_alias_scope.sysml"
+	r := migratePrivateLayoutAliasWithMetadataMember(t)
+	notation := string(r.Notation)
+	if !strings.Contains(notation, "metadata $::MigrationMetadata::SynthesizedName about 'x (A)';") {
+		t.Errorf("metadata marker is not rooted past the local name:\n%s", notation)
+	}
+	for _, d := range errors(t, docName, r.Notation) {
+		t.Errorf("%v", d)
+	}
+	assertPrivateLayoutAliasTarget(t, docName, r.Notation, []string{"Model", "A"}, "A BDD", "x (A)", "Model::A::x", "Model::B::x")
+
+	ws := model.NewWorkspace()
+	ws.Open(docName, r.Notation, 1)
+	doc := ws.Document(docName)
+	if doc == nil {
+		t.Fatalf("workspace did not open %s", docName)
+	}
+	owner, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf("Model", "A"))
+	if !ok || owner.Scope == nil {
+		t.Fatal("owner Model::A is unresolved or has no scope")
+	}
+	if _, ok := owner.Scope.LookupLocal("MigrationMetadata"); !ok {
+		t.Fatal("test model has no owner-local MigrationMetadata")
+	}
+	var markerFacts []*symbols.AnnotationFacts
+	var libraryType *symbols.Symbol
+	var libraryTypeOK bool
+	if err := ws.Read(func(reading *model.Reading) error {
+		reading.Query(docName, func(resolver *resolve.Resolver, semantic *semantics.Model) {
+			for _, member := range owner.Scope.AllMembers() {
+				if facts := semantic.AboutAnnotationFactsOf(member); facts != nil {
+					markerFacts = append(markerFacts, facts)
+				}
+			}
+			libraryType, libraryTypeOK = resolver.ResolveQualified(doc.Scope, ast.QualifiedNameOf("MigrationMetadata", "SynthesizedName"))
+		})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !libraryTypeOK || libraryType.Kind != symbols.SymbolMetadataDef {
+		t.Fatalf("library MigrationMetadata::SynthesizedName = %v, resolved = %t", libraryType, libraryTypeOK)
+	}
+	libraryFQN := symbols.FQNOf(libraryType)
+	for _, facts := range markerFacts {
+		if facts.TypeFQN == libraryFQN {
+			return
+		}
+	}
+	t.Fatalf("about marker facts = %+v, want library type %s", markerFacts, libraryFQN)
+}
+
+func migratePrivateLayoutAliasWithMetadataMember(t *testing.T) *migrate.Result {
+	t.Helper()
+	const sourcePath = "testdata/xmi/private_layout_alias.xmi"
+	sourceData, err := os.ReadFile(sourcePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const member = `      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_b" name="b" type="_b" aggregation="composite"/>`
+	const replacement = `      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_migration_metadata" name="MigrationMetadata" type="_b" aggregation="composite"/>
+` + member
+	if !bytes.Contains(sourceData, []byte(member)) {
+		t.Fatalf("%s does not contain the expected owner member", sourcePath)
+	}
+	sourceData = bytes.Replace(sourceData, []byte(member), []byte(replacement), 1)
+	layoutData, err := os.ReadFile("testdata/xmi/private_layout_alias.layout.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	layout, err := mtip.Parse(layoutData)
+	if err != nil {
+		t.Fatalf("mtip.Parse: %v", err)
+	}
+	r, err := migrate.MigrateOptions("private_layout_alias_scope.xmi", sourceData, migrate.Options{
+		Layout: layout, LayoutSource: "private_layout_alias.layout.xml",
+	})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	return r
+}
+
+func TestStrictPrivateLayoutAliasIsOmitted(t *testing.T) {
+	r := migrateLaidOutOptions(t, "private_layout_alias", migrate.Options{Strict: true})
+	if strings.Contains(string(r.Notation), "private alias ") {
+		t.Fatalf("strict migration wrote a private layout alias:\n%s", r.Notation)
+	}
+}
+
 func assertPrivateLayoutAliasTarget(t *testing.T, docName string, notation []byte, ownerPath []string, viewName, aliasName, targetFQN, wrongFQN string) {
 	t.Helper()
 	ws := model.NewWorkspace()

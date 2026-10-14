@@ -921,10 +921,13 @@ func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, 
 
 // writePrivateLayoutAliases writes the aliases planned for an owner's body.
 func (m *migration) writePrivateLayoutAliases(owner *sysmlv1.Element) {
+	saved := m.scope
+	m.scope = owner
 	for _, alias := range m.privateAliasesByOwner[owner] {
 		m.w.line("private alias " + writeName(alias.name) + " for " + writeName(m.nameFor(alias.target)) + ";")
 		m.w.line(m.synthesizedNames([]string{writeName(alias.name)}))
 	}
+	m.scope = saved
 }
 
 // exposureName returns the unqualified name at the end of an exposure reference.
