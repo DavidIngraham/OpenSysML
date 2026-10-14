@@ -23,6 +23,21 @@ func TestAnalysisRunsADefinitionOwnedCaseOnTheObjectGiven(t *testing.T) {
 	wants(t, run(t, s, "%analysis Cost::Definition::costTest"), "ambiguous subject", "cheap", "dear")
 }
 
+// TestAnalysisRunsADefinitionOwnedCaseOnTheObjectGivenOverOneHeld checks that
+// an object held under the definition's own name does not displace the object
+// named: the body reads the named object's cost, and a body that fails on an
+// object still names it.
+func TestAnalysisRunsADefinitionOwnedCaseOnTheObjectGivenOverOneHeld(t *testing.T) {
+	s := loadFixture(t, "testdata/verification_definition_owned.sysml")
+	run(t, s, "%instantiate Cost::Definition")
+	run(t, s, "%instantiate Cost::dear")
+	wants(t, run(t, s, "%analysis Cost::Definition::costTest Cost::dear"),
+		"verdict = VerdictKind::fail",
+		"✗ Verification Cost::Definition::costTest on Cost::dear (object #2) verdict: fail")
+	wants(t, run(t, s, "%analysis Cost::Definition::costTest"),
+		"? Verification Cost::Definition::costTest on Instance(ID: 1) verdict: error", "no value for feature cost")
+}
+
 // TestAnalysisOfADefinitionOwnedCaseWithoutAnObject checks that the case runs
 // on the one object of the definition the session holds, and on none when it
 // holds none, where the owner's cost has no value.
