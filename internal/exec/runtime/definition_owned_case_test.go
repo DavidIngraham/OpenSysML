@@ -1,0 +1,189 @@
+package runtime
+
+import (
+	"errors"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
+)
+
+// definitionOwnedCaseModel declares a verification case inside a part
+// definition, a feature of every object of it: its body reads the owner's cost.
+const definitionOwnedCaseModel = `
+package test {
+	private import ScalarValues::Real;
+
+	requirement def CostRequirement {
+		subject product : Definition;
+		attribute maximumCost : Real;
+		require constraint costOk { product.cost <= maximumCost }
+	}
+	requirement costReq : CostRequirement { :>> maximumCost = 100.0; }
+
+	part def Definition {
+		attribute cost : Real;
+		satisfy costReq;
+
+		verification costTest {
+			objective costObjective { verify costReq; }
+			return verdict = VerificationCases::PassIf(cost <= 100.0);
+		}
+
+		verification subjectTest {
+			subject s : Definition;
+			return verdict = VerificationCases::PassIf(s.cost <= 100.0 and cost <= 100.0);
+		}
+	}
+
+	part cheap : Definition { attribute :>> cost = 80.0; }
+	part dear : Definition { attribute :>> cost = 120.0; }
+
+	part def Other;
+	part other : Other;
+}`
+
+// definitionOwnedCase builds the model and materializes the named objects.
+func definitionOwnedCase(t *testing.T, objects ...string) (*symbols.Index, *Context, []*Instance) {
+	t.Helper()
+	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, definitionOwnedCaseModel))
+	var made []*Instance
+	for _, name := range objects {
+		inst, err := ctx.Instantiate(oneSymbol(t, idx, name))
+		if err != nil {
+			t.Fatalf("instantiate %s: %v", name, err)
+		}
+		made = append(made, inst)
+	}
+	return idx, ctx, made
+}
+
+// runOn runs the case on an object given as the run's object argument.
+func runOn(t *testing.T, idx *symbols.Index, ctx *Context, name string, object *Instance) VerificationVerdict {
+	t.Helper()
+	sym := oneSymbol(t, idx, name)
+	result, err := ctx.RunVerification(sym, AnalysisArgs{Subject: object}, sym.OwnerScope, nil)
+	if err != nil {
+		t.Fatalf("RunVerification(%s): %v", name, err)
+	}
+	return result.Verdict
+}
+
+// TestDefinitionOwnedCaseRunsOnTheObjectGiven pins that an object given to a case
+// a definition owns is the object the case is a feature of, not its subject: the
+// body reads that object's cost, and the verdict names it.
+func TestDefinitionOwnedCaseRunsOnTheObjectGiven(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::cheap", "test::dear")
+	cheap, dear := objects[0], objects[1]
+	for _, tc := range []struct {
+		object *Instance
+		want   VerdictKind
+	}{{cheap, VerdictPass}, {dear, VerdictFail}} {
+		got := runOn(t, idx, ctx, "test::Definition::costTest", tc.object)
+		if got.Kind != tc.want || got.Subject != tc.object {
+			t.Errorf("costTest on #%d = %s (%s) about #%v, want %s about it", tc.object.ID, got.Kind, got.Detail, got.Subject, tc.want)
+		}
+	}
+}
+
+// TestDefinitionOwnedCaseBindsAnUnboundSubjectToTheObjectToo pins that a case
+// declaring a subject it leaves unbound reads the object given as both its owner
+// and its subject.
+func TestDefinitionOwnedCaseBindsAnUnboundSubjectToTheObjectToo(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::cheap", "test::dear")
+	if got := runOn(t, idx, ctx, "test::Definition::subjectTest", objects[0]); got.Kind != VerdictPass {
+		t.Errorf("subjectTest on cheap = %s (%s), want pass", got.Kind, got.Detail)
+	}
+	if got := runOn(t, idx, ctx, "test::Definition::subjectTest", objects[1]); got.Kind != VerdictFail {
+		t.Errorf("subjectTest on dear = %s (%s), want fail", got.Kind, got.Detail)
+	}
+}
+
+// TestDefinitionOwnedCaseWithoutAnObject pins the run made when no object is
+// given: the single object of the definition, a refusal naming several, and a
+// refusal saying to instantiate one when there is none.
+func TestDefinitionOwnedCaseWithoutAnObject(t *testing.T) {
+	idx, ctx, _ := definitionOwnedCase(t)
+	sym := oneSymbol(t, idx, "test::Definition::costTest")
+	got := runOn(t, idx, ctx, "test::Definition::costTest", nil)
+	if got.Kind != VerdictError || !strings.Contains(got.Detail, "instantiate one") {
+		t.Errorf("costTest with no object = %s (%s), want an error verdict saying to instantiate one", got.Kind, got.Detail)
+	}
+	_, _, err := ctx.runCase(sym, AnalysisArgs{}, sym.OwnerScope, nil)
+	if !errors.Is(err, ErrNoPerformer) {
+		t.Errorf("runCase with no object = %v, want ErrNoPerformer", err)
+	}
+
+	idx, ctx, objects := definitionOwnedCase(t, "test::dear")
+	if got := runOn(t, idx, ctx, "test::Definition::costTest", nil); got.Kind != VerdictFail || got.Subject != objects[0] {
+		t.Errorf("costTest with one object = %s about %v, want fail about it", got.Kind, got.Subject)
+	}
+
+	idx, ctx, _ = definitionOwnedCase(t, "test::cheap", "test::dear")
+	got = runOn(t, idx, ctx, "test::Definition::costTest", nil)
+	if got.Kind != VerdictError || !strings.Contains(got.Detail, "ambiguous subject") || !strings.Contains(got.Detail, "dear") {
+		t.Errorf("costTest with two objects = %s (%s), want a refusal naming both", got.Kind, got.Detail)
+	}
+}
+
+// TestDefinitionOwnedCaseRefusesAnObjectOfAnotherType pins that an object that
+// is not of the definition and holds no object of it is refused by name.
+func TestDefinitionOwnedCaseRefusesAnObjectOfAnotherType(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::other")
+	sym := oneSymbol(t, idx, "test::Definition::costTest")
+	_, _, err := ctx.runCase(sym, AnalysisArgs{Subject: objects[0]}, sym.OwnerScope, nil)
+	if !errors.Is(err, ErrNotCarried) || !strings.Contains(err.Error(), "test::Definition") {
+		t.Errorf("costTest on an Other = %v, want ErrNotCarried naming the definition", err)
+	}
+}
+
+// TestVerificationVerdictsOfADefinitionOwnedCaseRunPerObject pins that the cases
+// verifying a requirement run once per object of the owning definition, and for
+// a verdict about one object on that object alone.
+func TestVerificationVerdictsOfADefinitionOwnedCaseRunPerObject(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::cheap", "test::dear")
+	root := idx.DocumentRoot("<test>")
+	req := oneSymbol(t, idx, "test::costReq")
+	spell := func(verdicts []VerificationVerdict) string {
+		var got []string
+		for _, v := range verdicts {
+			id := int64(0)
+			if v.Subject != nil {
+				id = v.Subject.ID
+			}
+			got = append(got, strings.TrimPrefix(v.Case, "test::Definition::")+"="+string(v.Kind)+"@"+strconv.FormatInt(id, 10))
+		}
+		return strings.Join(got, ",")
+	}
+	all := spell(ctx.VerificationVerdictsIn([]*symbols.Scope{root}, req))
+	want := "costTest=pass@" + strconv.FormatInt(objects[0].ID, 10) + ",costTest=fail@" + strconv.FormatInt(objects[1].ID, 10)
+	if all != want {
+		t.Errorf("VerificationVerdictsIn = %s, want %s", all, want)
+	}
+	about := spell(ctx.VerificationVerdictsOn([]*symbols.Scope{root}, req, objects[1]))
+	if want := "costTest=fail@" + strconv.FormatInt(objects[1].ID, 10); about != want {
+		t.Errorf("VerificationVerdictsOn(dear) = %s, want %s", about, want)
+	}
+}
+
+// TestDefinitionOwnedSatisfyIsCheckedOnTheObjectOfTheDefinition pins that a
+// `satisfy` without `by` a definition states is checked on the single object of
+// that definition when none is given.
+func TestDefinitionOwnedSatisfyIsCheckedOnTheObjectOfTheDefinition(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::dear")
+	root := idx.DocumentRoot("<test>")
+	var stated *SatisfyAssertion
+	for _, a := range ctx.SatisfyAssertionsIn(root) {
+		if a.Owner != nil && a.Owner.Name == "Definition" {
+			stated = a
+		}
+	}
+	if stated == nil {
+		t.Fatal("the definition's satisfy was not found")
+	}
+	result, err := ctx.CheckSatisfactionOn(stated, nil)
+	if !errors.Is(err, ErrViolated) || result.Holds || result.Subject != objects[0] {
+		t.Errorf("satisfy costReq on the one object = holds %v about %v (%v), want violated about dear", result.Holds, result.Subject, err)
+	}
+}

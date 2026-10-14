@@ -2477,7 +2477,7 @@ func (s *Session) satisfyVerdict(ctx *runtime.Context, a *runtime.SatisfyAsserti
 	// A `satisfy requirement r by p` declares its requirement rather than
 	// referencing one, so the assertion names it.
 	req := a.AssertedRequirement()
-	verdict := s.withVerifications(satisfactionVerdict(a, result, err, subject, owner), ctx, req)
+	verdict := s.withVerifications(satisfactionVerdict(a, result, err, subject, owner), ctx, req, subject)
 	return standing(verdict, plan)
 }
 

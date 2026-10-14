@@ -54,6 +54,10 @@ type VerificationVerdict struct {
 	// Subcase marks the verdict of a case performed by another, which the
 	// library states no roll-up for and which is therefore reported on its own.
 	Subcase bool
+
+	// Subject is the object the case ran as a feature of: an object of the type
+	// owning it; nil for a package-level case or a run on no object.
+	Subject *Instance
 }
 
 // VerificationResult is what one run of a verification case produced: the
@@ -132,6 +136,7 @@ func (ctx *Context) RunVerification(sym *symbols.Symbol, args AnalysisArgs, scop
 		}, nil
 	}
 	result := VerificationResult{Verdict: ctx.bodyVerdict(sym, name, caseRun, run), Run: run}
+	result.Verdict.Subject = caseRun.self
 	result.Subcases = ctx.subcaseVerdicts(caseRun)
 	return result, nil
 }

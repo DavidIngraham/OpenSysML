@@ -212,3 +212,49 @@ func TestVerificationObjectiveDecidesOnEverySurface(t *testing.T) {
 		"✓ Verification Ver::checkScout verdict: pass",
 		"✗ Verification Ver::checkHeavy verdict: fail")
 }
+
+// definitionOwnedModel declares a verification case inside a part definition,
+// whose body reads the owning object's cost.
+const definitionOwnedModel = `package Cost {
+    private import ScalarValues::Real;
+    requirement def CostRequirement {
+        subject product : Definition;
+        attribute maximumCost : Real;
+        require constraint costOk { product.cost <= maximumCost }
+    }
+    requirement costReq : CostRequirement { :>> maximumCost = 100.0; }
+    part def Definition {
+        attribute cost : Real;
+        satisfy costReq;
+        verification costTest {
+            objective costObjective { verify costReq; }
+            return verdict = VerificationCases::PassIf(cost <= 100.0);
+        }
+    }
+    part cheap : Definition { attribute :>> cost = 80.0; }
+    part dear : Definition { attribute :>> cost = 120.0; }
+}`
+
+// TestRunVerificationOnADefinitionOwnedCase checks that -analysis runs a case a
+// part definition owns on the object named after it, and that -validate and
+// -requirement run it on the object they check, naming the object.
+func TestRunVerificationOnADefinitionOwnedCase(t *testing.T) {
+	binary := buildCLI(t)
+
+	// The objective states only `verify costReq`, no condition, so it is undecided
+	// and the case's status unresolved; the body's verdict is reported beside it.
+	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::cheap", "-analysis", "Cost::Definition::costTest Cost::cheap"), 2,
+		"verdict = VerdictKind::pass",
+		"✓ Verification Cost::Definition::costTest on Cost::cheap (object #1) verdict: pass")
+	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::dear", "-analysis", "Cost::Definition::costTest Cost::dear"), 2,
+		"verdict = VerdictKind::fail",
+		"✗ Verification Cost::Definition::costTest on Cost::dear (object #1) verdict: fail")
+	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::dear", "-validate=Cost::dear"), 1,
+		"✗ satisfy costReq fails (on Cost::dear ID: 1)",
+		"✗ Verification Cost::Definition::costTest on Cost::dear (object #1) verdict: fail")
+	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::cheap", "-requirement", "Cost::costReq Cost::cheap"), 0,
+		"✓ Requirement Cost::costReq satisfied (on Cost::cheap ID: 1)",
+		"✓ Verification Cost::Definition::costTest on Cost::cheap (object #1) verdict: pass")
+	wantReport(t, check(t, binary, definitionOwnedModel, "-analysis", "Cost::Definition::costTest"), 2,
+		"? Verification Cost::Definition::costTest verdict: error", "instantiate one")
+}

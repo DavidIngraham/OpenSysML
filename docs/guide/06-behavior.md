@@ -1734,7 +1734,11 @@ A case usage owned by a part definition (`part def Holder { analysis inner : Cos
 subject s = h; } part h : Ship; }`) is a feature of every object of that type, as a `calc` usage
 owned by a part is: `holder.inner.total` runs the case on first read and keeps the result until a
 value it depends on changes, and an attribute redefined from an analysis output (`attribute :>>
-fuelEconomy = cityAnalysis.fuelEconomyResult;`) evaluates through the same path.
+fuelEconomy = cityAnalysis.fuelEconomyResult;`) evaluates through the same path. Run by name, such a
+case takes the object named after it as the object it is a feature of (`-analysis "Holder::inner
+holder"`), else the single object of the definition the run holds; `-validate=<object>`,
+`-requirement` and `-satisfy` run a verification case a definition owns once per object of it the
+check is about, naming the object on its verdict.
 
 What stops a case is reported as an error naming it, never as a silent empty result: a
 `subject` nothing binds (`analysis An::CostAnalysis: s subject is unbound: bind it

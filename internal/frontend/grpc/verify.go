@@ -415,7 +415,7 @@ func (s *Service) VerifyRequirement(ctx context.Context, req *pb.VerifyRequireme
 		Instances: v.instanceGraph(subject),
 		// Beside the satisfaction verdict: what the cases verifying this
 		// requirement answered when their bodies ran.
-		VerificationVerdicts: v.requirementVerifications(sym),
+		VerificationVerdicts: v.requirementVerifications(sym, subject),
 	}, nil
 }
 
@@ -455,14 +455,14 @@ func (s *Service) VerifySatisfaction(ctx context.Context, req *pb.VerifySatisfac
 					Instances: instances,
 				}, nil
 			}
-			verdict, instances, err := v.satisfyVerdict(ctx, a)
+			verdict, instances, subject, err := v.satisfyVerdict(ctx, a)
 			if err != nil {
 				return nil, err
 			}
 			return &pb.VerifySatisfactionResponse{
 				Verdicts:             []*pb.Verdict{verdict},
 				Instances:            instances,
-				VerificationVerdicts: v.assertionVerifications(a),
+				VerificationVerdicts: v.assertionVerifications(a, subject),
 			}, nil
 		}
 		// A symbol that is neither an assertion nor a scope stating any is the
@@ -485,11 +485,12 @@ func (s *Service) VerifySatisfaction(ctx context.Context, req *pb.VerifySatisfac
 		for _, a := range v.runtime.SatisfyAssertionsIn(scope) {
 			var verdict *pb.Verdict
 			var instances []*pb.Instance
+			var subject *runtime.Instance
 			var err error
 			if question != questionEvaluate {
 				verdict, instances, err = v.symbolicSatisfy(ctx, question, a)
 			} else {
-				verdict, instances, err = v.satisfyVerdict(ctx, a)
+				verdict, instances, subject, err = v.satisfyVerdict(ctx, a)
 			}
 			if err != nil {
 				return nil, err
@@ -498,7 +499,7 @@ func (s *Service) VerifySatisfaction(ctx context.Context, req *pb.VerifySatisfac
 			if question == questionEvaluate {
 				if req := a.AssertedRequirement(); req != nil && !verified[req] {
 					verified[req] = true
-					resp.VerificationVerdicts = append(resp.VerificationVerdicts, v.assertionVerifications(a)...)
+					resp.VerificationVerdicts = append(resp.VerificationVerdicts, v.assertionVerifications(a, subject)...)
 				}
 			}
 			// One graph per response, so two assertions about the same object do
@@ -517,7 +518,7 @@ func (s *Service) VerifySatisfaction(ctx context.Context, req *pb.VerifySatisfac
 // satisfyVerdict evaluates one assertion against an object of its subject, built
 // for this call so the verdict is about the values that subject holds. The error
 // is the caller's own, having gone away before the check.
-func (v *verifyContext) satisfyVerdict(ctx context.Context, a *runtime.SatisfyAssertion) (*pb.Verdict, []*pb.Instance, error) {
+func (v *verifyContext) satisfyVerdict(ctx context.Context, a *runtime.SatisfyAssertion) (*pb.Verdict, []*pb.Instance, *runtime.Instance, error) {
 	var subject *runtime.Instance
 	if a.Subject != nil {
 		// Created here rather than inside the evaluation so that the object the
@@ -528,7 +529,7 @@ func (v *verifyContext) satisfyVerdict(ctx context.Context, a *runtime.SatisfyAs
 			// which is a failure to evaluate rather than a verdict of false.
 			verdict := v.verdict(verdictSatisfy, a.Symbol, a.Text(), nil, false, err, analysis.Plan{})
 			v.associateRequirement(verdict, a)
-			return verdict, nil, nil
+			return verdict, nil, nil, nil
 		}
 		subject = inst
 	}
@@ -536,12 +537,12 @@ func (v *verifyContext) satisfyVerdict(ctx context.Context, a *runtime.SatisfyAs
 		return rt.CheckSatisfactionOn(a, subject)
 	})
 	if gone := callerGone(ctx, err); gone != nil {
-		return nil, nil, gone
+		return nil, nil, nil, gone
 	}
 	subject = subjectOf(result, subject)
 	verdict := v.verdict(verdictSatisfy, a.Symbol, a.Text(), subject, result.Holds, err, plan)
 	v.associateRequirement(verdict, a)
-	return verdict, v.instanceGraph(subject), nil
+	return verdict, v.instanceGraph(subject), subject, nil
 }
 
 // associateRequirement names on a satisfaction verdict the requirement it
@@ -666,21 +667,20 @@ func (v *verifyContext) calcUsageOutputs(ctx context.Context, subject string, sy
 	return pbOutputs, true, plan, nil
 }
 
-// requirementVerifications are the body verdicts of the verification cases of
-// the whole model whose objective verifies req, since the case need not be
-// written in the document the requirement is.
-func (v *verifyContext) requirementVerifications(req *symbols.Symbol) []*pb.VerificationVerdict {
+// requirementVerifications are the body verdicts of the whole model's verification cases verifying
+// req (the case need not share the requirement's document), type-owned ones run about subject.
+func (v *verifyContext) requirementVerifications(req *symbols.Symbol, subject *runtime.Instance) []*pb.VerificationVerdict {
 	return v.verificationVerdicts(
-		v.runtime.VerificationVerdictsIn(v.cached.DocumentRoots(), req),
+		v.runtime.VerificationVerdictsOn(v.cached.DocumentRoots(), req, subject),
 		namedFQN(v.cached.Index, req))
 }
 
 // assertionVerifications are the body verdicts of the verification cases whose
-// objective verifies the requirement an assertion satisfies.
-func (v *verifyContext) assertionVerifications(a *runtime.SatisfyAssertion) []*pb.VerificationVerdict {
+// objective verifies the requirement an assertion satisfies, run about subject.
+func (v *verifyContext) assertionVerifications(a *runtime.SatisfyAssertion, subject *runtime.Instance) []*pb.VerificationVerdict {
 	req := a.AssertedRequirement()
 	if req == nil {
 		return nil
 	}
-	return v.requirementVerifications(req)
+	return v.requirementVerifications(req, subject)
 }
