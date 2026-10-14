@@ -390,7 +390,8 @@ func carriesMarker(text string) bool {
 	return false
 }
 
-// rowStatus is the one status marker in a rule row's Status column.
+// rowStatus is the one status marker in a rule row's Status column; a repeated
+// marker is refused as two are, so the cell states its status once.
 func rowStatus(number int, line string, column int) (string, error) {
 	cells := splitCells(line)
 	cell := ""
@@ -399,7 +400,7 @@ func rowStatus(number int, line string, column int) (string, error) {
 	}
 	var found []string
 	for _, marker := range statusMarkers {
-		if strings.Contains(cell, marker) {
+		for n := strings.Count(cell, marker); n > 0; n-- {
 			found = append(found, marker)
 		}
 	}

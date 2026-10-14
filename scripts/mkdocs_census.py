@@ -85,7 +85,7 @@ def status_column(block: list[str]) -> Optional[int]:
 def row_status(number: int, line: str, column: int) -> str:
     cells = split_cells(line)
     cell = cells[column] if column < len(cells) else ""
-    found = [m for m in MARKERS if m in cell]
+    found = [m for m in MARKERS for _ in range(cell.count(m))]
     if not found:
         raise ValueError(f"{PAGE}:{number}: no status marker in the {STATUS_HEADING} column")
     if len(found) > 1:

@@ -50,6 +50,18 @@ func TestCountRulesAttributesARowByItsStatusCell(t *testing.T) {
 	}
 }
 
+// TestCountRulesTakesTheRenderersTableDelimiter: Python-Markdown's tables
+// extension accepts a delimiter row of spaces alone, so the census does too.
+func TestCountRulesTakesTheRenderersTableDelimiter(t *testing.T) {
+	counts, err := CountRules("| Rule | Status |\n|   |   |\n| a | ✅ Faithful |\n")
+	if err != nil {
+		t.Fatalf("census: %v", err)
+	}
+	if want := (RuleCounts{Total: 1, Faithful: 1}); counts != want {
+		t.Fatalf("census: want %+v, got %+v", want, counts)
+	}
+}
+
 func TestCountRulesIgnoresProseAndHeaders(t *testing.T) {
 	page := "✅ prose outside a table, naming ⚠️ and ❌ too\n\n| header | Status |\n|---|---|\n\n| Not implemented | Why |\n|---|---|\n| `at` | not declared |\n"
 	counts, err := CountRules(page)
@@ -68,6 +80,8 @@ func TestCountRulesRefusesAnAmbiguousRow(t *testing.T) {
 	for name, tc := range map[string]struct{ page, want string }{
 		"two statuses in the status cell": {table + "| b | x | y | ✅ Faithful; compiled ⚠️ Approximate |\n",
 			"docs/project/spec-compliance.md:4: 2 status markers in the Status column (✅, ⚠); state one"},
+		"the same status twice in the status cell": {table + "| b | x | y | ✅ Faithful; was ✅ before |\n",
+			"docs/project/spec-compliance.md:4: 2 status markers in the Status column (✅, ✅); state one"},
 		"no status in the status cell": {table + "| b | x | y | pending |\n",
 			"docs/project/spec-compliance.md:4: no status marker in the Status column"},
 		"a row wrapped over two lines": {table + "| b | x | y\n  z | ✅ Faithful |\n",

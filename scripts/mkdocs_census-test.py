@@ -70,6 +70,12 @@ class CensusTest(unittest.TestCase):
         c = census.count_rules(page)
         self.assertEqual((c["total"], c["✅"], c["⛔"], c["❌"]), (2, 1, 1, 0))
 
+    def test_a_delimiter_row_of_spaces_is_a_table_as_the_renderer_renders_it(self):
+        page = "| Rule | Status |\n|   |   |\n| a | ✅ Faithful |\n"
+        self.assertEqual(census.count_rules(page)["total"], 1)
+        if markdown is not None:
+            self.assertIn("<td>✅ Faithful</td>", markdown.markdown(page, extensions=["tables"]))
+
     def test_headers_separators_and_prose_are_not_rows(self):
         page = "✅ prose naming ⚠️ and ❌\n\n| header | Status |\n|---|---|\n\n| Not implemented | Why |\n|---|---|\n| `at` | no |\n"
         self.assertEqual(census.count_rules(page)["total"], 0)
@@ -78,6 +84,8 @@ class CensusTest(unittest.TestCase):
         for page, message in (
             (TABLE + "| b | x | y | ✅ Faithful; compiled ⚠️ Approximate |\n",
              "project/spec-compliance.md:4: 2 status markers in the Status column (✅, ⚠); state one"),
+            (TABLE + "| b | x | y | ✅ Faithful; was ✅ before |\n",
+             "project/spec-compliance.md:4: 2 status markers in the Status column (✅, ✅); state one"),
             (TABLE + "| b | x | y | pending |\n",
              "project/spec-compliance.md:4: no status marker in the Status column"),
             (TABLE + "| b | x | y\n  z | ✅ Faithful |\n",
