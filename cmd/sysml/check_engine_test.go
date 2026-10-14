@@ -108,7 +108,7 @@ func TestEngineCheckWitnessesADivergence(t *testing.T) {
 	}
 	// The file is the schedule's choices, a blank line, then the run's trace.
 	if !strings.HasPrefix(string(content), "step 3: 2@left first of 2@left, 3@right\n\n") ||
-		!strings.Contains(string(content), "choice step 3: tokens 2@left, 3@right (unordered; took 2@left first)") {
+		!strings.Contains(string(content), "choice step 3: tokens 2@left, 3@right (unordered; took 2@left first; order-dependent: x)") {
 		t.Errorf("witness file:\n%s", content)
 	}
 	replayed := check(t, binary, forkModel, "-schedule", "replay:"+witness, "-trace", "-action", "Mission::race")
@@ -319,10 +319,10 @@ func TestEngineCheckBindsWitnessObjectsAcrossRuns(t *testing.T) {
 		}
 		// The run makes the spare's performance after the tank's: the spare is object #3 here.
 		replayed := check(t, binary, model, slices.Concat([]string{"-schedule", "replay:" + name(c.n), "-trace"}, invocation)...)
-		wantReport(t, replayed, 0, "materialize: spare #3", "ran action fill of object #3 first)",
+		wantReport(t, replayed, 0, "materialize: spare #3", "ran action fill of object #3 first; independent)",
 			"standing: value (observed: 1 run under replay:"+name(c.n)+")")
-		_, spareRan, _ := strings.Cut(replayed.output(), "ran action fill of object #3 first)")
-		if !strings.Contains(spareRan, "choice step 3: tokens 2@a, 3@b (unordered; took "+c.took+" first)") ||
+		_, spareRan, _ := strings.Cut(replayed.output(), "ran action fill of object #3 first; independent)")
+		if !strings.Contains(spareRan, "choice step 3: tokens 2@a, 3@b (unordered; took "+c.took+" first; order-dependent: level)") ||
 			strings.Count(replayed.output(), "Action completed") != 2 {
 			t.Errorf("witness %d does not replay to spare.level = %s:\n%s", c.n, c.level, replayed.output())
 		}
