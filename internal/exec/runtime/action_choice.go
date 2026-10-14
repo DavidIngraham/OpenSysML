@@ -153,6 +153,7 @@ func (l *stepWriteLedger) noteChoices(e *performances) {
 			Taken:        taken,
 			File:         d.file,
 			Span:         d.span,
+			Touches:      []string{d.label},
 		})
 	}
 }
@@ -330,6 +331,7 @@ func (e *ActionExecutor) tokenActed(before Token, count int) bool {
 // at least two, or the one an exploring step picked among those able to act.
 func (e *ActionExecutor) noteTokenOrder(step int, order stepOrder, schedule *tokenSchedule) {
 	alts, taken, chosen := schedule.Choice()
+	var fps []lower.Footprint
 	if !chosen {
 		if len(order.acted) < 2 {
 			return
@@ -339,21 +341,25 @@ func (e *ActionExecutor) noteTokenOrder(step int, order stepOrder, schedule *tok
 		copy(tokens, order.acted)
 		sort.Slice(tokens, func(i, j int) bool { return tokens[i].ID < tokens[j].ID })
 		alts = make([]string, len(tokens))
+		fps = make([]lower.Footprint, len(tokens))
 		for i, t := range tokens {
 			alts[i] = TokenLabel(t.ID, t.Location)
+			fps[i] = standing(e, t)
 			if t.ID == first {
 				taken = i
 			}
 		}
 	}
-	e.noteChoice(ChoicePoint{
+	choice := ChoicePoint{
 		Kind:         ChoiceTokenOrder,
 		Step:         step,
 		Alternatives: alts,
 		Taken:        taken,
 		File:         e.action.DocName,
 		Span:         e.action.DeclSpan,
-	})
+	}
+	classifyChoice(&choice, fps, nil)
+	e.noteChoice(choice)
 }
 
 // chooseBranch resolves which of the holding guarded successions of a decision
@@ -389,6 +395,7 @@ func (e *ActionExecutor) chooseBranch(ec *EvalContext, frame *actionFrame, node 
 		Span:         node.Span(),
 		Weights:      weights,
 	}
+	classifyExclusive(&choice, e.branchFutures(frame, successors, holding))
 	if err := e.ctx.scheduling().chooseWeighted(&choice, nil); err != nil {
 		return nil, 0, err
 	}
@@ -458,4 +465,28 @@ func (e *ActionExecutor) decisionFile(frame *actionFrame) string {
 		return scope.DocName()
 	}
 	return e.action.DocName
+}
+
+// branchFutures is what each holding succession of a decision may go on to touch
+// at this instant, in holding's order: the reach of its target in the flow the
+// token runs.
+func (e *ActionExecutor) branchFutures(frame *actionFrame, successors []lower.ActionEdge, holding []int) []lower.Footprint {
+	if e.dynamics != nil {
+		fps := make([]lower.Footprint, len(holding))
+		for i := range fps {
+			fps[i] = dynamicsFootprint()
+		}
+		return fps
+	}
+	graph := e.graph
+	if frame != nil && frame.graph != nil {
+		graph = frame.graph
+	}
+	futures := e.ctx.futureFootprints()
+	futures.at()
+	fps := make([]lower.Footprint, len(holding))
+	for i, pos := range holding {
+		fps[i] = futures.reach(graph, successors[pos].Target)
+	}
+	return fps
 }

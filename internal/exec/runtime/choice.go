@@ -132,6 +132,13 @@ type ChoicePoint struct {
 	// when the runtime could not name one.
 	File string
 	Span source.Span
+	// Independent reports that the alternatives commute by their lowered
+	// footprints: whichever is taken, the run's values are the same, so the
+	// choice leaves no value order-dependent.
+	Independent bool
+	// Touches are the features the conflicting alternatives write, sorted; the
+	// run's value of each is order-dependent on this choice.
+	Touches []string
 }
 
 // Weighted reports whether the model weights the alternatives.

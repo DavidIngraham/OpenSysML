@@ -428,11 +428,13 @@ func (e *StateExecutor) branchPoint(ps *ast.PseudostateNode, outgoing []*lower.T
 	for i, pos := range enabled {
 		alts[i] = transitionName(outgoing, pos)
 	}
-	return ChoicePoint{
+	choice := ChoicePoint{
 		Kind:         ChoiceTransition,
 		Where:        pseudostateWhere(ps),
 		Alternatives: alts,
-	}, true
+	}
+	classifyExclusive(&choice, e.transitionFootprints(outgoing, enabled))
+	return choice, true
 }
 
 // pseudostateWhere names a pseudostate for a note, `choice pick` or `junction split`.

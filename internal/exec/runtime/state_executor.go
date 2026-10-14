@@ -1042,6 +1042,7 @@ func (e *StateExecutor) nextEvent() (Event, error) {
 	for i := range tied {
 		choice.Alternatives[i] = e.eventLabel(tied[i])
 	}
+	classifyExclusive(&choice, []lower.Footprint{dispatchFootprint(e)})
 	scheduling := e.ctx.scheduling()
 	choice.Taken = scheduling.choose(choice, nil)
 	if err := scheduling.refusal(); err != nil {
@@ -1414,7 +1415,7 @@ func (e *StateExecutor) dispatchInOrder(
 			if join, ok := candidate.chosen.Target.(*ast.PseudostateNode); ok && join.Kind == ast.PseudostateJoin {
 				head.label, head.at, head.silent = join.Name+"(join)", join, false
 			}
-			f.spawnAt(head, func() error { return firing(candidate) })
+			f.spawnAt(head, unit{run: func() error { return firing(candidate) }, footprint: e.graph.TransitionFootprints()[candidate.chosen]})
 		}
 		if err := f.drain(); err != nil {
 			return err
@@ -1598,6 +1599,11 @@ func (e *StateExecutor) regionOrderChoice(where string, states []*ast.StateNode)
 		Alternatives: e.stateNames(states),
 		File:         e.stateMachine.DocName,
 	}
+	fps := make([]lower.Footprint, len(states))
+	for i, state := range states {
+		fps[i] = e.stateFootprint(state)
+	}
+	classifyChoice(&choice, fps, nil)
 	choice.Taken = e.ctx.scheduling().choose(choice, nil)
 	choice.Span = states[choice.Taken].Span()
 	return choice
@@ -2023,7 +2029,29 @@ func (e *StateExecutor) transitionChoice(state *ast.StateNode, transitions []*lo
 	for i, pos := range enabled {
 		alts[i] = transitionName(transitions, pos)
 	}
-	return ChoicePoint{Kind: ChoiceTransition, Alternatives: alts}, true
+	choice := ChoicePoint{Kind: ChoiceTransition, Alternatives: alts}
+	classifyExclusive(&choice, e.transitionFootprints(transitions, enabled))
+	return choice, true
+}
+
+// transitionFootprints is what each transition at the enabled positions may touch.
+func (e *StateExecutor) transitionFootprints(transitions []*lower.Transition, enabled []int) []lower.Footprint {
+	footprints := e.graph.TransitionFootprints()
+	fps := make([]lower.Footprint, len(enabled))
+	for i, pos := range enabled {
+		fps[i] = footprints[transitions[pos]]
+	}
+	return fps
+}
+
+// stateFootprint is what the transitions out of state may touch when it reacts.
+func (e *StateExecutor) stateFootprint(state *ast.StateNode) lower.Footprint {
+	var fp lower.Footprint
+	footprints := e.graph.TransitionFootprints()
+	for _, trans := range e.graph.Transitions[state] {
+		fp = unionFootprints(fp, footprints[trans])
+	}
+	return fp
 }
 
 // transitionWeights evaluates the weight each transition out of source states
@@ -3198,13 +3226,16 @@ func (e *StateExecutor) leaveForFork(trans *lower.Transition, owner *ast.StateNo
 // exitRegionsOf leaves every region of owner, which stays active, drawn one unit
 // at a time: a fork reached from inside them restarts them all from its branches.
 func (e *StateExecutor) exitRegionsOf(owner *ast.StateNode) error {
-	var bodies []func() error
+	var units []unit
 	for _, region := range e.graph.CompositeStates[owner] {
 		if _, active := e.activeConfig.regionStates[region]; active {
-			bodies = append(bodies, func() error { return e.exitRegionTo(region, owner) })
+			units = append(units, unit{
+				run:       func() error { return e.exitRegionTo(region, owner) },
+				footprint: e.exitFootprint(e.regionExitPath(region, owner)),
+			})
 		}
 	}
-	return e.performUnits(ChoiceExitOrder, exitingWherePrefix+owner.Name, bodies, true)
+	return e.performUnits(ChoiceExitOrder, exitingWherePrefix+owner.Name, units, true)
 }
 
 // regionsExitPath lists the states exitRegionsOf exits.
@@ -4108,13 +4139,19 @@ func (e *StateExecutor) chooseStepOrder(due []*doAction, dispatch string) (bool,
 // stepOrderChoice is the ChoiceStepOrder between a move of one of the due do
 // behaviors and the dispatch, before it is drawn.
 func (e *StateExecutor) stepOrderChoice(due []*doAction, dispatch string) ChoicePoint {
-	return ChoicePoint{
+	choice := ChoicePoint{
 		Kind:         ChoiceStepOrder,
 		Where:        stepWherePrefix + semantics.FormatReal(e.ctx.clock.now),
 		Alternatives: []string{doStepLabel(e.stateNames(statesOf(due))), dispatch},
 		File:         e.stateMachine.DocName,
 		Span:         e.stateMachine.DeclSpan,
 	}
+	var steps lower.Footprint
+	for _, act := range due {
+		steps = unionFootprints(steps, doStepFootprint(e, act.state))
+	}
+	classifyChoice(&choice, []lower.Footprint{steps, dispatchFootprint(e)}, nil)
+	return choice
 }
 
 // noteRoundStepOrder records the step order a fixed policy's round takes without
@@ -5812,7 +5849,7 @@ func (e *StateExecutor) exitState(state *ast.StateNode) error {
 // exitRegionsBelow exits each region's active state and the states up to owner as queues of
 // an exit front, drawn one unit at a time, each region's innermost first.
 func (e *StateExecutor) exitRegionsBelow(owner *ast.StateNode, regions []*ast.StateRegion, active map[*ast.StateRegion]*ast.StateNode) error {
-	var bodies []func() error
+	var units []unit
 	for _, region := range regions {
 		regionState, isActive := active[region]
 		if !isActive {
@@ -5821,16 +5858,23 @@ func (e *StateExecutor) exitRegionsBelow(owner *ast.StateNode, regions []*ast.St
 		// Clear the entry first: the recursive exit walks the same map, and the
 		// region still pointing at regionState would exit it a second time.
 		delete(e.activeConfig.regionStates, region)
-		bodies = append(bodies, func() error {
-			for current := regionState; current != nil && current != owner; current = e.graph.ParentState[current] {
-				if err := e.exitState(current); err != nil {
-					return fmt.Errorf("exit region state: %w", err)
+		var leaving []*ast.StateNode
+		for current := regionState; current != nil && current != owner; current = e.graph.ParentState[current] {
+			leaving = append(leaving, current)
+		}
+		units = append(units, unit{
+			run: func() error {
+				for _, current := range leaving {
+					if err := e.exitState(current); err != nil {
+						return fmt.Errorf("exit region state: %w", err)
+					}
 				}
-			}
-			return nil
+				return nil
+			},
+			footprint: e.exitFootprint(leaving),
 		})
 	}
-	return e.performUnits(ChoiceExitOrder, exitingWherePrefix+owner.Name, bodies, true)
+	return e.performUnits(ChoiceExitOrder, exitingWherePrefix+owner.Name, units, true)
 }
 
 // invokeNested performs an action from a state's entry/exit/effect behavior,

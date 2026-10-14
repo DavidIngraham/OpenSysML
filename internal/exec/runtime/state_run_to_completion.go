@@ -238,6 +238,7 @@ func (e *StateExecutor) entryStep(progress *dueProgress) (bool, error) {
 		File:         e.stateMachine.DocName,
 		Span:         e.stateMachine.DeclSpan,
 	}
+	classifyExclusive(&choice, []lower.Footprint{machineStanding(e)})
 	choice.Taken = e.ctx.scheduling().choose(choice, nil)
 	if err := e.ctx.scheduling().refusal(); err != nil {
 		return false, err
