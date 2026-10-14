@@ -466,9 +466,9 @@ jobs:
               go test -C tools -v -race -pgo=off -timeout 30m ./...
             else
               # tests/migrate alone runs 23-32 minutes under -race on this class and
-              # tests/model 25-30, so their shards get the Makefile's per-package
-              # timeout (see make test-shard).
-              timeout=30m; case "$shard" in migrate|model) timeout=55m ;; esac
+              # tests/model (in the export shard) 25-30, so those shards get the
+              # Makefile's per-package timeout (see make test-shard).
+              timeout=30m; case "$shard" in migrate|export) timeout=55m ;; esac
               go test -v -race -pgo=off -timeout "$timeout" $pkgs
             fi
           no_output_timeout: 30m
