@@ -128,6 +128,23 @@ func (ctx *Context) VerificationVerdictsIn(scopes []*symbols.Scope, req *symbols
 // VerificationVerdictsOn is VerificationVerdictsIn for a verdict about subject: a case a type owns
 // runs once on each object of that type subject is or holds, every held one when subject is nil.
 func (ctx *Context) VerificationVerdictsOn(scopes []*symbols.Scope, req *symbols.Symbol, subject *Instance) []VerificationVerdict {
+	return ctx.VerificationVerdictsOnce(scopes, req, subject, nil)
+}
+
+// VerificationRuns records the runs a report has made, so a case verifying a
+// requirement several checks are about runs once per object it is a feature of.
+type VerificationRuns struct {
+	done map[verificationRunKey]bool
+}
+
+type verificationRunKey struct {
+	requirement, kase *symbols.Symbol
+	self              *Instance
+}
+
+// VerificationVerdictsOnce is VerificationVerdictsOn skipping the runs recorded
+// in runs, and recording the ones it makes; a nil runs records nothing.
+func (ctx *Context) VerificationVerdictsOnce(scopes []*symbols.Scope, req *symbols.Symbol, subject *Instance, runs *VerificationRuns) []VerificationVerdict {
 	var out []VerificationVerdict
 	ran := make(map[*symbols.Symbol]bool)
 	for _, scope := range scopes {
@@ -137,6 +154,16 @@ func (ctx *Context) VerificationVerdictsOn(scopes []*symbols.Scope, req *symbols
 			}
 			ran[sym] = true
 			for _, self := range ctx.caseCarriers(sym, subject) {
+				if runs != nil {
+					key := verificationRunKey{requirement: req, kase: sym, self: self}
+					if runs.done[key] {
+						continue
+					}
+					if runs.done == nil {
+						runs.done = make(map[verificationRunKey]bool)
+					}
+					runs.done[key] = true
+				}
 				out = append(out, ctx.verificationVerdictsOn(sym, self)...)
 			}
 		}

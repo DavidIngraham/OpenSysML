@@ -100,6 +100,40 @@ func TestDefinitionOwnedCaseBindsAnUnboundSubjectToTheObjectToo(t *testing.T) {
 	}
 }
 
+// TestDefinitionOwnedCaseKeepsANamedSubject pins that a subject the arguments
+// bind by name is kept when an object is given as the owner.
+func TestDefinitionOwnedCaseKeepsANamedSubject(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::cheap", "test::dear")
+	sym := oneSymbol(t, idx, "test::Definition::subjectTest")
+	args := AnalysisArgs{Subject: objects[0], Named: map[string]Value{"s": {Kind: ValInstance, Instance: objects[1].ID}}}
+	result, err := ctx.RunVerification(sym, args, sym.OwnerScope, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Verdict.Kind != VerdictFail || result.Run.Subject != objects[1] || result.Verdict.Subject != objects[0] {
+		t.Errorf("subjectTest(s = dear) on cheap = %s, subject %v, owner %v; want fail reading dear as the subject on cheap", result.Verdict.Kind, result.Run.Subject, result.Verdict.Subject)
+	}
+}
+
+// TestVerificationRunsRecordTheRunsMade pins that a report sharing one
+// VerificationRuns runs a case once per object checked, not per check.
+func TestVerificationRunsRecordTheRunsMade(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::cheap")
+	root := idx.DocumentRoot("<test>")
+	req := oneSymbol(t, idx, "test::costReq")
+	runs := &VerificationRuns{}
+	scopes := []*symbols.Scope{root}
+	if got := ctx.VerificationVerdictsOnce(scopes, req, objects[0], runs); len(got) != 1 {
+		t.Fatalf("first check = %d verdicts, want 1", len(got))
+	}
+	if got := ctx.VerificationVerdictsOnce(scopes, req, objects[0], runs); len(got) != 0 {
+		t.Errorf("second check of the same object = %d verdicts, want none: the case already ran on it", len(got))
+	}
+	if got := ctx.VerificationVerdictsOnce(scopes, req, nil, runs); len(got) != 0 {
+		t.Errorf("check about no object = %d verdicts, want none: cheap is the only object", len(got))
+	}
+}
+
 // TestDefinitionOwnedCaseWithoutAnObject pins the run made when no object is
 // given: on no object when the run holds none, so the owner's feature has no
 // value; on the single object of the definition; a refusal naming several.

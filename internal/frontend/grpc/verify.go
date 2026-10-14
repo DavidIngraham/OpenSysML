@@ -478,9 +478,9 @@ func (s *Service) VerifySatisfaction(ctx context.Context, req *pb.VerifySatisfac
 
 	resp := &pb.VerifySatisfactionResponse{}
 	seen := map[int64]bool{}
-	// A case verifying a requirement answers once for the response, a type-owned
+	// A case verifying a requirement runs once for the response, a type-owned
 	// one once per object checked, however many assertions report it.
-	reported := map[verdictIdentity]bool{}
+	runs := &runtime.VerificationRuns{}
 	for _, scope := range scopes {
 		for _, a := range v.runtime.SatisfyAssertionsIn(scope) {
 			var verdict *pb.Verdict
@@ -498,7 +498,7 @@ func (s *Service) VerifySatisfaction(ctx context.Context, req *pb.VerifySatisfac
 			resp.Verdicts = append(resp.Verdicts, verdict)
 			if question == questionEvaluate {
 				if req := a.AssertedRequirement(); req != nil {
-					verdicts := unseenVerdicts(reported, req, v.runtime.VerificationVerdictsOn(v.cached.DocumentRoots(), req, subject))
+					verdicts := v.runtime.VerificationVerdictsOnce(v.cached.DocumentRoots(), req, subject, runs)
 					resp.VerificationVerdicts = append(resp.VerificationVerdicts, v.verificationVerdicts(verdicts, namedFQN(v.cached.Index, req))...)
 				}
 			}
@@ -665,29 +665,6 @@ func (v *verifyContext) calcUsageOutputs(ctx context.Context, subject string, sy
 		})
 	}
 	return pbOutputs, true, plan, nil
-}
-
-// verdictIdentity is one case's verdict about one requirement and object, which
-// a response reports once.
-type verdictIdentity struct {
-	requirement *symbols.Symbol
-	kase        string
-	about       *runtime.Instance
-	subcase     bool
-}
-
-// unseenVerdicts keeps the verdicts about req not yet reported, noting them in seen.
-func unseenVerdicts(seen map[verdictIdentity]bool, req *symbols.Symbol, verdicts []runtime.VerificationVerdict) []runtime.VerificationVerdict {
-	var out []runtime.VerificationVerdict
-	for _, verdict := range verdicts {
-		key := verdictIdentity{requirement: req, kase: verdict.Case, about: verdict.Subject, subcase: verdict.Subcase}
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-		out = append(out, verdict)
-	}
-	return out
 }
 
 // requirementVerifications are the body verdicts of the whole model's verification cases verifying

@@ -351,10 +351,12 @@ func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Ins
 	if err != nil {
 		return nil, args, fmt.Errorf("%s %s: %w", shape.Kind, shape.Name, err)
 	}
-	// The object also binds a subject the case declares but leaves unbound.
+	// The object also binds a subject the case declares and nothing else binds.
 	args.Subject = nil
 	if subject, ok := shape.subjectParameter(); ok && subject.Default == nil && reached.instance != nil {
-		args.Subject = reached.instance
+		if _, named := args.Named[subject.Name]; !named {
+			args.Subject = reached.instance
+		}
 	}
 	return reached.instance, args, nil
 }
