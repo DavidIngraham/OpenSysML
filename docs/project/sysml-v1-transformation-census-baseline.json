@@ -22,7 +22,7 @@
       },
       {
         "name": "fixtures",
-        "files": 117
+        "files": 118
       }
     ],
     "counts": {
@@ -140,7 +140,7 @@
       },
       "uml:Class": {
         "pssm": 311,
-        "fixtures": 542
+        "fixtures": 546
       },
       "uml:ClearAssociationAction": {
         "pssm": 0,
@@ -248,7 +248,7 @@
       },
       "uml:Property": {
         "pssm": 25,
-        "fixtures": 541
+        "fixtures": 544
       },
       "uml:Property[qualifier]": {
         "pssm": 0,
