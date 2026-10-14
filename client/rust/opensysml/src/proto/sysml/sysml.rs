@@ -2901,6 +2901,11 @@ pub struct RenderDocumentResponse {
     pub markdown: ::prost::alloc::string::String,
     #[prost(string, tag="2")]
     pub html: ::prost::alloc::string::String,
+    /// The file a rendered set writes this document to in the requested form
+    /// (-render-documents), which the other documents' links to it name.
+    /// Populated under the render_document_file_name capability.
+    #[prost(string, tag="3")]
+    pub file_name: ::prost::alloc::string::String,
 }
 /// RenderViewRequest names a declared view or targeted pseudo-view to render.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]

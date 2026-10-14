@@ -276,6 +276,10 @@ CAPABILITY_CONVERT_COMPACT = "convert_compact"
 #: whose results may differ from the base model's, so a client re-reads only those after an edit.
 CAPABILITY_PARSE_SOURCES_AFFECTED = "parse_sources_affected"
 
+#: ``RenderDocumentResponse.file_name``: the file a rendered set writes the document to, which the
+#: other documents' links to it name.
+CAPABILITY_RENDER_DOCUMENT_FILE_NAME = "render_document_file_name"
+
 
 @dataclass(frozen=True)
 class ServerInfo:

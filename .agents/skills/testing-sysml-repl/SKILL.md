@@ -6423,3 +6423,30 @@ None for native local CLI/REPL tests.
 - Keep scratch models under `~/scratch`, not `/tmp`, so no unrelated LSP workspace indexing
   joins in. Real stdio JSON-RPC checks need no editor.
 
+
+## Expression fixtures must be semantically valid, not just parsed
+
+A probe that only needs the parser to accept a construct still goes through the
+full validation tiers in the CLI, the REPL and the LSP, so a fixture that is
+syntactically fine but semantically invalid reports errors that have nothing to
+do with the change under test. Shapes that have cost time:
+
+- `ScalarValues::*` provides the scalar types, not `floor`. Import
+  `RealFunctions::floor` (or `RealFunctions::*`) before calling it.
+- `calc c : Real { expression }` parses but is not a valid calculation usage:
+  its type must be a calculation definition. Write
+  `calc def C { return : Real; expression }` and `calc c : C;`, then `%calc P::c`.
+- A nested calculation definition cannot read an enclosing instance's feature.
+  For expression probes, bind the operands as package-level attributes and
+  declare the calculation definition at package level, or pass them in as
+  parameters.
+- Keep a duplicate-member probe apart from a qualified-reference probe: two
+  members of one name make `Type::name` an ambiguous reference, which is a
+  separate diagnostic from the one being tested.
+- Do not read a clean validation off the CLI exit status. In permissive mode a
+  foreign-notation diagnostic prints at `error` severity while the CLI exits 0
+  and says no error stops a check; inspect the messages and severities, and run
+  `-strict` separately to see the escalation (exit 2).
+- To tell a parser regression from a pre-existing semantic rule, run the same
+  fixture with the name quoted (`'step'`) on a develop build, and keep both the
+  original and the adjusted fixture outputs.
