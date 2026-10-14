@@ -56,6 +56,9 @@ func TestRunAnalysisRunsADefinitionOwnedCaseOnTheSubjectGiven(t *testing.T) {
 			t.Fatalf("RunAnalysis on %s reported %q", tc.subject, resp.Error)
 		}
 		wantVerdicts(t, "RunAnalysis on "+tc.subject, resp.VerificationVerdicts, tc.want)
+		// The case declares no subject, so the object it ran on is reported as
+		// the one its verdict is about, not as the run's subject.
+		wantVerdictObjects(t, "RunAnalysis on "+tc.subject, resp.VerificationVerdicts, resp.Instances, tc.subject)
 	}
 }
 
