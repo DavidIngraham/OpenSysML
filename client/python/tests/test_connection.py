@@ -9,6 +9,7 @@ import time
 from unittest.mock import Mock, patch
 from opensysml.connection import (
     CHANNEL_OPTIONS,
+    STOP_TIMEOUT,
     Connection,
     _private_services,
 )
@@ -222,6 +223,22 @@ class _FakeChild:
         self.terminate()
 
     def wait(self, timeout=None):
+        if self._code is None:
+            raise subprocess.TimeoutExpired(self.args, timeout)
+        return self._code
+
+
+class _LateExitChild(_FakeChild):
+    """A Popen stand-in whose exit becomes reapable only when waited for."""
+
+    def __init__(self, code):
+        super().__init__()
+        self._eventual_code = code
+        self.waited_with = None
+
+    def wait(self, timeout=None):
+        self.waited_with = timeout
+        self._code = self._eventual_code
         return self._code
 
 
@@ -281,8 +298,45 @@ def test_a_child_that_serves_nothing_is_reported_not_dialled(private_child):
     with pytest.raises(ConnectionError) as excinfo:
         Connection()
 
-    assert "without serving an address" in str(excinfo.value)
+    assert "exited with code 1 without serving an address" in str(excinfo.value)
     assert "address already in use" in str(excinfo.value)
+
+
+def test_a_child_that_exits_after_closing_stdout_is_waited_for(private_child):
+    """End of file arrives before the exit is reapable: the exit is waited for."""
+    child = _LateExitChild(code=3)
+    private_child(child)
+
+    with pytest.raises(ConnectionError) as excinfo:
+        Connection()
+
+    assert "exited with code 3 without serving an address" in str(excinfo.value)
+    assert child.waited_with == STOP_TIMEOUT
+    assert not child.terminated
+
+
+def test_a_child_ended_by_a_signal_is_reported_by_it(private_child):
+    """A child a signal ended is reported by that signal, not as an exit."""
+    private_child(_LateExitChild(code=-11))
+
+    with pytest.raises(ConnectionError) as excinfo:
+        Connection()
+
+    assert "ended with signal 11 without serving an address" in str(excinfo.value)
+
+
+def test_a_child_that_hangs_after_closing_stdout_is_killed(private_child):
+    """One still running at the end of its grace is killed, and said to be."""
+    child = _FakeChild()
+    private_child(child)
+
+    with pytest.raises(ConnectionError) as excinfo:
+        Connection()
+
+    message = str(excinfo.value)
+    assert "was still running 5s later, so it was killed" in message
+    assert "exited with code" not in message
+    assert child.terminated
 
 
 def test_the_wait_for_an_address_is_the_module_constant(private_child, monkeypatch):
