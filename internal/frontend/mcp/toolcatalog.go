@@ -54,7 +54,10 @@ func registerCatalog(s *sdk.Server, groups []Group) {
 				return nil, CatalogOutput{}, fmt.Errorf("this server does not serve the group %q; it serves %s", in.Group, groupList(groups))
 			}
 		}
-		out := CatalogOutput{Groups: strings.Split(groupList(served), ", ")}
+		out := CatalogOutput{Groups: []string{}}
+		for _, g := range served {
+			out.Groups = append(out.Groups, string(g))
+		}
 		var text strings.Builder
 		for _, e := range catalog.Entries(served...) {
 			out.Tools = append(out.Tools, CatalogTool{Name: e.Name, Group: string(e.Group), Operation: e.Operation(), Summary: e.Summary})

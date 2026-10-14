@@ -234,3 +234,17 @@ func TestGroupsShareNoToolName(t *testing.T) {
 		t.Fatalf("all groups register %d tools, the groups alone %d plus tool_catalog: a name is shared", all, sum)
 	}
 }
+
+func TestToolCatalogOverNoGroupsListsNoGroup(t *testing.T) {
+	cs := connect(t, Config{Root: t.TempDir(), Groups: []Group{}})
+	if names := toolNames(t, cs); !slices.Equal(names, []string{"tool_catalog"}) {
+		t.Fatalf("no groups serve %v", names)
+	}
+	var out CatalogOutput
+	if res := call(t, cs, "tool_catalog", map[string]any{}, &out); res.IsError {
+		t.Fatalf("tool_catalog: %v", res.Content)
+	}
+	if len(out.Groups) != 0 || len(out.Tools) != 1 || out.Tools[0].Name != "tool_catalog" {
+		t.Errorf("groups %q, tools %v", out.Groups, out.Tools)
+	}
+}

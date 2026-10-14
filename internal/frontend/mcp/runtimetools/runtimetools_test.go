@@ -613,6 +613,10 @@ func TestQueriesAndRenderings(t *testing.T) {
 	if view.GetKind() != "tree" {
 		t.Errorf("pseudo-view kind = %q", view.GetKind())
 	}
+	h.ok("render_model_view", map[string]any{"modelHash": hash, "view": "Demo::overview", "show": []string{"edge-labels"}}, &view)
+	if !slices.Contains(view.GetShown(), "edge-labels") {
+		t.Errorf("show edge-labels: shown = %v", view.GetShown())
+	}
 
 	var graphs pb.ExportGraphsResponse
 	_, out = h.ok("export_graphs", map[string]any{"modelHash": hash, "subject": "Demo::Lamp"}, &graphs)
@@ -928,8 +932,11 @@ func TestDiagnosticsReportsEveryDiagnostic(t *testing.T) {
 	if len(resp.GetDiagnostics()) == 0 {
 		t.Fatalf("a model naming an unknown symbol reports no diagnostic\n%s", out)
 	}
-	if d := resp.GetDiagnostics()[0]; !strings.Contains(out, d.GetMessage()) || !strings.Contains(out, "broken.sysml") {
-		t.Errorf("the text does not spell the diagnostic %v:\n%s", d, out)
+	if d := resp.GetDiagnostics()[0]; strings.Count(out, d.GetMessage()) != 1 || !strings.Contains(out, "broken.sysml") {
+		t.Errorf("the text does not spell the diagnostic %v exactly once:\n%s", d, out)
+	}
+	if n := len(resp.GetDiagnostics()); strings.Count(out, "\n") != n {
+		t.Errorf("the text has %d lines after the model hash for %d diagnostics:\n%s", strings.Count(out, "\n"), n, out)
 	}
 	if _, has := structured(t, res)["diagnostics"]; !has {
 		t.Error("the structured result is not the DiagnosticsResponse")

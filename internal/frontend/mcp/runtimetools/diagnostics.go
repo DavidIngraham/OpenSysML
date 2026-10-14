@@ -2,6 +2,8 @@ package runtimetools
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -30,10 +32,19 @@ func (g *group) registerDiagnostics(s *mcp.Server) {
 		if err != nil {
 			return nil, nil, toolError(err)
 		}
-		text := diagnosticsText(resp.GetDiagnostics())
-		if text == "" {
-			text = "no diagnostics"
+		out, err := result(resp, m)
+		if err != nil {
+			return nil, nil, err
 		}
-		return answer(resp, m, text)
+		var b strings.Builder
+		if m.parsed != nil {
+			fmt.Fprintf(&b, "model %s\n", m.hash)
+		}
+		if diags := resp.GetDiagnostics(); len(diags) > 0 {
+			b.WriteString(strings.TrimRight(diagnosticsText(diags), "\n"))
+		} else {
+			b.WriteString("no diagnostics")
+		}
+		return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: b.String()}}}, out, nil
 	})
 }
