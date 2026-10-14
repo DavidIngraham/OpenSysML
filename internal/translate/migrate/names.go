@@ -478,7 +478,7 @@ func (m *migration) refMember(owner *sysmlv1.Element, name string, path []segmen
 				break
 			}
 		}
-		if !shadowed {
+		if !shadowed && !(chained && path[len(path)-1].feature && m.isUsage(owner) && m.definitionBetween(chain[:i])) {
 			return writeName(path[len(path)-1].name)
 		}
 	}
@@ -495,6 +495,17 @@ func (m *migration) refMember(owner *sysmlv1.Element, name string, path []segmen
 		return writeName(path[len(path)-1].name)
 	}
 	return m.qualifiedFrom(path, chain, chained)
+}
+
+// A definition nested in a usage is not featured within it (KerML isFeaturedWithin),
+// so the usage's features must be reached by a chain.
+func (m *migration) definitionBetween(scopes []*sysmlv1.Element) bool {
+	for _, scope := range scopes {
+		if !m.isUsage(scope) {
+			return true
+		}
+	}
+	return false
 }
 
 // relativeTo shortens path to its tail below the root Model of chain, whose
