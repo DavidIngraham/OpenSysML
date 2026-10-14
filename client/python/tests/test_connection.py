@@ -254,7 +254,7 @@ class _ExitsBeforeTheKillChild(_FakeChild):
         self._eventual_code = code
 
     def wait(self, timeout=None):
-        if timeout is not None:
+        if timeout is not None and self._code is None:
             self._code = self._eventual_code
             raise subprocess.TimeoutExpired(self.args, timeout)
         return self._code
