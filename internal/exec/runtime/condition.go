@@ -22,10 +22,6 @@ var ErrAmbiguousSubject = errors.New("ambiguous subject")
 // not of that type and holds none.
 var ErrNotCarried = errors.New("object does not carry the case")
 
-// ErrNoPerformer is returned when a case a definition owns is run while no
-// object of that definition exists to run it on.
-var ErrNoPerformer = errors.New("no object to run the case on")
-
 // Condition is one boolean check a constraint or requirement states, with the
 // scope its expression resolves names in. A condition states either an
 // expression or a group, which holds when all of its conditions hold.

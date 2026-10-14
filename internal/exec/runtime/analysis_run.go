@@ -355,10 +355,6 @@ func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Ins
 	if err != nil {
 		return nil, args, fmt.Errorf("%s %s: %w", shape.Kind, shape.Name, err)
 	}
-	if _, definition := owner.Decl.(*ast.Definition); definition && reached.instance == nil {
-		return nil, args, fmt.Errorf("%w: %s is a feature of %s, of which this run holds no object: instantiate one to run it on",
-			ErrNoPerformer, shape.Label, ctx.qualifiedSymbolName(owner))
-	}
 	return reached.instance, args, nil
 }
 

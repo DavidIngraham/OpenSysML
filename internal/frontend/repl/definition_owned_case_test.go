@@ -24,12 +24,12 @@ func TestAnalysisRunsADefinitionOwnedCaseOnTheObjectGiven(t *testing.T) {
 }
 
 // TestAnalysisOfADefinitionOwnedCaseWithoutAnObject checks that the case runs
-// on the one object of the definition the session holds, and says an object is
-// needed when it holds none.
+// on the one object of the definition the session holds, and on none when it
+// holds none, where the owner's cost has no value.
 func TestAnalysisOfADefinitionOwnedCaseWithoutAnObject(t *testing.T) {
 	s := loadFixture(t, "testdata/verification_definition_owned.sysml")
 	wants(t, run(t, s, "%analysis Cost::Definition::costTest"),
-		"? Verification Cost::Definition::costTest verdict: error", "instantiate one")
+		"? Verification Cost::Definition::costTest verdict: error", "no value for feature cost")
 	run(t, s, "%instantiate Cost::dear")
 	wants(t, run(t, s, "%analysis Cost::Definition::costTest"),
 		"✗ Verification Cost::Definition::costTest on Cost::dear (object #1) verdict: fail")

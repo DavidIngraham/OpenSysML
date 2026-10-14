@@ -101,18 +101,13 @@ func TestDefinitionOwnedCaseBindsAnUnboundSubjectToTheObjectToo(t *testing.T) {
 }
 
 // TestDefinitionOwnedCaseWithoutAnObject pins the run made when no object is
-// given: the single object of the definition, a refusal naming several, and a
-// refusal saying to instantiate one when there is none.
+// given: on no object when the run holds none, so the owner's feature has no
+// value; on the single object of the definition; a refusal naming several.
 func TestDefinitionOwnedCaseWithoutAnObject(t *testing.T) {
 	idx, ctx, _ := definitionOwnedCase(t)
-	sym := oneSymbol(t, idx, "test::Definition::costTest")
 	got := runOn(t, idx, ctx, "test::Definition::costTest", nil)
-	if got.Kind != VerdictError || !strings.Contains(got.Detail, "instantiate one") {
-		t.Errorf("costTest with no object = %s (%s), want an error verdict saying to instantiate one", got.Kind, got.Detail)
-	}
-	_, _, err := ctx.runCase(sym, AnalysisArgs{}, sym.OwnerScope, nil)
-	if !errors.Is(err, ErrNoPerformer) {
-		t.Errorf("runCase with no object = %v, want ErrNoPerformer", err)
+	if got.Kind != VerdictError || !strings.Contains(got.Detail, "no value for feature cost") || got.Subject != nil {
+		t.Errorf("costTest with no object = %s (%s) about %v, want an error verdict about no object", got.Kind, got.Detail, got.Subject)
 	}
 
 	idx, ctx, objects := definitionOwnedCase(t, "test::dear")
