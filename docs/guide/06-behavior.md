@@ -6,7 +6,8 @@ values they produce. A behavior can be performed by an object, in which case the
 are routed over that object's connections. What a run reports is one linearization of the partial
 order the model states — the default `reverse` policy picks it, deterministically — so when more
 than one order is valid, the values are *a* result, not *the* result; `explore` and `check` are
-how to see the whole set ([below](#when-a-model-has-more-than-one-valid-run)).
+how to see the whole set, up to their run and depth budgets — a result that hit one says so
+([below](#when-a-model-has-more-than-one-valid-run)).
 
 **Action execution (step-by-step):**
 ```sysml
