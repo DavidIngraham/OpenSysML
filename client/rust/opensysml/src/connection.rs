@@ -684,12 +684,27 @@ fn terminate_process(process: &mut Child, grace: Duration) -> Ending {
         thread::sleep((deadline - now).min(Duration::from_millis(10)));
     }
     let _ = process.kill();
-    // A child that exited between the last poll and the kill keeps its own
-    // status: the signal reaches a zombie and changes nothing.
+    // A child that ended between the last poll and the kill keeps its own
+    // status: the kill signal reaches a zombie and changes nothing.
     match process.wait() {
-        Ok(status) if status.code().is_some() => Ending::Own(status),
+        Ok(status) if !ended_by_kill(status) => Ending::Own(status),
         _ => Ending::Killed,
     }
+}
+
+/// Whether `status` is the one `Child::kill` leaves behind.
+#[cfg(unix)]
+fn ended_by_kill(status: ExitStatus) -> bool {
+    use std::os::unix::process::ExitStatusExt;
+    const SIGKILL: i32 = 9;
+    status.signal() == Some(SIGKILL)
+}
+
+/// Whether `status` is the one `Child::kill` leaves behind: TerminateProcess
+/// ends the child with exit code 1.
+#[cfg(not(unix))]
+fn ended_by_kill(status: ExitStatus) -> bool {
+    status.code() == Some(1)
 }
 
 /// The exit a child chose for itself, or the signal that ended it.
@@ -1046,5 +1061,15 @@ mod tests {
             matches!(&error, Error::Transport(message) if message.contains("path")),
             "{error}"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn only_the_kill_signal_counts_as_a_kill() {
+        use std::os::unix::process::ExitStatusExt;
+        assert!(ended_by_kill(ExitStatus::from_raw(9)));
+        assert!(!ended_by_kill(ExitStatus::from_raw(15)));
+        assert!(!ended_by_kill(ExitStatus::from_raw(3 << 8)));
+        assert!(!ended_by_kill(ExitStatus::from_raw(0)));
     }
 }

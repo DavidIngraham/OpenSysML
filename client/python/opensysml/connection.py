@@ -5,6 +5,7 @@ from fractions import Fraction
 import grpc
 import os
 import queue
+import signal
 import subprocess
 import threading
 import warnings
@@ -589,11 +590,14 @@ class _PrivateService:
             code = self.process.wait(timeout=STOP_TIMEOUT)
         except subprocess.TimeoutExpired:
             self.process.kill()
-            self.process.wait()
-            return (
-                f"closed stdout without serving an address and was still "
-                f"running {STOP_TIMEOUT:g}s later, so it was killed"
-            )
+            # A child that ended between the wait and the kill keeps its own
+            # status: the kill signal reaches a zombie and changes nothing.
+            code = self.process.wait()
+            if code == -signal.SIGKILL:
+                return (
+                    f"closed stdout without serving an address and was still "
+                    f"running {STOP_TIMEOUT:g}s later, so it was killed"
+                )
         if code < 0:
             return f"ended with signal {-code} without serving an address"
         return f"exited with code {code} without serving an address"

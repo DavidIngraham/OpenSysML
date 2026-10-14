@@ -220,7 +220,9 @@ class _FakeChild:
         self._code = -15
 
     def kill(self):
-        self.terminate()
+        self.terminated = True
+        if self._code is None:
+            self._code = -9
 
     def wait(self, timeout=None):
         if self._code is None:
@@ -239,6 +241,20 @@ class _LateExitChild(_FakeChild):
     def wait(self, timeout=None):
         self.waited_with = timeout
         self._code = self._eventual_code
+        return self._code
+
+
+class _ExitsBeforeTheKillChild(_FakeChild):
+    """A Popen stand-in that outlives its grace, then exits just before the kill."""
+
+    def __init__(self, code):
+        super().__init__()
+        self._eventual_code = code
+
+    def wait(self, timeout=None):
+        if timeout is not None:
+            self._code = self._eventual_code
+            raise subprocess.TimeoutExpired(self.args, timeout)
         return self._code
 
 
@@ -336,6 +352,20 @@ def test_a_child_that_hangs_after_closing_stdout_is_killed(private_child):
     message = str(excinfo.value)
     assert "was still running 5s later, so it was killed" in message
     assert "exited with code" not in message
+    assert child.terminated
+
+
+def test_a_child_that_exits_as_its_grace_ends_keeps_its_exit(private_child):
+    """An exit that lands between the wait and the kill is not called a kill."""
+    child = _ExitsBeforeTheKillChild(code=3)
+    private_child(child)
+
+    with pytest.raises(ConnectionError) as excinfo:
+        Connection()
+
+    message = str(excinfo.value)
+    assert "exited with code 3 without serving an address" in message
+    assert "killed" not in message
     assert child.terminated
 
 
