@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Open-MBEE/OpenSysML/internal/translate/mtip"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/xmi/sysmlv1"
 )
 
@@ -80,6 +81,71 @@ func diagram(id, name, owner, kind string, shown ...string) string {
 	}
 	b.WriteString(`</diagramContents></diagram:DiagramRepresentationObject></diagramRepresentation></xmi:Extension></ownedDiagram>`)
 	return b.String()
+}
+
+func TestPrivateLayoutPlacementOutsideOwnerIsUnexposed(t *testing.T) {
+	members := `<packagedElement xmi:type="uml:Class" xmi:id="_a" name="A">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_x" name="x" visibility="private" type="_pump" aggregation="composite"/>
+    </packagedElement>`
+	data := diagramModel(members, diagram("_d", "Outside", "_sys", "SysML Block Definition Diagram"),
+		`<sysml:Block xmi:id="_s_a" base_Class="_a"/>`)
+	layout := &mtip.Export{Diagrams: []mtip.Diagram{{
+		ID: "_d",
+		Placements: []mtip.Placement{
+			{ID: "_x", X: 10, Y: 10, Width: 20, Height: 20},
+		},
+		Unsupported: map[string]int{},
+	}}}
+	r, err := MigrateOptions("outside.xmi", []byte(data), Options{Layout: layout, LayoutSource: "outside.layout.xml"})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 0 || l.PlacementsUnexposed != 1 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	if strings.Contains(string(r.Notation), "metadata DiagramLayout::Layout about") {
+		t.Errorf("private placement written outside its owner:\n%s", r.Notation)
+	}
+	if !strings.Contains(string(r.Notation), "private part x") || strings.Contains(string(r.Notation), "public part x") {
+		t.Errorf("private feature visibility was not preserved:\n%s", r.Notation)
+	}
+	for _, entry := range r.Report.Entries {
+		if entry.ID == "_d" {
+			if !strings.Contains(entry.Note, "private to") || !strings.Contains(entry.Note, "no name visible in the view denotes it") {
+				t.Errorf("diagram note = %q, want private-member explanation", entry.Note)
+			}
+			return
+		}
+	}
+	t.Fatal("diagram report entry not found")
+}
+
+func TestPrivateLayoutPlacementInEnclosingOwnerKeepsExistingExposure(t *testing.T) {
+	members := `<packagedElement xmi:type="uml:Class" xmi:id="_a" name="A">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_x" name="x" visibility="private" type="_pump" aggregation="composite"/>
+      <packagedElement xmi:type="uml:Class" xmi:id="_b" name="B"/>
+    </packagedElement>`
+	data := diagramModel(members, diagram("_d", "Inside", "_b", "SysML Block Definition Diagram", "_x"),
+		`<sysml:Block xmi:id="_s_a" base_Class="_a"/>`,
+		`<sysml:Block xmi:id="_s_b" base_Class="_b"/>`)
+	layout := &mtip.Export{Diagrams: []mtip.Diagram{{
+		ID: "_d",
+		Placements: []mtip.Placement{
+			{ID: "_x", X: 10, Y: 10, Width: 20, Height: 20},
+		},
+		Unsupported: map[string]int{},
+	}}}
+	r, err := MigrateOptions("inside.xmi", []byte(data), Options{Layout: layout, LayoutSource: "inside.layout.xml"})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 1 || l.PlacementsUnexposed != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	if strings.Contains(string(r.Notation), "private part x") ||
+		!strings.Contains(string(r.Notation), "metadata DiagramLayout::Layout about") {
+		t.Errorf("in-scope exposure behavior changed:\n%s", r.Notation)
+	}
 }
 
 // machineMembers is a state machine Modes (_sm) whose region enters Idle

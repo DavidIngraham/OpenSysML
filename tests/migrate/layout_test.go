@@ -13,9 +13,14 @@ import (
 	"testing"
 
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/resolve"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/diag"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/migrate"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/mtip"
+	"github.com/Open-MBEE/OpenSysML/internal/workspace/model"
 )
 
 // migrateLayoutFixture migrates testdata/xmi/layout.xmi augmented by the MTIP
@@ -1016,6 +1021,86 @@ func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
 	want := []string{"Model::UI::Console composition Model::UI::GUI: GUI", "Model::UI::Console composition Model::UI::Panel: panel"}
 	if !reflect.DeepEqual(edges, want) {
 		t.Errorf("edges = %q, want %q", edges, want)
+	}
+}
+
+func TestGoldenPrivateLayoutAlias(t *testing.T) {
+	r := migrateLaidOut(t, "private_layout_alias")
+	if l := r.Report.Layout; l == nil || l.DiagramsJoined != 1 || l.PlacementsWritten != 2 || l.PlacementsUnexposed != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	if diagnostics := errors(t, "private_layout_alias.sysml", r.Notation); len(diagnostics) > 0 {
+		for _, d := range diagnostics {
+			t.Error(d)
+		}
+		t.FailNow()
+	}
+	assertPrivateLayoutAliasTarget(t, "private_layout_alias.sysml", r.Notation, []string{"Model", "A"}, "A BDD", "x (A)", "Model::A::x", "Model::B::x")
+	checkGolden(t, "testdata/xmi/private_layout_alias.layout.golden.sysml", r.Notation)
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	checkGolden(t, "testdata/xmi/private_layout_alias.layout.golden.report.txt", report.Bytes())
+	notation := string(r.Notation)
+	for _, want := range []string{
+		"private alias 'x (A)' for x;",
+		"metadata MigrationMetadata::SynthesizedName about 'x (A)';",
+		"metadata DiagramLayout::Layout about 'x (A)'",
+	} {
+		if !strings.Contains(notation, want) {
+			t.Errorf("layout output does not contain %q:\n%s", want, notation)
+		}
+	}
+}
+
+func assertPrivateLayoutAliasTarget(t *testing.T, docName string, notation []byte, ownerPath []string, viewName, aliasName, targetFQN, wrongFQN string) {
+	t.Helper()
+	ws := model.NewWorkspace()
+	ws.Open(docName, notation, 1)
+	doc := ws.Document(docName)
+	if doc == nil {
+		t.Fatalf("workspace did not open %s", docName)
+	}
+	owner, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf(ownerPath...))
+	if !ok || owner.Scope == nil {
+		t.Fatalf("owner %v is unresolved or has no scope", ownerPath)
+	}
+	viewSym, ok := ws.ResolveQualifiedInDoc(docName, owner.Scope, ast.QualifiedNameOf(viewName))
+	if !ok || viewSym.Scope == nil {
+		t.Fatalf("view %q is unresolved or has no scope", viewName)
+	}
+	alias, ok := owner.Scope.LookupLocal(aliasName)
+	if !ok || alias.Kind != symbols.SymbolAlias || alias.Visibility != ast.VisibilityPrivate {
+		t.Fatalf("owner alias %q = %v, want private alias", aliasName, alias)
+	}
+	var aboutTarget, aliasTarget *symbols.Symbol
+	var aboutOK, aliasOK bool
+	if err := ws.Read(func(r *model.Reading) error {
+		r.Query(docName, func(resolver *resolve.Resolver, _ *semantics.Model) {
+			aboutTarget, aboutOK = resolver.ResolveQualified(viewSym.Scope, ast.QualifiedNameOf(aliasName))
+			aliasTarget, aliasOK = resolver.ResolveAliasTarget(alias)
+		})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !aboutOK || !aliasOK {
+		t.Fatalf("about target resolved = %t, alias target resolved = %t", aboutOK, aliasOK)
+	}
+	if aboutTarget != aliasTarget {
+		t.Fatalf("about target %s is not alias target %s", symbols.FQNOf(aboutTarget), symbols.FQNOf(aliasTarget))
+	}
+	if got := symbols.FQNOf(aliasTarget); got != targetFQN {
+		t.Fatalf("alias %q resolves to %s, want %s", aliasName, got, targetFQN)
+	}
+	pos := doc.Lines().PosAt(aliasTarget.DeclSpan.Offset)
+	t.Logf("alias %q resolves to %s at %s:%d", aliasName, symbols.FQNOf(aliasTarget), docName, pos.Line)
+	if aliasTarget.Visibility != ast.VisibilityPrivate {
+		t.Fatalf("alias %q target visibility = %v, want private", aliasName, aliasTarget.Visibility)
+	}
+	if wrong, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf(strings.Split(wrongFQN, "::")...)); ok && aboutTarget == wrong {
+		t.Fatalf("alias %q resolves to %s, not a distinct target from %s", aliasName, wrongFQN, targetFQN)
 	}
 }
 
