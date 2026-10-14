@@ -53,10 +53,18 @@ func (r *Renderer) renderInterconnectionWithIDs(view *symbols.Symbol, exposed []
 				declKind(elem), r.notationName(elem)))
 		}
 	}
-	// A port some usage of its owner already pins is drawn there alone.
+	// A port one drawn usage of its owner pins is drawn there alone, whatever the display shows.
 	for _, port := range ports {
-		if w.siteOf(port).node == nil {
+		site := w.siteOf(port)
+		switch {
+		case site.node == nil:
 			out.Roots = append(out.Roots, w.featureNode(port, map[*symbols.Symbol]bool{}, 0, true))
+		case site.port != "":
+			for i := range site.node.Ports {
+				if site.node.Ports[i].ID == site.port {
+					site.node.Ports[i].Exposed = true
+				}
+			}
 		}
 	}
 	seen := map[*symbols.Symbol]bool{}
@@ -186,19 +194,24 @@ func (w *featureWalk) siteOf(sym *symbols.Symbol) edgeEnd {
 	return w.pinSite(sym)
 }
 
-// pinSite is the first node, in drawing order, that pins sym on its border, and
-// the pin; the zero edgeEnd when none does.
+// pinSite is the node that pins sym on its border, and the pin, when exactly
+// one drawn node does; the zero edgeEnd when none or several do, since a bare
+// name of the port names no one of them.
 func (w *featureWalk) pinSite(sym *symbols.Symbol) edgeEnd {
+	var site edgeEnd
 	for _, drawn := range w.drawn {
 		node := w.nodes[drawn]
 		if node == nil {
 			continue
 		}
 		if id, ok := w.pins[node][sym]; ok {
-			return edgeEnd{node: node, port: id}
+			if site.node != nil {
+				return edgeEnd{}
+			}
+			site = edgeEnd{node: node, port: id}
 		}
 	}
-	return edgeEnd{}
+	return site
 }
 
 // casePin reports whether member, a member of a case drawn as a node, is
@@ -504,7 +517,7 @@ func (w *featureWalk) endNode(connector *symbols.Symbol, attachment ast.Node) ed
 			return edgeEnd{node: node}
 		}
 	}
-	// A port of a definition drawn only as the pin of a usage typed by it.
+	// A port of a definition drawn only as the pin of the one usage typed by it.
 	return w.pinSite(target)
 }
 

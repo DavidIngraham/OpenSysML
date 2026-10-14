@@ -63,4 +63,69 @@ package LayoutPorts {
 		metadata Layout about Detector { x = 40; y = 20; width = 200; height = 100; }
 		metadata Layout about Detector::tx { x = 175; y = 100; width = 130; height = 36; }
 	}
+
+	part def Probe {
+		port tap : Signal;
+		part sensor;
+		connection wire connect tap to sensor;
+	}
+	part def Solo { part probe : Probe; }
+	part def Rig {
+		part primary : Probe;
+		part backup : Probe;
+	}
+
+	// One usage of the definition beside the definition's port, nested part and the connection
+	// naming the port bare: the port is the usage's pin, where the connection ends.
+	view soloWire {
+		expose Solo::probe;
+		expose Probe::tap;
+		expose Probe::sensor;
+		expose Probe::wire;
+		render asInterconnectionDiagram;
+		metadata Layout about Solo::probe { x = 40; y = 20; width = 300; height = 200; }
+		metadata Layout about Probe::tap { x = 275; y = 82; width = 130; height = 36; }
+		metadata Layout about Probe::sensor { x = 100; y = 80; width = 120; height = 60; }
+		metadata Route about Probe::wire { points = (220, 110, 275, 100); }
+	}
+
+	// Two usages of the definition beside its port: the bare name is neither usage's pin, so the
+	// port keeps a square of its own, which the connection reaches.
+	view pairWire {
+		expose Rig::primary;
+		expose Rig::backup;
+		expose Probe::tap;
+		expose Probe::sensor;
+		expose Probe::wire;
+		render asInterconnectionDiagram;
+		metadata Layout about Rig::primary { x = 40; y = 20; width = 300; height = 200; }
+		metadata Layout about Rig::backup { x = 400; y = 20; width = 300; height = 200; }
+		metadata Layout about Probe::tap { x = 275; y = 82; width = 130; height = 36; }
+		metadata Layout about Probe::sensor { x = 100; y = 80; width = 120; height = 60; }
+		metadata Route about Probe::wire { points = (220, 110, 275, 100); }
+	}
+
+	// The definition's port exposed beside the usage with nothing connected to it.
+	view bare {
+		expose Solo::probe;
+		expose Probe::tap;
+		render asInterconnectionDiagram;
+		metadata Layout about Solo::probe { x = 40; y = 20; width = 300; height = 200; }
+		metadata Layout about Probe::tap { x = 275; y = 82; width = 130; height = 36; }
+	}
+
+	part def Hub {
+		port bus : Signal {
+			port lane : Signal;
+		}
+	}
+
+	// A port nested in a port, both sized, in a tree: the inner square touches the outer square.
+	view nested {
+		expose Hub;
+		render asTreeDiagram;
+		metadata Layout about Hub { x = 40; y = 20; width = 200; height = 100; }
+		metadata Layout about Hub::bus { x = 175; y = 100; width = 130; height = 36; }
+		metadata Layout about Hub::bus::lane { x = 200; y = 118; width = 60; height = 20; }
+	}
 }

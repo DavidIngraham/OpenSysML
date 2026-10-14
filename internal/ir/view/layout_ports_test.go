@@ -96,3 +96,82 @@ func TestLayoutSizedPortOfADefinitionIsAPinInATree(t *testing.T) {
 	out := child(t, rendering, "LayoutPorts::Detector", "tx").ID
 	portSquare(t, pinnedBoxes(t, dot), out, Point{X: 240 + dotPinSize/2, Y: 118})
 }
+
+// A connection a definition declares between its port, named bare, and a nested part, drawn
+// beside the one usage of the definition the view exposes: the port is the usage's pin, shown
+// though the display is minimal, and the connection ends at it.
+func TestABareConnectionToADefinitionsPortEndsAtItsOnlyUsagesPin(t *testing.T) {
+	rendering := render(t, "layout-ports.sysml", "LayoutPorts::soloWire")
+	if len(rendering.Roots) != 2 {
+		t.Fatalf("roots = %v, want the usage and the nested part alone", rendering.Roots)
+	}
+	probe := findNode(t, rendering.Roots, "LayoutPorts::Solo::probe")
+	if len(probe.Ports) != 1 || !probe.Ports[0].Exposed {
+		t.Fatalf("pins of the usage = %+v, want its one exposed port", probe.Ports)
+	}
+	sensor := findNode(t, rendering.Roots, "LayoutPorts::Probe::sensor")
+	if len(rendering.Edges) != 1 || rendering.Edges[0].From != probe.ID || rendering.Edges[0].FromPort != probe.Ports[0].ID || rendering.Edges[0].To != sensor.ID {
+		t.Fatalf("edges = %+v, want one from the pin %s to %s", rendering.Edges, probe.Ports[0].ID, sensor.ID)
+	}
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	portSquare(t, pinnedBoxes(t, dot), probe.Ports[0].ID, Point{X: 340 + dotPinSize/2, Y: 100})
+}
+
+// Two usages of the definition pin its port, so the bare name of the port in the connection is
+// neither usage's pin: the port keeps a node of its own, the square centred on its Layout, and
+// the connection reaches it there.
+func TestADefinitionsPortSeveralUsagesPinKeepsItsOwnNode(t *testing.T) {
+	rendering := render(t, "layout-ports.sysml", "LayoutPorts::pairWire")
+	tap := findNode(t, rendering.Roots, "LayoutPorts::Probe::tap")
+	sensor := findNode(t, rendering.Roots, "LayoutPorts::Probe::sensor")
+	if len(rendering.Roots) != 4 {
+		t.Fatalf("roots = %v, want the two usages, the port and the nested part", rendering.Roots)
+	}
+	if len(rendering.Edges) != 1 || rendering.Edges[0].From != tap.ID || rendering.Edges[0].FromPort != "" || rendering.Edges[0].To != sensor.ID {
+		t.Fatalf("edges = %+v, want one from the port's node %s to %s", rendering.Edges, tap.ID, sensor.ID)
+	}
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	portSquare(t, pinnedBoxes(t, dot), tap.ID, Point{X: 340, Y: 100})
+}
+
+// A definition's port exposed beside the usage with nothing connected to it is still drawn,
+// as the usage's pin, under the minimal display.
+func TestAnExposedUnconnectedPortIsDrawnUnderTheMinimalDisplay(t *testing.T) {
+	rendering := render(t, "layout-ports.sysml", "LayoutPorts::bare")
+	if len(rendering.Roots) != 1 {
+		t.Fatalf("roots = %v, want the usage alone", rendering.Roots)
+	}
+	probe := rendering.Roots[0]
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(dot, `xlabel="tap"`); got != 1 {
+		t.Errorf("DOT names the exposed port %d times, want once:\n%s", got, dot)
+	}
+	portSquare(t, pinnedBoxes(t, dot), probe.Ports[0].ID, Point{X: 340 + dotPinSize/2, Y: 100})
+}
+
+// A sized port nested in a sized port, in a tree: the outer port is squared first, so the
+// inner square sits on the outer square's border, not on the rectangle it replaced.
+func TestANestedSizedPortAttachesToItsParentsSquare(t *testing.T) {
+	rendering := render(t, "layout-ports.sysml", "LayoutPorts::nested")
+	dot, err := rendering.DOT()
+	if err != nil {
+		t.Fatal(err)
+	}
+	boxes := pinnedBoxes(t, dot)
+	bus := child(t, rendering, "LayoutPorts::Hub", "bus")
+	lane := bus.Children[0]
+	portSquare(t, boxes, bus.ID, Point{X: 240 + dotPinSize/2, Y: 118})
+	portSquare(t, boxes, lane.ID, Point{X: 240 - dotPinSize/2, Y: 118 + dotPinSize/2})
+	if outer, inner := boxes[bus.ID], boxes[lane.ID]; math.Abs(inner.high.X-outer.low.X) > 0.5 {
+		t.Errorf("the nested square %v does not touch the outer square %v", inner, outer)
+	}
+}

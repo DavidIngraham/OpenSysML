@@ -128,12 +128,14 @@ func pinBox(box nodeBox, side boundarySide, end Point) nodeBox {
 	return box.sideBox(side, pinAround(Point{}), side.along(border), true)
 }
 
-// pinLayoutPorts boxes every port member a Layout sizes as the notation's port square: a
-// pin on the side of its owner's stated box nearest the Layout's centre, level with it, or
-// centred on the Layout when no stated box bounds the owner. The source rectangle gives the
-// port its place, never its size, so a port drawn as a box that carried its own name stays a pin.
+// pinLayoutPorts boxes every port member a Layout sizes as the notation's square, on the side of
+// its owner's stated box nearest the Layout's centre: the source rectangle gives a place, not a size.
 func (w *dotWriter) pinLayoutPorts(node *Node, owner *nodeBox) {
 	box, boxed := w.boxes[node.ID]
+	if boxed && w.layoutPinned(node) {
+		box = w.layoutPinBox(node, owner)
+		w.boxes[node.ID] = box
+	}
 	var stated *nodeBox
 	if boxed && box.stated {
 		stated = &box
@@ -141,19 +143,26 @@ func (w *dotWriter) pinLayoutPorts(node *Node, owner *nodeBox) {
 	for _, child := range node.Children {
 		w.pinLayoutPorts(child, stated)
 	}
+}
+
+// layoutPinned reports whether node is a port drawn as a square where its sized Layout puts it:
+// not a cluster, which is boxed round its drawn members instead.
+func (w *dotWriter) layoutPinned(node *Node) bool {
 	cluster := len(node.Children) > 0 && !w.tree
-	if !boxed || cluster || !isPortKind(node.Kind) || node.Geometry == nil || !node.Geometry.HasSize {
-		return
-	}
+	return !cluster && isPortKind(node.Kind) && node.Geometry != nil && node.Geometry.HasSize
+}
+
+// layoutPinBox is the square of a port a Layout sizes: on the side of owner nearest the Layout's
+// centre, level with it, or centred on the Layout when no stated box bounds the owner.
+func (w *dotWriter) layoutPinBox(node *Node, owner *nodeBox) nodeBox {
 	at := node.Geometry.centre()
 	if owner == nil {
-		w.boxes[node.ID] = pinAround(Point{X: halfPixel(at.X), Y: halfPixel(at.Y)})
-		return
+		return pinAround(Point{X: halfPixel(at.X), Y: halfPixel(at.Y)})
 	}
 	centre := owner.centre()
 	side := owner.nearestSide(at, Point{X: at.X - centre.X, Y: at.Y - centre.Y})
-	w.boxes[node.ID] = pinBox(*owner, side, at)
 	w.spread[node.ID] = side
+	return pinBox(*owner, side, at)
 }
 
 // pinAround is a pin's box centred on a point.
