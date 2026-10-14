@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"errors"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 	"testing"
 )
 
@@ -28,6 +29,11 @@ package test {
 	requirement def Tight :> Limit { attribute :>> details.limit = 7.0; }
 	requirement tight : Tight;
 	requirement bodyWins : Limit { attribute :>> details { :>> limit = 3.0; } attribute :>> details.limit = 5.0; }
+	attribute def Details2 :> Details { attribute nick :>> limit; }
+	attribute template : Details { :>> limit = 1.0; }
+	requirement def Bound { attribute details : Details default = template; attribute d2 : Details2; }
+	requirement boundReq : Bound { attribute :>> details.limit = 9.0; attribute :>> d2.nick = 9.0; }
+	requirement boundPlain : Bound;
 
 	attribute def Dims { attribute w : Real; attribute h : Real = 2.0; }
 	part def Product { attribute mass : Real = 3.0; attribute dims : Dims { :>> w = 4.0; } }
@@ -62,6 +68,9 @@ func TestChainThroughPackageUsageReadsBoundMember(t *testing.T) {
 		"chained.details.limit":                     "9.0",
 		"tight.details.limit":                       "7.0",
 		"bodyWins.details.limit":                    "3.0",
+		"boundReq.details.limit":                    "9.0",
+		"boundPlain.details.limit":                  "1.0",
+		"boundReq.d2.nick":                          "9.0",
 		"product.mass":                              "3.0",
 		"product.dims.w":                            "4.0",
 		"product.dims.h":                            "2.0",
@@ -81,6 +90,13 @@ func TestChainThroughPackageUsageReadsBoundMember(t *testing.T) {
 			t.Errorf("%s = %s, want %s", src, got, want)
 		}
 	}
+	// The object a requirement chain was read from is taken back with its probe;
+	// the parts read as occurrences stay, as before.
+	for _, inst := range ctx.instances {
+		if usage, ok := inst.Type.Decl.(*ast.Usage); ok && usage.Kind == ast.UsageRequirement {
+			t.Errorf("requirement %s materialized by a model-level chain read", inst.Type.Name)
+		}
+	}
 }
 
 // A member nothing binds stays undetermined through the chain, as does a member
@@ -98,6 +114,8 @@ func TestChainThroughPackageUsageWithoutBoundMemberIsUndetermined(t *testing.T) 
 		"costReq.details.other":            "[1]",
 		"inherit.deep.limit":               "[1]",
 		"tight.details.other":              "[1]",
+		"boundReq.details.other":           "[1]",
+		"boundPlain.d2.nick":               "[1]",
 	} {
 		val, err := ctx.EvalWithScope(parseExpr(t, src), pkg.Scope)
 		wantUndetermined(t, src, val, err, count)
