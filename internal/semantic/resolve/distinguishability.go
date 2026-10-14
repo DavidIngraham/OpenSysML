@@ -85,7 +85,7 @@ func (r *Resolver) checkImportedNames(scope *symbols.Scope) {
 	hidden := map[string]bool{}
 	owned, aliases := r.DistinguishableMembers(scope)
 	for _, sym := range append(owned, aliases...) {
-		for _, name := range memberNames(sym) {
+		for _, name := range r.memberNames(sym) {
 			hidden[name] = true
 		}
 	}
@@ -103,7 +103,7 @@ func (r *Resolver) checkImportedNames(scope *symbols.Scope) {
 				continue
 			}
 			key := symbols.KeyOf(r.aliasTarget(sym))
-			for _, name := range memberNames(sym) {
+			for _, name := range r.memberNames(sym) {
 				bound := boundName{key: key, name: name}
 				owned := ownedName{owner: ownerKeyOf(sym.OwnerScope), name: name}
 				if hidden[name] || seen[bound] || owners[owned] {
@@ -162,12 +162,12 @@ func (r *Resolver) inheritedAgainstImports(scope *symbols.Scope) map[string][]*s
 	return r.inheritedMembers(owner, model)
 }
 
-// memberNames are the names a membership binds: the member's name and, when it
-// declares one, its short name (KerML 8.3.2.4.3 compares both).
-func memberNames(sym *symbols.Symbol) []string {
+// memberNames are the names a membership binds: the member's name and its short
+// name, declared or derived (KerML 8.3.2.4.3 compares both).
+func (r *Resolver) memberNames(sym *symbols.Symbol) []string {
 	names := []string{sym.Name}
-	if sym.ShortName != "" && sym.ShortName != sym.Name {
-		names = append(names, sym.ShortName)
+	if short := r.shortNameOf(sym); short != "" && short != sym.Name {
+		names = append(names, short)
 	}
 	return names
 }
