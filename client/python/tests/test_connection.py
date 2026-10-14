@@ -369,6 +369,19 @@ def test_a_child_that_exits_as_its_grace_ends_keeps_its_exit(private_child):
     assert child.terminated
 
 
+def test_a_windows_kill_is_told_apart_by_its_exit_code(private_child, monkeypatch):
+    """Where the kill is a TerminateProcess, its exit code 1 is what marks a kill."""
+    monkeypatch.setattr("opensysml.connection._KILLED_CODE", 1)
+    child = _FakeChild()
+    child.kill = lambda: setattr(child, "_code", 1)
+    private_child(child)
+
+    with pytest.raises(ConnectionError) as excinfo:
+        Connection()
+
+    assert "was still running 5s later, so it was killed" in str(excinfo.value)
+
+
 def test_the_wait_for_an_address_is_the_module_constant(private_child, monkeypatch):
     """START_TIMEOUT is the seam: shortening it shortens the wait for an address."""
     read_fd, write_fd = os.pipe()

@@ -228,6 +228,9 @@ START_TIMEOUT = 2.5
 #: Seconds a private child is given to exit on its own before it is killed,
 #: whether asked to stop or on its way out after closing stdout at startup.
 STOP_TIMEOUT = 5.0
+# What Popen.kill leaves behind: TerminateProcess ends a Windows child with
+# exit code 1; everywhere else the child dies of SIGKILL.
+_KILLED_CODE = 1 if os.name == "nt" else -signal.SIGKILL
 
 #: Lines of a private child's stderr kept, so a failure to start can quote it.
 _STDERR_LINES_KEPT = 20
@@ -593,7 +596,7 @@ class _PrivateService:
             # A child that ended between the wait and the kill keeps its own
             # status: the kill signal reaches a zombie and changes nothing.
             code = self.process.wait()
-            if code == -signal.SIGKILL:
+            if code == _KILLED_CODE:
                 return (
                     f"closed stdout without serving an address and was still "
                     f"running {STOP_TIMEOUT:g}s later, so it was killed"
