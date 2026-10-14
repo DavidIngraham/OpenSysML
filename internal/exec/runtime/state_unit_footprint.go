@@ -22,13 +22,8 @@ func unknownFootprint() lower.Footprint {
 // behaviorsFootprint is what running the behaviors touches.
 func (e *StateExecutor) behaviorsFootprint(behaviors []lower.StateBehavior) lower.Footprint {
 	var fp lower.Footprint
-	footprints := e.graph.BehaviorFootprints()
 	for _, behavior := range behaviors {
-		b, ok := footprints[behavior.Node]
-		if !ok {
-			return unknownFootprint()
-		}
-		fp = unionFootprints(fp, b)
+		fp = unionFootprints(fp, e.graph.BehaviorFootprint(behavior))
 	}
 	return fp
 }
@@ -103,4 +98,46 @@ func (e *StateExecutor) headFootprint(head unitHead) lower.Footprint {
 		return doStepFootprint(e, state)
 	}
 	return e.enterFootprint(state)
+}
+
+// heldEntryFootprint is what resuming a paused composite entry may touch:
+// entering each region it still has to enter.
+func (e *StateExecutor) heldEntryFootprint(item heldEntry) lower.Footprint {
+	var fp lower.Footprint
+	for _, region := range item.regions {
+		entry := &regionEntry{region: region, container: item.owner, branches: item.branches, target: item.branches[region]}
+		fp = unionFootprints(fp, e.regionEntryFootprint(entry))
+	}
+	return fp
+}
+
+// eventFootprint is what dispatching the occurrence may touch: firing any
+// transition out of an active state its trigger reacts to. A trigger whose
+// match cannot be read is taken to react.
+func (e *StateExecutor) eventFootprint(event Event) lower.Footprint {
+	var fp lower.Footprint
+	footprints := e.graph.TransitionFootprints()
+	seen := make(map[*ast.StateNode]bool)
+	for _, leaf := range e.activeStates() {
+		for _, state := range e.getParentChain(leaf) {
+			if seen[state] {
+				continue
+			}
+			seen[state] = true
+			for _, trans := range e.graph.Transitions[state] {
+				matches, err := e.matchesEvent(trans, &event)
+				if err != nil {
+					return unknownFootprint()
+				}
+				if !matches {
+					continue
+				}
+				fp = unionFootprints(fp, footprints[trans])
+				if channel, takes := triggerChannel(trans); takes {
+					fp.Accepts = append(fp.Accepts, channel)
+				}
+			}
+		}
+	}
+	return withDrop(e, fp)
 }

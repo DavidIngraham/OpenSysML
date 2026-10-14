@@ -150,6 +150,25 @@ func (c ChoicePoint) Weighted() bool {
 // order and which one the executor took; a weighted decision's alternatives carry
 // their weights and how the branch was selected.
 func (c ChoicePoint) Describe() string {
+	d := c.describe()
+	return strings.TrimSuffix(d, ")") + "; " + c.Standing() + ")"
+}
+
+// Standing is what the choice leaves open: `independent` when its alternatives
+// commute by their footprints, else `order-dependent`, naming the features the
+// conflicting alternatives wrote.
+func (c ChoicePoint) Standing() string {
+	switch {
+	case c.Independent:
+		return "independent"
+	case len(c.Touches) > 0:
+		return "order-dependent: " + strings.Join(c.Touches, ", ")
+	}
+	return "order-dependent"
+}
+
+// describe is the choice less its standing.
+func (c ChoicePoint) describe() string {
 	alts := strings.Join(c.Alternatives, ", ")
 	taken := ""
 	if c.Taken >= 0 && c.Taken < len(c.Alternatives) {

@@ -1039,10 +1039,12 @@ func (e *StateExecutor) nextEvent() (Event, error) {
 		File:         e.stateMachine.DocName,
 		Span:         e.stateMachine.DeclSpan,
 	}
+	fps := make([]lower.Footprint, len(tied))
 	for i := range tied {
 		choice.Alternatives[i] = e.eventLabel(tied[i])
+		fps[i] = e.eventFootprint(tied[i])
 	}
-	classifyExclusive(&choice, []lower.Footprint{dispatchFootprint(e)})
+	classifyChoice(&choice, fps, nil)
 	scheduling := e.ctx.scheduling()
 	choice.Taken = scheduling.choose(choice, nil)
 	if err := scheduling.refusal(); err != nil {

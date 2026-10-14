@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"slices"
 	"sort"
 	"strings"
@@ -22,21 +23,32 @@ import (
 // executor's. Footprints not matching the alternatives leave the choice
 // conflicting, touching nothing named.
 func classifyChoice(c *ChoicePoint, fps []lower.Footprint, rel func(i, j int) lower.Relation) {
+	relation := func(i, j int) lower.Relation {
+		if rel == nil {
+			return lower.Relation{}
+		}
+		return rel(i, j)
+	}
+	classifyBy(c, fps, func(i, j int) bool {
+		return onValues(fps[i]).DependentBy(onValues(fps[j]), relation(i, j))
+	}, relation)
+}
+
+// classifyBy classifies a choice among moves by a dependence of its own — a
+// statement order's, which also keeps the successions written among them —
+// touching by the footprints as classifyChoice does.
+func classifyBy(c *ChoicePoint, fps []lower.Footprint, dependent func(i, j int) bool, rel func(i, j int) lower.Relation) {
 	if len(fps) != len(c.Alternatives) || len(fps) < 2 {
 		return
 	}
 	found := false
 	for i := range fps {
 		for j := i + 1; j < len(fps); j++ {
-			var r lower.Relation
-			if rel != nil {
-				r = rel(i, j)
-			}
-			if !onValues(fps[i]).DependentBy(onValues(fps[j]), r) {
+			if !dependent(i, j) {
 				continue
 			}
 			found = true
-			c.touchMeeting(fps[i], fps[j], r)
+			c.touchMeeting(fps[i], fps[j], rel(i, j))
 		}
 	}
 	c.Independent = !found
@@ -120,41 +132,21 @@ func (c ChoicePoint) touchesFeature(name string) bool {
 	return false
 }
 
-// OrderDependence is what a run's unresolved choice points leave open: how many
-// there are, and the features they may have left at an order-dependent value.
-type OrderDependence struct {
-	// Unresolved counts the choice points whose alternatives may not commute.
-	Unresolved int
-	// Features maps a feature a conflicting alternative wrote to the number of
-	// unresolved choice points touching it.
-	Features map[string]int
-}
-
-// Dependent reports how many unresolved choice points touch the feature; 0 for a
-// value nothing order-dependent wrote.
-func (d OrderDependence) Dependent(feature string) int {
-	return d.Features[feature]
-}
-
-// orderDependenceOf folds the choice points among notes.
-func orderDependenceOf(notes []RunNote) OrderDependence {
-	d := OrderDependence{Features: make(map[string]int)}
-	for _, n := range notes {
-		c, ok := n.(ChoicePoint)
-		if !ok || c.Independent {
-			continue
-		}
-		d.Unresolved++
-		for _, t := range c.Touches {
-			d.Features[t]++
-		}
+// OrderDependenceText is the marker a value nothing fixed prints with: how many
+// of the run's unresolved choice points touch it, and where the set it stands
+// in is shown. Empty for a value no conflicting alternative wrote.
+func OrderDependenceText(unresolved int) string {
+	if unresolved <= 0 {
+		return ""
 	}
-	return d
+	return fmt.Sprintf("(order-dependent; %d %s — explore shows the set)", unresolved, pluralChoicePoints(unresolved))
 }
 
-// OrderDependence is what the run's choice points so far leave open.
-func (ctx *Context) OrderDependence() OrderDependence {
-	return orderDependenceOf(ctx.run.notes)
+func pluralChoicePoints(n int) string {
+	if n == 1 {
+		return "choice point"
+	}
+	return "choice points"
 }
 
 // OrderDependent reports how many unresolved choice points of the run touch the
@@ -169,8 +161,29 @@ func (ctx *Context) OrderDependent(feature string) int {
 	return count
 }
 
+// OrderDependentAmong is, for each named value an unresolved choice point of the
+// run touches, how many do; a value nothing order-dependent wrote is absent.
+func (ctx *Context) OrderDependentAmong(names []string) map[string]int {
+	var out map[string]int
+	for _, name := range names {
+		if n := ctx.OrderDependent(name); n > 0 {
+			if out == nil {
+				out = make(map[string]int)
+			}
+			out[name] = n
+		}
+	}
+	return out
+}
+
 // UnresolvedChoices counts the run's choice points whose alternatives may not
 // commute: the ones a default run's result stands only up to.
 func (ctx *Context) UnresolvedChoices() int {
-	return orderDependenceOf(ctx.run.notes).Unresolved
+	count := 0
+	for _, n := range ctx.run.notes {
+		if c, ok := n.(ChoicePoint); ok && !c.Independent {
+			count++
+		}
+	}
+	return count
 }

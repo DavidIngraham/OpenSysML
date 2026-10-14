@@ -29,6 +29,21 @@ func (g *StateGraph) BehaviorFootprints() map[ast.Node]Footprint {
 	return g.behaviorFootprints
 }
 
+// BehaviorFootprint is what running the behavior touches: its table entry for
+// an entry, do or exit behavior, computed on first use for a transition's or
+// an entry transition's effect, which the table does not key.
+func (g *StateGraph) BehaviorFootprint(behavior StateBehavior) Footprint {
+	g.lowerFootprints()
+	g.effectFootprintsMu.Lock()
+	defer g.effectFootprintsMu.Unlock()
+	if fp, ok := g.behaviorFootprints[behavior.Node]; ok {
+		return fp
+	}
+	fp := behaviorFootprint(g, behavior)
+	g.behaviorFootprints[behavior.Node] = fp
+	return fp
+}
+
 // lowerFootprints computes both footprint tables once; the behaviors' first,
 // since a transition's footprint folds in the behaviors of the states it crosses.
 func (g *StateGraph) lowerFootprints() {

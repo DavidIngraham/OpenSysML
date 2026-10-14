@@ -182,6 +182,8 @@ type stepOrder struct {
 	// token of the run takes the message: it stays parked, the other goes on.
 	yielding map[int64]bool
 	acted    []Token
+	// able are the tokens the step handed its policy, as they stood before it.
+	able []Token
 }
 
 // beginStepOrder opens the order of a step about to run.
@@ -332,6 +334,9 @@ func (e *ActionExecutor) tokenActed(before Token, count int) bool {
 func (e *ActionExecutor) noteTokenOrder(step int, order stepOrder, schedule *tokenSchedule) {
 	alts, taken, chosen := schedule.Choice()
 	var fps []lower.Footprint
+	if chosen {
+		fps = e.labeledFootprints(alts, order.able)
+	}
 	if !chosen {
 		if len(order.acted) < 2 {
 			return
@@ -360,6 +365,23 @@ func (e *ActionExecutor) noteTokenOrder(step int, order stepOrder, schedule *tok
 	}
 	classifyChoice(&choice, fps, nil)
 	e.noteChoice(choice)
+}
+
+// labeledFootprints is what each token a step picked among, by its label, may
+// touch standing where it stood before the step; a label naming none of the
+// tokens handed to the policy is taken to touch anything.
+func (e *ActionExecutor) labeledFootprints(labels []string, able []Token) []lower.Footprint {
+	fps := make([]lower.Footprint, len(labels))
+	for i, label := range labels {
+		fps[i] = unknownFootprint()
+		for _, t := range able {
+			if TokenLabel(t.ID, t.Location) == label {
+				fps[i] = standing(e, t)
+				break
+			}
+		}
+	}
+	return fps
 }
 
 // chooseBranch resolves which of the holding guarded successions of a decision

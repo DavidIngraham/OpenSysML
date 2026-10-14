@@ -1941,7 +1941,7 @@ func formatFeatureValue(ctx *runtime.Context, fv *runtime.FeatureValue) string {
 	if err != nil {
 		return runtime.UnsetText
 	}
-	return formatValue(ctx, val)
+	return markOrderDependent(formatValue(ctx, val), ctx.OrderDependent(fv.Feature.Name))
 }
 
 // formatValue renders a value as every surface spells it. ctx may be nil, which
