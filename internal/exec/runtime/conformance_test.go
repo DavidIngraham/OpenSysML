@@ -2652,7 +2652,7 @@ func TestAdmissibleOutcomesSchema(t *testing.T) {
 		{"empty outcome", ExpectedOutcome{Type: "action", Outcomes: []AdmittedOutcome{outcomes[0], {}}, Admissible: cited}, 1, false},
 		{"calc case", ExpectedOutcome{Type: "calc", Outcomes: outcomes, Admissible: cited}, 1, false},
 		{"explore budget on a checked case", ExpectedOutcome{Type: "action", Outputs: outcomes[0].Outputs, ExploreBudget: &ExpectedExploreBudget{Runs: &runs}}, 0, true},
-		{"explore budget on a case with a gap", ExpectedOutcome{Type: "action", Outputs: outcomes[0].Outputs, ExploreGaps: []string{"block-body-repetition"}, ExploreBudget: &ExpectedExploreBudget{Runs: &runs}}, 0, false},
+		{"explore budget on a case with a gap", ExpectedOutcome{Type: "action", Outputs: outcomes[0].Outputs, ExploreGaps: []string{"coverage-gap-1"}, ExploreBudget: &ExpectedExploreBudget{Runs: &runs}}, 0, false},
 		{"single outcome explore budget", ExpectedOutcome{
 			Type: "action", Outputs: outcomes[0].Outputs, ExploreBudget: &ExpectedExploreBudget{Runs: &runs},
 		}, 0, false},

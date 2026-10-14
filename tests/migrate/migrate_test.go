@@ -372,6 +372,7 @@ var constructFixtures = []string{
 	"tool_block_stereotypes",
 	"block_specialization_profile",
 	"property_markers",
+	"nested_requirement_refs",
 	"diagrams",
 	"diagram_edges",
 	"control_nodes",

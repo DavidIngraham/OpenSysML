@@ -4,7 +4,6 @@
 	"schedule": "declared",
 	"exploreBudget": {"runs": 8192},
 	"trace": true,
-	"exploreGaps": ["block-body-repetition"],
 	"outputs": {
 		"c": {"type": "Integer", "value": 6},
 		"passes": {"type": "Integer", "value": 2}

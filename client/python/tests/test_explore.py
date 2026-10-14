@@ -413,10 +413,10 @@ class TestExploreAgainstTheService:
 def test_exploration_with_a_construct_left_unenumerated_is_incomplete():
     gap = Exploration(
         [], complete=False, runs=2, budgets_hit=[], runs_budget=1024,
-        depth_budget=64, unenumerated=["block-body-repetition"],
+        depth_budget=64, unenumerated=["coverage-gap-1"],
     )
-    assert gap.unenumerated == ["block-body-repetition"]
-    assert gap.status == "incomplete after 2 runs; not enumerated: block-body-repetition"
+    assert gap.unenumerated == ["coverage-gap-1"]
+    assert gap.status == "incomplete after 2 runs; not enumerated: coverage-gap-1"
     assert not bool(gap)
     with pytest.raises(ExecutionError):
         gap.raise_for_incomplete()

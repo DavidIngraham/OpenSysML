@@ -9,29 +9,19 @@ import (
 // CoverageGap is a construct whose unordered alternatives a run performs in one
 // order without a choice point, so exploring or checking it enumerates fewer
 // orders than the library admits and neither may report its outcome set complete.
+// No construct records one today: every order the executors take without a
+// choice point is fixed by the library or canonical (see scheduling.md). A
+// construct found to perform an open order as one move is named here and
+// recorded with noteGap, so Complete() is false over it rather than a note.
 type CoverageGap int
-
-const (
-	// GapBlockBodyRepetition: the performances of a repeated step in a loop or if
-	// body are each run as one move, so no interleaving of them is ever a schedule.
-	GapBlockBodyRepetition CoverageGap = iota + 1
-)
 
 // String is the gap's identifier, as a conformance case's `exploreGaps` names it.
 func (g CoverageGap) String() string {
-	switch g {
-	case GapBlockBodyRepetition:
-		return "block-body-repetition"
-	}
-	return fmt.Sprintf("coverage gap %d", int(g))
+	return fmt.Sprintf("coverage-gap-%d", int(g))
 }
 
 // Description says what the gap left unenumerated, as a status prints it.
 func (g CoverageGap) Description() string {
-	switch g {
-	case GapBlockBodyRepetition:
-		return "the performances of a repeated step in a loop or if body are each run as one move, so their interleavings were not explored"
-	}
 	return g.String()
 }
 

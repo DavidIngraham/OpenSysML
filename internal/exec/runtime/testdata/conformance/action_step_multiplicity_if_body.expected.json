@@ -1,7 +1,6 @@
 {
 	"type": "action",
 	"libraries": true,
-	"exploreGaps": ["block-body-repetition"],
 	"outputs": {
 		"c": {"type": "Integer", "value": 10}
 	}

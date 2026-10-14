@@ -837,11 +837,11 @@ maximum model-draw probability over schedulers; a range that collapses to one va
 incomplete exploration prefixes numeric cells with `≥` and adds `; probabilities are lower bounds`
 only when a weighted choice occurred, since the runs not taken can only add. Six
 linearizations, three outcomes, two each; `complete (6 runs)` says every choice sequence was
-tried. `complete` is a claim about the model, not the budget: where the runtime performs a
-construct in one order without offering the alternatives as a choice point — today, the
-performances of a repeated step in a loop or `if` body — the status reads
-`incomplete after N runs; not enumerated: …` naming the construct, the standing is *observed*
-rather than *proved*, and the gRPC and client results list it under `unenumerated`. Under `explore` an action step is one token advancing one node — not, as under the fixed
+tried. `complete` is a claim about the model, not the budget: were the runtime to perform a
+construct in one order without offering the alternatives as a choice point (no construct does
+today), the status would read `incomplete after N runs; not enumerated: …` naming the
+construct, the standing *observed* rather than *proved*, and the gRPC and client results list
+it under `unenumerated`. Under `explore` an action step is one token advancing one node — not, as under the fixed
 policies, every steppable token moving once — so the picks fall in consecutive steps and a branch
 of several nodes can run ahead of, or be overtaken by, a concurrent one at each of them. A
 `complete` exploration therefore covers every interleaving of the nodes the library leaves

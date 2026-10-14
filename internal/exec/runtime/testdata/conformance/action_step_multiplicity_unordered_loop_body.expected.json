@@ -3,7 +3,6 @@
 	"libraries": true,
 	"schedule": "declared",
 	"exploreBudget": {"runs": 8192},
-	"exploreGaps": ["block-body-repetition"],
 	"outputs": {
 		"c": {"type": "Integer", "value": 6},
 		"i": {"type": "Integer", "value": 2}
