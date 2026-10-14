@@ -373,9 +373,13 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 		}
 		return []string{m.exposure(el, scope)}, ""
 	}
-	if m.backedProperty(el) != nil {
-		// The line is the backed attribute's edge, which takes no route.
-		return nil, routeNotWritten
+	if prop := m.backedProperty(el); prop != nil {
+		// The line is the backed attribute's typing edge, drawn from its owner's
+		// box to its type's; the route pins that edge to the attribute.
+		if !f.drawsEdge("attribute") {
+			return nil, routeNotDrawn
+		}
+		return []string{m.exposure(prop, scope)}, ""
 	}
 	if nameableEdge(el) {
 		em, ok := m.edgeMembers[el]
@@ -543,7 +547,7 @@ func (f viewForm) drawsEdge(keyword string) bool {
 	case interconnectionRendering:
 		return keyword == "connection" || keyword == "binding"
 	case treeRendering:
-		return keyword == "connection def"
+		return keyword == "connection def" || keyword == "attribute"
 	}
 	return false
 }
