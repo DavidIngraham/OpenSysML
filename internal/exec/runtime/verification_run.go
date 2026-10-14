@@ -125,14 +125,14 @@ func (ctx *Context) RunVerification(sym *symbols.Symbol, args AnalysisArgs, scop
 	defer ctx.beginRun()()
 
 	name := ctx.qualifiedSymbolName(sym)
-	caseRun, run, err := ctx.runCase(sym, args, scope, self)
+	caseRun, performer, run, err := ctx.runCase(sym, args, scope, self)
 	defer caseRun.endOccurrence(ctx)
 	if err != nil {
 		if badRequest(err) || errors.Is(err, ErrToolDryRun) {
 			return VerificationResult{}, err
 		}
 		return VerificationResult{
-			Verdict: VerificationVerdict{Case: name, Symbol: sym, Kind: VerdictError, Detail: err.Error()},
+			Verdict: VerificationVerdict{Case: name, Symbol: sym, Kind: VerdictError, Detail: err.Error(), Subject: performer},
 		}, nil
 	}
 	result := VerificationResult{Verdict: ctx.bodyVerdict(sym, name, caseRun, run), Run: run}
@@ -229,9 +229,10 @@ func (ctx *Context) subcaseVerdicts(run *calcRun) []VerificationVerdict {
 }
 
 // subcaseVerdict reads the verdict of one performed subcase from the outputs its
-// performance holds; performed reports whether the run took the step at all.
+// performance holds; performed reports whether the run took the step at all. A
+// step runs as a feature of the object the run does (case_step.go), so it is about that object.
 func (ctx *Context) subcaseVerdict(run *calcRun, node ast.Node, sym *symbols.Symbol) (VerificationVerdict, bool) {
-	verdict := VerificationVerdict{Case: ctx.qualifiedSymbolName(sym), Symbol: sym, Subcase: true}
+	verdict := VerificationVerdict{Case: ctx.qualifiedSymbolName(sym), Symbol: sym, Subcase: true, Subject: run.self}
 	perf, _, err := run.perf.subaction(ActionNodeName(node), node)
 	if err != nil || perf == nil {
 		return verdict, false

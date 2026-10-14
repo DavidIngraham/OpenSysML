@@ -35,6 +35,11 @@ package test {
 			subject s : Definition;
 			return verdict = VerificationCases::PassIf(s.cost <= 100.0 and cost <= 100.0);
 		}
+
+		verification planTest {
+			verification step { return verdict = VerificationCases::PassIf(cost <= 100.0); }
+			return verdict = step.verdict;
+		}
 	}
 
 	part cheap : Definition { attribute :>> cost = 80.0; }
@@ -83,6 +88,54 @@ func TestDefinitionOwnedCaseRunsOnTheObjectGiven(t *testing.T) {
 		got := runOn(t, idx, ctx, "test::Definition::costTest", tc.object)
 		if got.Kind != tc.want || got.Subject != tc.object {
 			t.Errorf("costTest on #%d = %s (%s) about #%v, want %s about it", tc.object.ID, got.Kind, got.Detail, got.Subject, tc.want)
+		}
+	}
+}
+
+// TestDefinitionOwnedCaseRunsOnTheObjectGivenOverOneFound pins that the object
+// given wins over an object of the definition the caller found for the case: the
+// body reads the given object's cost, not the found object's unset one.
+func TestDefinitionOwnedCaseRunsOnTheObjectGivenOverOneFound(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::Definition", "test::dear")
+	found, dear := objects[0], objects[1]
+	sym := oneSymbol(t, idx, "test::Definition::costTest")
+	result, err := ctx.RunVerification(sym, AnalysisArgs{Subject: dear}, sym.OwnerScope, found)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Verdict; got.Kind != VerdictFail || got.Subject != dear {
+		t.Errorf("costTest on dear with #%d found = %s (%s) about %v, want fail about dear", found.ID, got.Kind, got.Detail, got.Subject)
+	}
+}
+
+// TestDefinitionOwnedCaseErrorVerdictNamesTheObject pins that a body that fails
+// on an object still answers a verdict about that object.
+func TestDefinitionOwnedCaseErrorVerdictNamesTheObject(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::Definition")
+	got := runOn(t, idx, ctx, "test::Definition::costTest", objects[0])
+	if got.Kind != VerdictError || !strings.Contains(got.Detail, "no value for feature cost") || got.Subject != objects[0] {
+		t.Errorf("costTest on an object with no cost = %s (%s) about %v, want error about #%d", got.Kind, got.Detail, got.Subject, objects[0].ID)
+	}
+}
+
+// TestDefinitionOwnedCaseSubcasesAreAboutTheObjectToo pins that a verification
+// case a run performs as a step answers for the object the run is about.
+func TestDefinitionOwnedCaseSubcasesAreAboutTheObjectToo(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::cheap", "test::dear")
+	sym := oneSymbol(t, idx, "test::Definition::planTest")
+	for _, tc := range []struct {
+		object *Instance
+		want   VerdictKind
+	}{{objects[0], VerdictPass}, {objects[1], VerdictFail}} {
+		result, err := ctx.RunVerification(sym, AnalysisArgs{Subject: tc.object}, sym.OwnerScope, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Verdict.Kind != tc.want || result.Verdict.Subject != tc.object {
+			t.Errorf("planTest on #%d = %s (%s) about %v, want %s about it", tc.object.ID, result.Verdict.Kind, result.Verdict.Detail, result.Verdict.Subject, tc.want)
+		}
+		if len(result.Subcases) != 1 || result.Subcases[0].Kind != tc.want || result.Subcases[0].Subject != tc.object {
+			t.Errorf("planTest on #%d subcases = %+v, want one %s about it", tc.object.ID, result.Subcases, tc.want)
 		}
 	}
 }
@@ -165,7 +218,7 @@ func TestDefinitionOwnedCaseWithoutAnObject(t *testing.T) {
 func TestDefinitionOwnedCaseRefusesAnObjectOfAnotherType(t *testing.T) {
 	idx, ctx, objects := definitionOwnedCase(t, "test::other")
 	sym := oneSymbol(t, idx, "test::Definition::costTest")
-	_, _, err := ctx.runCase(sym, AnalysisArgs{Subject: objects[0]}, sym.OwnerScope, nil)
+	_, _, _, err := ctx.runCase(sym, AnalysisArgs{Subject: objects[0]}, sym.OwnerScope, nil)
 	if !errors.Is(err, ErrNotCarried) || !strings.Contains(err.Error(), "test::Definition") {
 		t.Errorf("costTest on an Other = %v, want ErrNotCarried naming the definition", err)
 	}

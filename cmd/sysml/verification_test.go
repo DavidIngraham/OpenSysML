@@ -241,13 +241,14 @@ const definitionOwnedModel = `package Cost {
 func TestRunVerificationOnADefinitionOwnedCase(t *testing.T) {
 	binary := buildCLI(t)
 
-	// The objective states only `verify costReq`, no condition, so it is undecided
-	// and the case's status unresolved; the body's verdict is reported beside it.
-	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::cheap", "-analysis", "Cost::Definition::costTest Cost::cheap"), 2,
+	// The objective states only `verify costReq`, so it is satisfied and the
+	// case's status is the body's verdict, reported beside it.
+	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::cheap", "-analysis", "Cost::Definition::costTest Cost::cheap"), 0,
+		"✓ Cost::Definition::costTest", "objective costObjective: satisfied",
 		"verdict = VerdictKind::pass",
 		"✓ Verification Cost::Definition::costTest on Cost::cheap (object #1) verdict: pass")
-	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::dear", "-analysis", "Cost::Definition::costTest Cost::dear"), 2,
-		"verdict = VerdictKind::fail",
+	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::dear", "-analysis", "Cost::Definition::costTest Cost::dear"), 1,
+		"✗ Cost::Definition::costTest", "verdict = VerdictKind::fail",
 		"✗ Verification Cost::Definition::costTest on Cost::dear (object #1) verdict: fail")
 	wantReport(t, check(t, binary, definitionOwnedModel, "-instantiate", "Cost::dear", "-validate=Cost::dear"), 1,
 		"✗ satisfy costReq fails (on Cost::dear ID: 1)",
