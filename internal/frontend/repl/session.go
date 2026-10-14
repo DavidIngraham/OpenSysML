@@ -27,6 +27,7 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 	"github.com/Open-MBEE/OpenSysML/internal/workspace/libs"
 	"github.com/Open-MBEE/OpenSysML/internal/workspace/model"
+	"github.com/Open-MBEE/OpenSysML/internal/workspace/project"
 )
 
 // docName is the workspace key of the transcript: the typed submissions, joined,
@@ -100,6 +101,9 @@ type Session struct {
 	sourceConverter SourceConverter
 	snippets        []snippet
 	version         int
+	// libraryRoots are the directories installed projects are looked for
+	// under, besides the well-known ones beneath a loaded file's project.
+	libraryRoots []string
 
 	// Runtime execution context
 	rtCtx *runtime.Context
@@ -327,6 +331,7 @@ func newSession(converter SourceConverter) *Session {
 	s := &Session{
 		ws:              model.NewWorkspace(),
 		sourceConverter: converter,
+		libraryRoots:    project.EnvLibraryRoots(),
 		instances:       make(map[string]*runtime.Instance),
 		budgets:         runtime.DefaultBudgets(),
 		engines:         engines.Default(),

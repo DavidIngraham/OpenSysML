@@ -12,6 +12,7 @@ import (
 	"go.lsp.dev/protocol"
 
 	"github.com/Open-MBEE/OpenSysML/internal/workspace/model"
+	"github.com/Open-MBEE/OpenSysML/internal/workspace/project"
 )
 
 //lint:file-ignore SA1019 rootUri/rootPath are deprecated, but see legacyRoot.
@@ -119,7 +120,8 @@ func (s *Server) loadFolders(ctx context.Context) {
 }
 
 // loadFolder reads the model sources one folder holds, skipping hidden and
-// vendored directories and passing over entries it cannot read.
+// vendored directories and passing over entries it cannot read, and those of
+// the installed projects the folder's project uses.
 func (s *Server) loadFolder(folder string) { s.scanFolder(folder, -1) }
 
 // scanFolder is loadFolder over at most budget directories, every directory
@@ -127,8 +129,140 @@ func (s *Server) loadFolder(folder string) { s.scanFolder(folder, -1) }
 // The sources found are indexed as one batch, not one at a time: each document
 // added alone would re-derive the imports of every package that reads it.
 func (s *Server) scanFolder(folder string, budget int) {
-	paths, _ := walkFolder(folder, budget)
+	paths, _ := s.walkWorkspace(folder, budget)
 	s.loadFilesFromDisk(paths)
+}
+
+// walkWorkspace is walkFolder over folder followed by the directories of the
+// installed projects that the project at or above folder uses, each once; the
+// dependency sources are recorded against folder so they can be dropped with it.
+func (s *Server) walkWorkspace(folder string, budget int) (paths, unlisted []string) {
+	paths, unlisted = walkFolder(folder, budget)
+	seen := make(map[string]bool, len(paths))
+	for _, path := range paths {
+		seen[path] = true
+	}
+	var deps []string
+	for _, dir := range s.dependencyDirs(folder) {
+		more, failed := walkFolder(dir, -1)
+		unlisted = append(unlisted, failed...)
+		for _, path := range more {
+			if !seen[path] {
+				seen[path] = true
+				deps = append(deps, path)
+			}
+		}
+	}
+	s.mu.Lock()
+	if s.dependencies == nil {
+		s.dependencies = map[string][]string{}
+	}
+	if len(deps) == 0 {
+		delete(s.dependencies, folder)
+	} else {
+		s.dependencies[folder] = deps
+	}
+	s.mu.Unlock()
+	return append(paths, deps...), unlisted
+}
+
+// dependencyDirs lists the directories of the installed projects the project
+// at or above folder uses, found under the well-known library directories of
+// the projects above folder and the configured library roots, a relative one
+// taken from folder.
+func (s *Server) dependencyDirs(folder string) []string {
+	if folder == "" {
+		return nil
+	}
+	s.mu.Lock()
+	roots := make([]string, 0, len(s.libraryRoots))
+	for _, root := range s.libraryRoots {
+		if !filepath.IsAbs(root) {
+			root = filepath.Join(folder, root)
+		}
+		roots = append(roots, root)
+	}
+	s.mu.Unlock()
+	around := project.Discovery{Roots: roots}.Around([]string{folder})
+	dirs := make([]string, 0, len(around.Used))
+	for _, used := range around.Used {
+		dirs = append(dirs, used.Dir)
+	}
+	return dirs
+}
+
+// dependencySources lists the sources the installed projects contributed for
+// every folder and opened directory, each once.
+func (s *Server) dependencySources() map[string]bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := map[string]bool{}
+	for _, paths := range s.dependencies {
+		for _, path := range paths {
+			out[path] = true
+		}
+	}
+	return out
+}
+
+// reloadDependencies walks the folders and the opened directories again after
+// the library roots changed, dropping the dependency sources no project
+// contributes any more, and republishes the open documents.
+func (s *Server) reloadDependencies(ctx context.Context) {
+	before := s.dependencySources()
+	s.mu.Lock()
+	folders := append([]string(nil), s.folders...)
+	var openDirs []string
+	for dir := range s.openDirs {
+		openDirs = append(openDirs, dir)
+	}
+	s.mu.Unlock()
+	s.debugEdit(ctx, "", func() {
+		walked := map[string]bool{}
+		var paths []string
+		for _, folder := range folders {
+			found, _ := s.walkWorkspace(folder, -1)
+			paths = append(paths, found...)
+		}
+		for _, dir := range openDirs {
+			found, _ := s.walkWorkspace(dir, maxOpenedDirs)
+			paths = append(paths, found...)
+		}
+		for _, path := range paths {
+			walked[path] = true
+		}
+		s.loadFilesFromDisk(paths)
+		for name := range before {
+			if !walked[name] && !s.ws.IsOpen(name) {
+				s.ws.DeleteOnDisk(name)
+			}
+		}
+	})
+	s.refreshOpenDiagnostics(ctx, "")
+}
+
+// dropDependencies forgets the dependency sources recorded against the keys —
+// folders or opened directories — that no other key contributed, keeping an
+// open buffer and a source under a remaining folder.
+func (s *Server) dropDependencies(keys, kept []string) {
+	s.mu.Lock()
+	var dropped []string
+	for _, key := range keys {
+		dropped = append(dropped, s.dependencies[key]...)
+		delete(s.dependencies, key)
+	}
+	still := map[string]bool{}
+	for _, paths := range s.dependencies {
+		for _, path := range paths {
+			still[path] = true
+		}
+	}
+	s.mu.Unlock()
+	for _, name := range dropped {
+		if !still[name] && !s.ws.IsOpen(name) && !underAnyFolder(name, kept) {
+			s.ws.DeleteOnDisk(name)
+		}
+	}
 }
 
 // walkFolder lists the model sources under folder, visiting at most budget
@@ -184,10 +318,11 @@ func (s *Server) Rescan(ctx context.Context) {
 		return
 	}
 	s.debugEdit(ctx, "", func() {
+		before := s.dependencySources()
 		onDisk := map[string]bool{}
 		var changed, unlisted []string
 		for _, folder := range folders {
-			paths, failed := walkFolder(folder, -1)
+			paths, failed := s.walkWorkspace(folder, -1)
 			unlisted = append(unlisted, failed...)
 			for _, path := range paths {
 				onDisk[path] = true
@@ -198,7 +333,7 @@ func (s *Server) Rescan(ctx context.Context) {
 		}
 		s.loadFilesFromDisk(changed)
 		for _, name := range s.ws.DocumentNames() {
-			if onDisk[name] || s.ws.IsLibraryDocument(name) || s.ws.IsOpen(name) || !underFolders(name, folders) {
+			if onDisk[name] || s.ws.IsLibraryDocument(name) || s.ws.IsOpen(name) || !(underFolders(name, folders) || before[name]) {
 				continue
 			}
 			// Not walked: gone, grown past the size limit, or moved under a
@@ -401,6 +536,7 @@ func (s *Server) releaseOpenedDirectories(closed string) {
 			s.ws.DeleteOnDisk(name)
 		}
 	}
+	s.dropDependencies(released, folders)
 }
 
 // underAnyOpen reports whether one of the open documents lies inside dir.
@@ -451,6 +587,7 @@ func (s *Server) dropFolder(folder string) {
 			s.ws.DeleteOnDisk(name)
 		}
 	}
+	s.dropDependencies([]string{folder}, kept)
 }
 
 // underAnyFolder reports whether name lies inside one of the folders.

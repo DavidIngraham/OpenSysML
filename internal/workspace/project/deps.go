@@ -27,6 +27,13 @@ type Source struct {
 // is standard input contributes nothing; the loader reports the former. The
 // result is ordered as it was found and holds no file already named.
 func Dependencies(files []string, known func(name string) bool) []string {
+	return Discovery{}.Dependencies(files, known)
+}
+
+// Dependencies is the package's Dependencies with the discovery's library
+// roots: the files are also looked for in the project each named file belongs
+// to and in the installed projects that project uses.
+func (d Discovery) Dependencies(files []string, known func(name string) bool) []string {
 	sources := make([]Source, 0, len(files))
 	for _, file := range files {
 		if IsStdin(file) {
@@ -39,13 +46,18 @@ func Dependencies(files []string, known func(name string) bool) []string {
 		}
 		sources = append(sources, Source{Path: file, Content: content})
 	}
-	return DependenciesOf(sources, known)
+	return d.DependenciesOf(sources, known)
 }
 
 // DependenciesOf is Dependencies over sources already read, so a notebook's
 // cells, or a file converted from another notation, are searched from as the
 // model text they load as. Standard input contributes nothing.
 func DependenciesOf(sources []Source, known func(name string) bool) []string {
+	return Discovery{}.DependenciesOf(sources, known)
+}
+
+// DependenciesOf is the package's DependenciesOf with the discovery's library roots.
+func (d Discovery) DependenciesOf(sources []Source, known func(name string) bool) []string {
 	loaded := map[string]bool{}
 	declared := map[string]bool{}
 	wanted := map[string]bool{}
@@ -68,6 +80,9 @@ func DependenciesOf(sources []Source, known func(name string) bool) []string {
 		return nil
 	}
 
+	// A project's own directory and the projects it uses are where its
+	// imports are meant to be found, wherever in it the named files lie.
+	dirs = append(dirs, d.Around(dirs).Dirs()...)
 	byRoot := rootIndex(dirs, loaded)
 	var out []string
 	for len(wanted) > 0 {
