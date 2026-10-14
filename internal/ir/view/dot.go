@@ -747,6 +747,9 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 		w.placeNode(root, ends, &derived)
 	}
 	for _, root := range roots {
+		w.pinLayoutPorts(root, nil)
+	}
+	for _, root := range roots {
 		w.spreadBoundaries(root, ends)
 	}
 	if len(derived) == 0 && len(w.spread) == 0 {
