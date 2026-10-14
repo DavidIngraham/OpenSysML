@@ -237,7 +237,12 @@ func (m *migration) edgeTarget(e *sysmlv1.Element) string {
 	if !ok || em.name == "" {
 		return ""
 	}
-	path := m.edgePath(em.edgePlace)
+	return m.placeTarget(em.edgePlace)
+}
+
+// placeTarget is the qualified name a report entry records for the member declared at p.
+func (m *migration) placeTarget(p edgePlace) string {
+	path := m.edgePath(p)
 	segs := make([]string, len(path))
 	for i, s := range path {
 		segs[i] = s.name
@@ -549,7 +554,7 @@ func (f viewForm) drawsEdge(keyword string) bool {
 	}
 	switch f.rendering {
 	case interconnectionRendering:
-		return keyword == "connection" || keyword == "binding"
+		return keyword == "connection" || keyword == "binding" || keyword == "flow"
 	case treeRendering:
 		return keyword == "connection def" || keyword == "attribute"
 	}
