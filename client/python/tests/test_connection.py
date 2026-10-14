@@ -211,6 +211,7 @@ class _FakeChild:
         self.args = []
         self._code = code
         self.terminated = False
+        self.killed = False
 
     def poll(self):
         return self._code
@@ -220,6 +221,7 @@ class _FakeChild:
         self._code = -15
 
     def kill(self):
+        self.killed = True
         self.terminated = True
         if self._code is None:
             self._code = -9
@@ -352,7 +354,7 @@ def test_a_child_that_hangs_after_closing_stdout_is_killed(private_child):
     message = str(excinfo.value)
     assert "was still running 5s later, so it was killed" in message
     assert "exited with code" not in message
-    assert child.terminated
+    assert child.killed
 
 
 def test_a_child_that_exits_as_its_grace_ends_keeps_its_exit(private_child):
@@ -366,11 +368,12 @@ def test_a_child_that_exits_as_its_grace_ends_keeps_its_exit(private_child):
     message = str(excinfo.value)
     assert "exited with code 3 without serving an address" in message
     assert "killed" not in message
-    assert child.terminated
+    assert not child.killed
 
 
 def test_a_windows_kill_is_told_apart_by_its_exit_code(private_child, monkeypatch):
-    """Where the kill is a TerminateProcess, its exit code 1 is what marks a kill."""
+    """Where the kill is a TerminateProcess, exit code 1 marks a kill, with a caveat."""
+    monkeypatch.setattr("opensysml.connection._WINDOWS", True)
     monkeypatch.setattr("opensysml.connection._KILLED_CODE", 1)
     child = _FakeChild()
     child.kill = lambda: setattr(child, "_code", 1)
@@ -379,7 +382,25 @@ def test_a_windows_kill_is_told_apart_by_its_exit_code(private_child, monkeypatc
     with pytest.raises(ConnectionError) as excinfo:
         Connection()
 
-    assert "was still running 5s later, so it was killed" in str(excinfo.value)
+    message = str(excinfo.value)
+    assert "was still running 5s later, so it was killed" in message
+    assert "exited with code 1 just then" in message
+
+
+def test_a_windows_exit_of_one_before_the_kill_is_an_exit(private_child, monkeypatch):
+    """An exit with the kill's own code that lands before the kill is still an exit."""
+    monkeypatch.setattr("opensysml.connection._WINDOWS", True)
+    monkeypatch.setattr("opensysml.connection._KILLED_CODE", 1)
+    child = _ExitsBeforeTheKillChild(code=1)
+    private_child(child)
+
+    with pytest.raises(ConnectionError) as excinfo:
+        Connection()
+
+    message = str(excinfo.value)
+    assert "exited with code 1 without serving an address" in message
+    assert "killed" not in message
+    assert not child.killed
 
 
 def test_the_wait_for_an_address_is_the_module_constant(private_child, monkeypatch):
