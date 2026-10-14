@@ -28,7 +28,7 @@ flowchart TD
   n1["`*«part def»*
 **Airbag**`"]
   n2["`*«part def»*
-**Braking::Brake**`"]
+**Brake**`"]
     n3("`*«part»*
 **pad**`")
   n2 --- n3

@@ -1231,7 +1231,11 @@ func (r *Resolver) resolveRedefinition(scope *symbols.Scope, qn *ast.QualifiedNa
 		}
 	}
 
-	r.Leave()
+	// A semantic query asked before the owner's generals are all decided has
+	// seen too few of them to look elsewhere; the document walk resolves it.
+	if !r.Leave() && r.quiet > 0 {
+		return
+	}
 	if redefines {
 		// A redefinition target the generals lack is looked up from the enclosing
 		// namespace outward; the owning type's own scope is never consulted.

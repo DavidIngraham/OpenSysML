@@ -39,6 +39,12 @@ func cloneNodes(nodes []*Node) []*Node {
 		copied := *node
 		copied.Children = cloneNodes(node.Children)
 		copied.Ports = append([]Port(nil), node.Ports...)
+		for j, port := range copied.Ports {
+			if port.Geometry != nil {
+				geometry := *port.Geometry
+				copied.Ports[j].Geometry = &geometry
+			}
+		}
 		if node.Geometry != nil {
 			geometry := *node.Geometry
 			copied.Geometry = &geometry

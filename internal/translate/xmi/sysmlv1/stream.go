@@ -157,9 +157,14 @@ var attachmentTags = map[string]bool{
 	"file": true, "path": true, "url": true, "attachedFile": true, "attachment": true,
 }
 
+// symbolContainers are the tags whose mdElement children are symbols: a symbol's
+// own mdOwnedViews, and the parts and regions MagicDraw lists inside a part or
+// state shape instead. Any other mdElement is a property of the open symbol.
+var symbolContainers = map[string]bool{"mdOwnedViews": true, "parts": true, "regions": true}
+
 // readSymbols reads a MagicDraw diagram stream: each mdElement symbol under an
-// mdOwnedViews, nested to any depth, names in its elementID the element it
-// stands for, in its geometry where it is drawn, in its linkFirstEndID and
+// mdOwnedViews, or under the parts or regions of a shape, nested to any depth,
+// names in its elementID the element it stands for, in its geometry where it is drawn, in its linkFirstEndID and
 // linkSecondEndID what a path joins, and in its properties the colours and font
 // it is drawn with, and in its image the bytes of a pasted picture. A top-level
 // symbol naming no element is free content, a pasted image or text box,
@@ -259,7 +264,7 @@ func (r *symbolReader) start(t xml.StartElement) error {
 		parentTag = r.stack[len(r.stack)-1].tag
 	}
 	switch {
-	case t.Name.Local == "mdElement" && parentTag == "mdOwnedViews":
+	case t.Name.Local == "mdElement" && symbolContainers[parentTag]:
 		f.sym = &Symbol{ID: attr(t, "id"), Class: attr(t, "elementClass"), Parent: r.enclosing()}
 		r.syms.list = append(r.syms.list, f.sym)
 		r.symbolPath = append(r.symbolPath, f.sym)

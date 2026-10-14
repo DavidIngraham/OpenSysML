@@ -339,7 +339,7 @@ github.com/Open-MBEE/OpenSysML
 
 Documentation is organized by what a reader wants, not by the feature that landed. Four areas,
 mapped in [docs/README.md](docs/README.md) and published as
-<https://redk.opensysml.org/>:
+<https://runtime.opensysml.org/>:
 
 - **[docs/guide/](docs/guide/)** — *how do I use it?* A numbered handbook read in order.
 - **[docs/reference/](docs/reference/)** — *what does this flag, command, API or triple mean?*
@@ -374,7 +374,7 @@ When a change needs documenting:
 - **Robustness cases are registered per feature.** A runtime failure-mode subtest goes in
   `internal/exec/runtime/robustness_<feature>_test.go` under a `TestRuntimeRobustness<Feature>`
   function (gRPC: `internal/frontend/grpc/robustness_<feature>_test.go`, `TestGRPCRobustness<Feature>`),
-  a new file for a new feature; `robustness_test.go` holds the shared cases and is not where new
+  a new file for a new feature; `robustness_test.go` holds only the shared helpers and is not where new
   ones go. `go test` discovers them like any test, and the build-time counters sum every
   `TestRuntimeRobustness*` and `TestGRPCRobustness*` function, so two branches adding cases never
   edit one registry.

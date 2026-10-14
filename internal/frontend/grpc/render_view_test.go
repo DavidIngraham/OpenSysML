@@ -142,7 +142,14 @@ func TestRenderViewRendersCaseAndMixed(t *testing.T) {
 		port telemetry : Signal;
 		perform action descend : Descend;
 	}
+	part def Rover {
+		part wheels[4] : Vehicle;
+	}
 
+	view structure {
+		expose Rover;
+		expose Vehicle;
+	}
 	view useCases {
 		expose CrewOperation;
 		render asCaseDiagram;
@@ -214,6 +221,23 @@ func TestRenderViewRendersCaseAndMixed(t *testing.T) {
 	}
 	if !perform {
 		t.Errorf("mixed view has no perform reference edge: %+v", mixedView.Edges)
+	}
+
+	// An association end's name, drawn at the type's end, reaches the wire as
+	// the edge's label, the response placing no label; multiplicities are an
+	// optional element, off by default.
+	structure, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{
+		ModelHash: parsed.ModelHash, View: "RenderViewKinds::structure",
+	})
+	if err != nil {
+		t.Fatalf("RenderView structure: %v", err)
+	}
+	var wheels bool
+	for _, edge := range structure.Edges {
+		wheels = wheels || edge.Kind == "composition" && edge.Label == "wheels"
+	}
+	if !wheels {
+		t.Errorf("structure view has no composition labelled wheels: %+v", structure.Edges)
 	}
 
 	casePseudo, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{
@@ -313,7 +337,7 @@ func TestRenderViewMatchesEngineJSON(t *testing.T) {
 func engineProjection(response *pb.RenderViewResponse) engine.JRenderViewResponse {
 	projected := engine.JRenderViewResponse{
 		View: response.View, Kind: response.Kind, Stated: response.Stated,
-		Notices: response.Notices, Columns: response.Columns,
+		Notices: response.Notices, Shown: response.Shown, Columns: response.Columns,
 		Nodes: make([]engine.JRenderNode, 0, len(response.Nodes)),
 		Edges: make([]engine.JRenderEdge, 0, len(response.Edges)),
 	}
