@@ -142,10 +142,24 @@ func TestPrivateLayoutPlacementInEnclosingOwnerKeepsExistingExposure(t *testing.
 	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 1 || l.PlacementsUnexposed != 0 {
 		t.Fatalf("layout summary: %+v", l)
 	}
-	if strings.Contains(string(r.Notation), "private part x") ||
-		!strings.Contains(string(r.Notation), "metadata DiagramLayout::Layout about") {
+	notation := string(r.Notation)
+	if strings.Contains(notation, "private part x") ||
+		!strings.Contains(notation, "metadata DiagramLayout::Layout about") {
 		t.Errorf("in-scope exposure behavior changed:\n%s", r.Notation)
 	}
+	if strings.Contains(notation, "private alias") {
+		t.Errorf("owner with no shadowed layout target wrote an alias:\n%s", notation)
+	}
+}
+
+func TestPrivateLayoutAliasRequiresPlannedOwner(t *testing.T) {
+	m := &migration{}
+	defer func() {
+		if got := recover(); got != "private layout alias owner was not planned" {
+			t.Fatalf("panic = %v", got)
+		}
+	}()
+	m.privateLayoutAlias(nil, nil, nil)
 }
 
 // machineMembers is a state machine Modes (_sm) whose region enters Idle

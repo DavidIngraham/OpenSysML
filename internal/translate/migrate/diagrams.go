@@ -703,12 +703,14 @@ func (m *migration) exposures(d *sysmlv1.Diagram, host *sysmlv1.Element, form vi
 	return x
 }
 
+// privateLayoutAlias records a private member's owner-local alias.
 type privateLayoutAlias struct {
 	owner  *sysmlv1.Element
 	target *sysmlv1.Element
 	name   string
 }
 
+// privateLayoutMember reports whether the element is written as a private feature.
 func (m *migration) privateLayoutMember(e *sysmlv1.Element) bool {
 	if e == nil || e.Type != "Property" && e.Type != "Port" {
 		return false
@@ -717,31 +719,12 @@ func (m *migration) privateLayoutMember(e *sysmlv1.Element) bool {
 	return m.written(e) && prefix == privatePrefix
 }
 
-func (m *migration) privateLayoutTarget(e *sysmlv1.Element) bool {
-	if !m.written(e) || e.Type != "Property" && e.Type != "Port" {
-		return false
-	}
-	visibility := e.Attrs["visibility"]
-	return visibility == "private" || visibility == "package"
-}
-
-func (m *migration) layoutPlaces(v *view, target *sysmlv1.Element) bool {
-	rec, _ := m.layoutRecord(v)
-	if rec == nil {
-		return false
-	}
-	for _, placement := range rec.Placements {
-		if placement.ID == target.ID && !placement.OnPath {
-			return true
-		}
-	}
-	return false
-}
-
+// privateLayoutNameShadowed reports whether a private member's simple name is unusable in a view.
 func (m *migration) privateLayoutNameShadowed(owner, target, scope *sysmlv1.Element) bool {
 	return m.privateLayoutNameShadowedWith(owner, target, scope, m.hidden(m.nameFor(target)))
 }
 
+// privateLayoutNameShadowedWith checks member-name shadowing with a precomputed hidden state.
 func (m *migration) privateLayoutNameShadowedWith(owner, target, scope *sysmlv1.Element, hidden bool) bool {
 	name := m.nameFor(target)
 	chain := scopeChain(scope)
@@ -762,6 +745,7 @@ func (m *migration) privateLayoutNameShadowedWith(owner, target, scope *sysmlv1.
 	return false
 }
 
+// planPrivateLayoutAliases records owners of private members shown by enclosed views.
 func (m *migration) planPrivateLayoutAliases() {
 	for i := range m.model.Diagrams {
 		d := &m.model.Diagrams[i]
@@ -773,19 +757,7 @@ func (m *migration) planPrivateLayoutAliases() {
 		if rec == nil {
 			continue
 		}
-		form := m.formOf(d)
-		x := m.exposures(d, v.host, form)
-		for _, scope := range scopeChain(v.host) {
-			for name := range m.viewNames[scope] {
-				x.names[name] = true
-			}
-		}
-		hidden := x.hides()
-		for _, scope := range scopeChain(v.host) {
-			for name := range m.viewNames[scope] {
-				hidden[name] = true
-			}
-		}
+		scopes := scopeChain(v.host)
 		for _, placement := range rec.Placements {
 			if placement.OnPath {
 				continue
@@ -795,15 +767,18 @@ func (m *migration) planPrivateLayoutAliases() {
 				continue
 			}
 			owner := target.Parent
-			if containsElement(scopeChain(v.host), owner) &&
-				m.privateLayoutNameShadowedWith(owner, target, v.host, hidden[m.nameFor(target)]) {
+			if containsElement(scopes, owner) {
 				m.privateAliasOwners[owner] = true
 			}
 		}
 	}
 }
 
+// privateLayoutAlias names a private target without colliding with visible view names.
 func (m *migration) privateLayoutAlias(target, owner *sysmlv1.Element, current *view) string {
+	if !m.privateAliasOwners[owner] {
+		panic("private layout alias owner was not planned")
+	}
 	if alias := m.privateAliases[target]; alias != nil {
 		return alias.name
 	}
@@ -824,6 +799,7 @@ func (m *migration) privateLayoutAlias(target, owner *sysmlv1.Element, current *
 	}
 }
 
+// privateLayoutAliasAvailable reports whether the alias resolves unambiguously in every view that uses it.
 func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, name string, current *view) bool {
 	available := func(v *view) bool {
 		if v == nil {
@@ -887,6 +863,7 @@ func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, 
 	return true
 }
 
+// writePrivateLayoutAliases writes the aliases planned for an owner's body.
 func (m *migration) writePrivateLayoutAliases(owner *sysmlv1.Element) {
 	for _, alias := range m.privateAliasesByOwner[owner] {
 		m.w.line("private alias " + writeName(alias.name) + " for " + writeName(m.nameFor(alias.target)) + ";")
@@ -1200,7 +1177,7 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 			p.onEdges++
 			continue
 		}
-		privateOwner := (*sysmlv1.Element)(nil)
+		var privateOwner *sysmlv1.Element
 		if m.privateLayoutMember(el) {
 			privateOwner = el.Parent
 			if !containsElement(scopeChain(v.host), privateOwner) {
@@ -1242,6 +1219,7 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 	return placements
 }
 
+// notePrivateUnexposed records why a private layout target has no visible name in the view.
 func (p *layoutPlan) notePrivateUnexposed(target, owner *sysmlv1.Element) {
 	note := "the shown element " + writeName(p.m.nameFor(target)) + " is private to " +
 		qualifiedName(owner) + " and no name visible in the view denotes it"
