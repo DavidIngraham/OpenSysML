@@ -160,9 +160,10 @@ func (ctx *Context) choiceTouches(c ChoicePoint, name string) bool {
 	return false
 }
 
-// performerSelves are the distinct objects the run's executors perform on.
+// performerSelves are the distinct objects the run's executors perform or have
+// performed on: those noted as they joined the clock, and any driven now.
 func (ctx *Context) performerSelves() []*Instance {
-	var selves []*Instance
+	selves := slices.Clone(ctx.run.performers)
 	for _, w := range ctx.clock.waiters {
 		if self := executorSelf(w); self != nil && !slices.Contains(selves, self) {
 			selves = append(selves, self)
