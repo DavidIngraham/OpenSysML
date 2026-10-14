@@ -827,14 +827,39 @@ func (m *migration) inheritedNodeRef(el, scope *sysmlv1.Element) string {
 	default:
 		return ""
 	}
-	if el.Parent == nil {
+	body := el.Parent
+	if pseudoKind(el) == "initial" {
+		body = m.entryRegion(el)
+	}
+	if body == nil {
 		return ""
 	}
-	owner := m.edgePlaceIn(el.Parent, nil, name).owner
+	owner := m.edgePlaceIn(body, nil, name).owner
 	if owner == nil || !m.reaches(owner) {
 		return ""
 	}
 	return m.memberRef(owner, scope) + "::" + name
+}
+
+// entryRegion is the region whose start the initial pseudostate init is written as:
+// its own region when it is that region's entry, or the orthogonal region it is
+// donated to; nil for a duplicate, dangling, coinciding, conflicting or foreign
+// initial, which no start stands for.
+func (m *migration) entryRegion(init *sysmlv1.Element) *sysmlv1.Element {
+	r := init.Parent
+	if r == nil || r.Type != "Region" {
+		return nil
+	}
+	e := m.regionEntry(r)
+	if e.init == init {
+		return r
+	}
+	for _, st := range e.strays {
+		if st.init == init && m.regionEntry(st.into).init == init {
+			return st.into
+		}
+	}
+	return nil
 }
 
 // exposable is the declaration written for e that a view can expose: its own, the
@@ -1168,14 +1193,34 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector, boxes map[
 	if first == nil || second == nil || first == second {
 		return c.Points
 	}
-	ends := c.Ends
-	if ends == [2]string{} {
-		ends = endsAt(c.Points, [2]string{first.ID, second.ID}, boxes)
+	reversed, known := lineReversed(c, first.ID, second.ID, boxes)
+	if !known {
+		// A flow between pins may be drawn, or its ends placed, at the actions owning them.
+		if a, b := ownerNode(first), ownerNode(second); a != b && (a != first || b != second) {
+			reversed, _ = lineReversed(c, a.ID, b.ID, boxes)
+		}
 	}
-	if ends[0] == second.ID || ends[1] == first.ID {
+	if reversed {
 		return reversePoints(c.Points)
 	}
 	return c.Points
+}
+
+// lineReversed reports whether c's points run from the element at the line's second
+// end to the one at its first, by the ends the record names or, naming none, the
+// boxes it places; known is false when neither end is named or placed.
+func lineReversed(c mtip.Connector, first, second string, boxes map[string]mtip.Placement) (reversed, known bool) {
+	ends := c.Ends
+	if ends == [2]string{} {
+		ends = endsAt(c.Points, [2]string{first, second}, boxes)
+	}
+	switch {
+	case ends[0] == second, ends[1] == first:
+		return true, true
+	case ends[0] == first, ends[1] == second:
+		return false, true
+	}
+	return false, false
 }
 
 // lineEnds are the elements at the ends of the line el is drawn as, in the order its

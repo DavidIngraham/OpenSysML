@@ -2,7 +2,15 @@
 <mdOwnedViews>
   <mdElement elementClass='DiagramFrame' xmi:id='_sym_modes_frame'>
     <elementID xmi:idref='_diag_modes'></elementID>
-    <geometry>0, 0, 140, 220</geometry>
+    <geometry>0, 0, 240, 340</geometry>
+  </mdElement>
+  <mdElement elementClass='Pseudostate' xmi:id='_sym_ps_dup'>
+    <elementID xmi:idref='_ps_dup'></elementID>
+    <geometry>10, 50, 20, 20</geometry>
+  </mdElement>
+  <mdElement elementClass='Pseudostate' xmi:id='_sym_ps_dangling'>
+    <elementID xmi:idref='_ps_dangling'></elementID>
+    <geometry>110, 50, 20, 20</geometry>
   </mdElement>
   <mdElement elementClass='Pseudostate' xmi:id='_sym_ps_init'>
     <elementID xmi:idref='_ps_init'></elementID>
@@ -14,7 +22,7 @@
   </mdElement>
   <mdElement elementClass='FinalState' xmi:id='_sym_st_done'>
     <elementID xmi:idref='_st_done'></elementID>
-    <geometry>50, 190, 20, 20</geometry>
+    <geometry>50, 300, 20, 20</geometry>
   </mdElement>
   <mdElement elementClass='Transition' xmi:id='_sym_t_init'>
     <elementID xmi:idref='_t_init'></elementID>
@@ -24,8 +32,24 @@
   </mdElement>
   <mdElement elementClass='Transition' xmi:id='_sym_t_done'>
     <elementID xmi:idref='_t_done'></elementID>
-    <linkFirstEndID xmi:idref='_sym_idle'></linkFirstEndID>
+    <linkFirstEndID xmi:idref='_sym_active'></linkFirstEndID>
     <linkSecondEndID xmi:idref='_sym_st_done'></linkSecondEndID>
-    <geometry>60, 140; 60, 190; </geometry>
+    <geometry>60, 280; 60, 300; </geometry>
+  </mdElement>
+  <mdElement elementClass='State' xmi:id='_sym_active'>
+    <elementID xmi:idref='_st_active'></elementID>
+    <geometry>10, 160, 220, 120</geometry>
+  </mdElement>
+  <mdElement elementClass='Pseudostate' xmi:id='_sym_ps_stray'>
+    <elementID xmi:idref='_ps_stray'></elementID>
+    <geometry>150, 180, 16, 16</geometry>
+  </mdElement>
+  <mdElement elementClass='State' xmi:id='_sym_a1'>
+    <elementID xmi:idref='_st_a1'></elementID>
+    <geometry>20, 200, 80, 40</geometry>
+  </mdElement>
+  <mdElement elementClass='State' xmi:id='_sym_b1'>
+    <elementID xmi:idref='_st_b1'></elementID>
+    <geometry>130, 220, 80, 40</geometry>
   </mdElement>
 </mdOwnedViews>

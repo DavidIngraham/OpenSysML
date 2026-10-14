@@ -438,9 +438,9 @@ func TestMigratedRoutesRenderPinned(t *testing.T) {
 		"Structure::Vehicle::Drive::Driving": {
 			`"n4" -> "n1" [pos="e,60,180 60,210 60,210 60,190 60,190"];`,
 			`"n2" -> "n3" [label="finish", pos="e,60,20 60,60 60,60 60,30 60,30", lp="87.5,40"];`,
-			`"n1.0" [shape=box, label="", xlabel="result", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="110,134!", pin=true];`,
-			`"n2.0" [shape=box, label="", xlabel="value", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="110,106!", pin=true];`,
-			`"n1.0" -> "n2.0" [style=dashed, pos="e,113.5,112 113.5,128 113.5,128 140,80 140,80 140,80 140,160 140,160 140,160 118.5,121 118.5,121"];`,
+			`"n1.0" [shape=box, label="", xlabel="result", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="116,160!", pin=true];`,
+			`"n2.0" [shape=box, label="", xlabel="value", fontsize=8, width=0.16666666666666666, height=0.16666666666666666, fixedsize=true, pos="116,80!", pin=true];`,
+			`"n1.0" -> "n2.0" [style=dashed, pos="e,110,80 110,160 110,160 140,160 140,160 140,160 140,80 140,80 140,80 120,80 120,80"];`,
 		},
 		"Behavior::Modes::Modes": {
 			`"n1" -> "n2" [label="accept Go", pos="e,200,110 110,110 110,110 190,110 190,110", lp="155,122"];`,
@@ -1055,43 +1055,60 @@ func TestGoldenNestedPartsPlacedInsideTheirPart(t *testing.T) {
 
 // An initial node's symbol, and a flow final's, is placed as the start or done of the
 // body it is drawn in, a nested action's included; a control flow the tool drew from
-// its target back to its source is routed the way its succession runs.
+// its target back to its source is routed the way its succession runs, an object flow
+// drawn between the actions owning its pins too. Of a region's initial pseudostates only
+// the one written as its entry places its start, a stray one donated to an orthogonal
+// region as that region's; a duplicate or dangling one, drawn first, places nothing.
 func TestGoldenPseudoNodeLayout(t *testing.T) {
 	r := migrateStream(t, "pseudo_nodes")
 	checkGolden(t, "testdata/xmi/pseudo_nodes.golden.sysml", r.Notation)
 	for _, d := range errors(t, "pseudo_nodes.sysml", r.Notation) {
 		t.Errorf("%v", d)
 	}
-	checkPseudoNodeLayout(t, r)
+	checkPseudoNodeLayout(t, r, 17, 15, 9,
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::start { x = 50; y = 50; width = 20; height = 20; }",
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::done { x = 50; y = 300; width = 20; height = 20; }",
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::Active::regions::b::start { x = 150; y = 180; width = 16; height = 16; }",
+		"metadata DiagramLayout::Route about 'start then Idle' { points = (60, 70, 60, 100); }",
+		"metadata DiagramLayout::Route about 'Active then done' { points = (60, 280, 60, 300); }",
+	)
+	for _, unwanted := range []string{"{ x = 10; y = 50;", "{ x = 110; y = 50;"} {
+		if strings.Contains(string(r.Notation), unwanted) {
+			t.Errorf("a duplicate or dangling initial pseudostate's symbol is placed:\n%s", r.Notation)
+		}
+	}
 }
 
 // The export record names no end of a line; its own boxes say which way the tool
-// drew it, so a flow recorded from its target is routed from its source all the same.
+// drew it, so a flow recorded from its target is routed from its source all the same,
+// an object flow between pins by the boxes of the actions owning them.
 func TestExportPseudoNodeLayout(t *testing.T) {
 	r := migrateLaidOut(t, "pseudo_nodes")
-	checkPseudoNodeLayout(t, r)
+	checkPseudoNodeLayout(t, r, 11, 11, 9,
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::start { x = 50; y = 50; width = 20; height = 20; }",
+		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::done { x = 50; y = 190; width = 20; height = 20; }",
+		"metadata DiagramLayout::Route about 'start then Idle' { points = (60, 70, 60, 100); }",
+	)
 }
 
-func checkPseudoNodeLayout(t *testing.T, r *migrate.Result) {
+func checkPseudoNodeLayout(t *testing.T, r *migrate.Result, placements, written, routes int, wants ...string) {
 	t.Helper()
 	l := r.Report.Layout
 	if l == nil {
 		t.Fatal("no layout summary")
 	}
-	if l.Placements != 10 || l.PlacementsWritten != 10 || l.PlacementsUnexposed != 0 || l.Routes != 7 || l.RoutesWritten != 7 {
+	if l.Placements != placements || l.PlacementsWritten != written || l.Routes != routes || l.RoutesWritten != routes {
 		t.Errorf("layout: %+v", l)
 	}
-	for _, want := range []string{
+	wants = append(wants,
 		"metadata DiagramLayout::Layout about Imaging::Camera::Acquire::start { x = 85; y = 90; width = 15; height = 15; }",
 		"metadata DiagramLayout::Layout about 'Position Not Correct'::start { x = 379; y = 127; width = 15; height = 15; }",
 		"metadata DiagramLayout::Route about 'start to position' { points = (92, 105, 92, 117); }",
 		"metadata DiagramLayout::Route about Imaging::Camera::Acquire::'Position Not Correct'::'start to adjust' { points = (386, 142, 386, 152); }",
-		"metadata DiagramLayout::Route about 'position to Position Not Correct' { points = (92, 150, 92, 158, 300, 158); }",
-		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::start { x = 50; y = 50; width = 20; height = 20; }",
-		"metadata DiagramLayout::Layout about Imaging::Camera::Modes::done { x = 50; y = 190; width = 20; height = 20; }",
-		"metadata DiagramLayout::Route about 'start then Idle' { points = (60, 70, 60, 100); }",
-		"metadata DiagramLayout::Route about 'Idle then done' { points = (60, 140, 60, 190); }",
-	} {
+		"metadata DiagramLayout::Route about 'position to check' { points = (120, 150, 120, 260); }",
+		"metadata DiagramLayout::Route about 'position.result to check.value' { points = (40, 150, 40, 260); }",
+	)
+	for _, want := range wants {
 		if !strings.Contains(string(r.Notation), want) {
 			t.Errorf("the migrated view lacks %s\n%s", want, r.Notation)
 		}

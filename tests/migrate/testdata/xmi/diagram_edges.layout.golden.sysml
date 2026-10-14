@@ -23,7 +23,7 @@ package Model {
                     metadata DiagramLayout::Layout about final { x = 50; y = 220; width = 20; height = 20; }
                     metadata DiagramLayout::Route about 'start to gain' { points = (60, 30, 60, 60); }
                     metadata DiagramLayout::Route about finish { points = (60, 180, 60, 220); }
-                    metadata DiagramLayout::Route about 'gain.result to set speed.value' { points = (110, 160, 140, 160, 140, 80, 110, 80); }
+                    metadata DiagramLayout::Route about 'gain.result to set speed.value' { points = (110, 80, 140, 80, 140, 160, 110, 160); }
                     render Views::asInterconnectionDiagram;
                 }
                 view 'Driving Sketch' {

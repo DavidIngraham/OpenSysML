@@ -85,6 +85,16 @@
                <id _dtype="str">_pn_final2</id>
                <type _dtype="str">sysml.ActivityFinalNode</type>
             </element>
+            <element _dtype="dict" key="7">
+               <relationship_metadata _dtype="dict">
+                  <top _dtype="int">-260</top>
+                  <bottom _dtype="int">-293</bottom>
+                  <left _dtype="int">21</left>
+                  <right _dtype="int">163</right>
+               </relationship_metadata>
+               <id _dtype="str">_pn_check</id>
+               <type _dtype="str">sysml.OpaqueAction</type>
+            </element>
          </element>
          <diagramConnector _dtype="list">
             <diagramConnector _dtype="dict" key="0">
@@ -105,19 +115,14 @@
             <diagramConnector _dtype="dict" key="1">
                <relationship_metadata _dtype="dict">
                   <supplierPoint _dtype="dict">
-                     <xCoordinate _dtype="int">300</xCoordinate>
-                     <yCoordinate _dtype="int">158</yCoordinate>
+                     <xCoordinate _dtype="int">120</xCoordinate>
+                     <yCoordinate _dtype="int">260</yCoordinate>
                   </supplierPoint>
                   <clientPoint _dtype="dict">
-                     <xCoordinate _dtype="int">92</xCoordinate>
+                     <xCoordinate _dtype="int">120</xCoordinate>
                      <yCoordinate _dtype="int">150</yCoordinate>
                   </clientPoint>
-                  <breakPoint _dtype="list">
-                     <breakPoint key="0">
-                        <xCoordinate _dtype="int">92</xCoordinate>
-                        <yCoordinate _dtype="int">158</yCoordinate>
-                     </breakPoint>
-                  </breakPoint>
+                  <breakPoint _dtype="list"/>
                </relationship_metadata>
                <id _dtype="str">_pn_e2</id>
                <type _dtype="str">sysml.ControlFlow</type>
@@ -165,6 +170,36 @@
                   <breakPoint _dtype="list"/>
                </relationship_metadata>
                <id _dtype="str">_pn_e4</id>
+               <type _dtype="str">sysml.ControlFlow</type>
+            </diagramConnector>
+            <diagramConnector _dtype="dict" key="5">
+               <relationship_metadata _dtype="dict">
+                  <supplierPoint _dtype="dict">
+                     <xCoordinate _dtype="int">40</xCoordinate>
+                     <yCoordinate _dtype="int">150</yCoordinate>
+                  </supplierPoint>
+                  <clientPoint _dtype="dict">
+                     <xCoordinate _dtype="int">40</xCoordinate>
+                     <yCoordinate _dtype="int">260</yCoordinate>
+                  </clientPoint>
+                  <breakPoint _dtype="list"/>
+               </relationship_metadata>
+               <id _dtype="str">_pn_of</id>
+               <type _dtype="str">sysml.ObjectFlow</type>
+            </diagramConnector>
+            <diagramConnector _dtype="dict" key="6">
+               <relationship_metadata _dtype="dict">
+                  <supplierPoint _dtype="dict">
+                     <xCoordinate _dtype="int">300</xCoordinate>
+                     <yCoordinate _dtype="int">240</yCoordinate>
+                  </supplierPoint>
+                  <clientPoint _dtype="dict">
+                     <xCoordinate _dtype="int">163</xCoordinate>
+                     <yCoordinate _dtype="int">276</yCoordinate>
+                  </clientPoint>
+                  <breakPoint _dtype="list"/>
+               </relationship_metadata>
+               <id _dtype="str">_pn_e6</id>
                <type _dtype="str">sysml.ControlFlow</type>
             </diagramConnector>
          </diagramConnector>

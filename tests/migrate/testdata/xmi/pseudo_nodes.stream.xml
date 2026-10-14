@@ -41,8 +41,14 @@
   <mdElement elementClass='ControlFlow' xmi:id='_sym_e2'>
     <elementID xmi:idref='_pn_e2'></elementID>
     <linkFirstEndID xmi:idref='_sym_position'></linkFirstEndID>
+    <linkSecondEndID xmi:idref='_sym_check'></linkSecondEndID>
+    <geometry>120, 150; 120, 260; </geometry>
+  </mdElement>
+  <mdElement elementClass='ControlFlow' xmi:id='_sym_e6'>
+    <elementID xmi:idref='_pn_e6'></elementID>
+    <linkFirstEndID xmi:idref='_sym_check'></linkFirstEndID>
     <linkSecondEndID xmi:idref='_sym_adjusting'></linkSecondEndID>
-    <geometry>92, 150; 92, 158; 300, 158; </geometry>
+    <geometry>163, 276; 300, 240; </geometry>
   </mdElement>
   <mdElement elementClass='ControlFlow' xmi:id='_sym_e5'>
     <elementID xmi:idref='_pn_e5'></elementID>
@@ -61,5 +67,15 @@
     <linkFirstEndID xmi:idref='_sym_adjust'></linkFirstEndID>
     <linkSecondEndID xmi:idref='_sym_final2'></linkSecondEndID>
     <geometry>391, 185; 391, 220; </geometry>
+  </mdElement>
+  <mdElement elementClass='OpaqueAction' xmi:id='_sym_check'>
+    <elementID xmi:idref='_pn_check'></elementID>
+    <geometry>21, 260, 142, 33</geometry>
+  </mdElement>
+  <mdElement elementClass='ObjectFlow' xmi:id='_sym_of'>
+    <elementID xmi:idref='_pn_of'></elementID>
+    <linkFirstEndID xmi:idref='_sym_check'></linkFirstEndID>
+    <linkSecondEndID xmi:idref='_sym_position'></linkSecondEndID>
+    <geometry>40, 260; 40, 150; </geometry>
   </mdElement>
 </mdOwnedViews>
