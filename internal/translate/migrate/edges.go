@@ -556,3 +556,9 @@ func within(e, owner *sysmlv1.Element) bool {
 	}
 	return false
 }
+
+// associationDef reports whether e is an association written as a connection
+// def, which a tree draws as a line between its end types' boxes.
+func (m *migration) associationDef(e *sysmlv1.Element) bool {
+	return e != nil && (e.Type == "Association" || e.Type == "AssociationClass") && m.written(e) && m.associationAsConnectionDef(e)
+}
