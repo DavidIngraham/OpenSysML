@@ -2000,9 +2000,9 @@ $ … /Migrate -d '{"filePath":"Vehicle.xmi","toFormat":"sysml"}'
   "report": {
     "source": "Vehicle.xmi",
     "exporter": "Example UML Tool",
-    "summary": "migrated 95 element(s): 76 mapped, 16 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)",
-    "mapped": 76,
-    "approximated": 16,
+    "summary": "migrated 95 element(s): 77 mapped, 15 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)",
+    "mapped": 77,
+    "approximated": 15,
     "unmapped": 3,
     "skipped": 2
   }
@@ -2227,7 +2227,9 @@ selected, filtered and bound — are on the Go API page and are not repeated her
 [Native document queries and rendering over gRPC](api.md#native-documents-and-views-over-grpc).
 Each is its own capability: `Query` needs `query` (and `oslc_query` when the request uses
 `oslcQuery`); `RunDocumentQuery` needs `document_query`; `RenderDocument` needs
-`render_document`, and `render_document_html` too when its `form` is `html`.
+`render_document`, and `render_document_html` too when its `form` is `html`; its `file_name` (the
+file a rendered set writes the document to, which the other documents' links to it name) is
+populated under `render_document_file_name`.
 
 ### `Query`
 

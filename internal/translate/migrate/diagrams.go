@@ -159,8 +159,8 @@ func (m *migration) viewName(host *sysmlv1.Element, name string) string {
 // owner when that hosts views — the operation, for a behavior written as the
 // operation's method — else the owner's nearest ancestor that does; for a
 // diagram naming no owner the element whose extension holds it, and failing
-// that the document's top level. The top level is a nil host; the root model,
-// whose members are written there, is never one. note says why the host is not
+// that the document's top level, a nil host; a root Model hosts views as any
+// package does. note says why the host is not
 // the owner; placed is false when nothing written can hold the view.
 func (m *migration) viewHost(d *sysmlv1.Diagram) (host *sysmlv1.Element, placed bool, note string) {
 	from := m.viewOwner(d)
@@ -180,9 +180,6 @@ func (m *migration) viewHost(d *sysmlv1.Diagram) (host *sysmlv1.Element, placed 
 		host := m.bodyOf(cur)
 		if !m.hostsViews(host) {
 			continue
-		}
-		if m.flattened(host) {
-			host = nil
 		}
 		switch {
 		case cur == from && d.Owner != nil:
@@ -213,12 +210,9 @@ func (m *migration) bodyOf(e *sysmlv1.Element) *sysmlv1.Element {
 	return e
 }
 
-// hostsViews reports whether e is written with a body a view can be a member of: the
-// root model, or a declared package or definition (not an enum def, node, vertex or region).
+// hostsViews reports whether e is written with a body a view can be a member of: a
+// declared package or definition (not an enum def, node, vertex or region).
 func (m *migration) hostsViews(e *sysmlv1.Element) bool {
-	if m.flattened(e) {
-		return true
-	}
 	switch e.Type {
 	case "Property", "Port", "Parameter", "EnumerationLiteral", "Region":
 		return false
@@ -249,12 +243,6 @@ func (m *migration) writtenIn(host *sysmlv1.Element) string {
 		return "written at the top level"
 	}
 	return "written in " + m.hostName(host)
-}
-
-// isTopLevel reports whether e is the root model, whose members are the
-// document's top level.
-func isTopLevel(e *sysmlv1.Element) bool {
-	return e.Parent == nil && e.Type == "Model"
 }
 
 // views leaves room for the views of the diagrams host owns (nil: the top level's), written
@@ -1114,9 +1102,12 @@ func (p *layoutPlan) route(ref string, points []float64) string {
 	return b.String()
 }
 
-// linePoints is the line's points as the Route of el lists them: a connection
-// def's run from its first end's type to its second's, as a tree reads them.
+// linePoints is the line's points as the Route of el lists them, run from the written
+// element's first end to its second as a rendering reads them.
 func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	if el.Type == "Connector" {
+		return m.connectorLinePoints(el, c)
+	}
 	if !m.associationDef(el) {
 		return c.Points
 	}
@@ -1132,6 +1123,29 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 		return reversePoints(c.Points)
 	}
 	return c.Points
+}
+
+// connectorLinePoints is connector el's line run as `bind a = b` names its ends: reversed when
+// the stream drew it from the second end's feature; as drawn when it names no end or one feature.
+func (m *migration) connectorLinePoints(el *sysmlv1.Element, c mtip.Connector) []float64 {
+	segs, note := m.connectorEnds(el, el.Parent)
+	if note != "" || c.Ends[0] == "" && c.Ends[1] == "" {
+		return c.Points
+	}
+	first, second := endFeature(segs[0]), endFeature(segs[1])
+	if first == second {
+		return c.Points
+	}
+	if c.Ends[0] == second || c.Ends[1] == first {
+		return reversePoints(c.Points)
+	}
+	return c.Points
+}
+
+// endFeature is the id of the feature a connector end's path names last, the element
+// the symbol at that end of the line stands for.
+func endFeature(seg []*sysmlv1.Element) string {
+	return seg[len(seg)-1].ID
 }
 
 // reversePoints is the flattened point list read from its last point to its first.

@@ -315,7 +315,7 @@ public class RunWithOpenSysMLService {
         static ResultParts document(RenderedDocument rendered, String target, RunDocumentForm form,
                 ExportedProject project) {
             ResultParts p = new ResultParts(project);
-            p.document = RunDocument.of(form, rendered.content(), target);
+            p.document = RunDocument.of(form, rendered, target);
             return p;
         }
         static ResultParts table(DocumentQueryResult result, ExportedProject project) {

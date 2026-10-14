@@ -144,6 +144,8 @@ func (m *migration) connectUsages(e, host, from, to *sysmlv1.Element, fromKw, to
 // connection def written for e, when def is not nil.
 func (m *migration) connectTyped(e, def, host, from, to *sysmlv1.Element, fromKw, toKw, name string) *defConn {
 	fu, tu := m.defUsageOf(m.usageHost(from), from, fromKw), m.defUsageOf(m.usageHost(to), to, toKw)
+	// The usage's name is invented when e has none to give it, or a def keeps e's.
+	invented := name == "" || def != nil
 	if name == "" {
 		name = spoken(writeName(fu.name)) + " to " + spoken(writeName(tu.name))
 	}
@@ -160,6 +162,9 @@ func (m *migration) connectTyped(e, def, host, from, to *sysmlv1.Element, fromKw
 		m.moreConns[e] = append(m.moreConns[e], c)
 	}
 	m.extras[host] = append(m.extras[host], func() {
+		if invented {
+			m.w.madeUp(writeName(name))
+		}
 		typed := ""
 		if def != nil {
 			typed = " : " + m.ref(def, host)
@@ -460,8 +465,6 @@ func (m *migration) connHost(d, a, b *sysmlv1.Element) (host *sysmlv1.Element, o
 	for p := b.Parent; p != nil; p = p.Parent {
 		switch {
 		case !above[p]:
-		case isTopLevel(p):
-			return nil, true
 		case (p.Type == "Package" || p.Type == "Model") && m.written(p):
 			return p, true
 		}

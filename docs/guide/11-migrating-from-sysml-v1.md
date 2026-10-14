@@ -96,22 +96,22 @@ need attention first:
 «Unit» InstanceSpecification	Vehicle Design::Value Types::kilogram	_unit_kg	(units and quantity kinds are not migrated; use the SI and ISQ libraries; applied stereotypes «Unit» (quantityKind = Vehicle Design::Value Types::mass; symbol = kg))
 «QuantityKind» InstanceSpecification	Vehicle Design::Value Types::mass	_qk_mass	(units and quantity kinds are not migrated; use the SI and ISQ libraries; applied stereotypes «QuantityKind»)
 
-## approximated (13)
-Package	Requirements	_pkg_reqs	-> RequirementsModel	(written as RequirementsModel since a root package named Requirements would be hidden by the standard library's Requirements)
-«Refine» Abstraction	Requirements::<Abstraction>	_dep_refine	-> 'Drive refines Speed Requirement'	(written as a connection between usages of its ends, which a diagram draws; the standard Refinement metadata annotates only a dependency, so the connection's name says it refines)
-«Trace» Abstraction	Requirements::<Abstraction>	_dep_trace	-> RequirementsModel::'Speed Requirement traces Engine'	(a trace is written as a plain dependency named by its kind)
-«TestCase» Activity	Requirements::Mass Test	_tc_mass	-> RequirementsModel::'Mass Test'	(the test case's behavior is not migrated; only its verified requirements are)
-Diagram	Vehicle BDD	_diag_bdd	-> 'Vehicle BDD'	(a diagram of unknown kind written as a view rendered asTextualNotation; the diagram names no owner; written at the top level, which holds it; no diagram representation is serialized: what the diagram is and shows is unknown, and the view exposes nothing)
-Actor	Vehicle Design::Driver	_actor_driver	-> 'Vehicle Design'::Driver	(a UML actor is written as a part usage)
-«FlowPort» Port	Vehicle Design::Engine::speedIn	_port_speedIn	-> 'Vehicle Design'::Engine::speedIn	(a port typed by a DataType is written as a port holding one directed attribute)
+## approximated (12)
+«Refine» Abstraction	Requirements::<Abstraction>	_dep_refine	-> Model::'Drive refines Speed Requirement'	(written as a connection between usages of its ends, which a diagram draws; the standard Refinement metadata annotates only a dependency, so the connection's name says it refines)
+«Trace» Abstraction	Requirements::<Abstraction>	_dep_trace	-> Model::Requirements::'Speed Requirement traces Engine'	(a trace is written as a plain dependency named by its kind)
+«TestCase» Activity	Requirements::Mass Test	_tc_mass	-> Model::Requirements::'Mass Test'	(the test case's behavior is not migrated; only its verified requirements are)
+Diagram	Vehicle BDD	_diag_bdd	-> Model::'Vehicle BDD'	(a diagram of unknown kind written as a view rendered asTextualNotation; the diagram names no owner; written in package Model, which holds it; no diagram representation is serialized: what the diagram is and shows is unknown, and the view exposes nothing)
+Actor	Vehicle Design::Driver	_actor_driver	-> Model::'Vehicle Design'::Driver	(a UML actor is written as a part usage)
+«FlowPort» Port	Vehicle Design::Engine::speedIn	_port_speedIn	-> Model::'Vehicle Design'::Engine::speedIn	(a port typed by a DataType is written as a port holding one directed attribute)
 …
-Property	Vehicle Design::Vehicle::totalMass	_prop_total	-> 'Vehicle Design'::Vehicle::totalMass	(opaque expression copied verbatim (language SysML))
+Property	Vehicle Design::Vehicle::totalMass	_prop_total	-> Model::'Vehicle Design'::Vehicle::totalMass	(opaque expression copied verbatim (language SysML))
 
-## mapped (77)
+## mapped (78)
+Model	Model	_model	-> Model	(written as package Model)
 …
-Operation	Vehicle Design::Vehicle::start	_op_start	-> 'Vehicle Design'::Vehicle::start	(its owner's usage start 2 performs it, as a call on an object does)
+Operation	Vehicle Design::Vehicle::start	_op_start	-> Model::'Vehicle Design'::Vehicle::start	(its owner's usage start 2 performs it, as a call on an object does)
 …
-StateMachine	Vehicle Design::Vehicle::Vehicle States	_sm_vehicle	-> 'Vehicle Design'::Vehicle::'Vehicle States'
+StateMachine	Vehicle Design::Vehicle::Vehicle States	_sm_vehicle	-> Model::'Vehicle Design'::Vehicle::'Vehicle States'
 ```
 
 Each line is the v1 element's kind with its applied stereotypes, its qualified name in the v1
@@ -119,7 +119,7 @@ model, its `xmi:id`, the v2 element it became (after `->`) when one was written,
 how, or why not. The columns are tab-separated, so `cut` and `awk` read them.
 
 - **mapped** — a direct v2 form. Nothing to do; a note, when there is one, says how the form was
-  chosen (the root model's members are written at the top level; an English constraint body was
+  chosen (the root Model is written as the package of its name; an English constraint body was
   translated to a v2 expression).
 - **approximated** — written as the nearest v2 construct, and the note says what was lost. Some
   of these are simply how v2 spells the idea (a `«Trace»` is a `dependency`; a flow port typed by a

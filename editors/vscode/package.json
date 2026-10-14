@@ -165,7 +165,7 @@
               "Every optional notation element."
             ]
           },
-          "markdownDescription": "Optional notation elements every diagram draws besides the ones its view's rendering shows and the default (port symbols and compartments), by the names the SysML v2 notation makes optional; `all` draws every one. Applies to the diagram panel and to exports, on a server that lists the elements (`openSysmlRenderElements`)."
+          "markdownDescription": "Optional notation elements every diagram draws besides the ones its view's rendering shows and the default (port symbols, compartments and keywords), by the names the SysML v2 notation makes optional; `all` draws every one. Applies to the diagram panel and to exports, on a server that lists the elements (`openSysmlRenderElements`)."
         }
       }
     },
