@@ -27,6 +27,14 @@ type Geometry struct {
 	Collapsed     bool
 }
 
+// centre is the middle of the geometry, its corner when it has no size.
+func (g *Geometry) centre() Point {
+	if !g.HasSize {
+		return Point{X: g.X, Y: g.Y}
+	}
+	return Point{X: g.X + g.Width/2, Y: g.Y + g.Height/2}
+}
+
 // Canvas is the drawing surface a view states with DiagramLayout::Canvas: its
 // unit, and its extent when HasSize.
 type Canvas struct {

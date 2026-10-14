@@ -251,7 +251,7 @@ func (w *dotWriter) dotBB(box nodeBox) string {
 func newDOTWriter(r *Rendering, options Options) *dotWriter {
 	skin := skinOf(options.Style)
 	w := &dotWriter{kind: r.Kind, tree: r.Kind == KindTree, action: r.Kind == KindAction, clusters: map[string]bool{}, enclosing: map[string][]string{}, canvas: r.Canvas,
-		placement: placeRendering(r), drawn: map[string]bool{}, boxes: map[string]nodeBox{}, pins: map[string]nodeBox{}, ported: map[string]*Node{}, omitted: map[string]bool{},
+		placement: placeRendering(r), drawn: map[string]bool{}, boxes: map[string]nodeBox{}, spread: map[string]boundarySide{}, pins: map[string]nodeBox{}, ported: map[string]*Node{}, omitted: map[string]bool{},
 		fills: familyFills{palette: options.Palette, tree: r.Kind == KindTree}, skin: skin, pictures: r.Pictures, pictureRefusals: r.pictureRefusals(), links: options.Links}
 	w.notices = append(w.notices, refusedPictureNotices(w.pictures, w.pictureRefusals)...)
 	w.sources = map[string]bool{}
@@ -446,33 +446,36 @@ func (w *dotWriter) stripBox(node *Node, corner Point, across float64) nodeBox {
 type dotWriter struct {
 	b               strings.Builder
 	kind            Kind
-	tree            bool                // containment as edges, not clusters
-	action          bool                // the pins name what a flow carries
-	sources         map[string]bool     // port IDs an edge leaves from
-	clusters        map[string]bool     // node IDs drawn as clusters
-	enclosing       map[string][]string // node ID -> the cluster IDs around it
-	compound        bool                // an edge is clipped at a cluster
-	lines           Lines               // the edge routing asked for
-	canvas          *Canvas             // the surface positions are flipped against
-	placement       *placement          // which nodes have a place, shared with every form
-	drawn           map[string]bool     // node ID -> in the rendering's trees
-	boxes           map[string]nodeBox  // node ID -> the box it is drawn in, for every node that has one
-	pins            map[string]nodeBox  // port ID -> the box its pin is drawn in, for every port of a boxed node
-	ported          map[string]*Node    // port ID -> the node it is a port of
-	ports           portView            // the ports drawn of each node, and how they are named
-	stated          map[string]bool     // node IDs the drawing itself boxes, once a strip adds boxes of its own
-	omitted         map[string]bool     // node IDs left undrawn for want of a box
-	edges           []Edge              // the rendering's edges, each route led on to the ends it stopped short of
-	routed          int                 // edges with a route to write
-	notices         []string            // geometry the form cannot draw
-	fills           familyFills         // the palette fills, by keyword family
-	labels          labeller            // the node labels, headed relative to the roots' namespace
-	skin            dotSkin             // the drawing style's defaults
+	tree            bool                    // containment as edges, not clusters
+	action          bool                    // the pins name what a flow carries
+	sources         map[string]bool         // port IDs an edge leaves from
+	clusters        map[string]bool         // node IDs drawn as clusters
+	enclosing       map[string][]string     // node ID -> the cluster IDs around it
+	compound        bool                    // an edge is clipped at a cluster
+	lines           Lines                   // the edge routing asked for
+	canvas          *Canvas                 // the surface positions are flipped against
+	placement       *placement              // which nodes have a place, shared with every form
+	drawn           map[string]bool         // node ID -> in the rendering's trees
+	boxes           map[string]nodeBox      // node ID -> the box it is drawn in, for every node that has one
+	spread          map[string]boundarySide // node ID -> the side of its cluster a port member was spread along, its routes ending on it
+	pins            map[string]nodeBox      // port ID -> the box its pin is drawn in, for every port of a boxed node
+	ported          map[string]*Node        // port ID -> the node it is a port of
+	ports           portView                // the ports drawn of each node, and how they are named
+	stated          map[string]bool         // node IDs the drawing itself boxes, once a strip adds boxes of its own
+	omitted         map[string]bool         // node IDs left undrawn for want of a box
+	edges           []Edge                  // the rendering's edges, each route led on to the ends it stopped short of
+	routed          int                     // edges with a route to write
+	notices         []string                // geometry the form cannot draw
+	fills           familyFills             // the palette fills, by keyword family
+	labels          labeller                // the node labels, headed relative to the roots' namespace
+	skin            dotSkin                 // the drawing style's defaults
 	links           Links
-	notes           []Note    // the notes the drawing keeps, those of the nodes it draws
-	noteBoxes       []nodeBox // where each positioned note is drawn, by index in notes
-	noteShown       []int     // note index -> the index of the note drawn for it, itself unless a twin at the same place is
-	pictures        []Picture // the pictures drawn, each at its stated bounds
+	notes           []Note       // the notes the drawing keeps, those of the nodes it draws
+	noteBoxes       []nodeBox    // where each positioned note is drawn, by index in notes
+	placer          *labelPlacer // where the routed edges' labels went, once one is placed
+	segments        [][2]Point   // the routed edges' segments, which a label's cover counts crossing
+	noteShown       []int        // note index -> the index of the note drawn for it, itself unless a twin at the same place is
+	pictures        []Picture    // the pictures drawn, each at its stated bounds
 	pictureRefusals []error
 	frameRoot       string // the root the Cameo frame header names, drawn untitled
 }
@@ -703,7 +706,9 @@ func reachingEnds(ends []routeEnd) []routeEnd {
 
 // ledEdges is edges with every route that stops short of an end led on to it,
 // from the point of the end's box's border facing where the route stops, when
-// that is not the point itself; an end with no box is left short.
+// that is not the point itself; an end with no box is left short. A route that
+// reaches a boundary symbol spread along its cluster's side ends on the
+// symbol's border instead, facing the waypoint before.
 func (w *dotWriter) ledEdges(edges []Edge) []Edge {
 	led := make([]Edge, 0, len(edges))
 	for _, edge := range edges {
@@ -713,13 +718,18 @@ func (w *dotWriter) ledEdges(edges []Edge) []Edge {
 				edge.Route = append([]Point{lead}, edge.Route...)
 			}
 			edge.openFrom = false
+		} else if ok && w.spreadAlongSide(edge.From) && len(edge.Route) > 1 {
+			edge.Route = append([]Point{box.toward(edge.Route[1])}, edge.Route[1:]...)
 		}
+		n := len(edge.Route)
 		if box, ok := w.boxes[edge.To]; ok && edge.openTo {
-			at := edge.Route[len(edge.Route)-1]
+			at := edge.Route[n-1]
 			if lead := box.faces(at, at); lead != at {
 				edge.Route = append(slices.Clone(edge.Route), lead)
 			}
 			edge.openTo = false
+		} else if ok && w.spreadAlongSide(edge.To) && n > 1 {
+			edge.Route = append(slices.Clone(edge.Route[:n-1]), box.toward(edge.Route[n-2]))
 		}
 		led = append(led, edge)
 	}
@@ -741,7 +751,10 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 	for _, root := range roots {
 		w.placeNode(root, ends, &derived)
 	}
-	if len(derived) == 0 {
+	for _, root := range roots {
+		w.spreadBoundaries(root, ends)
+	}
+	if len(derived) == 0 && len(w.spread) == 0 {
 		return
 	}
 	for _, node := range derived {
@@ -753,7 +766,8 @@ func (w *dotWriter) placeNodes(roots []*Node, edges []Edge) {
 }
 
 // reboxClusters recomputes, members first, the box of every cluster under node
-// boxed round its members, once nodes placed by their neighbours have theirs.
+// boxed round its members, once nodes placed by their neighbours have theirs
+// and spread boundary symbols their new places.
 func (w *dotWriter) reboxClusters(node *Node) {
 	for _, child := range node.Children {
 		w.reboxClusters(child)
@@ -1809,8 +1823,14 @@ func (w *dotWriter) clusterBox(node *Node) nodeBox {
 	return box
 }
 
-// membersBox is the box round a cluster's placed members, a margin out from
-// them; nil while no member has a box with an extent.
+// spreadAlongSide reports whether the node is a port member spread along its cluster's side.
+func (w *dotWriter) spreadAlongSide(id string) bool {
+	_, ok := w.spread[id]
+	return ok
+}
+
+// membersBox is the box round a cluster's placed members, a margin out from them except where a
+// member spread along a side touches the border; nil while no member has a box with an extent.
 func (w *dotWriter) membersBox(node *Node) *nodeBox {
 	var box *nodeBox
 	for _, child := range node.Children {
@@ -1820,6 +1840,18 @@ func (w *dotWriter) membersBox(node *Node) *nodeBox {
 		}
 		grown := nodeBox{low: Point{X: member.low.X - dotClusterMargin, Y: member.low.Y - dotClusterMargin},
 			high: Point{X: member.high.X + dotClusterMargin, Y: member.high.Y + dotClusterMargin}}
+		if side, ok := w.spread[child.ID]; ok {
+			switch side {
+			case leftSide:
+				grown.low.X = member.low.X
+			case rightSide:
+				grown.high.X = member.high.X
+			case topSide:
+				grown.low.Y = member.low.Y
+			case bottomSide:
+				grown.high.Y = member.high.Y
+			}
+		}
 		if box == nil {
 			box = &grown
 			continue
@@ -1840,9 +1872,15 @@ func (b nodeBox) union(other nodeBox) nodeBox {
 // `pos` spline when a Route gives waypoints.
 func (w *dotWriter) dotEdgeAttributes(edge Edge) []string {
 	var attrs []string
-	label := w.edgeText(edge)
+	from, label, to := w.edgeTexts(edge)
 	if label != "" {
 		attrs = append(attrs, dotLabelAttribute(dotQuote(label)))
+	}
+	if from != "" {
+		attrs = append(attrs, "taillabel="+dotQuote(from))
+	}
+	if to != "" {
+		attrs = append(attrs, "headlabel="+dotQuote(to))
 	}
 	switch edge.Kind {
 	case EdgeConnection:
@@ -1884,9 +1922,16 @@ func (w *dotWriter) dotEdgeAttributes(edge Edge) []string {
 	}
 	attrs = append(attrs, dotStyleAttributes(edge.Style, false)...)
 	if len(edge.Route) > 1 {
-		attrs = append(attrs, "pos="+dotQuote(w.dotSpline(w.pinnedRoute(edge), dotArrowtailed(attrs), dotArrowheaded(attrs))))
+		route := w.pinnedRoute(edge)
+		attrs = append(attrs, "pos="+dotQuote(w.dotSpline(route, dotArrowtailed(attrs), dotArrowheaded(attrs))))
 		if label != "" {
-			attrs = append(attrs, "lp="+dotQuote(w.dotPoint(w.dotLabelPoint(edge))))
+			attrs = append(attrs, "lp="+dotQuote(w.dotPoint(w.placeLabel(route, label, w.edgePts(edge), labelMid))))
+		}
+		if from != "" {
+			attrs = append(attrs, "tail_lp="+dotQuote(w.dotPoint(w.placeLabel(route, from, w.edgePts(edge), labelFrom))))
+		}
+		if to != "" {
+			attrs = append(attrs, "head_lp="+dotQuote(w.dotPoint(w.placeLabel(route, to, w.edgePts(edge), labelTo))))
 		}
 	}
 	attrs = append(attrs, w.dotLinkAttributes(edge.Origin)...)
@@ -1960,41 +2005,46 @@ func dotArrowBase(route []Point) Point {
 	return Point{X: halfPixel(tip.X - (tip.X-from.X)/d*back), Y: halfPixel(tip.Y - (tip.Y-from.Y)/d*back)}
 }
 
-// dotLabelGap is the space, in pixels, between a routed edge and its label.
-const dotLabelGap = 4
-
-// dotLabelPoint is where a routed edge's label is centred: beside the midpoint
-// of the route's longest segment, clear of it by the label's half-extent and a
-// gap — right of a segment going down, above one going right — unless the
-// other side, or a quarter point of the segment, keeps more of the label off
-// the drawn boxes and notes and on the canvas.
-func (w *dotWriter) dotLabelPoint(edge Edge) Point {
-	from, to := longestSegment(edge.Route)
-	length := math.Hypot(to.X-from.X, to.Y-from.Y)
-	if length == 0 {
-		return from
-	}
-	nx, ny := (to.Y-from.Y)/length, -(to.X-from.X)/length
-	width, height := dotTextExtent([]string{w.edgeText(edge)}, w.skin.edgePts)
-	off := math.Abs(nx)*width/2 + math.Abs(ny)*height/2 + dotLabelGap
-	var best Point
-	cover := math.Inf(1)
-	for _, along := range []float64{0.5, 0.25, 0.75} {
-		at := Point{X: from.X + (to.X-from.X)*along, Y: from.Y + (to.Y-from.Y)*along}
-		for _, side := range []float64{1, -1} {
-			p := Point{X: halfPixel(at.X + side*nx*off), Y: halfPixel(at.Y + side*ny*off)}
-			if c := w.labelCover(p, width, height); c < cover {
-				best, cover = p, c
+// placeLabel is where a routed edge's text, drawn at pts points, is centred,
+// at the end it names, clear of its route and every other, the drawn boxes and
+// notes, the canvas's edge and the labels placed before it (labelPlacer); the
+// drawing's labels are placed in the order its edges are written.
+func (w *dotWriter) placeLabel(route []Point, text string, pts float64, end labelEnd) Point {
+	if w.placer == nil {
+		w.placer = &labelPlacer{
+			extent: func(text string, pts float64) (width, height float64) { return dotTextExtent([]string{text}, pts) },
+			cover:  w.labelCover,
+		}
+		for _, edge := range w.edges {
+			if len(edge.Route) < 2 {
+				continue
+			}
+			route := w.pinnedRoute(edge)
+			for i := 1; i < len(route); i++ {
+				w.segments = append(w.segments, [2]Point{route[i-1], route[i]})
 			}
 		}
 	}
-	return best
+	return w.placer.place(route, text, pts, end)
 }
 
-// labelCover is how much of a label centred at p, of the given extent, lies on
-// a node's box, a note or off the canvas, as an area in whole square pixels.
-func (w *dotWriter) labelCover(p Point, width, height float64) float64 {
-	label := nodeBox{low: Point{X: p.X - width/2, Y: p.Y - height/2}, high: Point{X: p.X + width/2, Y: p.Y + height/2}}
+// edgePts is the size an edge's texts are drawn in: its Style's font size, else
+// the skin's; Graphviz's labelfontsize defaults to it and nothing sets another.
+func (w *dotWriter) edgePts(edge Edge) float64 {
+	if edge.Style != nil && edge.Style.FontSize > 0 {
+		return edge.Style.FontSize
+	}
+	return w.skin.edgePts
+}
+
+// labelCover is how much of a label's box lies on a node's box, a note or off
+// the canvas, as an area in whole square pixels, and how much of the routed
+// edges' lines run through it, as a length in whole pixels.
+func (w *dotWriter) labelCover(label nodeBox) (area, lines float64) {
+	width, height := label.high.X-label.low.X, label.high.Y-label.low.Y
+	for _, segment := range w.segments {
+		lines += label.crossing(segment[0], segment[1])
+	}
 	cover := 0.0
 	for id, box := range w.boxes {
 		if !w.clusters[id] {
@@ -2008,7 +2058,31 @@ func (w *dotWriter) labelCover(p Point, width, height float64) float64 {
 		canvas := nodeBox{high: Point{X: w.canvas.Width, Y: w.canvas.Height}}
 		cover += width*height - label.overlap(canvas)
 	}
-	return math.Round(cover)
+	return math.Round(cover), math.Round(lines)
+}
+
+// crossing is the length of the segment from p to q that lies in the box.
+func (b nodeBox) crossing(p, q Point) float64 {
+	dx, dy := q.X-p.X, q.Y-p.Y
+	enter, leave := 0.0, 1.0
+	for _, side := range [][2]float64{{-dx, p.X - b.low.X}, {dx, b.high.X - p.X}, {-dy, p.Y - b.low.Y}, {dy, b.high.Y - p.Y}} {
+		d, room := side[0], side[1]
+		if d == 0 {
+			if room < 0 {
+				return 0
+			}
+			continue
+		}
+		if t := room / d; d < 0 {
+			enter = math.Max(enter, t)
+		} else {
+			leave = math.Min(leave, t)
+		}
+	}
+	if enter >= leave {
+		return 0
+	}
+	return (leave - enter) * math.Hypot(dx, dy)
 }
 
 // overlap is the area the two boxes share.
@@ -2021,25 +2095,26 @@ func (b nodeBox) overlap(o nodeBox) float64 {
 	return w * h
 }
 
-// edgeText is the label an edge is drawn with: an action's flow at a pin is
-// labelled by its own name alone, the drawn pins naming what it carries, where
-// an interconnection's connector at a port keeps its label, the port naming
-// only where it attaches; under Cameo's look a transition reads
+// edgeTexts are the texts an edge is drawn with: the names of its ends, set at
+// them, about its own label. An action's flow at a pin is labelled by its own
+// name alone, the drawn pins naming what it carries, where an
+// interconnection's connector at a port keeps its label, the port naming only
+// where it attaches; under Cameo's look a transition reads
 // `trigger [guard] / effect` with the `accept` keyword off and every name bare,
 // as Cameo writes it.
-func (w *dotWriter) edgeText(edge Edge) string {
-	label := edge.Label
+func (w *dotWriter) edgeTexts(edge Edge) (from, label, to string) {
+	label = edge.Label
 	if w.action && (edge.FromPort != "" || edge.ToPort != "") {
 		label = edge.Name
 	}
 	if !w.skin.cameo {
-		return label
+		return edge.FromLabel, label, edge.ToLabel
 	}
 	label = bareNames(label)
 	if edge.Kind == EdgeTransition {
 		label = strings.TrimPrefix(label, "accept ")
 	}
-	return displayText(label)
+	return displayText(bareNames(edge.FromLabel)), displayText(label), displayText(bareNames(edge.ToLabel))
 }
 
 // halfPixel rounds a coordinate to the nearest half pixel.

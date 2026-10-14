@@ -218,7 +218,7 @@ func (m *migration) wroteSameEdge(e, first *sysmlv1.Element) {
 // reaches reports whether a qualified name reaches the members of owner's body: the
 // top level, a declaration that is written, or a state's or transition's named inline action.
 func (m *migration) reaches(owner *sysmlv1.Element) bool {
-	return owner == nil || owner.Parent == nil && owner.Type == "Model" || m.written(owner) || m.inlineWritten(owner)
+	return owner == nil || m.written(owner) || m.inlineWritten(owner)
 }
 
 // edgePath is the qualified-name segments of the member declared at p.
@@ -372,6 +372,10 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 			return nil, routeNotDrawn
 		}
 		return []string{m.exposure(el, scope)}, ""
+	}
+	if m.backedProperty(el) != nil {
+		// The line is the backed attribute's edge, which takes no route.
+		return nil, routeNotWritten
 	}
 	if nameableEdge(el) {
 		em, ok := m.edgeMembers[el]

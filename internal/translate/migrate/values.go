@@ -997,20 +997,12 @@ func chainKind(chain bool) memberKind {
 	return memberAny
 }
 
-// rootMember returns the written top-level element named n: a member of the
-// global namespace, which the document's root Model or Package fills.
+// rootMember returns the written root element named n: a member of the global
+// namespace, which the document's root Models and Packages fill.
 func (m *migration) rootMember(n string) *sysmlv1.Element {
 	for _, root := range m.model.Roots {
-		if root.Type != "Model" {
-			if m.nameOf(root) == n && m.written(root) {
-				return root
-			}
-			continue
-		}
-		for _, c := range root.Children {
-			if m.nameOf(c) == n && m.written(c) {
-				return c
-			}
+		if m.nameOf(root) == n && m.written(root) {
+			return root
 		}
 	}
 	return nil

@@ -8,9 +8,9 @@ OpaqueAction	Mission::Sub::Run::b	_b	-> b	(the body is kept as a comment: the bo
 OpaqueAction	Mission::Sub::Run::mission	_shadow	-> mission	(the body is kept as a comment: the body is empty)
 
 ## mapped (13)
-«Block» Class	Mission	_mission	-> Mission
-«Block» Class	Mission::Sub	_sub	-> Mission::Sub
-Activity	Mission::Sub::Run	_run	-> Mission::Sub::run	(written as an action usage every object of Mission::Sub performs from creation, so its body runs on the object and reaches its features)
+«Block» Class	Mission	_mission	-> Model::Mission
+«Block» Class	Mission::Sub	_sub	-> Model::Mission::Sub
+Activity	Mission::Sub::Run	_run	-> Model::Mission::Sub::run	(written as an action usage every object of Mission::Sub performs from creation, so its body runs on the object and reaches its features)
 ActivityFinalNode	Mission::Sub::Run::<ActivityFinalNode>	_rf	-> final
 «Probability» ControlFlow	Mission::Sub::Run::<ControlFlow>	_ea	(the probability reads the property pr of the object performing the action, so a run checks it lies in [0, 1] and the branches sum to 1 when the decision is reached)
 ControlFlow	Mission::Sub::Run::<ControlFlow>	_fa
@@ -18,6 +18,6 @@ ControlFlow	Mission::Sub::Run::<ControlFlow>	_fb
 ControlFlow	Mission::Sub::Run::<ControlFlow>	_fs
 DecisionNode	Mission::Sub::Run::<DecisionNode>	_decide	-> 'decide'
 InitialNode	Mission::Sub::Run::<InitialNode>	_ri	-> start
-Property	Mission::Sub::mission	_mpart	-> Mission::Sub::mission
-Property	Mission::pr	_pr	-> Mission::pr
-Model	Model	_m	(the root model's members are written at the top level)
+Property	Mission::Sub::mission	_mpart	-> Model::Mission::Sub::mission
+Property	Mission::pr	_pr	-> Model::Mission::pr
+Model	Model	_m	-> Model	(written as package Model)
