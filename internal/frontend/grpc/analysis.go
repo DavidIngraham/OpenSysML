@@ -313,13 +313,18 @@ func (v *verifyContext) verificationVerdicts(verdicts []runtime.VerificationVerd
 	}
 	out := make([]*pb.VerificationVerdict, 0, len(verdicts))
 	for _, verdict := range verdicts {
-		out = append(out, &pb.VerificationVerdict{
+		wire := &pb.VerificationVerdict{
 			CaseId:        verdict.Case,
 			Kind:          string(verdict.Kind),
 			Detail:        verdict.Detail,
 			Subcase:       verdict.Subcase,
 			RequirementId: requirementID,
-		})
+		}
+		if verdict.Subject != nil {
+			wire.InstanceId = verdict.Subject.ID
+			wire.InstanceTypeId = namedFQN(v.cached.Index, verdict.Subject.Type)
+		}
+		out = append(out, wire)
 	}
 	return out
 }

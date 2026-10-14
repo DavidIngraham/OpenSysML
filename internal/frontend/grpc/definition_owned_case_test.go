@@ -106,4 +106,32 @@ func TestValidateInstanceRunsADefinitionOwnedCaseOnTheObject(t *testing.T) {
 	}
 	wantVerdicts(t, "VerifySatisfaction of checks", satisfied.VerificationVerdicts,
 		"Cost::Definition::costTest=pass", "Cost::Definition::costTest=fail")
+	wantVerdictObjects(t, "VerifySatisfaction of checks", satisfied.VerificationVerdicts, satisfied.Instances,
+		"Cost::cheap", "Cost::dear")
+}
+
+// wantVerdictObjects verifies each verdict names the object its case ran on, by
+// id and type, and that the id resolves to an instance of the response.
+func wantVerdictObjects(t *testing.T, surface string, got []*pb.VerificationVerdict, instances []*pb.Instance, want ...string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("%s reported %d verdicts, want %d", surface, len(got), len(want))
+	}
+	byID := make(map[int64]*pb.Instance, len(instances))
+	for _, inst := range instances {
+		byID[inst.Id] = inst
+	}
+	for i, verdict := range got {
+		inst, ok := byID[verdict.InstanceId]
+		if !ok {
+			t.Errorf("%s verdict %d names object #%d, which the response does not carry", surface, i, verdict.InstanceId)
+			continue
+		}
+		if inst.TypeSymbolId != want[i] {
+			t.Errorf("%s verdict %d is about %s (#%d), want %s", surface, i, inst.TypeSymbolId, inst.Id, want[i])
+		}
+		if verdict.InstanceTypeId != inst.TypeSymbolId {
+			t.Errorf("%s verdict %d names type %q, want %q", surface, i, verdict.InstanceTypeId, inst.TypeSymbolId)
+		}
+	}
 }
