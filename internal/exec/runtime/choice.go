@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/Open-MBEE/OpenSysML/internal/ir/lower"
 	"slices"
 	"strings"
 
@@ -139,6 +140,8 @@ type ChoicePoint struct {
 	// Touches are the features the conflicting alternatives write, sorted; the
 	// run's value of each is order-dependent on this choice.
 	Touches []string
+	// touched are the places written behind Touches, with the features they resolve to.
+	touched []lower.Place
 }
 
 // Weighted reports whether the model weights the alternatives.

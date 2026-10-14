@@ -2,8 +2,10 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/Open-MBEE/OpenSysML/internal/ir/lower"
 )
@@ -104,6 +106,9 @@ func (c *ChoicePoint) touch(p lower.Place) {
 	if p.Local || p.State != nil {
 		return
 	}
+	if !slices.ContainsFunc(c.touched, func(q lower.Place) bool { return q.Name == p.Name && q.Sym == p.Sym }) {
+		c.touched = append(c.touched, p)
+	}
 	name := p.String()
 	i := sort.SearchStrings(c.Touches, name)
 	if i < len(c.Touches) && c.Touches[i] == name {
@@ -120,17 +125,60 @@ func (ctx *Context) futureFootprints() *futureFootprints {
 	return ctx.futures
 }
 
-// touchesFeature reports whether the choice may have left the feature's value
-// order-dependent: a touch naming it, alone or as the last segment of a path,
-// against the name's own last segment (`this.mark`, `machine.state.mark`).
-func (c ChoicePoint) touchesFeature(name string) bool {
-	leaf := lastSegment(name)
-	for _, t := range c.Touches {
-		if t == name || lastSegment(t) == leaf {
+// choiceTouches reports whether the choice may have left the named value
+// order-dependent. A bare name is a feature of the behavior's own, so a write to
+// a performing object's feature of that name does not touch it; `this.<name>` is
+// the one performing object's feature, touched only by a write to a feature it
+// owns; any other qualifier (an object's name, a state path) is matched by the
+// written feature's name alone, which over-marks rather than under-marks.
+func (ctx *Context) choiceTouches(c ChoicePoint, name string) bool {
+	qualifier, leaf := "", name
+	if i := strings.LastIndex(name, "."); i >= 0 {
+		qualifier, leaf = name[:i], name[i+1:]
+	}
+	selves := ctx.performerSelves()
+	for _, p := range c.touched {
+		if p.Name != name && lastSegment(p.Name) != leaf {
+			continue
+		}
+		holder := ctx.performerOwning(selves, p.Sym)
+		switch {
+		case p.Sym == nil, len(selves) == 0:
+			return true
+		case qualifier == "":
+			if holder == nil {
+				return true
+			}
+		case qualifier == "this":
+			if len(selves) == 1 && holder == selves[0] {
+				return true
+			}
+		default:
 			return true
 		}
 	}
 	return false
+}
+
+// performerSelves are the distinct objects the run's executors perform on.
+func (ctx *Context) performerSelves() []*Instance {
+	var selves []*Instance
+	for _, w := range ctx.clock.waiters {
+		if self := executorSelf(w); self != nil && !slices.Contains(selves, self) {
+			selves = append(selves, self)
+		}
+	}
+	return selves
+}
+
+// performerOwning is the performing object whose own feature sym is, nil for none.
+func (ctx *Context) performerOwning(selves []*Instance, sym *symbols.Symbol) *Instance {
+	for _, self := range selves {
+		if ctx.ownsFeature(self, sym) {
+			return self
+		}
+	}
+	return nil
 }
 
 // OrderDependenceText is the marker a value nothing fixed prints with: how many
@@ -155,7 +203,7 @@ func pluralChoicePoints(n int) string {
 func (ctx *Context) OrderDependent(feature string) int {
 	count := 0
 	for _, n := range ctx.run.notes {
-		if c, ok := n.(ChoicePoint); ok && !c.Independent && c.touchesFeature(feature) {
+		if c, ok := n.(ChoicePoint); ok && !c.Independent && ctx.choiceTouches(c, feature) {
 			count++
 		}
 	}
