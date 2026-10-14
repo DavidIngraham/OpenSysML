@@ -379,6 +379,10 @@ func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]strin
 		if !f.drawsEdge("attribute") {
 			return nil, routeNotDrawn
 		}
+		if m.writtenHidden(prop) {
+			// A private attribute is out of the view's reach.
+			return nil, routeNotExposed
+		}
 		return []string{m.exposure(prop, scope)}, ""
 	}
 	if nameableEdge(el) {

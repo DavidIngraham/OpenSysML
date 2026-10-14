@@ -12,11 +12,12 @@ import (
 // association lines, are drawn by the exposed definitions and lines; exposed by
 // themselves a tool would draw each as a node. The port keeps its border symbol
 // and its Layout, and the line backing an attribute's typing is routed onto the
-// attribute's edge.
+// attribute's edge, run from the owner's box whichever end the tool drew first;
+// a private attribute, which the view cannot name, takes no route.
 func TestGoldenCompartmentRowsAreNotExposed(t *testing.T) {
 	r := migrateStream(t, "compartment_rows")
 	l := r.Report.Layout
-	if l == nil || l.StreamDiagrams != 1 || l.PlacementsWritten != 4 || l.PlacementsOnEdges != 5 || l.PlacementsUnexposed != 0 || l.RoutesWritten != 2 || l.RoutesUnexposed != 0 {
+	if l == nil || l.StreamDiagrams != 1 || l.PlacementsWritten != 4 || l.PlacementsOnEdges != 7 || l.PlacementsUnexposed != 0 || l.Routes != 3 || l.RoutesWritten != 2 || l.RoutesUnexposed != 1 {
 		t.Fatalf("layout summary: %+v", l)
 	}
 	checkGolden(t, "testdata/xmi/compartment_rows.golden.sysml", r.Notation)
@@ -41,12 +42,16 @@ func TestGoldenCompartmentRowsAreNotExposed(t *testing.T) {
 		"metadata DiagramLayout::Layout about Mode { x = 300; y = 220; width = 120; height = 60; }",
 		"metadata DiagramLayout::Route about EngineToVehicle { points = (100, 220, 100, 140); }",
 		"metadata DiagramLayout::Route about Blocks::Vehicle::mode { points = (200, 100, 360, 220); }",
+		"private attribute trim : Mode;",
 	} {
 		if !strings.Contains(notation, want) {
 			t.Errorf("output lacks %q", want)
 		}
 	}
-	for _, row := range []string{"speed", "mass", "limit", "engine", "mode", "eco", "sport"} {
+	if strings.Contains(notation, "Route about Blocks::Vehicle::trim") {
+		t.Errorf("output routes the line of the private attribute trim, which the view cannot name")
+	}
+	for _, row := range []string{"speed", "mass", "limit", "engine", "mode", "trim", "eco", "sport"} {
 		if strings.Contains(notation, "expose Blocks::Vehicle::"+row+";") || strings.Contains(notation, "expose Blocks::Mode::"+row+";") || strings.Contains(notation, "expose "+row+";") {
 			t.Errorf("output exposes compartment row or end label %s", row)
 		}

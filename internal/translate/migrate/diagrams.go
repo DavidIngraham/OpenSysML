@@ -1131,14 +1131,7 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 	if el.Type == "Connector" {
 		return m.connectorLinePoints(el, c)
 	}
-	if !m.associationDef(el) {
-		return c.Points
-	}
-	ends := m.model.Refs(el, "memberEnd")
-	if len(ends) != 2 {
-		return c.Points
-	}
-	first, second := m.model.Ref(ends[0], "type"), m.model.Ref(ends[1], "type")
+	first, second := m.lineEnds(el)
 	if first == nil || second == nil || first == second {
 		return c.Points
 	}
@@ -1146,6 +1139,23 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 		return reversePoints(c.Points)
 	}
 	return c.Points
+}
+
+// lineEnds are the elements at the ends of the line a tree draws for association
+// el, in the order the rendering runs it: a connection def's end types, or a
+// backed attribute's owner then its type; nil for a line drawn otherwise.
+func (m *migration) lineEnds(el *sysmlv1.Element) (first, second *sysmlv1.Element) {
+	if prop := m.backedProperty(el); prop != nil {
+		return prop.Parent, m.model.Ref(prop, "type")
+	}
+	if !m.associationDef(el) {
+		return nil, nil
+	}
+	ends := m.model.Refs(el, "memberEnd")
+	if len(ends) != 2 {
+		return nil, nil
+	}
+	return m.model.Ref(ends[0], "type"), m.model.Ref(ends[1], "type")
 }
 
 // connectorLinePoints is connector el's line run as `bind a = b` names its ends: reversed when

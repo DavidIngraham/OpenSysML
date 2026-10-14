@@ -7,6 +7,7 @@ package Model {
             port fuel;
             part engine : Engine;
             attribute mode : Mode;
+            private attribute trim : Mode;
         }
         part def Engine;
         constraint def MaxSpeed;
