@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Open-MBEE/OpenSysML/internal/exec/runtime"
 	"log/slog"
 	"path/filepath"
 	"sort"
@@ -381,6 +382,25 @@ func namedValuesText(values map[string]*pb.Value) string {
 	var b strings.Builder
 	for _, name := range names {
 		fmt.Fprintf(&b, "%s = %s\n", name, valueText(values[name]))
+	}
+	return b.String()
+}
+
+// markedValuesText is namedValuesText with the order-dependence marker on each
+// value the run's unresolved choice points touch, as the REPL prints it.
+func markedValuesText(values map[string]*pb.Value, orderDependent map[string]int32) string {
+	names := make([]string, 0, len(values))
+	for name := range values {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	var b strings.Builder
+	for _, name := range names {
+		fmt.Fprintf(&b, "%s = %s", name, valueText(values[name]))
+		if marker := runtime.OrderDependenceText(int(orderDependent[name])); marker != "" {
+			b.WriteString(" " + marker)
+		}
+		b.WriteString("\n")
 	}
 	return b.String()
 }
