@@ -125,6 +125,14 @@ already provides and says so in the run's messages, so the copy resolves names i
 shadowing the service's own library; a copy that adds members the service's library lacks is exported
 and shadows it, with a warning naming the additions.
 
+SysON 2026.9.2's own SysML serializer, which the exporter drives, writes no `calc def` and reports
+`CalculationDefinition are not yet handled` for each one it meets, so a document query declared in the
+project reaches the service neither as a query nor as a name: a document whose content references one
+fails with `unresolved reference` and `references no query`, and **Run document query** on it fails
+the same way. A document whose content is literal (paragraphs, sections, tables of literal rows)
+renders. SysON files every uploaded document, a user library included, under an unnamed root
+namespace; the exporter walks that namespace's members as the document's roots.
+
 Unit tests cover exporting, identity mapping, diagnostic mapping, configuration, GraphQL payloads,
 document bindings and validation results. Real-service integration tests run the mutation against
 `sysml-grpc` for instantiation, action execution, verification, diagnostics, document rendering,
