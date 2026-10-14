@@ -880,7 +880,8 @@ func (m *migration) privateLayoutAliasAvailable(target, owner *sysmlv1.Element, 
 		if ownerIndex < 0 {
 			return true
 		}
-		if m.viewHiddenNames(v)[name] {
+		x := m.exposures(v.d, v.host, m.formOf(v.d))
+		if x.names[name] || m.viewHiddenNames(v)[name] {
 			return false
 		}
 		for _, table := range v.tables {
