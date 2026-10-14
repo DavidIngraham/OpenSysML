@@ -11,15 +11,19 @@ const packageUsageChainModel = `
 package test {
 	private import ScalarValues::*;
 
+	attribute def Details { attribute limit : Real; attribute other : Real; }
 	requirement def Limit {
 		attribute maximum : Real;
 		attribute margin : Real = 5.0;
 		attribute unset : Real;
+		attribute details : Details { :>> limit = 4.0; }
+		attribute deep : Details;
 		require constraint { maximum > 0.0 }
 	}
 	requirement costReq : Limit { :>> maximum = 100.0; }
 	requirement optionalReq : Limit [0..1] { :>> maximum = 7.0; }
 	requirement bareReq : Limit;
+	requirement inherit : Limit { attribute kept :>> margin; attribute :>> deep { :>> other = 6.0; } }
 
 	attribute def Dims { attribute w : Real; attribute h : Real = 2.0; }
 	part def Product { attribute mass : Real = 3.0; attribute dims : Dims { :>> w = 4.0; } }
@@ -48,6 +52,9 @@ func TestChainThroughPackageUsageReadsBoundMember(t *testing.T) {
 		"test::costReq.maximum":                     "100.0",
 		"test::costReq::maximum":                    "100.0",
 		"costReq.margin":                            "5.0",
+		"inherit.kept":                              "5.0",
+		"costReq.details.limit":                     "4.0",
+		"inherit.deep.other":                        "6.0",
 		"product.mass":                              "3.0",
 		"product.dims.w":                            "4.0",
 		"product.dims.h":                            "2.0",
@@ -81,6 +88,8 @@ func TestChainThroughPackageUsageWithoutBoundMemberIsUndetermined(t *testing.T) 
 		"bareReq.maximum":                  "[1]",
 		"optionalReq.maximum":              "[0..1]",
 		"product.dims.w + bareReq.maximum": "[1]",
+		"costReq.details.other":            "[1]",
+		"inherit.deep.limit":               "[1]",
 	} {
 		val, err := ctx.EvalWithScope(parseExpr(t, src), pkg.Scope)
 		wantUndetermined(t, src, val, err, count)
