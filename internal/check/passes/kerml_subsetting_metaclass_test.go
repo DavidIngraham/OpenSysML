@@ -67,10 +67,8 @@ func subsettingMetaclassPositions(t *testing.T, name, src string) []string {
 	return got
 }
 
-// A SysML usage inherits the rule: `part eng : Engine :> Mass;` subsets an
-// attribute definition, which the pilot refuses to link (`Couldn't resolve
-// reference to Feature 'Mass'`), so it is an error in default mode for a
-// .sysml source too, at the span of the target.
+// A SysML usage inherits the rule: `part eng : Engine :> Mass;` over an
+// attribute definition is an error in default mode, at the target's span.
 func TestSubsettingMetaclassIsAnErrorInSysMLSources(t *testing.T) {
 	src := `package P6 {
     private import ScalarValues::*;
@@ -85,11 +83,8 @@ func TestSubsettingMetaclassIsAnErrorInSysMLSources(t *testing.T) {
 	}
 }
 
-// Every subsetting or redefinition whose target is a definition is rejected,
-// however the target is written — plain, qualified, through an alias, nested —
-// and whatever the usage kind: part, item, attribute, occurrence, ref, variant.
-// Each line is a line the pinned pilot validator reports as `Couldn't resolve
-// reference to Feature '…'` at the same column.
+// A definition target is rejected however it is written and whatever the usage
+// kind; the pinned pilot reports each of these lines at the same column.
 func TestSubsettingMetaclassRejectsDefinitionTargetsInSysML(t *testing.T) {
 	src := `package Neg {
     private import ScalarValues::*;
@@ -129,11 +124,8 @@ func TestSubsettingMetaclassRejectsDefinitionTargetsInSysML(t *testing.T) {
 	}
 }
 
-// Valid SysML keeps passing: a feature named plainly, qualified, through a
-// chain or an alias, an inherited end, a library usage (`parts`, `items`),
-// redefinitions in a variation, an occurrence and a `ref` usage, and an unnamed
-// redefinition whose borrowed name must not shadow the feature it redefines.
-// The pinned pilot validator accepts this model without a diagnostic.
+// Feature targets of every spelling keep passing, as does an unnamed redefinition
+// whose borrowed name must not shadow its target; the pilot accepts this model.
 func TestSubsettingMetaclassAcceptsFeatureTargetsInSysML(t *testing.T) {
 	src := `package Pos {
     private import ScalarValues::*;
@@ -170,9 +162,8 @@ func TestSubsettingMetaclassAcceptsFeatureTargetsInSysML(t *testing.T) {
 	}
 }
 
-// The reference form of a satisfy or verify usage (`verify RD;`) is a
-// ReferenceSubsetting the referent rule judges; the metaclass rule leaves it
-// alone so a definition there is reported once, as the wrong referent kind.
+// The reference form (`verify RD;`) is a ReferenceSubsetting the referent rule
+// judges, so a definition there is reported once.
 func TestSubsettingMetaclassLeavesTheReferenceFormToTheReferentRule(t *testing.T) {
 	src := `package V {
     requirement def RD;

@@ -9,11 +9,8 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/diag"
 )
 
-// KerMLSubsettingMetaclassPass checks that a feature subsets or redefines
-// another Feature (KerML 8.3.3.3: Subsetting::subsettedFeature and
-// Redefinition::redefinedFeature are typed Feature). SysML usages inherit the
-// rule, so it runs for both file kinds; the pilot refuses to link a classifier
-// at either position ("Couldn't resolve reference to Feature").
+// KerMLSubsettingMetaclassPass checks that a feature subsets or redefines a
+// Feature (KerML 8.3.3.3), in SysML sources as in KerML ones.
 type KerMLSubsettingMetaclassPass struct{}
 
 func (KerMLSubsettingMetaclassPass) Level() PassLevel { return LevelType }
@@ -77,8 +74,7 @@ func (c *kermlSubsettingMetaclassChecker) check(sym *symbols.Symbol) {
 }
 
 // resolveTarget resolves rel's target as the document walk does: a redefined
-// feature is one the owner inherits, which the redefining usage's own borrowed
-// name must not shadow (KerML 8.3.3.3.6), so it takes the redefinition route.
+// feature is resolved past the redefining usage's borrowed name (KerML 8.3.3.3.6).
 func (c *kermlSubsettingMetaclassChecker) resolveTarget(sym *symbols.Symbol, usage *ast.Usage, rel *ast.Relationship) (*symbols.Symbol, bool) {
 	scope := kit.DeclarationScope(sym)
 	if rel.Kind == ast.RelRedefines {
