@@ -1294,7 +1294,7 @@ func (s *Service) orderDependent(runtimeCtx *runtime.Context, values map[string]
 		if out == nil {
 			out = make(map[string]int32)
 		}
-		out[name] = int32(n)
+		out[name] = int32(n) // #nosec G115 -- choice points per run are bounded by the depth budget
 	}
 	return out
 }

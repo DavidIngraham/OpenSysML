@@ -254,7 +254,7 @@ func (ss *Session) FeatureValue(object int64, feature string) (*pb.FeatureValue,
 	}
 	out := &pb.FeatureValue{FeatureName: feature, Materialized: fv.Materialized}
 	if ss.svc.capabilities.has(CapabilityOrderDependence) {
-		out.OrderDependent = int32(ss.rt.OrderDependent(fv.Feature.Name))
+		out.OrderDependent = int32(ss.rt.OrderDependent(fv.Feature.Name)) // #nosec G115 -- choice points per run are bounded by the depth budget
 	}
 	if fv.Feature.Scalar() {
 		switch {
