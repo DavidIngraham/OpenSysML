@@ -871,8 +871,8 @@ export function decodeDiagnostic(diagnostic: Diagnostic): ModelDiagnostic {
     severity: diagnostic.severity,
     message: diagnostic.message,
     code: diagnostic.code,
-    orderDependent: [...(diagnostic.orderDependent ?? [])],
-    independent: diagnostic.independent ?? false,
+    orderDependent: [...diagnostic.orderDependent],
+    independent: diagnostic.independent,
     ...(span === undefined
       ? {}
       : {
