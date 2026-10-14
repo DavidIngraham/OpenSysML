@@ -438,7 +438,7 @@ class Outcome(_message.Message):
     def __init__(self, outputs: _Optional[_Mapping[str, Value]] = ..., final_state: _Optional[str] = ..., states_visited: _Optional[_Iterable[str]] = ..., error: _Optional[str] = ..., linearizations: _Optional[int] = ..., witness: _Optional[_Iterable[str]] = ..., diagnostics: _Optional[_Iterable[_Union[Diagnostic, _Mapping]]] = ..., probability: _Optional[float] = ..., probability_range: _Optional[_Union[ProbabilityRange, _Mapping]] = ...) -> None: ...
 
 class ExplorationStatus(_message.Message):
-    __slots__ = ("complete", "runs", "budgets_hit", "runs_budget", "depth_budget", "probabilities_lower_bound", "failed_linearizations")
+    __slots__ = ("complete", "runs", "budgets_hit", "runs_budget", "depth_budget", "probabilities_lower_bound", "failed_linearizations", "unenumerated")
     COMPLETE_FIELD_NUMBER: _ClassVar[int]
     RUNS_FIELD_NUMBER: _ClassVar[int]
     BUDGETS_HIT_FIELD_NUMBER: _ClassVar[int]
@@ -446,6 +446,7 @@ class ExplorationStatus(_message.Message):
     DEPTH_BUDGET_FIELD_NUMBER: _ClassVar[int]
     PROBABILITIES_LOWER_BOUND_FIELD_NUMBER: _ClassVar[int]
     FAILED_LINEARIZATIONS_FIELD_NUMBER: _ClassVar[int]
+    UNENUMERATED_FIELD_NUMBER: _ClassVar[int]
     complete: bool
     runs: int
     budgets_hit: _containers.RepeatedScalarFieldContainer[str]
@@ -453,7 +454,8 @@ class ExplorationStatus(_message.Message):
     depth_budget: int
     probabilities_lower_bound: bool
     failed_linearizations: int
-    def __init__(self, complete: _Optional[bool] = ..., runs: _Optional[int] = ..., budgets_hit: _Optional[_Iterable[str]] = ..., runs_budget: _Optional[int] = ..., depth_budget: _Optional[int] = ..., probabilities_lower_bound: _Optional[bool] = ..., failed_linearizations: _Optional[int] = ...) -> None: ...
+    unenumerated: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, complete: _Optional[bool] = ..., runs: _Optional[int] = ..., budgets_hit: _Optional[_Iterable[str]] = ..., runs_budget: _Optional[int] = ..., depth_budget: _Optional[int] = ..., probabilities_lower_bound: _Optional[bool] = ..., failed_linearizations: _Optional[int] = ..., unenumerated: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ListEnginesRequest(_message.Message):
     __slots__ = ()

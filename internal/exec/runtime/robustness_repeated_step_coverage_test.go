@@ -388,35 +388,43 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 				succession first [*] a then [1] done;
 			}
 		}`)
-		notes := func(name string) []string {
+		gaps := func(name string) []CoverageGap {
 			x := m.exploreAction(t, "explore", name)
-			if !x.Complete() {
-				t.Fatalf("exploration incomplete: %s", x.Status())
+			if len(x.BudgetsHit) > 0 {
+				t.Fatalf("exploration hit a budget: %s", x.Status())
 			}
-			return x.Notes
+			// A gap is an incomplete exploration, and the status says what it left out.
+			if want := len(x.Unenumerated) == 0; x.Complete() != want {
+				t.Errorf("%s: Complete() = %v with gaps %v", name, x.Complete(), x.Unenumerated)
+			}
+			if status := x.Status(); x.Complete() != strings.HasPrefix(status, "complete") ||
+				!x.Complete() && !strings.Contains(status, "not enumerated: "+GapBlockBodyRepetition.Description()) {
+				t.Errorf("%s: status %q does not match Complete() = %v", name, status, x.Complete())
+			}
+			return x.Unenumerated
 		}
 		for _, name := range []string{"LoopRace", "LoneOnly"} {
-			if got := notes(name); len(got) != 1 || got[0] != ReasonBlockBodyRepetition {
-				t.Errorf("%s notes = %v, want [%q]", name, got, ReasonBlockBodyRepetition)
+			if got := gaps(name); len(got) != 1 || got[0] != GapBlockBodyRepetition {
+				t.Errorf("%s gaps = %v, want [%v]", name, got, GapBlockBodyRepetition)
 			}
 		}
-		// Check records the same note where it searches the body at all.
+		// Check records the same gap where it searches the body at all.
 		report := checkStart(t, m, starterOf(m.action(t, "LoneOnly")), unreduced())
-		if len(report.Notes) != 1 || report.Notes[0] != ReasonBlockBodyRepetition {
-			t.Errorf("LoneOnly check notes = %v, want [%q]", report.Notes, ReasonBlockBodyRepetition)
+		if len(report.Unenumerated) != 1 || report.Unenumerated[0] != GapBlockBodyRepetition {
+			t.Errorf("LoneOnly check gaps = %v, want [%v]", report.Unenumerated, GapBlockBodyRepetition)
 		}
-		if got := notes("FlatAlone"); len(got) != 0 {
-			t.Errorf("FlatAlone notes = %v, want none", got)
+		if got := gaps("FlatAlone"); len(got) != 0 {
+			t.Errorf("FlatAlone gaps = %v, want none", got)
 		}
 		flatReport := checkStart(t, m, starterOf(m.action(t, "FlatAlone")), unreduced())
-		if len(flatReport.Notes) != 0 {
-			t.Errorf("FlatAlone check notes = %v, want none", flatReport.Notes)
+		if len(flatReport.Unenumerated) != 0 {
+			t.Errorf("FlatAlone check gaps = %v, want none", flatReport.Unenumerated)
 		}
 	})
 
-	// A snapshot restores the coverage notes it captured: one taken before the
+	// A snapshot restores the coverage gaps it captured: one taken before the
 	// run clears them, one taken after keeps them.
-	t.Run("block-body-notes-restore", func(t *testing.T) {
+	t.Run("block-body-gaps-restore", func(t *testing.T) {
 		idx, _, ctx := buildRuntime(t, "<test>", parseAndBuild(t, `package test {
 			action def LoneOnly {
 				first start then worker;
@@ -436,20 +444,20 @@ func TestRuntimeRobustnessRepeatedStepCoverage(t *testing.T) {
 		if _, err := ctx.ExecuteAction(sym); err != nil {
 			t.Fatalf("ExecuteAction: %v", err)
 		}
-		if len(ctx.coverageReasons()) == 0 {
-			t.Fatalf("no coverage note recorded")
+		if len(ctx.gaps()) == 0 {
+			t.Fatalf("no coverage gap recorded")
 		}
 		after, err := ctx.Snapshot()
 		if err != nil {
 			t.Fatalf("Snapshot after the run: %v", err)
 		}
 		after.Restore()
-		if got := ctx.coverageReasons(); !slices.Contains(got, ReasonBlockBodyRepetition) {
-			t.Errorf("notes after restoring the later snapshot = %v, want the block-body reason", got)
+		if got := ctx.gaps(); !slices.Contains(got, GapBlockBodyRepetition) {
+			t.Errorf("gaps after restoring the later snapshot = %v, want the block-body gap", got)
 		}
 		before.Restore()
-		if got := ctx.coverageReasons(); len(got) != 0 {
-			t.Errorf("notes after restoring the earlier snapshot = %v, want none", got)
+		if got := ctx.gaps(); len(got) != 0 {
+			t.Errorf("gaps after restoring the earlier snapshot = %v, want none", got)
 		}
 	})
 

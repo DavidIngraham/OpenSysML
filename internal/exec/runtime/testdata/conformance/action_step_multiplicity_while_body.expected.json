@@ -4,9 +4,7 @@
 	"schedule": "declared",
 	"exploreBudget": {"runs": 8192},
 	"trace": true,
-	"exploreNotes": [
-		"the performances of a repeated step in a loop or if body are each run as one move, so their interleavings were not explored"
-	],
+	"exploreGaps": ["block-body-repetition"],
 	"outputs": {
 		"c": {"type": "Integer", "value": 6},
 		"passes": {"type": "Integer", "value": 2}

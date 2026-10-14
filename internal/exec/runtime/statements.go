@@ -1227,7 +1227,7 @@ func (e *stmtEngine) blockFlow(block lower.Block) (stmtFlow, error) {
 				return flowNext, err
 			}
 			if count > 1 {
-				e.ctx.noteCoverage(ReasonBlockBodyRepetition)
+				e.ctx.noteGap(GapBlockBodyRepetition)
 			}
 			f.reps = count
 		}
