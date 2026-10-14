@@ -342,9 +342,8 @@ type exposures struct {
 	symbolless int
 }
 
-// symbolized reports whether a view of form f exposes shown. A tree exposes only
-// what a symbol of its own stands for: a compartment row or an end label lying on
-// a line is drawn by the element it belongs to, and exposed would become a node.
+// symbolized reports whether a view of form f exposes shown: a tree exposes only what
+// a symbol of its own stands for, not a compartment row or an end label on a line.
 func symbolized(f viewForm, shown sysmlv1.ElementRef) bool {
 	return f.rendering != treeRendering || !shown.Listed && !shown.OnPath
 }
@@ -1141,9 +1140,8 @@ func (m *migration) linePoints(el *sysmlv1.Element, c mtip.Connector) []float64 
 	return c.Points
 }
 
-// lineEnds are the elements at the ends of the line a tree draws for association
-// el, in the order the rendering runs it: a connection def's end types, or a
-// backed attribute's owner then its type; nil for a line drawn otherwise.
+// lineEnds are the elements at the ends of the line a tree draws for association el, in
+// drawing order: a connection def's end types, or a backed attribute's owner then its type.
 func (m *migration) lineEnds(el *sysmlv1.Element) (first, second *sysmlv1.Element) {
 	if prop := m.backedProperty(el); prop != nil {
 		return prop.Parent, m.model.Ref(prop, "type")

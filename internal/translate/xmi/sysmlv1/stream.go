@@ -111,9 +111,8 @@ func (s *Symbol) IsPath() bool {
 	return s.Ends[0] != "" || s.Ends[1] != "" || len(s.Points) > 0 && s.Bounds == nil
 }
 
-// OnPath reports a shape nested in a path symbol: the tool keeps a line's end
-// symbols there (an association's Role, a connector's ConnectorEnd), so the
-// shape marks where the line ends and stands for no node of its own.
+// OnPath reports a shape nested in a path symbol: a line's end symbol (an
+// association's Role, a connector's ConnectorEnd), which is no node of its own.
 func (s *Symbol) OnPath() bool {
 	for p := s.Parent; p != nil; p = p.Parent {
 		if p.IsPath() {
