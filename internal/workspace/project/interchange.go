@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -257,16 +256,15 @@ func compareIdentifiers(as, bs []string, core bool) int {
 				return 1
 			}
 		}
-		an, aErr := strconv.Atoi(a)
-		bn, bErr := strconv.Atoi(b)
+		aNum, bNum := isDigits(a), isDigits(b)
 		switch {
-		case aErr == nil && bErr == nil:
-			if an != bn {
-				return cmpInt(an, bn)
+		case aNum && bNum:
+			if c := compareNumbers(a, b); c != 0 {
+				return c
 			}
-		case aErr == nil:
+		case aNum:
 			return -1
-		case bErr == nil:
+		case bNum:
 			return 1
 		default:
 			return strings.Compare(a, b)
@@ -275,16 +273,36 @@ func compareIdentifiers(as, bs []string, core bool) int {
 	return 0
 }
 
+// isDigits reports whether s is a non-empty run of decimal digits.
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// compareNumbers orders two digit strings by value, however long: leading
+// zeros dropped, the longer is the larger, equal lengths compare as text.
+func compareNumbers(a, b string) int {
+	a = strings.TrimLeft(a, "0")
+	b = strings.TrimLeft(b, "0")
+	if len(a) != len(b) {
+		if len(a) < len(b) {
+			return -1
+		}
+		return 1
+	}
+	return strings.Compare(a, b)
+}
+
 func zeroIfEmpty(s string) string {
 	if s == "" {
 		return "0"
 	}
 	return s
-}
-
-func cmpInt(a, b int) int {
-	if a < b {
-		return -1
-	}
-	return 1
 }
