@@ -729,10 +729,7 @@ test("an exploration with a construct left unenumerated is incomplete and says w
     unenumerated: ["coverage-gap-1"],
   });
   assert.deepEqual(gap.unenumerated, ["coverage-gap-1"]);
-  assert.equal(
-    gap.status,
-    "incomplete after 2 runs; not enumerated: coverage-gap-1; probabilities are lower bounds",
-  );
+  assert.equal(gap.status, "incomplete after 2 runs; not enumerated: coverage-gap-1");
   assert.throws(() => gap.raiseForIncomplete(), ExecutionError);
   const whole = new Exploration({
     outcomes: [],
