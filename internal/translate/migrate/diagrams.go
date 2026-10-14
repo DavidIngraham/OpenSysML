@@ -432,8 +432,9 @@ func (m *migration) drawsEntry(f viewForm, el *sysmlv1.Element) bool {
 // geometry can pin it: an element it exposes, or a node or edge its subject's graph draws.
 func (m *migration) draws(x exposures, f viewForm, host, el *sysmlv1.Element, ref string) bool {
 	if prop := m.backedProperty(el); prop != nil {
-		// A tree draws an attribute's typing edge between its owner's and its type's boxes.
-		return x.exposed(m.exposure(prop.Parent, host)) && x.exposed(m.exposure(m.model.Ref(prop, "type"), host))
+		// A tree draws an attribute's typing edge between its owner's and its type's
+		// boxes; a private attribute is out of the view's reach.
+		return !m.writtenHidden(prop) && x.exposed(m.exposure(prop.Parent, host)) && x.exposed(m.exposure(m.model.Ref(prop, "type"), host))
 	}
 	return x.exposed(ref) || m.graphPins(f, el)
 }
