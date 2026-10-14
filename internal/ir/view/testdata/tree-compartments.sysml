@@ -1,0 +1,77 @@
+// A block definition diagram migrated from a tool that gave a Layout only to
+// the symbols it drew: the definitions' boxes and one nested part drawn as a
+// box of its own. The members with no Layout list in compartments of their
+// owner's box, grouped by kind.
+package Amplifier {
+    private import ScalarValues::Real;
+    private import ISQ::*;
+
+    attribute def dB :> Real;
+    port def SignalPort;
+    part def Housing;
+    part def Heatsink;
+    constraint def GainBound;
+
+    enum def Band { low; high; }
+
+    part def Stage {
+        attribute gain : dB = 15.0;
+        attribute noiseFigure : Real;
+        ref part heatsink : Heatsink;
+        part housing : Housing;
+        part shield : Housing;
+        port input : SignalPort;
+        port output : SignalPort;
+        constraint bound : GainBound;
+        action calibrate;
+        item def Slot;
+    }
+}
+
+package AmplifierViews {
+    private import ScalarValues::Boolean;
+    private import Views::*;
+    private import DiagramLayout::*;
+
+    // Positioned: the Stage box lists its layout-less members; `shield` has a
+    // box inside the Stage box, `housing` one outside, and the band lists its
+    // literals.
+    view positioned {
+        expose Amplifier::Stage;
+        expose Amplifier::Housing;
+        expose Amplifier::Band;
+        metadata Layout about Amplifier::Stage { x = 10; y = 10; width = 240; height = 260; }
+        metadata Layout about Amplifier::Stage::shield { x = 40; y = 220; width = 100; height = 30; }
+        metadata Layout about Amplifier::Stage::housing { x = 300; y = 400; width = 120; height = 40; }
+        metadata Layout about Amplifier::Housing { x = 300; y = 10; width = 120; height = 40; }
+        metadata Layout about Amplifier::Band { x = 500; y = 10; width = 100; height = 100; }
+        render asTreeDiagram;
+    }
+
+    // The same members under a box too small for them all.
+    view cramped {
+        expose Amplifier::Stage;
+        metadata Layout about Amplifier::Stage { x = 10; y = 10; width = 160; height = 90; }
+        render asTreeDiagram;
+    }
+
+    // Unpositioned: every member is a node of its own.
+    view plain {
+        expose Amplifier::Stage;
+        expose Amplifier::Housing;
+        expose Amplifier::Band;
+        render asTreeDiagram;
+    }
+
+    // The tree rendering without compartments.
+    rendering bareTree :> Views::asTreeDiagram {
+        attribute showCompartments : Boolean default = false;
+    }
+
+    // Compartments turned off: the layout-less members are left undrawn.
+    view bare {
+        expose Amplifier::Stage;
+        metadata Layout about Amplifier::Stage { x = 10; y = 10; width = 240; height = 260; }
+        render bareTree;
+    }
+}
