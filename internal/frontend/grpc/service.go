@@ -197,6 +197,11 @@ const CapabilityConvertCompact = "convert_compact"
 // the base model's, so a client re-reads only those after an edit.
 const CapabilityParseSourcesAffected = "parse_sources_affected"
 
+// CapabilityRenderDocumentFileName names RenderDocumentResponse.file_name:
+// the file a rendered set writes the document to, which the other
+// documents' links to it name. Without it the field is empty.
+const CapabilityRenderDocumentFileName = "render_document_file_name"
+
 // CapabilityComplexValues names the capability of carrying a complex number as
 // Value.complex, rather than reporting it as an unsupported null.
 const CapabilityComplexValues = "complex_values"
@@ -332,6 +337,7 @@ var capabilities = []string{
 	CapabilityConvertDocuments,
 	CapabilityConvertCompact,
 	CapabilityParseSourcesAffected,
+	CapabilityRenderDocumentFileName,
 }
 
 type capabilityAvailability struct {

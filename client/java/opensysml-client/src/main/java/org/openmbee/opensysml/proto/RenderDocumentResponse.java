@@ -36,6 +36,7 @@ private static final long serialVersionUID = 0L;
   private RenderDocumentResponse() {
     markdown_ = "";
     html_ = "";
+    fileName_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -129,6 +130,57 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int FILE_NAME_FIELD_NUMBER = 3;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object fileName_ = "";
+  /**
+   * <pre>
+   * The file a rendered set writes this document to in the requested form
+   * (-render-documents), which the other documents' links to it name.
+   * Populated under the render_document_file_name capability.
+   * </pre>
+   *
+   * <code>string file_name = 3 [json_name = "fileName"];</code>
+   * @return The fileName.
+   */
+  @java.lang.Override
+  public java.lang.String getFileName() {
+    java.lang.Object ref = fileName_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      fileName_ = s;
+      return s;
+    }
+  }
+  /**
+   * <pre>
+   * The file a rendered set writes this document to in the requested form
+   * (-render-documents), which the other documents' links to it name.
+   * Populated under the render_document_file_name capability.
+   * </pre>
+   *
+   * <code>string file_name = 3 [json_name = "fileName"];</code>
+   * @return The bytes for fileName.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getFileNameBytes() {
+    java.lang.Object ref = fileName_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      fileName_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -149,6 +201,9 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(html_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 2, html_);
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(fileName_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 3, fileName_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -163,6 +218,9 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(html_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(2, html_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(fileName_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(3, fileName_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -183,6 +241,8 @@ private static final long serialVersionUID = 0L;
         .equals(other.getMarkdown())) return false;
     if (!getHtml()
         .equals(other.getHtml())) return false;
+    if (!getFileName()
+        .equals(other.getFileName())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -198,6 +258,8 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getMarkdown().hashCode();
     hash = (37 * hash) + HTML_FIELD_NUMBER;
     hash = (53 * hash) + getHtml().hashCode();
+    hash = (37 * hash) + FILE_NAME_FIELD_NUMBER;
+    hash = (53 * hash) + getFileName().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -337,6 +399,7 @@ private static final long serialVersionUID = 0L;
       bitField0_ = 0;
       markdown_ = "";
       html_ = "";
+      fileName_ = "";
       return this;
     }
 
@@ -376,6 +439,9 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000002) != 0)) {
         result.html_ = html_;
       }
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.fileName_ = fileName_;
+      }
     }
 
     @java.lang.Override
@@ -398,6 +464,11 @@ private static final long serialVersionUID = 0L;
       if (!other.getHtml().isEmpty()) {
         html_ = other.html_;
         bitField0_ |= 0x00000002;
+        onChanged();
+      }
+      if (!other.getFileName().isEmpty()) {
+        fileName_ = other.fileName_;
+        bitField0_ |= 0x00000004;
         onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
@@ -436,6 +507,11 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000002;
               break;
             } // case 18
+            case 26: {
+              fileName_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000004;
+              break;
+            } // case 26
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -593,6 +669,108 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       html_ = value;
       bitField0_ |= 0x00000002;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object fileName_ = "";
+    /**
+     * <pre>
+     * The file a rendered set writes this document to in the requested form
+     * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
+     * </pre>
+     *
+     * <code>string file_name = 3 [json_name = "fileName"];</code>
+     * @return The fileName.
+     */
+    public java.lang.String getFileName() {
+      java.lang.Object ref = fileName_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        fileName_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <pre>
+     * The file a rendered set writes this document to in the requested form
+     * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
+     * </pre>
+     *
+     * <code>string file_name = 3 [json_name = "fileName"];</code>
+     * @return The bytes for fileName.
+     */
+    public com.google.protobuf.ByteString
+        getFileNameBytes() {
+      java.lang.Object ref = fileName_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        fileName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <pre>
+     * The file a rendered set writes this document to in the requested form
+     * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
+     * </pre>
+     *
+     * <code>string file_name = 3 [json_name = "fileName"];</code>
+     * @param value The fileName to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFileName(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      fileName_ = value;
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * The file a rendered set writes this document to in the requested form
+     * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
+     * </pre>
+     *
+     * <code>string file_name = 3 [json_name = "fileName"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFileName() {
+      fileName_ = getDefaultInstance().getFileName();
+      bitField0_ = (bitField0_ & ~0x00000004);
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * The file a rendered set writes this document to in the requested form
+     * (-render-documents), which the other documents' links to it name.
+     * Populated under the render_document_file_name capability.
+     * </pre>
+     *
+     * <code>string file_name = 3 [json_name = "fileName"];</code>
+     * @param value The bytes for fileName to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFileNameBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      fileName_ = value;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }
