@@ -7,10 +7,13 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/diag"
-	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 )
 
-// KerMLSubsettingMetaclassPass checks that a feature subsets another Feature.
+// KerMLSubsettingMetaclassPass checks that a feature subsets or redefines
+// another Feature (KerML 8.3.3.3: Subsetting::subsettedFeature and
+// Redefinition::redefinedFeature are typed Feature). SysML usages inherit the
+// rule, so it runs for both file kinds; the pilot refuses to link a classifier
+// at either position ("Couldn't resolve reference to Feature").
 type KerMLSubsettingMetaclassPass struct{}
 
 func (KerMLSubsettingMetaclassPass) Level() PassLevel { return LevelType }
@@ -18,7 +21,7 @@ func (KerMLSubsettingMetaclassPass) Level() PassLevel { return LevelType }
 func (KerMLSubsettingMetaclassPass) ElementScoped() { /* marker: per-element gating */ }
 
 func (KerMLSubsettingMetaclassPass) Run(ctx *Context, name string, root *ast.RootNamespace) []diag.Diagnostic {
-	if ctx == nil || ctx.Index == nil || root == nil || ctx.Kind != source.KindKerML {
+	if ctx == nil || ctx.Index == nil || root == nil {
 		return nil
 	}
 	rootScope := ctx.Index.DocumentRoot(name)
@@ -42,8 +45,13 @@ func (c *kermlSubsettingMetaclassChecker) check(sym *symbols.Symbol) {
 		return
 	}
 	for _, rel := range usage.Relationships {
-		if rel == nil || rel.Kind != ast.RelSubsets || rel.Target == nil ||
-			c.ctx.DownstreamOfFailure(rel.Target) {
+		if rel == nil || (rel.Kind != ast.RelSubsets && rel.Kind != ast.RelRedefines) ||
+			rel.Target == nil || c.ctx.DownstreamOfFailure(rel.Target) {
+			continue
+		}
+		// The reference form (`satisfy r;`) is an OwnedReferenceSubsetting the
+		// referent-kind rule judges by what the usage must reference.
+		if ast.IsReferenceSubsetting(usage, rel) {
 			continue
 		}
 		target, ok := c.ctx.Resolver().ResolveTarget(kit.DeclarationScope(sym), rel.Target)
