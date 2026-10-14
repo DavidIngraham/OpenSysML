@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"math"
@@ -2468,7 +2469,7 @@ func (s *Session) satisfyVerdictsOf(ctx *runtime.Context, a *runtime.SatisfyAsse
 	if typ == nil {
 		return []Verdict{s.satisfyVerdict(ctx, a)}
 	}
-	subjects := ctx.SatisfactionSubjects(a)
+	subjects := ctx.SatisfactionSubjects(a, s.heldRoots())
 	if len(subjects) == 0 {
 		if _, isUsage := typ.Decl.(*ast.Usage); isUsage {
 			// The usage names the object it is about, so one is made as for `by`.
@@ -2493,6 +2494,28 @@ func (s *Session) subjectLabel(subject runtime.SatisfactionSubject) string {
 		}
 	}
 	return s.objectLabel(subject.Object)
+}
+
+// heldRoots are the objects the session created and still names — by their
+// declaration or, displaced from it, by id — in identity order: what a sweep over
+// "the objects of the session" is about, not the objects runs made along the way.
+func (s *Session) heldRoots() []*runtime.Instance {
+	seen := map[int64]bool{}
+	var out []*runtime.Instance
+	keep := func(inst *runtime.Instance) {
+		if inst != nil && !seen[inst.ID] {
+			seen[inst.ID] = true
+			out = append(out, inst)
+		}
+	}
+	for _, inst := range s.instances {
+		keep(inst)
+	}
+	for _, u := range s.unnamed {
+		keep(u.obj)
+	}
+	slices.SortFunc(out, func(a, b *runtime.Instance) int { return cmp.Compare(a.ID, b.ID) })
+	return out
 }
 
 // satisfyNeedsObject reports an assertion a definition states with no `by` while

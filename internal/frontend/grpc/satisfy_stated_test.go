@@ -99,4 +99,22 @@ func TestVerifySatisfactionStatedByADefinitionSweepsHeldObjects(t *testing.T) {
 		t.Errorf("holds by object = %v, want product true and costly false (%v)", holds, ids)
 	}
 	wantVerdicts(t, "VerifySatisfaction", resp.VerificationVerdicts, "ProductPkg::costTest=pass")
+
+	// A second object of product is displaced from its name but still held, and
+	// is an object of the definition, so the sweep decides it too.
+	made, err := srv.Instantiate(ctx, &pb.InstantiateRequest{ModelHash: hash, SymbolId: "ProductPkg::product"})
+	if err != nil || made.Error != "" {
+		t.Fatalf("Instantiate again: %v %q", err, made.GetError())
+	}
+	resp, err = srv.VerifySatisfaction(ctx, &pb.VerifySatisfactionRequest{ModelHash: hash})
+	if err != nil {
+		t.Fatalf("VerifySatisfaction: %v", err)
+	}
+	decided := map[int64]bool{}
+	for _, v := range resp.Verdicts {
+		decided[v.InstanceId] = true
+	}
+	if len(resp.Verdicts) != 3 || !decided[ids["ProductPkg::product"]] || !decided[made.Instance.Id] || !decided[ids["ProductPkg::costly"]] {
+		t.Errorf("verdicts after a second product = %v, want one per held object (%v, %d)", resp.Verdicts, ids, made.Instance.Id)
+	}
 }

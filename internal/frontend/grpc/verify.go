@@ -536,7 +536,7 @@ func (v *verifyContext) satisfyVerdicts(ctx context.Context, a *runtime.SatisfyA
 		return one(v.satisfyVerdict(ctx, a))
 	}
 	defer held.lock(ctx)()
-	subjects := held.rt.SatisfactionSubjects(a)
+	subjects := held.rt.SatisfactionSubjects(a, held.rootObjects())
 	if len(subjects) == 0 {
 		return one(v.satisfyVerdict(ctx, a))
 	}

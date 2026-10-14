@@ -426,15 +426,16 @@ type SatisfactionSubject struct {
 }
 
 // SatisfactionSubjects returns the objects an assertion naming no `by` subject is
-// about: the objects this runtime holds of the type stating it, nested ones
-// included, as ValidateObject applies a type's `satisfy r;` to every object of the
-// type. It is nil for an assertion naming its subject, or stated by no type.
-func (ctx *Context) SatisfactionSubjects(a *SatisfyAssertion) []SatisfactionSubject {
-	typ := a.StatingType()
-	if typ == nil {
+// about among roots, the objects the caller holds: every one of the type stating
+// it — each object of a declaration instantiated more than once, the ones nested
+// in a root, and ones classified by the type since they were made — as
+// ValidateObject applies a type's `satisfy r;` to every object of the type. It is
+// nil for an assertion naming its subject, or stated by no type.
+func (ctx *Context) SatisfactionSubjects(a *SatisfyAssertion, roots []*Instance) []SatisfactionSubject {
+	if a.StatingType() == nil {
 		return nil
 	}
-	carriers := ctx.carriersUnder(ctx.rootInstances(), typ)
+	carriers := ctx.carriersWhere(roots, func(inst *Instance) bool { return ctx.statedOf(a, inst) })
 	out := make([]SatisfactionSubject, 0, len(carriers))
 	for _, c := range carriers {
 		out = append(out, SatisfactionSubject{Object: c.instance, Root: c.root, Path: ctx.carrierFeatures(c)})

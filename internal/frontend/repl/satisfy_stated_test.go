@@ -81,4 +81,13 @@ func TestSatisfyStatedByADefinitionSweepsItsObjects(t *testing.T) {
 		t.Errorf("%d satisfaction verdicts, want one per object:\n%s", n, swept)
 	}
 	wants(t, run(t, s, "%satisfy DefinitionPkg::Definition"), "✓ satisfy costReq holds (on ProductPkg::product ID: "+product+")")
+
+	// A second object of product displaces the first from its name, and both
+	// are objects of the definition, so both are decided.
+	again := objectIDIn(t, run(t, s, "%instantiate ProductPkg::product"))
+	twice := run(t, s, "%satisfy DefinitionPkg::Definition")
+	wants(t, twice,
+		"✓ satisfy costReq holds (on #"+product+" ID: "+product+")",
+		"✓ satisfy costReq holds (on ProductPkg::product ID: "+again+")",
+		"✗ satisfy costReq fails (on ProductPkg::costly ID: "+costly+")")
 }

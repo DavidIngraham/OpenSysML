@@ -161,6 +161,27 @@ func (h *heldObjects) documentStatus(err error) error {
 	return documentStatus(err)
 }
 
+// rootObjects are the objects the population holds — named and displaced — in
+// identity order, each once.
+func (h *heldObjects) rootObjects() []*runtime.Instance {
+	seen := make(map[int64]bool, len(h.named)+len(h.displaced))
+	out := make([]*runtime.Instance, 0, len(h.named)+len(h.displaced))
+	keep := func(inst *runtime.Instance) {
+		if inst != nil && !seen[inst.ID] {
+			seen[inst.ID] = true
+			out = append(out, inst)
+		}
+	}
+	for _, inst := range h.named {
+		keep(inst)
+	}
+	for _, inst := range h.displaced {
+		keep(inst)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
 // roots are the objects a query enumerates from, each under the label it is
 // reported by: named ones by qualified name in name order, displaced ones by id.
 func (h *heldObjects) roots() []queryexec.Root {

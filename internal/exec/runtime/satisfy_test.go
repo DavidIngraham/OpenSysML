@@ -263,7 +263,7 @@ func TestSatisfactionStatedByADefinitionIsAboutItsObjects(t *testing.T) {
 	if byDef == nil {
 		t.Fatal("no assertion stated by SafeLander")
 	}
-	if got := ctx.SatisfactionSubjects(byDef); len(got) != 0 {
+	if got := ctx.SatisfactionSubjects(byDef, ctx.LiveRoots()); len(got) != 0 {
 		t.Fatalf("subjects before any object = %d, want none", len(got))
 	}
 	_, err := ctx.EvaluateSatisfaction(byDef)
@@ -282,7 +282,7 @@ func TestSatisfactionStatedByADefinitionIsAboutItsObjects(t *testing.T) {
 	if _, err := ctx.Instantiate(oneSymbol(t, idx, "test::gentle")); err != nil {
 		t.Fatal(err)
 	}
-	subjects := ctx.SatisfactionSubjects(byDef)
+	subjects := ctx.SatisfactionSubjects(byDef, ctx.LiveRoots())
 	if len(subjects) != 2 || subjects[0].Object != slow || subjects[1].Object != fast {
 		t.Fatalf("subjects = %v, want slow then fast", subjects)
 	}
@@ -312,5 +312,66 @@ func TestSatisfactionStatedByAUsageIsAboutItsOwnObject(t *testing.T) {
 	}
 	if holds, err := ctx.EvaluateSatisfaction(assertions[0]); err != nil || !holds {
 		t.Errorf("holds = %v, err = %v; want true", holds, err)
+	}
+}
+
+// TestSatisfactionStatedByADefinitionSweepsEveryObject checks that the sweep is
+// about each object of the definition: a declaration instantiated twice is two
+// subjects, and an object classified by the definition since it was made is one.
+func TestSatisfactionStatedByADefinitionSweepsEveryObject(t *testing.T) {
+	ctx, idx := contextForSource(t, statedSatisfyModel+`
+package classified {
+	requirement def SafeTouchdown {
+		subject lander : test::SafeLander;
+		require constraint { lander.verticalSpeed <= 1.5 }
+	}
+	requirement safe : SafeTouchdown;
+	part plain : test::Lander {
+		attribute :>> verticalSpeed = 0.9;
+	}
+	part context {
+		assert satisfy safe by plain;
+	}
+}
+`)
+	var byDef *SatisfyAssertion
+	for _, a := range ctx.SatisfyAssertionsIn(idx.DocumentRoot("<test>")) {
+		if typ := a.StatingType(); typ != nil && typ.Name == "SafeLander" {
+			byDef = a
+		}
+	}
+	if byDef == nil {
+		t.Fatal("no assertion stated by SafeLander")
+	}
+	first, err := ctx.Instantiate(oneSymbol(t, idx, "test::slow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := ctx.Instantiate(oneSymbol(t, idx, "test::slow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	subjects := ctx.SatisfactionSubjects(byDef, ctx.LiveRoots())
+	if len(subjects) != 2 || subjects[0].Object != first || subjects[1].Object != second {
+		t.Fatalf("subjects after two objects of slow = %v, want both", subjects)
+	}
+
+	// Satisfying safe by plain holds plain as a SafeLander, so it is one of the
+	// objects SafeLander's own assertion is about from then on.
+	context := oneSymbol(t, idx, "classified::context")
+	byPlain := ctx.SatisfyAssertionsIn(context.Scope)
+	if len(byPlain) != 1 {
+		t.Fatalf("assertions of context = %v", byPlain)
+	}
+	plain, err := ctx.SatisfySubject(byPlain[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if holds, err := ctx.EvaluateSatisfactionOn(byPlain[0], plain); err != nil || !holds {
+		t.Fatalf("safe by plain: holds = %v, err = %v", holds, err)
+	}
+	subjects = ctx.SatisfactionSubjects(byDef, ctx.LiveRoots())
+	if len(subjects) != 3 || subjects[2].Object != plain {
+		t.Fatalf("subjects after classifying plain = %v, want slow, slow and plain", subjects)
 	}
 }
