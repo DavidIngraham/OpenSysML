@@ -334,31 +334,36 @@ func (ctx *Context) runCase(sym *symbols.Symbol, args AnalysisArgs, scope *symbo
 	return run, self, result, nil
 }
 
-// casePerformer is the object a type-owned case runs as a feature of: the object supplied (over one
-// found for the type; it also binds an unbound declared subject), else the single one carrying it,
-// as a type-owned constraint is checked.
+// casePerformer is the object a type-owned case runs as a feature of. The object supplied binds the
+// subject the case declares and nothing else binds when the case already has an owner (one holding
+// it); otherwise it is the owner (over one found for the type), binding such a subject too. Given
+// none, the single object carrying the case, as a type-owned constraint is checked.
 func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Instance) (*Instance, AnalysisArgs, error) {
 	owner := declaringType(shape.Sym)
 	if owner == nil {
 		return self, args, nil
 	}
-	if args.Subject != nil {
-		self = args.Subject
-		if !ctx.modelConforms(self.Type, owner) && len(ctx.carriersUnder([]*Instance{self}, owner)) == 0 {
+	subject, declared := shape.subjectParameter()
+	unbound := declared && subject.Default == nil
+	if unbound {
+		_, named := args.Named[subject.Name]
+		unbound = !named
+	}
+	given := args.Subject
+	if given != nil && (self == nil || !unbound) {
+		if !ctx.modelConforms(given.Type, owner) && len(ctx.carriersUnder([]*Instance{given}, owner)) == 0 {
 			return nil, args, fmt.Errorf("%w: %s is a feature of %s, which object #%d is not an object of",
-				ErrNotCarried, shape.Label, ctx.qualifiedSymbolName(owner), self.ID)
+				ErrNotCarried, shape.Label, ctx.qualifiedSymbolName(owner), given.ID)
 		}
+		self, given = given, nil
 	}
 	reached, err := ctx.conditionSubject(shape.Sym, self)
 	if err != nil {
 		return nil, args, fmt.Errorf("%s %s: %w", shape.Kind, shape.Name, err)
 	}
-	// The object also binds a subject the case declares and nothing else binds.
-	args.Subject = nil
-	if subject, ok := shape.subjectParameter(); ok && subject.Default == nil && reached.instance != nil {
-		if _, named := args.Named[subject.Name]; !named {
-			args.Subject = reached.instance
-		}
+	args.Subject = given
+	if given == nil && unbound && reached.instance != nil {
+		args.Subject = reached.instance
 	}
 	return reached.instance, args, nil
 }

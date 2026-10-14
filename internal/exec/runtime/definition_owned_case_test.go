@@ -14,6 +14,7 @@ import (
 const definitionOwnedCaseModel = `
 package test {
 	private import ScalarValues::Real;
+	private import ScalarValues::Boolean;
 
 	requirement def CostRequirement {
 		subject product : Definition;
@@ -45,8 +46,17 @@ package test {
 	part cheap : Definition { attribute :>> cost = 80.0; }
 	part dear : Definition { attribute :>> cost = 120.0; }
 
-	part def Other;
-	part other : Other;
+	part def Other { attribute ok : Boolean; }
+	part other : Other { attribute :>> ok = true; }
+
+	part def Holder {
+		attribute cost : Real;
+		verification heldTest {
+			subject s : Other;
+			return verdict = VerificationCases::PassIf(cost <= 100.0 and s.ok);
+		}
+	}
+	part holder : Holder { attribute :>> cost = 80.0; }
 }`
 
 // definitionOwnedCase builds the model and materializes the named objects.
@@ -105,6 +115,22 @@ func TestDefinitionOwnedCaseRunsOnTheObjectGivenOverOneFound(t *testing.T) {
 	}
 	if got := result.Verdict; got.Kind != VerdictFail || got.Subject != dear {
 		t.Errorf("costTest on dear with #%d found = %s (%s) about %v, want fail about dear", found.ID, got.Kind, got.Detail, got.Subject)
+	}
+}
+
+// TestHeldCaseBindsTheObjectGivenToItsSubject pins that an object given to a case
+// an object holds binds the subject the case declares, of another type than the
+// holder, and the holder stays the object the case runs as a feature of.
+func TestHeldCaseBindsTheObjectGivenToItsSubject(t *testing.T) {
+	idx, ctx, objects := definitionOwnedCase(t, "test::holder", "test::other")
+	holder, other := objects[0], objects[1]
+	sym := oneSymbol(t, idx, "test::Holder::heldTest")
+	result, err := ctx.RunVerification(sym, AnalysisArgs{Subject: other}, sym.OwnerScope, holder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Verdict; got.Kind != VerdictPass || got.Subject != holder {
+		t.Errorf("heldTest on other held by #%d = %s (%s) about %v, want pass about holder", holder.ID, got.Kind, got.Detail, got.Subject)
 	}
 }
 
