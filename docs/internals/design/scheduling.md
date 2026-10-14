@@ -134,8 +134,10 @@ per statement, an `assign` writing when it ends. Another performance may run bet
 
 - **Atomic units.** One initialization (every initial value of the body, read at its start
   shot) and one statement are each one move: an assignment reads its value and writes it with
-  no boundary between, since the library places nothing between them. A loop iteration and a
-  step of a flow the body drives are one move each, as they already were.
+  no boundary between, since the library places nothing between them. A loop iteration is one
+  move; a step of a flow the body drives is one move unless its own body divides, as a token of
+  the outer flow's does, so the repeated performances of a counted step in a loop or branch body
+  and the branches of a fork there interleave as they do at the top level.
 - **Scheduler boundaries.** Where a body divides, the run yields after its start shot and after
   each statement (`Context.bodyPerformed`, `Context.yieldBody`, `bodyPause.yielded`): the token
   goes back to the step's steppable tokens with its body frame held, and the next pick among
@@ -291,12 +293,15 @@ fresh `Context`:
    them into `CheckReport.Unenumerated`. A gap makes the exploration incomplete as a budget does —
    `Exploration.Complete` is false while either stands — and `Status` names what was not
    enumerated (`incomplete after N runs; not enumerated: …`); `analysis` reports the result's
-   standing as *observed*, never *proved*. The one gap today is `GapBlockBodyRepetition`: the
-   performances of a repeated step in a loop or if body are run one move apiece
-   (`stmtEngine.blockFlow`, `recordRepetition`), so their interleavings are no schedule. The
+   standing as *observed*, never *proved*. No construct records a gap today: the one that did —
+   the performances of a repeated step in a loop or `if` body, once run one move apiece — are
+   sibling tokens of the body's flow (`splitRepeatedStep`), so their interleavings are token-order
+   choice points like a top-level step's, and the table below finds every other order the
+   executors take without a choice point fixed by the library or canonical. A construct found to
+   perform an open order as one move is added as a `CoverageGap` and recorded where it runs. The
    REPL's `ExplorationVerdict.Unenumerated`, the wire `ExplorationStatus.unenumerated` and the
-   Python and Node clients' `unenumerated` carry the gaps by identifier (`block-body-repetition`),
-   and a conformance case states the gaps exploring it must record under `exploreGaps`.
+   Python and Node clients' `unenumerated` carry the gaps by identifier, and a conformance case
+   states the gaps exploring it must record under `exploreGaps`.
 
 A fresh context per run is what makes replay sound: instances, identities, the message bus, the
 clock, object behaviors, calc memoization and the notes of one run cannot leak into the next.
@@ -350,7 +355,7 @@ the lowering fall into these classes:
 | `lower/behavior_order.go` `BehaviorOrder` | successions outside a body | lowered as `HappensBefore` constraints the runtime enforces, never as an order it draws |
 | `state_run_to_completion.go` `entryStep` | a held entry against a free dispatch | drawn as `ChoiceEntryStep` |
 | `state_executor.go` `runDoRound` | the due do moves of a round against the dispatch after it | recorded as `ChoiceStepOrder` by `noteRoundStepOrder`, taken as the do step (above); the moves among the due do behaviors are `chooseDoAction`'s draw where two or more are due |
-| `statements.go` `blockFlow`, `action_step_multiplicity.go` `recordRepetition` | the performances of a repeated step in a loop or if body, run one move apiece | **not a choice point**: recorded as the coverage gap `GapBlockBodyRepetition`, so `explore` and `check` report themselves incomplete rather than `complete` over it |
+| `action_step_multiplicity.go` `splitRepeatedStep` | the `n` performances of a repeated step in a loop or `if` body, among themselves and against the steps outside the body | drawn as token order: the performances are sibling tokens of the body's flow, one repetition group, and the body yields between its moves (`lower.BodyDivides`), so `explore` reaches every interleaving a top-level `[n]` step admits |
 
 ## The conformance contract
 

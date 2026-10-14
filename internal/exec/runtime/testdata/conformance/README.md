@@ -201,11 +201,11 @@ a case that hits it fails with a message telling the author to raise it:
   budget too low fails the case rather than hiding behavior.
 
 - `exploreGaps`: optional; the coverage gaps exploring the case must record,
-  by identifier (`block-body-repetition`: the performances of a repeated step in
-  a loop or if body are run one move apiece), each matched exactly and in
-  canonical order — the constructs whose orders the exploration could not vary,
-  so it reports itself incomplete short of them rather than complete. A case
-  stating none must explore complete. Stating it explores the case even without
+  by identifier (`runtime.CoverageGap`), each matched exactly and in canonical
+  order — the constructs whose orders the exploration could not vary, so it
+  reports itself incomplete short of them rather than complete. No construct
+  records one today, so no case states any; a case stating none must explore
+  complete. Stating it explores the case even without
   `outcomes`; the exact set it explores to is then asserted only where the case
   also carries `outcomes` or `outputs`. Where the default budget leaves that
   exploration short, a case pairs `exploreGaps` with `exploreBudget` for the

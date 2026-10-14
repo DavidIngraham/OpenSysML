@@ -726,12 +726,12 @@ test("an exploration with a construct left unenumerated is incomplete and says w
     budgetsHit: [],
     runsBudget: 1024,
     depthBudget: 64,
-    unenumerated: ["block-body-repetition"],
+    unenumerated: ["coverage-gap-1"],
   });
-  assert.deepEqual(gap.unenumerated, ["block-body-repetition"]);
+  assert.deepEqual(gap.unenumerated, ["coverage-gap-1"]);
   assert.equal(
     gap.status,
-    "incomplete after 2 runs; not enumerated: block-body-repetition; probabilities are lower bounds",
+    "incomplete after 2 runs; not enumerated: coverage-gap-1; probabilities are lower bounds",
   );
   assert.throws(() => gap.raiseForIncomplete(), ExecutionError);
   const whole = new Exploration({

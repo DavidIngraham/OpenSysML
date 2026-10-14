@@ -2,8 +2,9 @@
 	"type": "action",
 	"libraries": true,
 	"schedule": "declared",
-	"exploreGaps": ["block-body-repetition"],
-	"outputs": {
-		"c": {"type": "Integer", "value": 2}
-	}
+	"outcomes": [
+		{"outputs": {"c": {"type": "Integer", "value": 1}}},
+		{"outputs": {"c": {"type": "Integer", "value": 2}}}
+	],
+	"admissible": "Repeated action steps and shared writes"
 }
