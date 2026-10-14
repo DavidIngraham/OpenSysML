@@ -108,6 +108,7 @@ package Model {
             metadata DiagramLayout::Layout about Vehicle { x = 10; y = 160; width = 100; height = 80; }
             metadata DiagramLayout::Layout about Engine { x = 120; y = 160; width = 100; height = 80; }
             metadata DiagramLayout::Layout about Wheel { x = 230; y = 160; width = 100; height = 80; }
+            metadata DiagramLayout::Route about Engine { points = (170, 80, 170, 160); ref :>> general : Component; }
             metadata DiagramLayout::Route about WheelToVehicle { points = (260, 220, 210, 260, 160, 220); }
             render Views::asTreeDiagram;
         }

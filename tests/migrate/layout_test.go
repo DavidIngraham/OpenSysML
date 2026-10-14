@@ -241,7 +241,7 @@ func TestGoldenEdgeLayout(t *testing.T) {
 	if l == nil {
 		t.Fatal("no layout summary")
 	}
-	if l.Routes != 24 || l.RoutesWritten != 12 || l.RoutesUnexposed != 11 || l.RoutesDangling != 1 {
+	if l.Routes != 24 || l.RoutesWritten != 13 || l.RoutesUnexposed != 10 || l.RoutesDangling != 1 {
 		t.Errorf("routes: %+v", l)
 	}
 	// An edge of the graph the activity's rendering does not draw is exposed, not swallowed.
@@ -287,7 +287,7 @@ func TestGoldenEdgeLayout(t *testing.T) {
 		{Kind: "ControlFlow", Reason: "unnamed", Count: 1},
 		{Kind: "ControlFlow", Reason: "written", Count: 2},
 		{Kind: "Dependency", Reason: "not drawn", Count: 2},
-		{Kind: "Generalization", Reason: "no v2 member", Count: 1},
+		{Kind: "Generalization", Reason: "written", Count: 1},
 		{Kind: "Include", Reason: "written", Count: 1},
 		{Kind: "ObjectFlow", Reason: "not drawn", Count: 1},
 		{Kind: "ObjectFlow", Reason: "written", Count: 1},

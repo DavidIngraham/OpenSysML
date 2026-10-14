@@ -475,9 +475,12 @@ Edges with no v2 member of their own are not given one: a Generalization or Inte
 is a `:>` clause or a port's conjugation, a Composition or Aggregation between blocks is the
 `part`/`ref` end usage, a constraint or information flow edge nothing realizes is not
 written, and a decision's `else` branch is a clause of the node it leaves, not a member. Their
-placements on a diagram expose the ends as before; their routes are reported (below), not
+placements on a diagram expose the ends as before. A Generalization's route is written about the
+specific definition, naming the general its `:>` is drawn to (`metadata DiagramLayout::Route
+about Sub { points = (…); ref :>> general : Sup; }`), one per general, when a block definition
+diagram shows both ends and the `:>` was written; the others' routes are reported (below), not
 attached to a member that is not an edge. The rendered view still draws them: a tree draws a
-specialization from each exposed element to the general it specializes, and a composition
+specialization from each exposed element to the general it specializes, along its Route, and a composition
 (filled diamond, labelled with the end usage's name and multiplicity) or reference (hollow
 diamond) from each to the definition typing a part or `ref` it owns, wherever both ends are
 drawn, and draws a `connection def` whose two ends are typed by drawn definitions as a line

@@ -362,49 +362,74 @@ func routeKindName(exported string, el *sysmlv1.Element) string {
 }
 
 // routeTarget is every member a route of el is pinned to, as scope's view of
-// form f exposes them; or nil and the reason there is none.
-func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) ([]string, string) {
+// form f exposes them; or nil and the reason there is none. A generalization's
+// route is pinned to the specific, naming the general the `:>` is drawn to.
+func (m *migration) routeTarget(el, scope *sysmlv1.Element, f viewForm) (refs []string, general, why string) {
 	if c := m.connOf(el); f.useCases && c != nil {
-		return m.connRefs(c.of, scope)[:1], ""
+		return m.connRefs(c.of, scope)[:1], "", ""
 	}
 	if m.associationDef(el) {
 		if !f.drawsEdge("connection def") || !m.associationLine(el) {
-			return nil, routeNotDrawn
+			return nil, "", routeNotDrawn
 		}
-		return []string{m.exposure(el, scope)}, ""
+		return []string{m.exposure(el, scope)}, "", ""
+	}
+	if el.Type == "Generalization" {
+		return m.generalizationRouteTarget(el, scope, f)
 	}
 	if prop := m.backedProperty(el); prop != nil {
 		// The line is the backed attribute's typing edge, drawn from its owner's
 		// box to its type's; the route pins that edge to the attribute.
 		if !f.drawsEdge("attribute") {
-			return nil, routeNotDrawn
+			return nil, "", routeNotDrawn
 		}
 		if m.writtenHidden(prop) {
 			// A private attribute is out of the view's reach.
-			return nil, routeNotExposed
+			return nil, "", routeNotExposed
 		}
-		return []string{m.exposure(prop, scope)}, ""
+		return []string{m.exposure(prop, scope)}, "", ""
 	}
 	if nameableEdge(el) {
 		em, ok := m.edgeMembers[el]
 		switch {
 		case !ok:
-			return nil, routeNotWritten
+			return nil, "", routeNotWritten
 		case em.none:
-			return nil, routeNoMember
+			return nil, "", routeNoMember
 		case em.name == "":
-			return nil, routeUnnamed
+			return nil, "", routeUnnamed
 		case !f.drawsEdge(em.keyword):
-			return nil, routeNotDrawn
+			return nil, "", routeNotDrawn
 		case !m.reaches(em.owner):
-			return nil, routeNotExposed
+			return nil, "", routeNotExposed
 		}
-		return m.routeRefs(el, scope, f), ""
+		return m.routeRefs(el, scope, f), "", ""
 	}
 	if m.exposure(el, scope) != "" {
-		return nil, routeNotDrawn
+		return nil, "", routeNotDrawn
 	}
-	return nil, routeNoMember
+	return nil, "", routeNoMember
+}
+
+// generalizationRouteTarget is routeTarget for generalization el: the specific
+// its `:>` clause is written on, and the general the tree draws the edge to.
+func (m *migration) generalizationRouteTarget(el, scope *sysmlv1.Element, f viewForm) (refs []string, general, why string) {
+	specific, target := el.Parent, m.model.Ref(el, "general")
+	if specific == nil || target == nil {
+		return nil, "", routeNotWritten
+	}
+	cat, _ := m.classify(specific)
+	if ref, _ := m.general(specific, el, cat); ref == "" {
+		return nil, "", routeNotWritten
+	}
+	if !f.drawsEdge("specialization") {
+		return nil, "", routeNotDrawn
+	}
+	ref, generalRef := m.exposure(specific, scope), m.exposure(target, scope)
+	if ref == "" || generalRef == "" {
+		return nil, "", routeNotExposed
+	}
+	return []string{ref}, generalRef, ""
 }
 
 // associationDef reports whether e is an association written as a connection
@@ -551,7 +576,7 @@ func (f viewForm) drawsEdge(keyword string) bool {
 	case interconnectionRendering:
 		return keyword == "connection" || keyword == "binding"
 	case treeRendering:
-		return keyword == "connection def" || keyword == "attribute"
+		return keyword == "connection def" || keyword == "attribute" || keyword == "specialization"
 	}
 	return false
 }
