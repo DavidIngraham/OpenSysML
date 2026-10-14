@@ -251,7 +251,7 @@ func (w *d2Writer) writeTree(r *Rendering) {
 	var contain func(node *Node)
 	contain = func(node *Node) {
 		for _, child := range node.Children {
-			w.writeArrow("", w.paths[node.ID], w.paths[child.ID], "--", "", "edge", nil, Origin{})
+			w.writeArrow("", d2EdgeSpec{from: w.paths[node.ID], to: w.paths[child.ID], arrow: "--", class: "edge"})
 			contain(child)
 		}
 	}
@@ -519,13 +519,21 @@ func (w *d2Writer) writeEdge(indent string, edge Edge) {
 	case EdgeImport, EdgeSatisfy, EdgeVerify, EdgeDerive, EdgeRefine, EdgeAllocate:
 		class = "dependency"
 	}
-	w.writeArrow(indent, w.end(edge.From, edge.FromPort), w.end(edge.To, edge.ToPort), arrow, edge.Label, class, edge.Style, edge.Origin)
+	w.writeArrow(indent, d2EdgeSpec{from: w.end(edge.From, edge.FromPort), to: w.end(edge.To, edge.ToPort), arrow: arrow, label: edge.Label, class: class, style: edge.Style, origin: edge.Origin})
 }
 
 // writeArrow writes one connection statement between two paths, with its
 // label when it carries one, its source link and the colours and font of its
 // Style.
-func (w *d2Writer) writeArrow(indent, from, to, arrow, label, class string, style *Style, origin Origin) {
+// d2EdgeSpec is one edge line: its ends, arrowhead, label, class, Style and source link.
+type d2EdgeSpec struct {
+	from, to, arrow, label, class string
+	style                         *Style
+	origin                        Origin
+}
+
+func (w *d2Writer) writeArrow(indent string, a d2EdgeSpec) {
+	from, to, arrow, label, class, style, origin := a.from, a.to, a.arrow, a.label, a.class, a.style, a.origin
 	w.classes[class] = true
 	attrs := []string{"class: " + class}
 	if link := w.link(origin); link != "" {
