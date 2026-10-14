@@ -114,6 +114,10 @@ type LayoutSite struct {
 	// Via is the namespace an `about` clause named the element through, when
 	// qualified: `about Acquire::start` positions the start Acquire inherits.
 	Via *symbols.Symbol
+	// General is the element a Route names with `ref :>> general : G;`: the
+	// Route steers the edge drawn from the annotated element to G for its
+	// specialization, not an edge the element declares itself. Nil otherwise.
+	General *symbols.Symbol
 	// Exactly one of Layout, Route, Canvas, Style, Note and Picture is set when
 	// the annotation reads; all are nil when a binding it needs has a Problem.
 	Layout  *Layout
@@ -320,9 +324,29 @@ func (m *Model) memberReferent(scope *symbols.Scope, member *symbols.Symbol, nam
 
 // RouteOf resolves the Route of the element an edge is declared as — a
 // connector, flow, transition or succession — as drawn in view, as LayoutOf
-// resolves a Layout.
+// resolves a Layout. A Route naming a general steers another edge and is
+// passed over.
 func (m *Model) RouteOf(view, elem *symbols.Symbol) (*LayoutSite, bool) {
-	return m.resolveSite(view, elem, RouteFQN)
+	var sites []*LayoutSite
+	for _, site := range m.LayoutSitesOf(elem) {
+		if site.TypeFQN == RouteFQN && site.General == nil {
+			sites = append(sites, site)
+		}
+	}
+	return pickSite(view, sites)
+}
+
+// SpecializationRouteOf resolves the Route of the edge drawn from elem to
+// general for the specialization, typing or subsetting elem states, as drawn in
+// view: a Route about elem naming general, picked as RouteOf picks.
+func (m *Model) SpecializationRouteOf(view, elem, general *symbols.Symbol) (*LayoutSite, bool) {
+	var sites []*LayoutSite
+	for _, site := range m.LayoutSitesOf(elem) {
+		if site.TypeFQN == RouteFQN && site.General != nil && sameElement(site.General, general) {
+			sites = append(sites, site)
+		}
+	}
+	return pickSite(view, sites)
 }
 
 // StyleOf resolves the Style of elem as drawn in view, as LayoutOf resolves a
@@ -522,11 +546,12 @@ func (m *Model) readLayout(site *LayoutSite, bindings []MetadataBinding) {
 }
 
 // readRoute reads a Route body: points is a sequence of reals, x and y
-// alternating, so an odd count leaves a point without its y.
+// alternating, so an odd count leaves a point without its y; general, when
+// typed, is the element the steered specialization edge is drawn to.
 func (m *Model) readRoute(site *LayoutSite, bindings []MetadataBinding) {
 	var values []float64
 	var elements []ast.Node
-	ok := true
+	ok := m.readGeneral(site)
 	for _, b := range bindings {
 		if b.Feature != "points" || b.Value == nil {
 			continue
@@ -554,6 +579,43 @@ func (m *Model) readRoute(site *LayoutSite, bindings []MetadataBinding) {
 		route.Points = append(route.Points, Waypoint{X: values[i], Y: values[i+1]})
 	}
 	site.Route = route
+}
+
+// readGeneral reads the general a Route body names, `ref :>> general : G;`,
+// into site.General; false when G resolves to no element.
+func (m *Model) readGeneral(site *LayoutSite) bool {
+	for _, member := range metadataBody(site.Node) {
+		usage := metadataBodyFeature(member)
+		if usage == nil || redefinedFeatureName(usage) != "general" {
+			continue
+		}
+		typeRef := typingTargetName(usage)
+		if typeRef == nil {
+			continue
+		}
+		if general := m.resolveMetadataType(valueScope(site.Scope, site.Node), typeRef); general != nil {
+			site.General = general
+			return true
+		}
+		site.Problems = append(site.Problems, LayoutProblem{Node: typeRef,
+			Message: fmt.Sprintf("Route names general %s, which resolves to no element", typeRef.Text())})
+		return false
+	}
+	return true
+}
+
+// typingTargetName is the name a usage's typing clause states, nil when it
+// states none.
+func typingTargetName(usage *ast.Usage) *ast.QualifiedName {
+	for _, rel := range usage.Relationships {
+		if rel == nil || rel.Kind != ast.RelTyping {
+			continue
+		}
+		if qn := ast.AsQualifiedName(rel.Target); qn != nil && len(qn.Parts) > 0 {
+			return qn
+		}
+	}
+	return nil
 }
 
 // readCanvas reads a Canvas body: an optional unit string and an optional

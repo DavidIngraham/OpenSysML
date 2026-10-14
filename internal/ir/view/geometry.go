@@ -235,6 +235,24 @@ func (r *Renderer) routeOf(view, elem *symbols.Symbol, out *Rendering) []Point {
 	if !ok {
 		return nil
 	}
+	return r.routePoints(site, elem, out)
+}
+
+// specializationRouteOf is the waypoints the edge drawn from elem to general,
+// for the specialization, typing or subsetting elem states, follows in view:
+// those of a Route about elem naming general, nil when none gives any.
+func (r *Renderer) specializationRouteOf(view, elem, general *symbols.Symbol, out *Rendering) []Point {
+	out.drawn.noteSpecialization(elem, general)
+	site, ok := r.model.SpecializationRouteOf(view, elem, general)
+	if !ok {
+		return nil
+	}
+	return r.routePoints(site, elem, out)
+}
+
+// routePoints is the waypoints a Route site about elem binds, nil when it
+// reads none; its problems are noticed on out.
+func (r *Renderer) routePoints(site *semantics.LayoutSite, elem *symbols.Symbol, out *Rendering) []Point {
 	r.noteLayoutProblems(site, elem, out)
 	if site.Route == nil {
 		return nil
