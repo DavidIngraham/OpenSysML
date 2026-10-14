@@ -5,9 +5,9 @@
 «Probability» ControlFlow	Sorter::Route::<ControlFlow>	_eReject	(«Probability» from http://example.com/routing/profile is not the SysML profile's; its probability is not read; the edge carries no «Probability»: it is weighted 1.0 - (bias + 0.3), its share of what the marked branches leave of 1, read when the decision is reached)
 
 ## mapped (15)
-Model	Sorter	_m	(the root model's members are written at the top level)
-«Block» Class	Sorter	_sorter	-> Sorter
-Activity	Sorter::Route	_act	-> Sorter::route	(written as an action usage every object of Sorter performs from creation, so its body runs on the object and reaches its features)
+Model	Sorter	_m	-> Sorter	(written as package Sorter)
+«Block» Class	Sorter	_sorter	-> Sorter::Sorter
+Activity	Sorter::Route	_act	-> Sorter::Sorter::route	(written as an action usage every object of Sorter performs from creation, so its body runs on the object and reaches its features)
 ActivityFinalNode	Sorter::Route::<ActivityFinalNode>	_final	-> final
 «Probability» ControlFlow	Sorter::Route::<ControlFlow>	_eLeft	(the probability reads the property bias of the object performing the action, so a run checks it lies in [0, 1] and the branches sum to 1 when the decision is reached)
 «Probability» ControlFlow	Sorter::Route::<ControlFlow>	_eRight
@@ -19,4 +19,4 @@ InitialNode	Sorter::Route::<InitialNode>	_init	-> start
 OpaqueAction	Sorter::Route::left	_left	-> left	(its body is empty, so it is written as an action that does nothing)
 OpaqueAction	Sorter::Route::reject	_reject	-> reject	(its body is empty, so it is written as an action that does nothing)
 OpaqueAction	Sorter::Route::right	_right	-> right	(its body is empty, so it is written as an action that does nothing)
-Property	Sorter::bias	_bias	-> Sorter::bias
+Property	Sorter::bias	_bias	-> Sorter::Sorter::bias

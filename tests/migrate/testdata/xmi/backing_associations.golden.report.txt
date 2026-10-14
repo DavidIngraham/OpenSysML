@@ -10,22 +10,22 @@
 # routes of Association: 1 written
 
 ## approximated (3)
-Association	Optics::<Association>	_sensorAmpAssoc	-> Optics::AmplifierToSensor	(the anonymous Association is written as connection def AmplifierToSensor; its one usage is the connection amplifier to sensor joining amplifier and sensor)
-Constraint	Optics::Gain::<Constraint>	_gainRule	-> Optics::Gain	(opaque expression copied verbatim (language SysML))
-Diagram	Optics::Sensors	_bdd	-> Optics::Sensors	(a SysML Block Definition Diagram written as a view rendered asTreeDiagram; 2 of 9 shown elements are not written and not exposed; laid out from the diagram's own symbol stream: 3 of 7 shown elements positioned (4 lying on connections), 1 of 2 connectors routed (1 not written))
+Association	Optics::<Association>	_sensorAmpAssoc	-> Model::Optics::AmplifierToSensor	(the anonymous Association is written as connection def AmplifierToSensor; its one usage is the connection amplifier to sensor joining amplifier and sensor)
+Constraint	Optics::Gain::<Constraint>	_gainRule	-> Model::Optics::Gain	(opaque expression copied verbatim (language SysML))
+Diagram	Optics::Sensors	_bdd	-> Model::Optics::Sensors	(a SysML Block Definition Diagram written as a view rendered asTreeDiagram; 2 of 9 shown elements are not written and not exposed; laid out from the diagram's own symbol stream: 3 of 7 shown elements positioned (4 lying on connections), 1 of 2 connectors routed (1 not written))
 
 ## mapped (11)
-Model	Model	_model	(the root model's members are written at the top level)
-Package	Optics	_optics	-> Optics
-Property	Optics::<Association>::<Property>	_sensorAmpEnd	-> Optics::AmplifierToSensor::sensor
-«Block» Class	Optics::Amplifier	_amplifier	-> Optics::Amplifier
-«ConstraintBlock» Class	Optics::Gain	_gain	-> Optics::Gain
-«ConstraintParameter» Port	Optics::Gain::input	_gainIn	-> Optics::Gain::input
-«ConstraintParameter» Port	Optics::Gain::output	_gainOut	-> Optics::Gain::output
-«ValueType» DataType	Optics::Mass	_mass	-> Optics::Mass
-«Block» Class	Optics::Sensor	_sensor	-> Optics::Sensor
-Property	Optics::Sensor::amplifier	_sensorAmp	-> Optics::Sensor::amplifier
-Property	Optics::Sensor::mass	_sensorMass	-> Optics::Sensor::mass
+Model	Model	_model	-> Model	(written as package Model)
+Package	Optics	_optics	-> Model::Optics
+Property	Optics::<Association>::<Property>	_sensorAmpEnd	-> Model::Optics::AmplifierToSensor::sensor
+«Block» Class	Optics::Amplifier	_amplifier	-> Model::Optics::Amplifier
+«ConstraintBlock» Class	Optics::Gain	_gain	-> Model::Optics::Gain
+«ConstraintParameter» Port	Optics::Gain::input	_gainIn	-> Model::Optics::Gain::input
+«ConstraintParameter» Port	Optics::Gain::output	_gainOut	-> Model::Optics::Gain::output
+«ValueType» DataType	Optics::Mass	_mass	-> Model::Optics::Mass
+«Block» Class	Optics::Sensor	_sensor	-> Model::Optics::Sensor
+Property	Optics::Sensor::amplifier	_sensorAmp	-> Model::Optics::Sensor::amplifier
+Property	Optics::Sensor::mass	_sensorMass	-> Model::Optics::Sensor::mass
 
 ## skipped (6)
 Association	Optics::<Association>	_gainInAssoc	(the association only backs Optics::Gain::input, which is written as a feature)

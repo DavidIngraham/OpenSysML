@@ -558,6 +558,9 @@ func (ctx *Context) denotedObjects(sym *symbols.Symbol) ([]*Instance, error) {
 // denotedValue is what a usage carrying no value reads as: its object, the collection of its
 // objects, or undetermined of its count where that admits more than the lower bound it holds.
 func (ctx *Context) denotedValue(sym *symbols.Symbol) (Value, error) {
+	// A reader of another document's scope tree holds its own symbol for the
+	// usage; its occurrences are recorded under the declaring tree's.
+	sym = ctx.declaredSymbol(sym)
 	if !ctx.namesObjects(sym) {
 		inst, err := ctx.occurrenceOf(sym)
 		if err != nil {

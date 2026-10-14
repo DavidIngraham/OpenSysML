@@ -63,7 +63,7 @@ part def Machine {
         transition first regions then done;
     }
     exhibit state run : Run;
-}`)}
+}`), Report: &migrate.Report{}}
 	s = session(t, prior)
 	meta(t, s, "%instantiate Machine")
 	meta(t, s, "%state Machine::Run #1")

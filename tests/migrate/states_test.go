@@ -221,7 +221,7 @@ func TestInitialIntoOrthogonalRegionEntersThatRegion(t *testing.T) {
 		r := migrateFixtureFileOptions(t, "orthogonal_initials", opts)
 		s := string(r.Notation)
 		for _, state := range []string{"Donate", "Coincide", "Conflict", "Nested", "Dangle"} {
-			if !strings.Contains(s, "state "+state+" {\n            entry; then regions;") {
+			if !hasBlock(s, "state "+state+" {\n    entry; then regions;") {
 				t.Errorf("%s has no default entry into its regions:\n%s", state, s)
 			}
 		}

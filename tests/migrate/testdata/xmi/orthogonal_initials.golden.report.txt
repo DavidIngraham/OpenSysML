@@ -20,10 +20,10 @@ Pseudostate	Plant::Life::main::Nested::na::<Pseudostate>	_naStray	(written as th
 Transition	Plant::Life::main::Nested::na::<Transition>	_naStrayT	(its target 'inner1' lies in ni, an orthogonal region of the pseudostate's, so it is written as the entry of ni)
 
 ## mapped (81)
-Model	Model	_m	(the root model's members are written at the top level)
-Signal	Next	_next	-> Next
-«Block» Class	Plant	_plant	-> Plant
-StateMachine	Plant::Life	_life	-> Plant::Life
+Model	Model	_m	-> Model	(written as package Model)
+Signal	Next	_next	-> Model::Next
+«Block» Class	Plant	_plant	-> Model::Plant
+StateMachine	Plant::Life	_life	-> Model::Plant::Life
 Region	Plant::Life::main	_main	(the one region is written as the body of its owner)
 Pseudostate	Plant::Life::main::<Pseudostate>	_init	(written as the entry of the region)
 Transition	Plant::Life::main::<Transition>	_enterDonate
@@ -87,8 +87,8 @@ Transition	Plant::Life::main::Nested::nb::<Transition>	_nbInitT
 State	Plant::Life::main::Nested::nb::Inner	_inner	-> Inner
 Region	Plant::Life::main::Nested::nb::Inner::ni	_ni	-> ni	(the region is written as the sub-state ni of the parallel state Inner, as a composite state's regions are)
 State	Plant::Life::main::Nested::nb::Inner::ni::inner1	_inner1	-> inner1
-«Block» Class	Site	_site	-> Site
-StateMachine	Site::Cross	_cross	-> Site::Cross
+«Block» Class	Site	_site	-> Model::Site
+StateMachine	Site::Cross	_cross	-> Model::Site::Cross
 Region	Site::Cross::main	_crossMain	(the one region is written as the body of its owner)
 Pseudostate	Site::Cross::main::<Pseudostate>	_crossInit	(written as the entry of the region)
 Transition	Site::Cross::main::<Transition>	_crossInitT

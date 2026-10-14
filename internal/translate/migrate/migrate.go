@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/url"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strconv"
@@ -675,6 +676,7 @@ func (m *migration) prepare() {
 		m.distinguish(e)
 		m.recordSender(e)
 		if e.Parent == nil {
+			m.nameRootModel(e)
 			m.avoidLibraryRoots(e)
 		}
 		if simulationConfig(e) != nil {
@@ -831,42 +833,48 @@ func (m *migration) prepare() {
 	}
 }
 
-// avoidLibraryRoots renames a top-level declaration named like a standard
-// library root package: a qualified name starting with that name resolves to
-// the library package, which the standard loads first, so a reference into the
+// avoidLibraryRoots renames a root declaration named like a standard library
+// root package: a qualified name starting with that name resolves to the
+// library package, which the standard loads first, so a reference into the
 // written one would fail. The source name is kept for the report and for the
 // LibraryNameAvoided metadata line. It runs for root r after the top level has
 // been distinguished, before anything derives names from the old ones.
 func (m *migration) avoidLibraryRoots(r *sysmlv1.Element) {
-	var decls []*sysmlv1.Element
-	if m.flattened(r) {
-		for _, c := range r.Children {
-			if !ownerWritten(c.Role) {
-				decls = append(decls, c)
-			}
-		}
-	} else if !m.isLibrary(r) {
-		decls = append(decls, r)
+	if m.isLibrary(r) {
+		return
 	}
-	for _, e := range decls {
-		if m.isLibrary(e) {
-			continue
-		}
-		src := m.nameOf(e)
-		if src == "" || !m.libraryPackage(src) {
-			continue
-		}
-		base := src + " Model"
-		if source.IsIdentifier(src) && !source.IsKeyword(src) {
-			base = src + "Model"
-		}
-		fresh := base
-		for i := 2; m.nameTaken(nil, fresh) || m.libraryPackage(fresh); i++ {
-			fresh = fmt.Sprintf("%s %d", base, i)
-		}
-		m.names[e], m.libraryClash[e] = fresh, src
-		m.clashBySource[src] = e
+	src := m.nameOf(r)
+	if src == "" || !m.libraryPackage(src) {
+		return
 	}
+	base := src + " Model"
+	if source.IsIdentifier(src) && !source.IsKeyword(src) {
+		base = src + "Model"
+	}
+	fresh := base
+	for i := 2; m.nameTaken(nil, fresh) || m.libraryPackage(fresh); i++ {
+		fresh = fmt.Sprintf("%s %d", base, i)
+	}
+	m.names[r], m.libraryClash[r] = fresh, src
+	m.clashBySource[src] = r
+}
+
+// nameRootModel names an unnamed root Model after the file it comes from, so
+// the package written for it has a name a reader can place.
+func (m *migration) nameRootModel(r *sysmlv1.Element) {
+	if !isRootModel(r) || r.Name != "" || m.isLibrary(r) {
+		return
+	}
+	src := m.report.Source
+	base := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
+	if base == "" || base == "." || base == string(filepath.Separator) {
+		base = "Model"
+	}
+	name := base
+	for i := 2; m.nameTaken(nil, name); i++ {
+		name = fmt.Sprintf("%s%d", base, i)
+	}
+	m.names[r] = name
 }
 
 // libraryNameNotes writes, at the document's top level, one
@@ -1087,21 +1095,16 @@ func (m *migration) foldedInto(e *sysmlv1.Element) bool {
 	return e.Parent != nil && ownerWritten(e.Role) && m.written(e.Parent)
 }
 
-// root writes a top-level element: a Model's members are written at the top
-// level, any other root as a declaration of its own.
+// root writes a top-level element as a declaration of its own: a Model as the
+// package of its name, as the OMG transformation maps it.
 func (m *migration) root(e *sysmlv1.Element) {
-	if m.flattened(e) {
-		m.add(e, Mapped, "", "the root model's members are written at the top level")
-		m.body(e)
-		return
-	}
 	m.member(e)
 }
 
-// flattened reports whether e is a root Model whose members are written at the
-// top level in place of a declaration of its own.
-func (m *migration) flattened(e *sysmlv1.Element) bool {
-	return e.Parent == nil && e.Type == "Model" && !m.isLibrary(e)
+// isRootModel reports whether e is a root Model: the package the document's
+// content is written in.
+func isRootModel(e *sysmlv1.Element) bool {
+	return e.Parent == nil && e.Type == "Model"
 }
 
 // body writes the members of e's body, in document order, then what other
@@ -1219,11 +1222,7 @@ func (m *migration) reserveElementImportAliases() {
 	var walk func(*sysmlv1.Element)
 	walk = func(e *sysmlv1.Element) {
 		if e.Role == "elementImport" && e.Attrs["alias"] != "" {
-			owner := e.Parent
-			if owner != nil && owner.Type == "Model" && owner.Parent == nil {
-				owner = nil
-			}
-			m.take(owner, e.Attrs["alias"])
+			m.take(e.Parent, e.Attrs["alias"])
 		}
 		for _, child := range e.Children {
 			walk(child)
@@ -1333,6 +1332,9 @@ func (m *migration) classifier(e *sysmlv1.Element) {
 		name = m.nameFor(e)
 		if note == "" {
 			note = "the anonymous " + e.Type + " is named " + name
+			if isRootModel(e) {
+				note = "the Model has no name; the package is named after the file"
+			}
 		}
 	}
 	if vis := e.Attrs["visibility"]; vis == "private" || vis == "package" || vis == "protected" {
@@ -1356,6 +1358,9 @@ func (m *migration) classifier(e *sysmlv1.Element) {
 	if cat == catSimConfig {
 		m.simulationConfig(e, header, note)
 		return
+	}
+	if isRootModel(e) {
+		note = joinNotes("written as package "+writeName(name), note)
 	}
 	m.add(e, verdict, m.v2Name(e), note)
 	m.classifierBody(e, cat, header)
@@ -1491,10 +1496,10 @@ func (m *migration) general(e, g *sysmlv1.Element, cat category) (ref, note stri
 		return "", "a generalization refers to nothing in the document"
 	}
 	if sv := m.scalarValue(target); sv != "" {
-		return scalarValuesPrefix + sv, ""
+		return m.scalarValueRef(sv, m.scope), ""
 	}
 	if cat == catAttributeDef && m.quantityValueType(target) {
-		return "ScalarValues::Real", "the quantity value type " + qualifiedName(target) + " is written as ScalarValues::Real; its unit is not kept"
+		return m.scalarValueRef("Real", m.scope), "the quantity value type " + qualifiedName(target) + " is written as ScalarValues::Real; its unit is not kept"
 	}
 	if isMonteCarloAnalysis(target) {
 		return "", m.monteCarloGeneralization(e)
@@ -2911,10 +2916,6 @@ func (m *migration) written(e *sysmlv1.Element) bool {
 	if e.Type == "Region" && e.Role == "region" {
 		return m.regionWritten(e)
 	}
-	// The root Model is the file itself, so nothing can refer to it.
-	if e.Parent == nil && e.Type == "Model" {
-		return false
-	}
 	if p := e.Parent; p != nil && isBehavior(p) && !m.behaviorWritesMember(p, e) {
 		return false
 	}
@@ -2988,7 +2989,7 @@ func (m *migration) connectorWritten(e *sysmlv1.Element) bool {
 // document, so nothing under it is written either.
 func (m *migration) isBuried(e *sysmlv1.Element) bool {
 	p := e.Parent
-	if p == nil || isTopLevel(p) {
+	if p == nil {
 		return false
 	}
 	if b, ok := m.buried[e]; ok {
@@ -3125,6 +3126,15 @@ func (m *migration) signalAttributes(sig *sysmlv1.Element) []*sysmlv1.Element {
 	return attrs
 }
 
+// scalarValueRef names the ScalarValues type sv from scope, from the global
+// namespace when a member on the way shadows the library package.
+func (m *migration) scalarValueRef(sv string, scope *sysmlv1.Element) string {
+	if m.shadowsLibrary("ScalarValues", scope) {
+		return "$::" + scalarValuesPrefix + sv
+	}
+	return scalarValuesPrefix + sv
+}
+
 // typeRef writes the type of a feature: a ScalarValues type, a reference to a
 // migrated classifier, or nothing with a note when the type is not migrated.
 func (m *migration) typeRef(t, scope *sysmlv1.Element) (string, string) {
@@ -3133,9 +3143,9 @@ func (m *migration) typeRef(t, scope *sysmlv1.Element) (string, string) {
 	}
 	if sv := m.scalarValue(t); sv != "" {
 		if _, std := scalarValues[t.Name]; !std {
-			return scalarValuesPrefix + sv, "the tool's " + t.Name + " datatype is written as " + scalarValuesPrefix + sv
+			return m.scalarValueRef(sv, scope), "the tool's " + t.Name + " datatype is written as " + scalarValuesPrefix + sv
 		}
-		return scalarValuesPrefix + sv, ""
+		return m.scalarValueRef(sv, scope), ""
 	}
 	if t.IsProxy() {
 		return "", "type " + qualifiedName(t) + " lives outside the document and is not written"

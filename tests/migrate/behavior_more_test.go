@@ -425,7 +425,7 @@ func checkDeferredSignalsAreKeptAndReplayed(t *testing.T, r *migrate.Result) {
 	wantNote(t, r, "_dBeep", migrate.Approximated, "the order between occurrences of different signals is not kept; UML leaves the order of the event pool open")
 	wantNote(t, r, "_waitDo", migrate.Approximated, "the JavaScript body is written as v2 assignments")
 	wantNote(t, r, "_waitExit", migrate.Approximated, "the JavaScript body is written as v2 assignments")
-	for id, target := range map[string]string{"_waitDo": "Panel::Watch::Waiting::buffer::run", "_waitExit": "Panel::Watch::Waiting::flush::leave"} {
+	for id, target := range map[string]string{"_waitDo": "Model::Panel::Watch::Waiting::buffer::run", "_waitExit": "Model::Panel::Watch::Waiting::flush::leave"} {
 		if es := entriesFor(r, id); len(es) != 1 || es[0].Target != target {
 			t.Errorf("%s is named where the generated action nests it: want %s, got %+v", id, target, es)
 		}
@@ -2090,7 +2090,7 @@ func TestStateBehaviorsSharingANameAreDistinguished(t *testing.T) {
 		wantLine(t, r.Notation, line)
 	}
 	wantNote(t, r, "_onExit", migrate.Approximated, "written as v2 assignments")
-	if es := entriesFor(r, "_onExit"); len(es) == 1 && es[0].Target != "Logger::Logging::On::'log 2'" {
+	if es := entriesFor(r, "_onExit"); len(es) == 1 && es[0].Target != "Model::Logger::Logging::On::'log 2'" {
 		t.Errorf("the exit behavior's report target is %q, not the name written", es[0].Target)
 	}
 	if es := entriesFor(r, "_log_s"); len(es) != 1 || es[0].Target != "'log 3'" {

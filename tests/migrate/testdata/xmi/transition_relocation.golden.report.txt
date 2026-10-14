@@ -6,9 +6,9 @@ Pseudostate	Plant::Life::main::Parallel::region4::<Pseudostate>	_region4Init	(co
 Transition	Plant::Life::main::Parallel::region4::<Transition>	_crossRegionInit	(coincides with region3's own entry into 'wait3', which its transition also enters from this orthogonal region)
 
 ## mapped (26)
-Model	Model	_m	(the root model's members are written at the top level)
-«Block» Class	Plant	_plant	-> Plant
-StateMachine	Plant::Life	_life	-> Plant::Life
+Model	Model	_m	-> Model	(written as package Model)
+«Block» Class	Plant	_plant	-> Model::Plant
+StateMachine	Plant::Life	_life	-> Model::Plant::Life
 Region	Plant::Life::main	_main	(the one region is written as the body of its owner)
 Pseudostate	Plant::Life::main::<Pseudostate>	_init	(written as the entry of the region)
 Transition	Plant::Life::main::<Transition>	_enterWork
@@ -30,5 +30,5 @@ Transition	Plant::Life::main::Work::work::<Transition>	_enterRun
 Transition	Plant::Life::main::Work::work::<Transition>	_leaveRun	(the source 'Run' lies in another region and is named by its path Work.work.Run; the target 'Ready' lies in another region and is named by its path Parked.parked.Ready)
 Trigger	Plant::Life::main::Work::work::<Transition>::<Trigger>	_stopTrigger
 State	Plant::Life::main::Work::work::Run	_run	-> Run
-Signal	Stop	_stop	-> Stop
+Signal	Stop	_stop	-> Model::Stop
 SignalEvent	stopEvent	_stopEvent	(written where a trigger refers to it, as accept Stop)
