@@ -36,7 +36,7 @@ package Model {
             flow 'spare pwr' of Pwr from supply.'pwr out'.pwr to spare.'pwr in'.pwr;
             connection 'supply.pwr out to aux.pwr in' connect supply.'pwr out' to aux.'pwr in';
             /* item flow of Cmd from supply.'pwr out' to aux.'pwr in' not migrated: no flow property typed by Cmd on both ends of the realizing connector */
-            /* not migrated: «ItemFlow» InformationFlow 'aux cmd' — no flow property typed by Cmd on both ends of the realizing connector; applied stereotypes «ItemFlow» */
+            /* not migrated: «ItemFlow» InformationFlow 'aux' — no flow property typed by Cmd on both ends of the realizing connector; applied stereotypes «ItemFlow» */
             view 'Sys Internals' {
                 expose supply;
                 expose load;

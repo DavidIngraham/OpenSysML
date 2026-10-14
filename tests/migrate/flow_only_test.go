@@ -77,6 +77,11 @@ func TestGoldenFlowOnlyConnectors(t *testing.T) {
 			t.Errorf("entries for %s = %+v, want one %v entry noting %q", id, es, want.verdict, want.note)
 		}
 	}
+	// The unwritten item flow 'aux' is named like the part aux, but takes no
+	// name, so neither its entry nor its comment says it was written apart.
+	if strings.Contains(notation, "aux 2") || strings.Contains(entriesFor(r, "_if_aux")[0].Note, "written as") {
+		t.Errorf("an unwritten flow is numbered:\n%s", notation)
+	}
 }
 
 // A strict migration names no OpenSysML library, so a flow's made-up name is

@@ -993,7 +993,7 @@ func (m *migration) exposeReached(e *sysmlv1.Element) {
 		_, _, kw, base, _ := m.connectorForm(e, ends)
 		if m.flowsAlone(e, ends, kw) {
 			m.asFlows[e] = true
-			m.nameFlows(e, base)
+			m.nameFlows(e, ends, base)
 			return
 		}
 		if m.nameOf(e) == "" {
@@ -1001,7 +1001,7 @@ func (m *migration) exposeReached(e *sysmlv1.Element) {
 				m.names[e] = m.freshName(e.Parent, base)
 			}
 		}
-		m.nameFlows(e, "")
+		m.nameFlows(e, ends, "")
 	case "InstanceSpecification":
 		for _, slot := range e.Owned("slot") {
 			f := m.model.Ref(slot, "definingFeature")
@@ -3454,9 +3454,13 @@ func (m *migration) flowWritable(f, c *sysmlv1.Element, segs [][]*sysmlv1.Elemen
 // nameFlows names, in c's owner, the flows written for the item flows connector
 // c realizes: each after its item flow, made distinct among the owner's members;
 // an anonymous one after the connector's ends, as a connection shown by a
-// diagram is named, when base gives that spelling and a diagram shows c.
-func (m *migration) nameFlows(c *sysmlv1.Element, base string) {
+// diagram is named, when base gives that spelling and a diagram shows c. An
+// item flow that is not written takes no name.
+func (m *migration) nameFlows(c *sysmlv1.Element, segs [][]*sysmlv1.Element, base string) {
 	for _, f := range m.flows[c] {
+		if !m.flowWritable(f, c, segs) {
+			continue
+		}
 		name := f.Name
 		if name == "" {
 			if base == "" || !m.shownEdges[c] {

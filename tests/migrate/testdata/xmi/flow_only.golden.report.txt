@@ -10,7 +10,7 @@
 # routes of Connector: 4 written
 
 ## unmapped (1)
-«ItemFlow» InformationFlow	Power::aux cmd	_if_aux	(no flow property typed by Cmd on both ends of the realizing connector; applied stereotypes «ItemFlow»)
+«ItemFlow» InformationFlow	Power::aux	_if_aux	(no flow property typed by Cmd on both ends of the realizing connector; applied stereotypes «ItemFlow»)
 
 ## mapped (34)
 Model	Model	_m	-> Model	(written as package Model)

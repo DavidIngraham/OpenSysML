@@ -56,7 +56,7 @@
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_cmd" name="cmd" informationSource="_pt_ctrl_bus" informationTarget="_pt_unit_bus" conveyed="_blk_cmd" realizingConnector="_c_bus"/>
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_tlm" name="tlm" informationSource="_pt_ctrl_bus" informationTarget="_pt_unit_bus" conveyed="_blk_tlm" realizingConnector="_c_bus"/>
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_spare" name="spare pwr" informationSource="_pt_supply_out" informationTarget="_pt_load_in" conveyed="_blk_pwr" realizingConnector="_c_spare"/>
-      <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_aux" name="aux cmd" informationSource="_pt_supply_out" informationTarget="_pt_load_in" conveyed="_blk_cmd" realizingConnector="_c_aux"/>
+      <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_aux" name="aux" informationSource="_pt_supply_out" informationTarget="_pt_load_in" conveyed="_blk_cmd" realizingConnector="_c_aux"/>
     </packagedElement>
     <xmi:Extension extender="Example UML Tool 1.0">
       <modelExtension>
