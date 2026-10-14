@@ -142,7 +142,10 @@ const SELF_MESSAGE_REACH = 28;
  */
 // The order Array.prototype.sort gives strings: by code unit, in every locale.
 function byCodeUnit(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+  if (a < b) {
+    return -1;
+  }
+  return a > b ? 1 : 0;
 }
 
 export function layoutCanvas(result: RenderResult, overrides: Overrides = {}, auto?: AutoLayout): CanvasLayout {
@@ -616,14 +619,18 @@ export function alignedPlacement(
     }
     const ownFace = portFace({ ...node.box, x: at.x, y: at.y }, port);
     const otherFace = portFace(otherNode.box, other);
-    const axis =
+    let axis: "x" | "y" | undefined;
+    if (
       (port.side === "east" && other.side === "west" && otherFace.x > ownFace.x) ||
       (port.side === "west" && other.side === "east" && otherFace.x < ownFace.x)
-        ? "y"
-        : (port.side === "south" && other.side === "north" && otherFace.y > ownFace.y) ||
-            (port.side === "north" && other.side === "south" && otherFace.y < ownFace.y)
-          ? "x"
-          : undefined;
+    ) {
+      axis = "y";
+    } else if (
+      (port.side === "south" && other.side === "north" && otherFace.y > ownFace.y) ||
+      (port.side === "north" && other.side === "south" && otherFace.y < ownFace.y)
+    ) {
+      axis = "x";
+    }
     if (axis) {
       pairs.push({ port, other, otherNode, axis });
     }
@@ -1079,7 +1086,7 @@ function routeEdge(
 }
 
 function sameBox(a: Box | undefined, b: Box): boolean {
-  return a !== undefined && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+  return a?.x === b.x && a?.y === b.y && a?.width === b.width && a?.height === b.height;
 }
 
 // autoRoute is the auto layout's route for an edge, usable only where neither end
@@ -1381,7 +1388,12 @@ export function liftedEdges(layout: CanvasLayout, id: string, dx: number, dy: nu
     if (edge.hidden || (!from && !to)) {
       continue;
     }
-    const route = from && to ? edge.route.map((p) => ({ x: p.x + dx, y: p.y + dy })) : edge.rerouted ? [] : edge.route;
+    let route = edge.route;
+    if (from && to) {
+      route = edge.route.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+    } else if (edge.rerouted) {
+      route = [];
+    }
     out.push(routeEdge(edge.edge, edge.index, placed, new Map([[edge.index, route]])));
   }
   return out;
