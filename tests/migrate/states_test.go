@@ -220,7 +220,7 @@ func TestInitialIntoOrthogonalRegionEntersThatRegion(t *testing.T) {
 		r := migrateFixtureFileOptions(t, "orthogonal_initials", opts)
 		s := string(r.Notation)
 		for _, state := range []string{"Donate", "Coincide", "Conflict", "Nested", "Dangle"} {
-			if !strings.Contains(s, "state "+state+" {\n            entry; then regions;") {
+			if !hasBlock(s, "state "+state+" {\n    entry; then regions;") {
 				t.Errorf("%s has no default entry into its regions:\n%s", state, s)
 			}
 		}
@@ -1682,16 +1682,19 @@ func TestStrictMigrationWritesNoExtensionNotation(t *testing.T) {
 	wantNote(t, r, "_tSkip", migrate.Unmapped, "the target 'Through' has no v2 form")
 }
 
-// testdata/xmi/operation_extra_params.xmi: a usage binding an operation's
-// context redeclares its method-only parameter after the leading context.
-func TestOperationUsageRedeclaresUnmatchedMethodParameters(t *testing.T) {
+// testdata/xmi/operation_extra_params.xmi: an operation's usage declares its
+// method-only parameter after the operation's own.
+func TestOperationUsageDeclaresUnmatchedMethodParameters(t *testing.T) {
 	r := migrateFixtureFile(t, "operation_extra_params")
-	wantLine(t, r.Notation, "action adjust : Adjust { in ref :>> context = Drive::context; in x[0..1]; in y[0..1]; }")
+	wantLine(t, r.Notation, "in x : ScalarValues::Real[0..1];")
+	wantLine(t, r.Notation, "in y : ScalarValues::Real[0..1];")
+	wantLine(t, r.Notation, "ref action adjust;")
 }
 
-func TestOperationUsageWritesContextBeforeOutputParameters(t *testing.T) {
+func TestOperationUsageDeclaresOutputParameters(t *testing.T) {
 	r := migrateFixtureFile(t, "operation_context_out")
-	wantLine(t, r.Notation, "action adjust : Adjust { in ref :>> context = Drive::context; in x[0..1]; out result[1]; }")
+	wantLine(t, r.Notation, "out result : ScalarValues::Real[1];")
+	wantLine(t, r.Notation, "perform action adjust ::> Plant::adjust;")
 }
 
 // testdata/xmi/swimlane_context_calls.xmi: calls in partitions representing the

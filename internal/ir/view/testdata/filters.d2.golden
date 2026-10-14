@@ -6,6 +6,6 @@ classes: {
 }
 n0: "«part def»\nRadio" { class: definition }
 n1: "«part def»\nAirbag" { class: definition }
-n2: "«part def»\nBraking::Brake" { class: definition }
+n2: "«part def»\nBrake" { class: definition }
 n3: "«part»\npad" { class: usage }
 n2 -- n3: { class: edge }

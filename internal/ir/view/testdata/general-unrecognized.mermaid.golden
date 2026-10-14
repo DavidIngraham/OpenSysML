@@ -24,19 +24,19 @@ config:
 %% RobustViews::unrecognized — tree rendering (view def GeneralView)
 flowchart TD
   n0["`*«part def»*
-**Loops::A**`"]
+**A**`"]
     n1("`*«part»*
-**b : B**`")
+**b**`")
   n0 --- n1
   n2["`*«part def»*
-**Loops::B**`"]
+**B**`"]
     n3("`*«part»*
-**a : A**`")
+**a**`")
   n2 --- n3
   n4["`*«part def»*
-**Cycles::C**`"]
+**C**`"]
   n5["`*«connection def»*
-**DerivationConnections::Derivation**`"]
+**Derivation**`"]
     n6("`*«requirement»*
 **originalRequirement**`")
   n5 --- n6

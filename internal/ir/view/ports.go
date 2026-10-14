@@ -137,7 +137,7 @@ func (v portView) interconnectionPort(port Port) bool {
 // pinLabel is the text a drawn pin is named by: `name : Type` under full and
 // the name alone under minimal.
 func (v portView) pinLabel(port Port) string {
-	if !v.minimal {
+	if !v.minimal || port.NameSynthesized {
 		return port.label()
 	}
 	return port.Name
@@ -151,7 +151,7 @@ func (r *Rendering) undrawnPins(drawn func(node *Node, port Port) bool) []string
 	walk = func(node *Node) {
 		for _, port := range node.Ports {
 			if !drawn(node, port) {
-				names = append(names, nodeLabel(node)+"."+port.Name)
+				names = append(names, nodeLabel(node, node.Name)+"."+port.Name)
 			}
 		}
 		for _, child := range node.Children {

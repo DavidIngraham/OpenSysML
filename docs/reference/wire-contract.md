@@ -148,7 +148,9 @@ $ … /ParseSources -d '{"documents":[{"name":"vehicle.sysml","content":"…"}],
 ```
 
 `strictConformance` makes OpenSysML's extension notation a parse error rather than an accepted
-extension; what that covers is under [Strict conformance](../guide/03-command-line.md#strict-conformance)
+extension, and a namespace whose memberships are indistinguishable (`Duplicate of other owned
+member name` and its alias and inherited wordings) an error rather than a warning; what that
+covers is under [Strict conformance](../guide/03-command-line.md#strict-conformance)
 in the guide.
 
 ### How long a hash is valid
@@ -1998,9 +2000,9 @@ $ … /Migrate -d '{"filePath":"Vehicle.xmi","toFormat":"sysml"}'
   "report": {
     "source": "Vehicle.xmi",
     "exporter": "Example UML Tool",
-    "summary": "migrated 93 element(s): 77 mapped, 13 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)",
+    "summary": "migrated 95 element(s): 77 mapped, 15 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model elements nothing refers to)",
     "mapped": 77,
-    "approximated": 13,
+    "approximated": 15,
     "unmapped": 3,
     "skipped": 2
   }
@@ -2225,7 +2227,9 @@ selected, filtered and bound — are on the Go API page and are not repeated her
 [Native document queries and rendering over gRPC](api.md#native-documents-and-views-over-grpc).
 Each is its own capability: `Query` needs `query` (and `oslc_query` when the request uses
 `oslcQuery`); `RunDocumentQuery` needs `document_query`; `RenderDocument` needs
-`render_document`, and `render_document_html` too when its `form` is `html`.
+`render_document`, and `render_document_html` too when its `form` is `html`; its `file_name` (the
+file a rendered set writes the document to, which the other documents' links to it name) is
+populated under `render_document_file_name`.
 
 ### `Query`
 

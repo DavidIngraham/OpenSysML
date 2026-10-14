@@ -45,6 +45,12 @@ type metaclassProvider interface {
 // maskChecker is the part of the semantic model that reports redefinition
 // masking: which of a type's inheritable members it does not inherit because
 // one of its features redefines them. *semantics.Model implements it.
+// shortNamer knows the naming feature of a feature loaded from a library
+// snapshot (KerML Feature::namingFeature); *semantics.Model is one.
+type shortNamer interface {
+	NamingFeatureOf(sym *symbols.Symbol) *symbols.Symbol
+}
+
 type maskChecker interface {
 	InheritanceMasked(sym, candidate *symbols.Symbol) bool
 	InheritanceMaskedRedefining(sym, candidate *symbols.Symbol) bool
@@ -181,6 +187,10 @@ type Resolver struct {
 	// implicitParams are the anonymous members of a scope that may be named by
 	// an implicit redefinition, collected once per scope: see implicitParameters.
 	implicitParams map[*symbols.Scope][]*symbols.Symbol
+	// derivedNamed are the members of a scope that take their names from a
+	// naming feature and declare no short name, whose effective short name is
+	// therefore that feature's.
+	derivedNamed map[*symbols.Scope][]*symbols.Symbol
 	// importTargets are the namespaces imports resolved to, one per import.
 	// Only a hit is kept (a miss may only mean sibling imports were suspended),
 	// and never one found while a filter condition resolves (InCondition);
@@ -188,6 +198,21 @@ type Resolver struct {
 	// cross-reference. Without it, resolving each of n sibling imports searched
 	// the others' unresolved targets in every order (issue #636).
 	importTargets map[*ast.Import]resolution
+	// collisions memoizes, per namespace, what its imports bring and the
+	// memberships hidden among them: see (*Resolver).importedCollisions.
+	// colliding marks the namespaces whose collisions are being computed.
+	collisions map[*symbols.Scope]*importCollisions
+	colliding  map[*symbols.Scope]bool
+	// bringing marks the namespaces one importBrings search has asked, so a
+	// cycle of re-exports is asked once per search.
+	bringing map[*symbols.Scope]bool
+	// provisional holds, while collisions are being computed, those of the
+	// namespaces met on the way that could not be settled: each is computed
+	// once per outermost computation and dropped when it ends.
+	provisional map[*symbols.Scope]*importCollisions
+	// collisionCut is set when a collision computation met one in progress,
+	// so what it computed is not memoized.
+	collisionCut bool
 	// redefined memoizes the features a declaration redefines, explicitly or as
 	// an end: see (*Resolver).redefinedFeatures.
 	redefined map[*symbols.Symbol][]*symbols.Symbol
@@ -251,7 +276,8 @@ func (r *Resolver) MemoSize() int {
 	return len(r.memo) + len(r.modeMemo) + len(r.filtered) + len(r.featureChains) +
 		len(r.parts) + len(r.aliasNames) + len(r.endpoints) + len(r.readings) +
 		len(r.invocationNames) + len(r.ambiguities) + len(r.reportedQualified) +
-		len(r.initials) + len(r.imports) + len(r.suggestions) + len(r.importTargets)
+		len(r.initials) + len(r.imports) + len(r.suggestions) + len(r.importTargets) +
+		len(r.collisions)
 }
 
 // New creates a resolver over the given index.
@@ -279,7 +305,11 @@ func New(idx *symbols.Index) *Resolver {
 		viewFiltersInProgress: map[*symbols.Scope]bool{},
 		payloads:              map[*symbols.Scope]map[string]*symbols.Symbol{},
 		implicitParams:        map[*symbols.Scope][]*symbols.Symbol{},
+		derivedNamed:          map[*symbols.Scope][]*symbols.Symbol{},
 		importTargets:         map[*ast.Import]resolution{},
+		collisions:            map[*symbols.Scope]*importCollisions{},
+		colliding:             map[*symbols.Scope]bool{},
+		bringing:              map[*symbols.Scope]bool{},
 		importVisits:          map[importVisit]bool{},
 		redefined:             map[*symbols.Symbol][]*symbols.Symbol{},
 		bodyOwners:            map[*symbols.Scope]*symbols.Symbol{},

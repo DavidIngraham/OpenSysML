@@ -197,6 +197,11 @@ const CapabilityConvertCompact = "convert_compact"
 // the base model's, so a client re-reads only those after an edit.
 const CapabilityParseSourcesAffected = "parse_sources_affected"
 
+// CapabilityRenderDocumentFileName names RenderDocumentResponse.file_name:
+// the file a rendered set writes the document to, which the other
+// documents' links to it name. Without it the field is empty.
+const CapabilityRenderDocumentFileName = "render_document_file_name"
+
 // CapabilityComplexValues names the capability of carrying a complex number as
 // Value.complex, rather than reporting it as an unsupported null.
 const CapabilityComplexValues = "complex_values"
@@ -332,6 +337,7 @@ var capabilities = []string{
 	CapabilityConvertDocuments,
 	CapabilityConvertCompact,
 	CapabilityParseSourcesAffected,
+	CapabilityRenderDocumentFileName,
 }
 
 type capabilityAvailability struct {
@@ -1162,8 +1168,8 @@ func (s *Service) ExecuteAction(ctx context.Context, req *pb.ExecuteActionReques
 		return nil, statusErrorf(connect.CodeNotFound, msgModelNotFound, req.ModelHash)
 	}
 
-	// Lookup action symbol
-	syms := symbolfacts.LookupNamed(cached.Index, req.ActionSymbolId)
+	// An inherited action is named by the subtype too (Sub::inherited).
+	syms := cached.LookupNamedMember(req.ActionSymbolId)
 	if len(syms) == 0 {
 		return &pb.ExecuteActionResponse{
 			Error: fmt.Sprintf("action not found: %s", req.ActionSymbolId),
@@ -1306,8 +1312,8 @@ func (s *Service) ExecuteState(ctx context.Context, req *pb.ExecuteStateRequest)
 		return nil, statusErrorf(connect.CodeNotFound, msgModelNotFound, req.ModelHash)
 	}
 
-	// Lookup state machine symbol
-	syms := symbolfacts.LookupNamed(cached.Index, req.StateMachineSymbolId)
+	// An inherited state machine is named by the subtype too (Sub::inherited).
+	syms := cached.LookupNamedMember(req.StateMachineSymbolId)
 	if len(syms) == 0 {
 		return &pb.ExecuteStateResponse{
 			Error: fmt.Sprintf("state machine not found: %s", req.StateMachineSymbolId),

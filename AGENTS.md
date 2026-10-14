@@ -29,7 +29,7 @@ make build            # build bin/sysml and bin/sysml-lsp (with version ldflags)
 make build-sysml      # REPL binary only
 make build-lsp        # LSP binary only
 make test             # full suite: go test -race -coverprofile ... ./...
-make test-shard SHARD=runtime   # one CI shard of the race suite (runtime|model|export|rest)
+make test-shard SHARD=runtime   # one CI shard of the race suite (runtime|runtime-corpus|model|export|rest|migrate)
 make test-short       # faster, no race detector
 make clean            # remove build artifacts
 ```
@@ -151,7 +151,7 @@ When touching the lexer/parser or adding grammar:
 1. **Golden AST fixture** locking parse structure (`tests/parser/testdata/parse/`).
 2. **Execution conformance:** add `.sysml` + `.expected.json` under `internal/exec/runtime/testdata/conformance/`; run `go test -run TestExecutionConformance ./internal/exec/runtime`. Schema is documented in that dir's `README.md`.
 3. **Golden execution traces** for ordering-sensitive behavior (fork/join, transitions): `go test -run TestExecutionTrace ./internal/exec/runtime` (update flag: `-update-traces`).
-4. **Robustness:** add a failure-mode case (deadlock, unbound params, missing refs, dangling transitions, step budget) as a subtest of a `TestRuntimeRobustness<Feature>` function in `internal/exec/runtime/robustness_<feature>_test.go` — a new file for a new feature, so branches never edit one shared registry; `robustness_test.go` holds the shared cases and is not where new ones go. Must return typed errors, never panic or hang. The suite counters read every `TestRuntimeRobustness*` function, and gRPC cases follow the same pattern with `TestGRPCRobustness*`.
+4. **Robustness:** add a failure-mode case (deadlock, unbound params, missing refs, dangling transitions, step budget) as a subtest of a `TestRuntimeRobustness<Feature>` function in `internal/exec/runtime/robustness_<feature>_test.go` — a new file for a new feature, so branches never edit one shared registry; `robustness_test.go` holds only the shared helpers and is not where new ones go. Must return typed errors, never panic or hang. The suite counters read every `TestRuntimeRobustness*` function, and gRPC cases follow the same pattern with `TestGRPCRobustness*`.
 
 Then update `docs/project/spec-compliance.md` mapping: semantic rule → implementation (file:function) → test → status (✅ faithful / ⚠️ approximate / ❌ not implemented / 🚧 known failure).
 
