@@ -85,8 +85,10 @@ func (r *Resolver) checkImportedNames(scope *symbols.Scope) {
 	hidden := map[string]bool{}
 	owned, aliases := r.DistinguishableMembers(scope)
 	for _, sym := range append(owned, aliases...) {
-		for _, name := range memberNames(sym) {
-			hidden[name] = true
+		for _, name := range r.memberNames(sym) {
+			if name != "" {
+				hidden[name] = true
+			}
 		}
 	}
 	seen := map[boundName]bool{}
@@ -103,7 +105,10 @@ func (r *Resolver) checkImportedNames(scope *symbols.Scope) {
 				continue
 			}
 			key := symbols.KeyOf(r.aliasTarget(sym))
-			for _, name := range memberNames(sym) {
+			for _, name := range r.memberNames(sym) {
+				if name == "" {
+					continue
+				}
 				bound := boundName{key: key, name: name}
 				owned := ownedName{owner: ownerKeyOf(sym.OwnerScope), name: name}
 				if hidden[name] || seen[bound] || owners[owned] {
@@ -162,12 +167,13 @@ func (r *Resolver) inheritedAgainstImports(scope *symbols.Scope) map[string][]*s
 	return r.inheritedMembers(owner, model)
 }
 
-// memberNames are the names a membership binds: the member's name and, when it
-// declares one, its short name (KerML 8.3.2.4.3 compares both).
-func memberNames(sym *symbols.Symbol) []string {
-	names := []string{sym.Name}
-	if sym.ShortName != "" && sym.ShortName != sym.Name {
-		names = append(names, sym.ShortName)
+// memberNames are the names a membership binds: the member's name and its short
+// name, declared or derived (KerML 8.3.2.4.3 compares both); the second is ""
+// when the member has none. A fixed pair, so a caller's loop does not allocate.
+func (r *Resolver) memberNames(sym *symbols.Symbol) [2]string {
+	names := [2]string{sym.Name}
+	if short := r.shortNameOf(sym); short != "" && short != sym.Name {
+		names[1] = short
 	}
 	return names
 }

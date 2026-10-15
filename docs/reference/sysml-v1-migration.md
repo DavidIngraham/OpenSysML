@@ -365,7 +365,11 @@ their own outside their body) is dropped and counted in the note. A diagram show
 with no `expose`, so the model's inventory of diagrams is complete. Each `expose` names one
 shown element by the qualified name the migrator writes elsewhere — `Package::Def::feature`,
 never a package's `::**` — so a diagram of a package exposes the members it pictures, not
-the package.
+the package. Each `expose` also imports the exposed element's name into the view, where the
+`expose` targets and the layout's `about`s resolve before the enclosing scopes do, so a name
+the exposes import for anything but the element it names outside the view — a definition
+shown beside a usage named after it, say — is written in full (`Package::Def`) in the view's
+body, and a name one `expose` imports under its simple spelling is written as it is elsewhere.
 
 The view takes the diagram's name unless the body already has a member so named: a tool
 names a view's diagram after the «View» class, a state's after the state, and both are
@@ -475,7 +479,26 @@ Geometry is written only for what the view draws: a placement whose element reso
 `expose` the view carries, or which the graph a typed view exposes draws as a node (a state's
 inline `entry`, `do` or `exit` action is listed inside the state's node, and an internal
 transition Cameo places as text in its state's box is an edge to the rendering, so their
-placements are counted as not exposed rather than pinned to a node the rendering never draws); a route whose
+placements are counted as not exposed rather than pinned to a node the rendering never draws). A shape
+the tool nests in a path's symbol — an association end's role symbol or a connector end's, a 10×10
+box at the end of the line, and the role-name label nested in it — is the end's position on the line,
+not a box of its own: its placement is counted as lying on a connection on every diagram kind and
+no `Layout` is written for the end property, since the line's `Route` carries where the end is
+drawn and a tree rendering labels the edge with it; a `Layout` of the property would make the
+rendering draw the usage a second time, as a nested node under its definition. The line of an
+association is pinned to the connection def it is written as, with its points run from the def's
+first end's type to its second's, which is how a tree rendering reads a connection def's `Route`:
+the stream names the element at each end of the line, so a line Cameo drew from the second end's
+block is written reversed, and the composition edge the tree draws from the owning block then
+follows the line from that block's box. The points stay as drawn when the stream names no end
+of the line or both ends are typed by one definition. A property drawn
+as its own box in a block's compartment, or as a part on an internal block diagram, is not nested
+in a path and keeps its `Layout`; when an MTIP export places an element the diagram's own stream
+shows only on a path, the export's bounds win but the end stays on the line, and an exported line
+takes which two elements its ends are from the stream, which the export does not record, and which
+of them is at which end from where the line starts and stops against the export's own boxes for
+them, so a line the export lists the other way round, or between boxes it has moved, is still read
+correctly; the points stay as the export lists them when it draws no box for an end. A route whose
 connector's element is written as a named member (see [Edges a diagram shows](#edges-a-diagram-shows))
 that the view exposes, or that its graph draws, *and* that the view's rendering draws as an edge —
 a succession or flow in an `ActionFlowView`, a transition in a `StateTransitionView`, a connection
@@ -483,7 +506,7 @@ or binding `asInterconnectionDiagram`. A route for an edge the rendering does no
 satisfy or include on a tree diagram, a message step) is not written: the geometry would pin
 nothing. Everything else is counted, not dropped: the report's `layout`
 summary section and each diagram's note say how many shown elements were positioned, how many were
-not exposed, and how many resolved to no element; the routes are itemized by the connector's v1 kind
+not exposed, how many lay on connections, and how many resolved to no element; the routes are itemized by the connector's v1 kind
 and what became of each — `written`, `no v2 member`, `not written`, `unnamed`, `not drawn`,
 `not exposed`, `duplicate`, `dangling` — in the report (`# routes of Transition: 2 written`) and
 the results sidecar's `routesByKind`; an export record matching no diagram of the model,
@@ -498,7 +521,11 @@ the diagram's layout note and the summary's `streamSupplemented` count say when 
 from its own stream alone. A symbol the stream keeps but does not draw (`visible` false), with
 every symbol nested in it and every part, region or compartment row it lists, shows nothing: the
 view does not expose its element for it, it takes no position or style, and a hidden frame does
-not bound the diagram. A symbol's position and style go to the element it names itself, not to
+not bound the diagram. The shapes Cameo lists under a part shape's `parts` or a state shape's
+`regions` rather than its `mdOwnedViews` — the parts, constraint usages, connectors and comments
+drawn inside a part — are symbols of their own, parented to the enclosing shape, so they are
+placed inside it and routed between its contents while the enclosing part keeps its own
+placement. A symbol's position and style go to the element it names itself, not to
 the last part or region listed under it. A route the export gives an edge the migration wrote
 as several members — a control flow written as a succession into a join the migrator made up,
 and from that join on — is pinned to the members whose both ends a diagram symbol stands at, so
@@ -1681,7 +1708,7 @@ Expression Language`, `ECMAScript for XML`, `JSON`:
 | `+ - * / %`, comparisons, `&& \|\| !`, parentheses | `+ - * / %`, comparisons, `and or not`, parentheses; a Java body's `/` of two whole numbers drops the remainder, so it is `OpenSysMLMathFunctions::quotient(x, y)` (the exact Integer quotient truncated toward zero, refused at run time only for the least Integer by `-1`, whose quotient no Integer holds), and is refused when the operands' types cannot tell whether both are whole. Whole-number arithmetic is the exact arithmetic of a v2 `Integer`: a script that rounds a result beyond 2⁵³ to a `Number`, or a Java `int`/`long` that wraps past its range, computes something else there, which the translation does not reproduce — the translated feature holds the modeler's `Integer`, not a floating-point or fixed-width number |
 | Java's `a.equals(b)` / `"x".equals(b)` on strings | `a == b`, the comparison of their content; a Java body's `==` or `!=` with an operand known to be a string is refused, since Java compares strings there by identity, which no comparison of their values reproduces, and `equals` is translated only on a receiver known to be a string — a string literal, or a feature or local declared `String` — since any other type's `equals` is that type's own method, and is refused where the argument is known not to be a string (a script's `==` on strings compares their content and translates as it stands) |
 | `c ? a : b` | `if c ? a else b` when `a` and `b` are of one scalar type |
-| `Math.min` `Math.max` `Math.abs` `Math.floor` `Math.ceil` `Math.round` `Math.sqrt` `Math.pow`, `a ** b` | `RealFunctions::min` … `RealFunctions::sqrt`, `**`; `Math.min` and `Math.max` take any number of arguments in a script, folded pairwise (`max(max(a, b), c)`; one argument is that argument, none is refused as the infinity the script answers), and exactly two in a Java body, as Java's do; `Math.ceil(x)` is `OpenSysMLMathFunctions::ceiling(x)` (the extension library's `Integer` ceiling, so the least Integer is a value where `-floor(-x)` would overflow on its negation) and `Math.round(x)` is `RealFunctions::floor(x + 0.5)`, which rounds a half toward +∞ as JavaScript does. The three answer the library's `Integer` in a script, and in a Java body `Math.round` does where `Math.floor` and `Math.ceil` answer a `Real` as Java's answer a `double` (so a Java `/` after them is real division, not `quotient`); each result is exact up to the `Integer` range and a whole Real at or beyond 2⁶³ (or below −2⁶³), which the script would keep as a `Number` and Java's `Math.round` would clamp to a `long`, is a typed arithmetic-overflow error at run time, never a wrapped Integer; `-a ** b` is refused, as JavaScript rejects a unary operand of `**` without parentheses, and a Java body's `**` is refused, Java having no such operator |
+| `Math.min` `Math.max` `Math.abs` `Math.floor` `Math.ceil` `Math.round` `Math.sqrt` `Math.pow`, `a ** b` | `RealFunctions::min` … `RealFunctions::sqrt`, `**`; `Math.min` and `Math.max` take any number of arguments in a script, folded pairwise (`max(max(a, b), c)`; one argument is that argument, none is refused as the infinity the script answers), and exactly two in a Java body, as Java's do; `Math.ceil(x)` is `OpenSysMLMathFunctions::ceiling(x)` (the extension library's `Integer` ceiling, so the least Integer is a value where `-floor(-x)` would overflow on its negation) and `Math.round(x)` is `RealFunctions::floor(x + 0.5)`, which rounds a half toward +∞ as JavaScript does. The three answer the library's `Integer` in a script, and in a Java body `Math.round` does where `Math.floor` and `Math.ceil` answer a `Real` as Java's answer a `double` (so a Java `/` after them is real division, not `quotient`); each result is exact up to the `Integer` range and a whole Real at or beyond 2⁶³ (or below −2⁶³), which the script would keep as a `Number` and Java's `Math.round` would clamp to a `long`, is a typed arithmetic-overflow error at run time, never a wrapped Integer; `-a ** b` is refused, as JavaScript rejects a unary operand of `**` without parentheses, and a Java body's `**` is refused, Java having no such operator. `Math.abs`, `Math.min` and `Math.max` are written through `IntegerFunctions` when every argument is an Integer, `RealFunctions` when every argument is a Real (or Rational), and `NumericalFunctions` otherwise (a `Number` or an argument of unknown type); `Math.abs` of a `Complex` is its modulus `ComplexFunctions::abs`, a Real; `Math.min` and `Math.max` of a `Complex`, which has no order, and `Math.sqrt`, `Math.floor`, `Math.ceil` and `Math.round` of one, their parameters being Reals, are refused as a type |
 | `java.util.Collections.max(s)` / `.min(s)` | `RealFunctions::max(s)` / `RealFunctions::min(s)` over a collection |
 | the tool's time variable (`simtime`) | `localClock.currentTime` |
 | `print(…);` `println(…);` `System.out.print(…);` `System.out.println(…);` (also qualified `java.lang.System.out.…`) as a statement | nothing: the call writes to the tool's console and changes no value of the model, so it is left out of the translation, the other statements of the body stand, and the report notes each print left out as an approximation; a body of prints alone is an empty action. The arguments are read for what they could change: one that assigns (`print(i = 1)`), counts (`i++`), deletes (`delete x`), constructs (`new Date`) or calls anything but a function of this table computing a value (`Math.max`, `Collections.max`, a Java `equals` on a receiver known to be a string — one on any other receiver may be that type's own method) could change the model, so that print is refused rather than left out; a print used as a value (`i = print(x)`) is a call outside the table |
@@ -1690,9 +1717,24 @@ Expression Language`, `ECMAScript for XML`, `JSON`:
 `TRUE` / `FALSE` / `true` / `false`; a property name, spaces and all; `not X`; `X and Y`;
 `X or Y`; comparisons written with `=` or `==`, `<`, `>`, `<=`, `>=`, `!=`; parentheses. A run
 of words between operators is one name (`not Guide Star Lost and i < Retries` reads the
-property `Guide Star Lost`), refused whole when nothing visible is called that. English has no
-calls: `Math.sqrt(t) > 3` or `name.equals(other)` in an English body is refused as a construct
-outside the subset, never run as the script functions of the same name.
+property `Guide Star Lost`), refused whole when nothing visible is called that. The one call
+English reads is of a mathematical function by its bare name, in any case, followed by `(`:
+`sin` `cos` `tan` `cot` `arcsin` `arccos` `arctan` (also spelled `asin` `acos` `atan`) are
+`TrigFunctions::sin` … `TrigFunctions::arctan`; `sqrt` `abs` `min` `max` `floor` `ceil` (or
+`ceiling`) `pow` are written as the script table's `Math.sqrt` … `Math.pow` above, `abs`, `min`
+and `max` through the library of the arguments' scalar (`IntegerFunctions::abs(i)`), `min` and
+`max` taking exactly two arguments as the library's do; `round` is `RealFunctions::round`;
+`exp` `ln` `log` `atan2` are the extension library's `OpenSysMLMathFunctions::exp(x)`, `ln(x)`,
+`log(x, base)` and `atan2(y, x)`, refused in a strict migration, which writes the standard
+library alone. Each takes the number of arguments the library function takes, all of them
+numbers, and answers the function's result type (`sine_wave = sin(t)` is
+`sine_wave == TrigFunctions::sin(t)`, a `Real`); a `Complex` argument is refused where the
+function's parameter is a `Real` and from `min` and `max`, a Complex having no order, while
+`abs` of one is its modulus `ComplexFunctions::abs`. Any other call — a name outside the table
+(`Ready(x)`), a dotted one (`Math.sqrt(t) > 3`, `name.equals(other)`), a run of several words
+before the `(` (`Guide Star sin(t)`) — is refused as a construct outside the subset, the reason
+listing the names the dialect does read, never run as the script functions of the same name; and
+`sin t`, with no parenthesis, is the two-word name `sin t`, refused when nothing is called that.
 
 **Refusals.** Anything else is refused, and the report line carries the reason with the token
 that caused it: a language not in the table (`the language "Groovy" is not translated`), text

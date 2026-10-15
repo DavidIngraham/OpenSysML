@@ -8,8 +8,8 @@ the frontend adds the explorer action, operation dialog and mapped run results.
 
 - `backend/` — the Spring Boot auto-configuration, exporter, GraphQL mutation, run service,
   result mapping and Validation view service.
-- `frontend/` — the `@openmbee/opensysml-syson` npm package with the menu contribution,
-  dialog, results panel and extension registry contribution.
+- `frontend/` — the `@openmbee/opensysml-syson` npm package with the explorer menu and palette
+  contributions, dialog, results panel and extension registry contribution.
 - `syson-api-stubs/` — compile-only Sirius Web and SysON API classes for the offline Maven build.
 
 ## Build without private artifacts
@@ -69,7 +69,11 @@ Put the backend jar on the SysON application classpath. Its
 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` entry
 activates `OpenSysMLAutoConfiguration`; no package-scan change is needed. In the SysON frontend
 `index.tsx`, add `addOpenSysMLContributions(sysonExtensionRegistry)` after the existing SysON
-contributions.
+contributions. It appends the "Run with OpenSysML…" tool to both explorer extension points: the
+`treeItemContextMenuEntryOverrideExtensionPoint` of `@eclipse-sirius/sirius-components-trees`
+and, for the tool palette that shows a tree item's tools since SysON 2026.9, the
+`paletteToolOverrideExtensionPoint` of `@eclipse-sirius/sirius-components-palette`. Both packages
+are optional peer dependencies the SysON frontend already provides.
 
 ## Configuration
 
@@ -102,7 +106,10 @@ satisfaction verification, calculation evaluation, analysis, and instance valida
 Unit tests cover exporting, identity mapping, diagnostic mapping, configuration, GraphQL payloads
 and validation results. Real-service integration tests run the mutation against `sysml-grpc` for
 instantiation, action execution, verification, diagnostics and stored results. Frontend tests
-cover the registry, explorer menu, operation dialog, toast errors, mapped selection, outputs,
+cover the registry, explorer menu and palette tool, operation dialog, toast errors, mapped selection, outputs,
 traces, verdicts, instances and diagnostics.
+
+SysON files every uploaded document under an unnamed root namespace; the exporter walks that
+namespace's members as the document's roots.
 
 Diagnostics that name a qualified name select that element; span-only diagnostics select the root element of the exported document containing the line. The serializer emits no source map.

@@ -3,14 +3,24 @@ package migrate_test
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
+	"maps"
 	"os"
+	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
+	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/resolve"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/diag"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/migrate"
 	"github.com/Open-MBEE/OpenSysML/internal/translate/mtip"
+	"github.com/Open-MBEE/OpenSysML/internal/workspace/model"
 )
 
 // migrateLayoutFixture migrates testdata/xmi/layout.xmi augmented by the MTIP
@@ -51,23 +61,63 @@ func migrateLaidOutOptions(t *testing.T, name string, opts migrate.Options) *mig
 
 func migrateStreamLaidOut(t *testing.T, name string, strict bool) *migrate.Result {
 	t.Helper()
+	archive := streamArchive(t, name)
+	layoutData, err := os.ReadFile("testdata/xmi/" + name + ".layout.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	layout, err := mtip.Parse(layoutData)
+	if err != nil {
+		t.Fatalf("mtip.Parse: %v", err)
+	}
+	r, err := migrate.MigrateOptions(name+".xmi", archive, migrate.Options{
+		Layout: layout, LayoutSource: name + ".layout.xml", Strict: strict,
+	})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	return r
+}
+
+// migrateStream migrates a fixture whose diagrams are laid out from their own
+// symbol streams alone, with no export record.
+func migrateStream(t *testing.T, name string) *migrate.Result {
+	t.Helper()
+	r, err := migrate.MigrateOptions(name+".xmi", streamArchive(t, name), migrate.Options{})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	return r
+}
+
+// streamArchive zips a fixture's XMI with the symbol stream its diagram names.
+func streamArchive(t *testing.T, name string) []byte {
+	t.Helper()
 	data, err := os.ReadFile("testdata/xmi/" + name + ".xmi")
 	if err != nil {
 		t.Fatal(err)
 	}
-	stream, err := os.ReadFile("testdata/xmi/" + name + ".stream.xml")
-	if err != nil {
-		t.Fatal(err)
+	type entry struct {
+		name string
+		data []byte
+	}
+	entries := []entry{{name: name + ".xmi", data: data}}
+	for _, pattern := range []string{name + ".stream.xml", name + ".*.stream.xml"} {
+		streams, err := filepath.Glob("testdata/xmi/" + pattern)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, path := range streams {
+			stream, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			entries = append(entries, entry{name: "BINARY-" + strings.TrimSuffix(filepath.Base(path), ".stream.xml"), data: stream})
+		}
 	}
 	var archive bytes.Buffer
 	zw := zip.NewWriter(&archive)
-	for _, entry := range []struct {
-		name string
-		data []byte
-	}{
-		{name: name + ".xmi", data: data},
-		{name: "BINARY-" + name, data: stream},
-	} {
+	for _, entry := range entries {
 		w, err := zw.Create(entry.name)
 		if err != nil {
 			t.Fatal(err)
@@ -79,21 +129,7 @@ func migrateStreamLaidOut(t *testing.T, name string, strict bool) *migrate.Resul
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)
 	}
-	layoutData, err := os.ReadFile("testdata/xmi/" + name + ".layout.xml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	layout, err := mtip.Parse(layoutData)
-	if err != nil {
-		t.Fatalf("mtip.Parse: %v", err)
-	}
-	r, err := migrate.MigrateOptions(name+".xmi", archive.Bytes(), migrate.Options{
-		Layout: layout, LayoutSource: name + ".layout.xml", Strict: strict,
-	})
-	if err != nil {
-		t.Fatalf("MigrateOptions: %v", err)
-	}
-	return r
+	return archive.Bytes()
 }
 
 // The notation and report of the augmented migration are pinned, and the
@@ -667,4 +703,449 @@ func TestLayoutOfTableDiagram(t *testing.T) {
 	s := session(t, r)
 	wantInOrder(t, "laid-out Pump Table rows", rows(t, s, "Plant::Inventory::'Pump Table Rows'"),
 		"returned 4 rows", "Plant::Inventory::r1", "Plant::Inventory::p1", "Plant::Spares::s1", "Plant::Spares::s2")
+}
+
+// An association end's role symbol — the 10×10 box Cameo keeps at the line's end,
+// inside the association's symbol — is the end's position on the line, which the
+// association's route carries, pinned to the member-end usage the tree rendering
+// draws as the composition edge: no Layout is written for the end property, so the
+// rendering lists the part in its definition unplaced and routes the edge, rather
+// than drawing a 10×10 node. A property drawn as its own box keeps its Layout.
+// The association's own route is pinned only where it is written as a connection
+// def; this one, anonymous with classifier-owned ends, is written as its end
+// properties, so the composition edge is left to the renderer.
+func TestGoldenAssociationEndLayoutLiesOnTheEdge(t *testing.T) {
+	r := migrateStream(t, "association_end_layout")
+	l := r.Report.Layout
+	if l == nil || l.StreamDiagrams != 1 || l.Placements != 6 || l.PlacementsWritten != 3 || l.PlacementsOnEdges != 3 || l.PlacementsUnexposed != 0 || l.Routes != 1 || l.RoutesWritten != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	checkGolden(t, "testdata/xmi/association_end_layout.golden.sysml", r.Notation)
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	checkGolden(t, "testdata/xmi/association_end_layout.golden.report.txt", report.Bytes())
+	for _, d := range errors(t, "association_end_layout.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	notation := string(r.Notation)
+	for _, want := range []string{
+		"metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }",
+		"metadata DiagramLayout::Layout about Engine { x = 40; y = 160; width = 120; height = 90; }",
+		"metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }",
+		"3 of 6 shown elements positioned (3 lying on connections)",
+	} {
+		if !strings.Contains(notation, want) && !strings.Contains(report.String(), want) {
+			t.Errorf("output does not contain %q:\n%s\n%s", want, notation, report.String())
+		}
+	}
+	if strings.Contains(notation, "width = 10;") {
+		t.Errorf("a Layout the size of an end symbol was written:\n%s", notation)
+	}
+	s := session(t, r)
+	rendering, err := s.ViewRendering("Blocks::'Vehicle BDD'")
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+	var drawn []string
+	names := map[string]string{}
+	var visit func([]*view.Node)
+	visit = func(list []*view.Node) {
+		for _, node := range list {
+			names[node.ID] = node.Name
+			g := ""
+			if node.Geometry != nil {
+				g = fmt.Sprintf(" at (%v, %v) size %vx%v", node.Geometry.X, node.Geometry.Y, node.Geometry.Width, node.Geometry.Height)
+			}
+			drawn = append(drawn, node.Kind+" "+node.Name+g)
+			visit(node.Children)
+		}
+	}
+	visit(rendering.Roots)
+	wantDrawn := []string{
+		"part def Blocks::Vehicle at (40, 20) size 120x50",
+		"part engine",
+		"part def Blocks::Engine at (40, 160) size 120x90",
+		"part piston at (55, 200) size 90x30",
+	}
+	if !slices.Equal(drawn, wantDrawn) {
+		t.Errorf("nodes drawn = %q, want %q", drawn, wantDrawn)
+	}
+	var edges []string
+	for _, edge := range rendering.Edges {
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+	}
+	wantEdges := []string{"Blocks::Vehicle composition Blocks::Engine: engine"}
+	if !slices.Equal(edges, wantEdges) {
+		t.Errorf("edges = %q, want %q", edges, wantEdges)
+	}
+}
+
+// An export that places an end symbol the stream shows on the association's
+// path keeps the end on the line: the export's bounds win, the stream's nesting holds.
+func TestExportPlacementOfAnEndSymbolStaysOnTheEdge(t *testing.T) {
+	layout := &mtip.Export{Diagrams: []mtip.Diagram{{
+		ID:   "_diag_bdd",
+		Name: "Vehicle BDD",
+		Type: "sysml.BlockDefinitionDiagram",
+		Placements: []mtip.Placement{
+			{ID: "_blk_vehicle", X: 40, Y: 20, Width: 120, Height: 50},
+			{ID: "_prop_engine", X: 95, Y: 150, Width: 10, Height: 10},
+		},
+		Unsupported: map[string]int{},
+	}}}
+	r, err := migrate.MigrateOptions("association_end_layout.xmi", streamArchive(t, "association_end_layout"), migrate.Options{Layout: layout, LayoutSource: "association_end_layout.xml"})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	l := r.Report.Layout
+	if l == nil || l.DiagramsJoined != 1 || l.Placements != 5 || l.PlacementsWritten != 3 || l.PlacementsOnEdges != 2 || l.RoutesWritten != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	notation := string(r.Notation)
+	wantInOrder(t, "joined view", notation,
+		"metadata DiagramLayout::Layout about Vehicle { x = 40; y = 20; width = 120; height = 50; }",
+		"metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 55; y = 200; width = 90; height = 30; }",
+	)
+	if strings.Contains(notation, "width = 10;") {
+		t.Errorf("a Layout the size of an end symbol was written:\n%s", notation)
+	}
+}
+
+// A view exposes a definition and a same-named usage, and each expose imports
+// its name into the view: inside it the simple name denotes neither, so the
+// writer qualifies both, the def keeps its own position and the association
+// to it is drawn as the composition edge the tree renders.
+func TestGoldenLayoutQualifiesNamesTheExposesHide(t *testing.T) {
+	r := migrateLaidOut(t, "layout_same_named_usage")
+	if l := r.Report.Layout; l == nil || l.DiagramsJoined != 1 || l.PlacementsWritten != 5 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	checkGolden(t, "testdata/xmi/layout_same_named_usage.layout.golden.sysml", r.Notation)
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	checkGolden(t, "testdata/xmi/layout_same_named_usage.layout.golden.report.txt", report.Bytes())
+	for _, d := range errors(t, "layout_same_named_usage.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	notation := string(r.Notation)
+	for _, want := range []string{
+		"expose UI::GUI;",
+		"expose UI::Console::GUI;",
+		"expose Panel;",
+		"metadata DiagramLayout::Layout about UI::GUI { x = 20; y = 200;",
+		"metadata DiagramLayout::Layout about UI::Console::GUI { x = 110; y = 90;",
+		"metadata DiagramLayout::Layout about Panel { x = 250; y = 200;",
+	} {
+		if !strings.Contains(notation, want) {
+			t.Errorf("layout output does not contain %q:\n%s", want, notation)
+		}
+	}
+	s := session(t, r)
+	rendering, err := s.ViewRendering("UI::'Console BDD'")
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+	nodes, names := map[string]*view.Node{}, map[string]string{}
+	var visit func([]*view.Node)
+	visit = func(list []*view.Node) {
+		for _, node := range list {
+			nodes[node.Name], names[node.ID] = node, node.Name
+			visit(node.Children)
+		}
+	}
+	visit(rendering.Roots)
+	gui := nodes["UI::GUI"]
+	if gui == nil || gui.Geometry == nil || *gui.Geometry != (view.Geometry{X: 20, Y: 200, Width: 80, Height: 37, HasSize: true}) {
+		t.Fatalf("GUI def node = %+v, want one at its own position; drawn: %v", gui, slices.Sorted(maps.Keys(nodes)))
+	}
+	var edges []string
+	for _, edge := range rendering.Edges {
+		edges = append(edges, fmt.Sprintf("%s %s %s: %s", names[edge.From], edge.Kind, names[edge.To], edge.Label))
+	}
+	want := []string{"UI::Console composition UI::GUI: GUI", "UI::Console composition UI::Panel: panel"}
+	if !reflect.DeepEqual(edges, want) {
+		t.Errorf("edges = %q, want %q", edges, want)
+	}
+}
+
+func TestGoldenPrivateLayoutAlias(t *testing.T) {
+	r := migrateLaidOut(t, "private_layout_alias")
+	if l := r.Report.Layout; l == nil || l.DiagramsJoined != 1 || l.PlacementsWritten != 2 || l.PlacementsUnexposed != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	if diagnostics := errors(t, "private_layout_alias.sysml", r.Notation); len(diagnostics) > 0 {
+		for _, d := range diagnostics {
+			t.Error(d)
+		}
+		t.FailNow()
+	}
+	assertPrivateLayoutAliasTarget(t, "private_layout_alias.sysml", r.Notation, []string{"A"}, "A BDD", "x (A)", "A::x", "B::x")
+	checkGolden(t, "testdata/xmi/private_layout_alias.layout.golden.sysml", r.Notation)
+	var report bytes.Buffer
+	if err := r.Report.WriteText(&report); err != nil {
+		t.Fatal(err)
+	}
+	checkGolden(t, "testdata/xmi/private_layout_alias.layout.golden.report.txt", report.Bytes())
+	notation := string(r.Notation)
+	for _, want := range []string{
+		"private alias 'x (A)' for x;",
+		"metadata MigrationMetadata::SynthesizedName about 'x (A)';",
+		"metadata DiagramLayout::Layout about 'x (A)'",
+	} {
+		if !strings.Contains(notation, want) {
+			t.Errorf("layout output does not contain %q:\n%s", want, notation)
+		}
+	}
+}
+
+func TestPrivateLayoutAliasMarkerResolvesToLibraryWithShadowedName(t *testing.T) {
+	const docName = "private_layout_alias_scope.sysml"
+	r := migratePrivateLayoutAliasWithMetadataMember(t)
+	notation := string(r.Notation)
+	if !strings.Contains(notation, "metadata $::MigrationMetadata::SynthesizedName about 'x (A)';") {
+		t.Errorf("metadata marker is not rooted past the local name:\n%s", notation)
+	}
+	for _, d := range errors(t, docName, r.Notation) {
+		t.Errorf("%v", d)
+	}
+	assertPrivateLayoutAliasTarget(t, docName, r.Notation, []string{"A"}, "A BDD", "x (A)", "A::x", "B::x")
+
+	ws := model.NewWorkspace()
+	ws.Open(docName, r.Notation, 1)
+	doc := ws.Document(docName)
+	if doc == nil {
+		t.Fatalf("workspace did not open %s", docName)
+	}
+	owner, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf("A"))
+	if !ok || owner.Scope == nil {
+		t.Fatal("owner A is unresolved or has no scope")
+	}
+	if _, ok := owner.Scope.LookupLocal("MigrationMetadata"); !ok {
+		t.Fatal("test model has no owner-local MigrationMetadata")
+	}
+	var markerFacts []*symbols.AnnotationFacts
+	var libraryType *symbols.Symbol
+	var libraryTypeOK bool
+	if err := ws.Read(func(reading *model.Reading) error {
+		reading.Query(docName, func(resolver *resolve.Resolver, semantic *semantics.Model) {
+			for _, member := range owner.Scope.AllMembers() {
+				if facts := semantic.AboutAnnotationFactsOf(member); facts != nil {
+					markerFacts = append(markerFacts, facts)
+				}
+			}
+			libraryType, libraryTypeOK = resolver.ResolveQualified(doc.Scope, ast.QualifiedNameOf("MigrationMetadata", "SynthesizedName"))
+		})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !libraryTypeOK || libraryType.Kind != symbols.SymbolMetadataDef {
+		t.Fatalf("library MigrationMetadata::SynthesizedName = %v, resolved = %t", libraryType, libraryTypeOK)
+	}
+	libraryFQN := symbols.FQNOf(libraryType)
+	for _, facts := range markerFacts {
+		if facts.TypeFQN == libraryFQN {
+			return
+		}
+	}
+	t.Fatalf("about marker facts = %+v, want library type %s", markerFacts, libraryFQN)
+}
+
+func migratePrivateLayoutAliasWithMetadataMember(t *testing.T) *migrate.Result {
+	t.Helper()
+	const sourcePath = "testdata/xmi/private_layout_alias.xmi"
+	sourceData, err := os.ReadFile(sourcePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const member = `      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_b" name="b" type="_b" aggregation="composite"/>`
+	const replacement = `      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_migration_metadata" name="MigrationMetadata" type="_b" aggregation="composite"/>
+` + member
+	if !bytes.Contains(sourceData, []byte(member)) {
+		t.Fatalf("%s does not contain the expected owner member", sourcePath)
+	}
+	sourceData = bytes.Replace(sourceData, []byte(member), []byte(replacement), 1)
+	layoutData, err := os.ReadFile("testdata/xmi/private_layout_alias.layout.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	layout, err := mtip.Parse(layoutData)
+	if err != nil {
+		t.Fatalf("mtip.Parse: %v", err)
+	}
+	r, err := migrate.MigrateOptions("private_layout_alias_scope.xmi", sourceData, migrate.Options{
+		Layout: layout, LayoutSource: "private_layout_alias.layout.xml",
+	})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	return r
+}
+
+// A private layout alias never takes a name the owner's body already refers
+// to unqualified: part c keeps its top-level type 'x (A)', and the alias for
+// the shadowed private part takes the numbered name.
+func TestPrivateLayoutAliasKeepsReferencedNameResolving(t *testing.T) {
+	const docName = "private_layout_alias_referenced.sysml"
+	data := document(`
+    <packagedElement xmi:type="uml:Class" xmi:id="_a" name="A">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_x" name="x" visibility="private" type="_b" aggregation="composite"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_c" name="c" type="_taken" aggregation="composite"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_b" name="B">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_b_x" name="x"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_taken" name="x (A)"/>
+    <xmi:Extension extender="Example UML Tool 1.0">
+      <ownedDiagram xmi:type="uml:Diagram" xmi:id="_diag" name="A BDD" ownerOfDiagram="_a">
+        <xmi:Extension extender="Example UML Tool 1.0">
+          <diagramRepresentation>
+            <diagram:DiagramRepresentationObject xmlns:diagram="http://www.example.com/tool/diagram" type="SysML Block Definition Diagram" umlType="Class Diagram">
+              <diagramContents>
+                <usedElements>_a_x</usedElements>
+                <usedElements>_b_x</usedElements>
+              </diagramContents>
+            </diagram:DiagramRepresentationObject>
+          </diagramRepresentation>
+        </xmi:Extension>
+      </ownedDiagram>
+    </xmi:Extension>`, `
+  <sysml:Block xmi:id="_s_a" base_Class="_a"/>
+  <sysml:Block xmi:id="_s_b" base_Class="_b"/>
+  <sysml:Block xmi:id="_s_taken" base_Class="_taken"/>`)
+	layout := &mtip.Export{Diagrams: []mtip.Diagram{{
+		ID: "_diag",
+		Placements: []mtip.Placement{
+			{ID: "_a_x", X: 10, Y: 10, Width: 80, Height: 40},
+			{ID: "_b_x", X: 110, Y: 10, Width: 80, Height: 40},
+		},
+		Unsupported: map[string]int{},
+	}}}
+	r, err := migrate.MigrateOptions("private_layout_alias_referenced.xmi", data, migrate.Options{
+		Layout: layout, LayoutSource: "private_layout_alias_referenced.layout.xml",
+	})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 2 || l.PlacementsUnexposed != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	for _, d := range errors(t, docName, r.Notation) {
+		t.Errorf("%v", d)
+	}
+	wantLine(t, r.Notation, "part c : 'x (A)';")
+	wantLine(t, r.Notation, "private alias 'x (A) 2' for x;")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about 'x (A) 2' {")
+	assertPrivateLayoutAliasTarget(t, docName, r.Notation, []string{"A"}, "A BDD", "x (A) 2", "A::x", "B::x")
+
+	ws := model.NewWorkspace()
+	ws.Open(docName, r.Notation, 1)
+	doc := ws.Document(docName)
+	if doc == nil {
+		t.Fatalf("workspace did not open %s", docName)
+	}
+	part, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf("A", "c"))
+	if !ok {
+		t.Fatal("A::c is unresolved")
+	}
+	var types []string
+	if err := ws.Read(func(reading *model.Reading) error {
+		reading.Query(docName, func(_ *resolve.Resolver, semantic *semantics.Model) {
+			for _, typ := range semantic.FeatureTypes(part) {
+				types = append(types, symbols.FQNOf(typ))
+			}
+		})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(types, []string{"x (A)"}) {
+		t.Fatalf("A::c is typed by %v, want the top-level block x (A)", types)
+	}
+}
+
+func TestStrictPrivateLayoutAliasIsOmitted(t *testing.T) {
+	r := migrateLaidOutOptions(t, "private_layout_alias", migrate.Options{Strict: true})
+	if strings.Contains(string(r.Notation), "private alias ") {
+		t.Fatalf("strict migration wrote a private layout alias:\n%s", r.Notation)
+	}
+}
+
+func assertPrivateLayoutAliasTarget(t *testing.T, docName string, notation []byte, ownerPath []string, viewName, aliasName, targetFQN, wrongFQN string) {
+	t.Helper()
+	ws := model.NewWorkspace()
+	ws.Open(docName, notation, 1)
+	doc := ws.Document(docName)
+	if doc == nil {
+		t.Fatalf("workspace did not open %s", docName)
+	}
+	owner, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf(ownerPath...))
+	if !ok || owner.Scope == nil {
+		t.Fatalf("owner %v is unresolved or has no scope", ownerPath)
+	}
+	viewSym, ok := ws.ResolveQualifiedInDoc(docName, owner.Scope, ast.QualifiedNameOf(viewName))
+	if !ok || viewSym.Scope == nil {
+		t.Fatalf("view %q is unresolved or has no scope", viewName)
+	}
+	alias, ok := owner.Scope.LookupLocal(aliasName)
+	if !ok || alias.Kind != symbols.SymbolAlias || alias.Visibility != ast.VisibilityPrivate {
+		t.Fatalf("owner alias %q = %v, want private alias", aliasName, alias)
+	}
+	var aboutTarget, aliasTarget *symbols.Symbol
+	var aboutOK, aliasOK bool
+	if err := ws.Read(func(r *model.Reading) error {
+		r.Query(docName, func(resolver *resolve.Resolver, _ *semantics.Model) {
+			aboutTarget, aboutOK = resolver.ResolveQualified(viewSym.Scope, ast.QualifiedNameOf(aliasName))
+			aliasTarget, aliasOK = resolver.ResolveAliasTarget(alias)
+		})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !aboutOK || !aliasOK {
+		t.Fatalf("about target resolved = %t, alias target resolved = %t", aboutOK, aliasOK)
+	}
+	if aboutTarget != aliasTarget {
+		t.Fatalf("about target %s is not alias target %s", symbols.FQNOf(aboutTarget), symbols.FQNOf(aliasTarget))
+	}
+	if got := symbols.FQNOf(aliasTarget); got != targetFQN {
+		t.Fatalf("alias %q resolves to %s, want %s", aliasName, got, targetFQN)
+	}
+	pos := doc.Lines().PosAt(aliasTarget.DeclSpan.Offset)
+	t.Logf("alias %q resolves to %s at %s:%d", aliasName, symbols.FQNOf(aliasTarget), docName, pos.Line)
+	if aliasTarget.Visibility != ast.VisibilityPrivate {
+		t.Fatalf("alias %q target visibility = %v, want private", aliasName, aliasTarget.Visibility)
+	}
+	if wrong, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf(strings.Split(wrongFQN, "::")...)); ok && aboutTarget == wrong {
+		t.Fatalf("alias %q resolves to %s, not a distinct target from %s", aliasName, wrongFQN, targetFQN)
+	}
+}
+
+// The shapes Cameo draws inside a part shape are listed under its parts, not its
+// mdOwnedViews: the nested parts are placed inside the enclosing part, which keeps a
+// placement of its own, and the connector between them is routed.
+func TestGoldenNestedPartsPlacedInsideTheirPart(t *testing.T) {
+	r := migrateStream(t, "nested_parts")
+	checkGolden(t, "testdata/xmi/nested_parts.golden.sysml", r.Notation)
+	for _, d := range errors(t, "nested_parts.sysml", r.Notation) {
+		t.Errorf("%v", d)
+	}
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about engine { x = 20; y = 20; width = 440; height = 240; }")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about Blocks::Engine::piston { x = 60; y = 100; width = 120; height = 60; }")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about Blocks::Engine::sensor { x = 300; y = 100; width = 120; height = 60; }")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Route about Blocks::Engine::'piston to sensor' { points = (180, 130, 300, 130); }")
+	// Only the two connector-end shapes on the line lie on a connection; the nested parts are nodes.
+	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 3 || l.PlacementsOnEdges != 2 || l.RoutesWritten != 1 {
+		t.Errorf("layout report = %+v", l)
+	}
 }

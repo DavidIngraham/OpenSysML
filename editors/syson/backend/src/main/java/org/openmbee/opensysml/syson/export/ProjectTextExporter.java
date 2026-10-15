@@ -12,6 +12,10 @@ import org.eclipse.sirius.components.core.api.IIdentityService;
 import org.eclipse.sirius.components.emf.services.api.IEMFEditingContext;
 import org.eclipse.sirius.components.representations.MessageLevel;
 import org.eclipse.syson.sysml.Element;
+import org.eclipse.syson.sysml.Namespace;
+import org.eclipse.syson.sysml.OwningMembership;
+import org.eclipse.syson.sysml.Relationship;
+import org.eclipse.syson.sysml.SysmlPackage;
 import org.eclipse.syson.sysml.metamodel.util.ElementUtil;
 import org.eclipse.syson.sysml.metamodel.services.textual.utils.Status;
 import org.openmbee.opensysml.SourceDocument;
@@ -37,12 +41,13 @@ public class ProjectTextExporter implements ProjectExporter {
         Map<String, IndexedElement> entries = new LinkedHashMap<>();
         Map<Element, IndexedElement> enclosing = new LinkedHashMap<>();
         Map<String, IndexedElement> byElementId = new LinkedHashMap<>();
+        Collected collected = new Collected(messages, ranges, entries, enclosing, byElementId);
         int documentIndex = 0;
         for (Resource resource : context.getDomain().getResourceSet().getResources()) {
             String uri = resource.getURI() == null ? "" : resource.getURI().toString();
             if (uri.startsWith(ElementUtil.KERML_LIBRARY_SCHEME) || uri.startsWith(ElementUtil.SYSML_LIBRARY_SCHEME)) continue;
             String name = documentName(resource, documents, documentIndex);
-            exportResource(resource, name, documents, messages, ranges, entries, enclosing, byElementId);
+            exportResource(resource, name, documents, collected);
             documentIndex++;
         }
         return new ExportedProject(documents, new ElementIndex(entries, enclosing, byElementId), messages, ranges);
@@ -62,30 +67,65 @@ public class ProjectTextExporter implements ProjectExporter {
     }
 
     // Serializes a resource's roots into one document, recording its ranges, messages and index entries.
+    // SysON files each uploaded document under an unnamed root Namespace that its serializer never
+    // prints, so that namespace's relationships are the roots, each exported on its own.
     private void exportResource(Resource resource, String name, List<SourceDocument> documents,
-            List<ExportedProject.ExportMessage> messages, List<ExportedProject.DocumentRange> ranges,
-            Map<String, IndexedElement> entries, Map<Element, IndexedElement> enclosing,
-            Map<String, IndexedElement> byElementId) {
+            Collected collected) {
         StringBuilder text = new StringBuilder();
         for (EObject root : resource.getContents()) {
-            if (!(root instanceof Element element)) continue;
-            if (!text.isEmpty() && text.charAt(text.length() - 1) != '\n') text.append('\n');
-            int start = text.isEmpty() ? 1 : lineCount(text);
-            List<Status> statuses = new ArrayList<>();
-            ElementSerializer.Serialization serialized = serializer.serialize(root, statuses::add);
-            String serializedText = serialized == null || serialized.text() == null ? "" : serialized.text();
-            text.append(serializedText);
-            int end = Math.max(start,
-                    lineCount(text) - (text.length() > 0 && text.charAt(text.length() - 1) == '\n' ? 1 : 0));
-            ranges.add(new ExportedProject.DocumentRange(name, start, end, element));
-            if (serialized != null && !serialized.fragments().isEmpty()) {
-                locate(element, start, strippedLines(serializedText), serialized.fragments(), name, ranges);
+            if (root instanceof Element element) {
+                exportRootElement(element, text, name, collected);
             }
-            statuses.forEach(status -> messages.add(new ExportedProject.ExportMessage(ExportedProject.level(status),
-                    status.message())));
-            index(element, null, entries, enclosing, byElementId);
         }
         documents.add(SourceDocument.inline(name, text.toString()));
+    }
+
+    // Exports one root of a resource: an unnamed root Namespace stands for its relationships.
+    private void exportRootElement(Element element, StringBuilder text, String name, Collected collected) {
+        if (!isRootNamespace(element)) {
+            exportRoot(element, List.of(element), text, name, collected);
+            return;
+        }
+        for (Relationship relationship : ((Namespace) element).getOwnedRelationship()) {
+            List<Element> declared = relationship instanceof OwningMembership membership
+                    ? List.copyOf(membership.getOwnedRelatedElement())
+                    : List.of(relationship);
+            exportRoot(relationship, declared, text, name, collected);
+        }
+    }
+
+    // What an export collects across its documents: messages, line ranges and the element index.
+    private record Collected(List<ExportedProject.ExportMessage> messages,
+            List<ExportedProject.DocumentRange> ranges, Map<String, IndexedElement> entries,
+            Map<Element, IndexedElement> enclosing, Map<String, IndexedElement> byElementId) {
+    }
+
+    private static boolean isRootNamespace(Element element) {
+        return element.eClass() == SysmlPackage.eINSTANCE.getNamespace() && element.getOwner() == null
+                && element.getName() == null;
+    }
+
+    // Appends one root's text and records the elements it declares.
+    private void exportRoot(EObject root, List<Element> declared, StringBuilder text, String name,
+            Collected collected) {
+        if (!text.isEmpty() && text.charAt(text.length() - 1) != '\n') text.append('\n');
+        int start = text.isEmpty() ? 1 : lineCount(text);
+        List<Status> statuses = new ArrayList<>();
+        ElementSerializer.Serialization serialized = serializer.serialize(root, statuses::add);
+        String serializedText = serialized == null || serialized.text() == null ? "" : serialized.text();
+        text.append(serializedText);
+        int end = Math.max(start,
+                lineCount(text) - (text.length() > 0 && text.charAt(text.length() - 1) == '\n' ? 1 : 0));
+        for (Element element : declared) {
+            collected.ranges().add(new ExportedProject.DocumentRange(name, start, end, element));
+            if (serialized != null && !serialized.fragments().isEmpty()) {
+                locate(element, start, strippedLines(serializedText), serialized.fragments(), name,
+                        collected.ranges());
+            }
+            index(element, null, collected.entries(), collected.enclosing(), collected.byElementId());
+        }
+        statuses.forEach(status -> collected.messages().add(new ExportedProject.ExportMessage(
+                ExportedProject.level(status), status.message())));
     }
 
     // Finds each visited child's fragment verbatim inside its parent's text (indentation stripped)

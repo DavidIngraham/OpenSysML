@@ -17,6 +17,11 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/translate/xmi/sysmlv1"
 )
 
+const (
+	emptyComment = "empty comment"
+	itsEnd       = "its end "
+)
+
 // The v2 keywords the writer prefixes a declaration or annotation with.
 const (
 	privatePrefix = "private "
@@ -157,6 +162,7 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 		concernLists:      map[*sysmlv1.Element][]*sysmlv1.Element{},
 		taken:             map[*sysmlv1.Element]map[string]bool{},
 		takenBy:           map[*sysmlv1.Element]map[string]*sysmlv1.Element{},
+		referenced:        map[*sysmlv1.Element]map[string]bool{},
 		parallel:          map[*sysmlv1.Element]string{},
 		exposed:           map[*sysmlv1.Element]string{},
 		methodOf:          map[*sysmlv1.Element]*sysmlv1.Element{},
@@ -194,6 +200,7 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 		entries:           map[*sysmlv1.Element]*regionEntry{},
 		stateUsed:         map[*sysmlv1.Element]map[string]bool{},
 		nestedIn:          map[*sysmlv1.Element]string{},
+		deferralPlans:     map[*sysmlv1.Element]*deferrals{},
 		vertexNames:       map[*sysmlv1.Element]string{},
 		stateMachinesUsed: map[*sysmlv1.Element]bool{},
 		points:            map[*sysmlv1.Element]pointForm{},
@@ -232,6 +239,11 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 		objectives:        map[*sysmlv1.Element]string{},
 		routeKinds:        routeKinds{},
 	}
+	m.privateAliases = map[*sysmlv1.Element]*privateLayoutAlias{}
+	m.privateAliasesByOwner = map[*sysmlv1.Element][]*privateLayoutAlias{}
+	m.privateAliasPlacements = map[privateLayoutPlacement]*privateLayoutAlias{}
+	m.privateAliasOwners = map[*sysmlv1.Element]bool{}
+	m.privateAliasHoles = map[*sysmlv1.Element]bool{}
 	m.w.marker = m.synthesizedNames
 	m.w.standInMarker = m.standInNames
 	m.imageBase, _ = imageBaseURL(opts.ImageBaseURL)
@@ -268,6 +280,9 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 	m.libraryNameNotes()
 	for _, extra := range m.extras[nil] {
 		extra()
+	}
+	if !m.strict {
+		m.planPrivateLayoutAliases()
 	}
 	m.views(nil)
 	m.flushFlows()
@@ -381,6 +396,18 @@ type migration struct {
 	taken map[*sysmlv1.Element]map[string]bool
 	// takenBy is the element each taken name was reserved for; nil for none.
 	takenBy map[*sysmlv1.Element]map[string]*sysmlv1.Element
+	// referenced holds the names a reference written in a body resolves past
+	// it by, by scope: a declaration named so there would capture the reference.
+	referenced map[*sysmlv1.Element]map[string]bool
+	// privateAliases names private members through aliases in their owners' bodies.
+	privateAliases        map[*sysmlv1.Element]*privateLayoutAlias
+	privateAliasesByOwner map[*sysmlv1.Element][]*privateLayoutAlias
+	// privateAliasPlacements records the aliases used by individual view placements.
+	privateAliasPlacements map[privateLayoutPlacement]*privateLayoutAlias
+	// privateAliasOwners records owners that may need deferred alias declarations.
+	privateAliasOwners map[*sysmlv1.Element]bool
+	// privateAliasHoles records owners whose deferred alias hole was added.
+	privateAliasHoles map[*sysmlv1.Element]bool
 	// opened holds the member names of each synthesized declaration being
 	// written, outermost first; a reference written inside them avoids those names.
 	opened []columnNames
@@ -567,6 +594,9 @@ type migration struct {
 	// nestedIn names the generated action a state's behavior is written
 	// within, for those the strict deferral encoding nests.
 	nestedIn map[*sysmlv1.Element]string
+	// deferralPlans holds how each state's deferrals are written, planned
+	// once so the names the encoding nests a behavior under are known early.
+	deferralPlans map[*sysmlv1.Element]*deferrals
 	// vertexNames gives the v2 name of every vertex a state machine writes.
 	vertexNames map[*sysmlv1.Element]string
 	// points says how each connection point of a composite state is written.
@@ -3363,7 +3393,7 @@ func (m *migration) placeholderEnds() {
 				if m.verdictOf(end) == Unmapped {
 					pl.fail(p.target)
 				}
-				pl.notes = append(pl.notes, "its end "+qualifiedName(end)+" is written only as a placeholder of a node that is not migrated")
+				pl.notes = append(pl.notes, itsEnd+qualifiedName(end)+" is written only as a placeholder of a node that is not migrated")
 				break
 			}
 		}
@@ -3662,7 +3692,7 @@ func (m *migration) dependencyPair(d *sysmlv1.Element, pl *placement, name strin
 	var nodes []*sysmlv1.Element
 	for _, end := range []*sysmlv1.Element{client, supplier} {
 		if !m.written(end) {
-			return "", false, "its end " + qualifiedName(end) + " is not migrated"
+			return "", false, itsEnd + qualifiedName(end) + " is not migrated"
 		}
 		if act, _ := m.nodeGraph(end); act != nil {
 			nodes = append(nodes, end)
@@ -3875,11 +3905,11 @@ func (m *migration) allocationFallbackNote(client, supplier *sysmlv1.Element) st
 			continue
 		}
 		if m.packageFeature(e) {
-			notes = append(notes, "its end "+qualifiedName(e)+" is a feature of a package, which no allocation end can be typed by, so a plain dependency stands for it")
+			notes = append(notes, itsEnd+qualifiedName(e)+" is a feature of a package, which no allocation end can be typed by, so a plain dependency stands for it")
 		} else if owner != nil {
-			notes = append(notes, "its end "+qualifiedName(e)+" has no feature path relative to its enclosing written definition, so a plain dependency stands for it")
+			notes = append(notes, itsEnd+qualifiedName(e)+" has no feature path relative to its enclosing written definition, so a plain dependency stands for it")
 		} else {
-			notes = append(notes, "its end "+qualifiedName(e)+" has no enclosing written definition to type an allocation end, so a plain dependency stands for it")
+			notes = append(notes, itsEnd+qualifiedName(e)+" has no enclosing written definition to type an allocation end, so a plain dependency stands for it")
 		}
 	}
 	return strings.Join(notes, "; ")
@@ -4000,7 +4030,7 @@ func (m *migration) writeComments(e *sysmlv1.Element, first bool) {
 		missing := m.dangling(c, "annotatedElement")
 		text := m.commentBody(c)
 		if text == "" {
-			m.add(c, Skipped, "", "empty comment")
+			m.add(c, Skipped, "", emptyComment)
 			continue
 		}
 		if note := m.concernCommentFallback(c); note != "" {
@@ -4037,8 +4067,8 @@ func (m *migration) writeConcern(c *sysmlv1.Element) {
 		}
 	})
 	note := ""
-	if text := m.commentBody(c); text == "" {
-		note = "empty comment"
+	if m.commentBody(c) == "" {
+		note = emptyComment
 	}
 	if m.annotatesOthers(c, c.Parent) {
 		note = joinNotes(note, "a v2 concern annotates nothing, so the comment's annotations are not carried")
@@ -4113,7 +4143,7 @@ func (m *migration) commentAbout(c *sysmlv1.Element, about []*sysmlv1.Element, t
 func (m *migration) comment(c *sysmlv1.Element) {
 	text := m.commentBody(c)
 	if text == "" {
-		m.add(c, Skipped, "", "empty comment")
+		m.add(c, Skipped, "", emptyComment)
 		return
 	}
 	if note := m.concernCommentFallback(c); note != "" {

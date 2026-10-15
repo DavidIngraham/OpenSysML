@@ -491,7 +491,7 @@ func lowerStateAttributes(graph *StateGraph, members []inheritedMember) []Attrib
 			continue
 		}
 		graph.attributeScope[usage] = member.scope
-		attrs = append(attrs, Attribute{Name: name, Direction: usage.Direction, IsResult: usage.IsResult, Type: TypeText(usage), Value: usage.Value, Binding: valueIsBinding(usage.Value, usage.ValueIsInitial, usage.ValueIsDefault), Node: usage, Scope: member.scope})
+		attrs = append(attrs, Attribute{Name: name, Direction: usage.Direction, IsResult: usage.IsResult, Type: TypeText(usage), Value: usage.Value, Binding: valueIsBinding(usage.Value, usage.ValueIsInitial, usage.ValueIsDefault), Node: usage, Scope: member.scope, Symbol: member.scope.MemberDeclaring(usage)})
 	}
 	return attrs
 }
@@ -1705,7 +1705,8 @@ func (g *StateGraph) startsAt(decl, guard ast.Node, body transitionBody, source,
 	if err != nil || vertex == nil {
 		return false, err
 	}
-	if err := addEntryTransitionTarget(g, decl, vertex, body.entryOwner, guard, nil, body.scope, body.scope); err != nil {
+	entryTransition := &EntryTransition{Decl: decl, Guard: guard, Scope: body.scope}
+	if err := addEntryTransitionTarget(g, entryTransition, vertex, body.entryOwner, body.scope); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -1973,7 +1974,7 @@ func collectSuccessionEdge(graph *StateGraph, n *ast.SuccessionEdge, body transi
 	// subaction names the state it starts in (SysML 7.19.3), the same as
 	// a named entry action with a succession out of it does.
 	if sourceVertex == nil && isEntrySubaction(n.SourceMember) && targetVertex != nil {
-		return addEntryTransitionTarget(graph, n, targetVertex, entryOwner, nil, nil, scope, scope)
+		return addEntryTransitionTarget(graph, &EntryTransition{Decl: n, Scope: scope}, targetVertex, entryOwner, scope)
 	}
 
 	if sourceVertex == nil {
@@ -2005,8 +2006,8 @@ func collectTransitionMember(graph *StateGraph, n *ast.TransitionMember, body tr
 			return err
 		}
 		entryScope := symbols.TriggerScope(scope, n)
-		return addEntryTransitionTarget(graph, n, target, entryOwner, n.Guard,
-			transitionEffects(n, entryScope, graph.resolver), scope, entryScope)
+		entry := &EntryTransition{Decl: n, Guard: n.Guard, Effect: transitionEffects(n, entryScope, graph.resolver), Scope: entryScope}
+		return addEntryTransitionTarget(graph, entry, target, entryOwner, scope)
 	}
 	// `transition initial then off;` out of the entry action names the
 	// state the machine starts in, not an edge between two vertices.

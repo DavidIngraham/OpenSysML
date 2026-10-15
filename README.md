@@ -78,9 +78,9 @@ curl -fsSL https://opensysml.org/install.sh | sh
 irm https://opensysml.org/install.ps1 | iex
 ```
 Both scripts take a release (`--version v0.9.1`, `nightly`), a tool list (`--tools sysml`,
-`sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel`, `all`) and a destination (`--prefix`, or
-`-InstallDir` on Windows), and `--dry-run` shows the choice without installing; `sh -s -- --help`
-lists the rest. The scripts are [`install.sh`](install.sh) and [`install.ps1`](install.ps1) in
+`sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel`, or `all` for every tool the chosen release
+published, read from its `SHA256SUMS.txt`) and a destination (`--prefix`, or `-InstallDir` on
+Windows), and `--dry-run` shows the choice without installing; `sh -s -- --help` lists the rest. The scripts are [`install.sh`](install.sh) and [`install.ps1`](install.ps1) in
 this repository, so a checkout runs them as `./install.sh`.
 
 **Download pre-built binaries by hand:**
@@ -98,7 +98,7 @@ brew install Open-MBEE/tap/opensysml
 go install github.com/Open-MBEE/OpenSysML/cmd/sysml@latest
 go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest
 ```
-`sysml -version` then reports the release it was built from (`sysml v0.10.0`), or the commit when
+`sysml -version` then reports the release it was built from (`sysml v0.10.1`), or the commit when
 installed from a checkout.
 
 **Or build from source:**
