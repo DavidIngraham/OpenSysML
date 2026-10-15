@@ -25,12 +25,10 @@ func queryName(name string) string {
 	return text[1 : len(text)-1]
 }
 
-// pathSegment spells a query name as one segment of a metadata path.
+// pathSegment spells a query name as one segment of a metadata path: quoted
+// unless it is a basic name no keyword reserves, so one holding `::` stays one.
 func pathSegment(name string) string {
-	if strings.Contains(name, "'") {
-		return "'" + name + "'"
-	}
-	return name
+	return source.NameText(name)
 }
 
 // nameOf returns the v2 name of an element: its own, or the one synthesized
