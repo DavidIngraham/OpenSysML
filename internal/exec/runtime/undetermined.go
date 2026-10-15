@@ -20,6 +20,24 @@ type Undetermined struct {
 	known     []Value
 	positions []Value         // the leading positions the model fixes, see Positions
 	feature   *symbols.Symbol // the feature read, whose members a chain resolves against
+	cause     *symbols.Symbol // the valueless feature the result is open for, carried through operations
+}
+
+// Feature is the feature the result is the read of, nil for a computed result.
+func (u *Undetermined) Feature() *symbols.Symbol {
+	if u == nil {
+		return nil
+	}
+	return u.feature
+}
+
+// Unset is the feature nothing gives a value to that the result is open for — read
+// directly or through the operations computing from it — nil where the count alone is open.
+func (u *Undetermined) Unset() *symbols.Symbol {
+	if u == nil {
+		return nil
+	}
+	return u.cause
 }
 
 // Reason names why the result is undetermined, phrased for a diagnostic.
@@ -122,6 +140,11 @@ func undeterminedFeatureValue(reason string, count semantics.Range, sym *symbols
 	return Value{Kind: ValUndetermined, ref: &Undetermined{reason: reason, count: count, feature: sym}}
 }
 
+// unsetFeatureValue is the undetermined read of feature sym, which nothing gives a value to.
+func unsetFeatureValue(spelled string, count semantics.Range, sym *symbols.Symbol) Value {
+	return Value{Kind: ValUndetermined, ref: &Undetermined{reason: noValueReason(spelled), count: count, feature: sym, cause: sym}}
+}
+
 // chainThroughUndetermined reads parts from an undetermined feature read: unresolved
 // when its type declares no such member, else undetermined over all it may hold,
 // certainly holding what the chain reads from the values it certainly holds.
@@ -152,7 +175,7 @@ func (ec *EvalContext) chainThroughUndetermined(value Value, parts []ast.NameSeg
 		count = count.Plus(countOf(val))
 		known = append(known, contributed...)
 	}
-	return Value{Kind: ValUndetermined, ref: &Undetermined{reason: u.reason, count: count, known: known, feature: cur}}, nil
+	return Value{Kind: ValUndetermined, ref: &Undetermined{reason: u.reason, count: count, known: known, feature: cur, cause: u.cause}}, nil
 }
 
 // unknownCount is the count of the values u holds beyond those it certainly holds.
@@ -212,7 +235,8 @@ func undeterminedResult(operands ...Value) Value {
 			count = optionalRange()
 		}
 	}
-	return NewUndeterminedValue(first.Undetermined().Reason(), count)
+	u := first.Undetermined()
+	return Value{Kind: ValUndetermined, ref: &Undetermined{reason: u.Reason(), count: count, cause: u.Unset()}}
 }
 
 // undeterminedOne is an undetermined result of exactly one value, whatever the
@@ -225,7 +249,8 @@ func undeterminedOne(operands ...Value) Value {
 // first undetermined operand.
 func undeterminedOf(count semantics.Range, operands ...Value) Value {
 	first, _ := undeterminedIn(operands...)
-	return NewUndeterminedValue(first.Undetermined().Reason(), count)
+	u := first.Undetermined()
+	return Value{Kind: ValUndetermined, ref: &Undetermined{reason: u.Reason(), count: count, cause: u.Unset()}}
 }
 
 // undeterminedElements is a sequence some element of which is undetermined: its
@@ -241,6 +266,7 @@ func undeterminedElements(elements []Value) Value {
 	}
 	return Value{Kind: ValUndetermined, ref: &Undetermined{
 		reason: first.Undetermined().Reason(), count: count, known: known, positions: fixedPrefixOf(elements...),
+		cause: first.Undetermined().Unset(),
 	}}
 }
 
@@ -292,7 +318,7 @@ func undeterminedFiltered(source Value, kept, open []Value, fromUnknown semantic
 		Plus(semantics.Range{Lower: semantics.Bound{Known: true}, Upper: semantics.Bound{Value: int64(len(open)), Known: true}}).
 		Plus(fromUnknown)
 	return Value{Kind: ValUndetermined, ref: &Undetermined{
-		reason: first.Undetermined().Reason(), count: count, known: kept,
+		reason: first.Undetermined().Reason(), count: count, known: kept, cause: first.Undetermined().Unset(),
 	}}
 }
 
@@ -307,7 +333,7 @@ func undeterminedCollected(source Value, answers []Value, fromUnknown semantics.
 		known = append(known, knownElementsOf(answer)...)
 	}
 	return Value{Kind: ValUndetermined, ref: &Undetermined{
-		reason: first.Undetermined().Reason(), count: count, known: known,
+		reason: first.Undetermined().Reason(), count: count, known: known, cause: first.Undetermined().Unset(),
 	}}
 }
 
@@ -516,9 +542,11 @@ func certainlyEmpty(val Value) bool {
 }
 
 // modelReads reports whether reading a feature of inst asserts only what the model
-// states: a model-level evaluation reading an object only the model stands behind.
+// states: an evaluation that is no performance — a model-level expression, or the
+// value a member binds on any object — reading an object only the model stands
+// behind. A running behavior reads what its objects hold.
 func (ec *EvalContext) modelReads(inst *Instance) bool {
-	return ec.modelLevel() && ec.ctx.readThrough(rootObject(inst))
+	return !ec.inBehaviorBody && !ec.hasPerformanceFrame() && ec.ctx.readThrough(rootObject(inst))
 }
 
 // memberFeatureValue reads the named feature value of inst: through the model,
@@ -545,8 +573,15 @@ func (ec *EvalContext) openFeatureRead(inst *Instance, fv *FeatureValue, open *o
 	if open != nil && open.Stopped {
 		return openCollectionValue(spelled, feature, open), true
 	}
+	// A feature of exactly no values holds none, whatever its value expression reads.
+	if n, exact := feature.Multiplicity.Exactly(); exact && n == 0 {
+		if typed, ok := ec.ctx.emptyOfSymbol(feature.Symbol); ok {
+			return typed, true
+		}
+		return sequenceOf(nil), true
+	}
 	if ec.ctx.holdsOnlyUnset(fv) {
-		return undeterminedFeatureValue(noValueReason(spelled), feature.Multiplicity, feature.Symbol), true
+		return unsetFeatureValue(spelled, feature.Multiplicity, feature.Symbol), true
 	}
 	if !fv.Assumed && (fv.Materialized || fv.HeldValue().Kind != ValInvalid) {
 		return Value{}, false

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -719,6 +720,18 @@ func ChainPins(ctx *runtime.Context, q *Query, read Reader, self *runtime.Instan
 			if errors.Is(err, runtime.ErrNoValue) && !errors.Is(err, runtime.ErrFeatureValueMaterialization) {
 				continue
 			}
+			unfixed = append(unfixed, Unfixed{Feature: v.Symbol, Name: v.Name, Var: v.Name, Reason: err.Error(), Err: err})
+			continue
+		}
+		if u := value.Undetermined(); u != nil && u.Unset() != nil && !slices.Contains(v.Steps, u.Unset()) {
+			// A declared value open for a feature nothing gives a value to does not evaluate,
+			// as a failed read does; a chain whose own step holds nothing stays free.
+			spelled := v.Name
+			if i := strings.LastIndex(spelled, "::"); i >= 0 {
+				spelled = spelled[i+2:]
+			}
+			noValue := &runtime.NoValueError{Feature: u.Unset().Name, Symbol: u.Unset()}
+			err := &runtime.FeatureValueError{Err: fmt.Errorf("feature value %s: %w", spelled, noValue)}
 			unfixed = append(unfixed, Unfixed{Feature: v.Symbol, Name: v.Name, Var: v.Name, Reason: err.Error(), Err: err})
 			continue
 		}

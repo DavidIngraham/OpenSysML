@@ -570,6 +570,8 @@ Supported types:
   or any other feature the library declares unique and unordered
 - `Instance`: an object, whose identity a case does not pin (no `value`)
 - `Unset`: a valueless feature of a value type, holding no value (no `value`)
+- `Undetermined`: a value the model leaves open, optionally pinned to the count
+  it is undetermined of, as a JSON string (`{"type": "Undetermined", "value": "[1..*]"}`)
 - `Variant`: the name of the variant a variation feature is bound to, as a JSON
   string (`{"type": "Variant", "value": "cutIdeal"}`)
 - `EnumLiteral`: the enumeration literal a value is, written as the enumeration

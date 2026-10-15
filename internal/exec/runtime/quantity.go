@@ -65,6 +65,10 @@ func (ec *EvalContext) evalIndexExpr(n *ast.IndexExpr) (Value, error) {
 	if err != nil {
 		return Value{}, err
 	}
+	if magnitude.Kind == ValUndetermined {
+		// A quantity of a magnitude the model leaves open is as open as the magnitude.
+		return undeterminedOf(countOf(magnitude), magnitude), nil
+	}
 	if magnitude.Kind != ValVector && (magnitude.Kind != ValConst || !magnitude.Const.IsNumeric()) {
 		return Value{}, fmt.Errorf("%w: magnitude of a quantity is %s, want a number or a vector", ErrNotAQuantity, magnitude.Kind)
 	}

@@ -71,7 +71,12 @@ func (ctx *Context) openOperandAdmits(val Value, accepts ...string) bool {
 // type is unknown, or typ is unknown, or either conforms to the other.
 func (ctx *Context) openValueMayBe(val Value, typ *symbols.Symbol) bool {
 	declared := ctx.openOperandType(val)
-	return declared == nil || typ == nil || ctx.modelConforms(declared, typ) || ctx.modelConforms(typ, declared)
+	if declared == nil || typ == nil || ctx.modelConforms(declared, typ) || ctx.modelConforms(typ, declared) {
+		return true
+	}
+	// A scalar quantity is a number with a unit, so an open one may be a numeric argument.
+	numeric := ctx.librarySymbol(numericalValueTypeFQN)
+	return ctx.modelConforms(declared, ctx.librarySymbol(scalarQuantityTypeFQN)) && numeric != nil && ctx.modelConforms(typ, numeric)
 }
 
 // openBoolOperand rejects an open operand whose declared type admits no Boolean,

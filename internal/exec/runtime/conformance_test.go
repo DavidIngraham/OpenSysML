@@ -2396,6 +2396,16 @@ func validateValue(t reporter, ctx *Context, name string, expected ExpectedValue
 		if ctx == nil || !ctx.HoldsNoValue(actual) {
 			t.Errorf("%s: type = %v, want %s", name, actual.Kind, UnsetText)
 		}
+	case "Undetermined":
+		// A value the model leaves open, of the count the case pins as its value.
+		u := actual.Undetermined()
+		if u == nil {
+			t.Errorf("%s: type = %v, want %s", name, actual.Kind, UndeterminedText)
+			return
+		}
+		if count, pinned := expected.Value.(string); pinned && u.Count().Text() != count {
+			t.Errorf("%s: undetermined of %s values, want %s", name, u.Count().Text(), count)
+		}
 	case "Integer":
 		if actual.Kind != ValConst || actual.Const.Kind != semantics.ValInt {
 			t.Errorf("%s: type = %v (Const.Kind=%v), want Integer", name, actual.Kind, actual.Const.Kind)
