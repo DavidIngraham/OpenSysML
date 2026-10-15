@@ -19,6 +19,20 @@ func writeName(name string) string {
 	return source.UnrestrictedNameText(name)
 }
 
+// queryName is a name as the index reads it from notation, without its quotes.
+func queryName(name string) string {
+	text := source.UnrestrictedNameText(name)
+	return text[1 : len(text)-1]
+}
+
+// pathSegment spells a query name as one segment of a metadata path.
+func pathSegment(name string) string {
+	if strings.Contains(name, "'") {
+		return "'" + name + "'"
+	}
+	return name
+}
+
 // nameOf returns the v2 name of an element: its own, or the one synthesized
 // for an anonymous element that something refers to; "" when it is anonymous
 // and stays so.
@@ -301,6 +315,7 @@ func (m *migration) path(e *sysmlv1.Element) []segment {
 		if op := m.methodOf[cur]; op != nil {
 			cur = op
 		}
+		m.planNesting(cur)
 		segs = append([]segment{{name: m.nameFor(cur), feature: m.isUsage(cur), elem: cur}}, segs...)
 		if within, ok := m.nestedIn[cur]; ok {
 			segs = append([]segment{{name: within, feature: true}}, segs...)

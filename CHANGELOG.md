@@ -94,6 +94,8 @@ release is described in [docs/project/releasing.md](docs/project/releasing.md).
 - The execution runtime resolves an unqualified name read from a scope once per model instead of asking the resolver on every read. A read resolves its name to the feature it denotes before it is answered from a frame, so a loop body paid a full scope walk per iteration for each name it read (`BenchmarkIntegerArithmeticLoop` +29% against 0.10.0); the memo takes that walk off every step after the first.
 
 - An action execution's root frame sizes the index of the features it holds for all of them up front instead of growing it entry by entry. The index takes every feature of the action, inherited ones included, so each fresh execution paid a dozen allocations and a few kilobytes of discarded map storage for the regrowth (`BenchmarkNewRootFrame`: 43 → 36 allocations, 16.2 → 12.8 KiB; `BenchmarkExecuteActionFreshContext`: 345 → 338 allocations, 42.6 → 40.2 KiB per execution). The index itself, the record of which feature each binding is a value of, stays.
+- Migrated document queries now spell names containing quotes, backslashes, or control characters as the document engine resolves them, so tables over elements such as a package named `Frank's Braindump` no longer render as error pages.
+- Migrated document queries now name an action of a deferring state's do or exit behavior through the `buffer` or `flush` action the deferral encoding writes that behavior in, so a table or DocGen document listing such an action no longer renders as an error page.
 
 ## 0.10.0 — 2026-10-08
 ### Added
