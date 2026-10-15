@@ -30,7 +30,7 @@ func (ctx *Context) holdFeature(held *map[*symbols.Symbol]string, sym *symbols.S
 }
 
 // heldName returns the name f binds sym under, if it holds that feature.
-func (f frame) heldName(sym *symbols.Symbol) (string, bool) {
+func (f *frame) heldName(sym *symbols.Symbol) (string, bool) {
 	if sym == nil || f.held == nil {
 		return "", false
 	}
@@ -40,7 +40,7 @@ func (f frame) heldName(sym *symbols.Symbol) (string, bool) {
 
 // bindsUnheld reports whether f binds name without recording the feature it is: a
 // binding resolution has no sight of, such as a pin an invocation adopts.
-func (f frame) bindsUnheld(name string) bool {
+func (f *frame) bindsUnheld(name string) bool {
 	if !f.has(name) {
 		return false
 	}
@@ -85,14 +85,15 @@ func (ec *EvalContext) lookupHeld(name string) (Value, bool, error) {
 		return Value{}, false, nil
 	}
 	for i := len(ec.frames) - 1; i >= 0; i-- {
-		bound, holds := ec.frames[i].heldName(sym)
+		f := &ec.frames[i]
+		bound, holds := f.heldName(sym)
 		if !holds {
-			if ec.frames[i].bindsUnheld(name) {
+			if f.bindsUnheld(name) {
 				return Value{}, false, nil
 			}
 			continue
 		}
-		if val, ok, err := ec.frames[i].read(ec.ctx, bound); err != nil {
+		if val, ok, err := f.read(ec.ctx, bound); err != nil {
 			return Value{}, false, err
 		} else if ok {
 			return val, true, nil
