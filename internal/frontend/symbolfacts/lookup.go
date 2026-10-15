@@ -90,10 +90,8 @@ func MemberChain(idx *symbols.Index, model *semantics.Model, name string) (*symb
 	return nil, ""
 }
 
-// soleDeclaration is the one declaration a qualified name denotes: the model's
-// when the model declares the name, since that shadows the library's, else the
-// library's; nil when nothing or more than one declaration answers. ambiguous
-// reports a name the model itself declares more than once.
+// soleDeclaration is the one declaration a qualified name denotes, the model's
+// shadowing the library's; ambiguous when the model declares the name twice.
 func soleDeclaration(idx *symbols.Index, fqn string) (sym *symbols.Symbol, ambiguous bool) {
 	matches := modelFirst(idx, idx.LookupQualified(fqn))
 	declared := 0
