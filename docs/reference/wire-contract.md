@@ -278,7 +278,7 @@ package Rover {
 
 	part def Vehicle {
 		attribute count : Integer = 4;
-		attribute mass : Real = 12.5;
+		attribute mass : Real default = 12.5;
 		attribute armed : Boolean = true;
 		attribute callsign : String = "R-1";
 		attribute speed : ISQ::SpeedValue = 5.4 [SI::km/SI::h];
