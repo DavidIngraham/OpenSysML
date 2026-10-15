@@ -332,6 +332,7 @@ func (m *migration) path(e *sysmlv1.Element) []segment {
 		if op := m.methodOf[cur]; op != nil {
 			cur = op
 		}
+		m.planNesting(cur)
 		segs = append([]segment{{name: m.nameFor(cur), feature: m.isUsage(cur), elem: cur}}, segs...)
 		if within, ok := m.nestedIn[cur]; ok {
 			segs = append([]segment{{name: within, feature: true}}, segs...)
