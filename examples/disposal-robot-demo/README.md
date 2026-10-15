@@ -263,11 +263,11 @@ branches, one of them still inside the retrieval flow:
 ```
 Active tokens (2):
   Token 2 @ sync
-  Token 3 @ grip
+  Token 3 @ sync
   Values:
-    armFrames = 0
+    armFrames = 3
     chargeAvailable = 1200.0
-    handlingCost = 0.0
+    handlingCost = 120.0
     streamed = 0
     surveyCost = 40.0
     surveyFrames = 12
