@@ -9,6 +9,10 @@ release is described in [docs/project/releasing.md](docs/project/releasing.md).
 
 ## 0.10.1 — 2026-10-14
 
+### Added
+
+- **The release-gate performance record of 0.10.1 against 0.10.0.** `docs/project/performance-release-0.10.1-vs-0.10.0.md` measures the `hotfix/0.10.1` candidate against the `v0.10.0` tag: every benchmark on both revisions under `benchstat`, the rows in doubt re-run interleaved, the stress constellation, and whole-binary validation, start-up and size. The patch is at parity everywhere but the executor, where the frame feature-identity rule costs +7–17% per loop step with allocations unchanged once five avoidable regressions it exposed — the resolver's generalization re-walk, a resolver lookup per name read, frames copied per probe, a per-member slice in the distinguishability check and a root-frame index grown entry by entry — were fixed in their own changes; analysis allocates 1–6% less than 0.10.0.
+
 ### Changed
 
 - **A changelog fragment is skipped as already folded only when `## Unreleased` or the latest release carries its entry.** `scripts/changelog.py` compared each fragment against every version in `CHANGELOG.md`, so a new entry whose text repeated a line of an old release was dropped without a word. Only those two sections can hold an entry an interrupted or repeated fold already wrote, so only they are searched now, and `render`, `release`, `summary` and `check` name each skipped fragment and the section that carries it on stderr; `check` still passes.
@@ -27,6 +31,8 @@ release is described in [docs/project/releasing.md](docs/project/releasing.md).
   of a `Number` go through `NumericalFunctions` rather than `RealFunctions`. A dotted name, a name outside the table, a name of
   several words before the `(` or the wrong number of arguments stays refused, and the reason
   now lists the names an English body does read.
+
+- **The `export` race shard of CI has the same 55-minute package timeout as `migrate`.** `tests/model`, which that shard runs, takes 25-30 minutes under the race detector on the CI executor, so it reached the 30-minute default timeout on roughly one run in four and failed the `develop` build that the nightly snapshot selects from.
 
 ### Fixed
 
@@ -74,6 +80,20 @@ release is described in [docs/project/releasing.md](docs/project/releasing.md).
 - **A trailing comma in a sequence expression parses.** `(a, b,)`, `(a,)`, `s#(1, 2,)` and `s[1,]` were rejected with `expected an expression` at the closing bracket; the OMG grammar admits the comma (KerMLExpressions.xtext `SequenceExpression`) and it adds no element, so `(a, b,)` is the pair and `(a,)` is `a`, as `(a)` is. An argument list still admits none (`f(a,)` remains an error), and the formatter keeps the comma as written.
 
 - **SysON plugin: "Run with OpenSysML…" opens its dialog from the explorer palette.** SysON 2026.9 shows a tree item's tools in a palette rather than a context menu, and the frontend registered its contribution only at `treeItemContextMenuEntryOverrideExtensionPoint`, so the entry appeared in the palette but did nothing when chosen. `addOpenSysMLContributions` now also registers `RunWithOpenSysMLPaletteContribution` at `paletteToolOverrideExtensionPoint`, which renders the tool in the explorer palette, hides it from a search it does not match and opens the dialog; `@eclipse-sirius/sirius-components-palette` joins the package's optional peer dependencies.
+
+- **The Rust and Python clients report how a private service that served no address really ended.** A child that closed its stdout without reporting an address was given 500 ms (Rust) or no time at all (Python) to become reapable before its status was read, so on a loaded machine one exiting on its own was reported as `exited with code None`, the same words as one killed for hanging or one ended by a signal. Both clients now wait up to `STOP_TIMEOUT` (5 s) for the child's own exit and name it (`exited with code 3`, `ended with signal 11`), and a child still running at the end of that grace is killed and reported as killed.
+
+- Diagram layouts use private aliases in their owners when exposed names hide the private members they position.
+
+- The distinguishability check of a scope's imported names no longer allocates once per member it compares. `memberNames` returned a two-element slice of the member's name and short name; when the short name began to be derived through the resolver, that slice escaped to the heap for every owned and imported member of every scope with imports, so re-analysing a document beside a large one allocated 7% more (`BenchmarkWorkspaceEditSmallDocBesideLarge`: 114.5k → 122.6k allocations). The names are a fixed pair now, and the check allocates as it did before.
+
+- Name resolution takes the specialization chain of a scope's owner from the semantic model's memoized closure (`AllSupertypes`) instead of walking the generalization graph afresh, allocating a visited set and a chain, on every lookup that consults inherited imports. A body that reads a name through that path on each step — a calc's assignment loop reading its own attributes — allocates 23% less per invocation (`BenchmarkAssignmentLoopStep`: 9.5k → 7.5k allocations); a model without a memoized closure is still walked.
+
+- A name read in a body no longer copies every frame it probes. A read resolves its name to a feature first and then asks each frame, innermost out, whether it holds that feature or binds the name without it; those probes (`heldName`, `bindsUnheld`, `has`, `lookup`) ran on a copy of the frame, a dozen words per frame per read. They now take the frame by pointer: the Integer loop rows (`BenchmarkIntegerArithmeticLoop`, `BenchmarkIntegerArithmeticNestedLoop`) run 4–5% faster, with the frame probes' share of a read's profile halved.
+
+- The execution runtime resolves an unqualified name read from a scope once per model instead of asking the resolver on every read. A read resolves its name to the feature it denotes before it is answered from a frame, so a loop body paid a full scope walk per iteration for each name it read (`BenchmarkIntegerArithmeticLoop` +29% against 0.10.0); the memo takes that walk off every step after the first.
+
+- An action execution's root frame sizes the index of the features it holds for all of them up front instead of growing it entry by entry. The index takes every feature of the action, inherited ones included, so each fresh execution paid a dozen allocations and a few kilobytes of discarded map storage for the regrowth (`BenchmarkNewRootFrame`: 43 → 36 allocations, 16.2 → 12.8 KiB; `BenchmarkExecuteActionFreshContext`: 345 → 338 allocations, 42.6 → 40.2 KiB per execution). The index itself, the record of which feature each binding is a value of, stays.
 
 ## 0.10.0 — 2026-10-08
 ### Added
