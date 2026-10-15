@@ -3,7 +3,11 @@
 Actions and state machines are executed, not just parsed. A debugger steps through
 them, and the non-interactive `-action` and `-state` flags run them to completion and report the
 values they produce. A behavior can be performed by an object, in which case the messages it sends
-are routed over that object's connections.
+are routed over that object's connections. What a run reports is one linearization of the partial
+order the model states — the default `reverse` policy picks it, deterministically — so when more
+than one order is valid, the values are *a* result, not *the* result; `explore` and `check` are
+how to see the whole set, up to their run and depth budgets — a result that hit one says so
+([below](#when-a-model-has-more-than-one-valid-run)).
 
 **Action execution (step-by-step):**
 ```sysml
@@ -1734,7 +1738,11 @@ A case usage owned by a part definition (`part def Holder { analysis inner : Cos
 subject s = h; } part h : Ship; }`) is a feature of every object of that type, as a `calc` usage
 owned by a part is: `holder.inner.total` runs the case on first read and keeps the result until a
 value it depends on changes, and an attribute redefined from an analysis output (`attribute :>>
-fuelEconomy = cityAnalysis.fuelEconomyResult;`) evaluates through the same path.
+fuelEconomy = cityAnalysis.fuelEconomyResult;`) evaluates through the same path. Run by name, such a
+case takes the object named after it as the object it is a feature of (`-analysis "Holder::inner
+holder"`), else the single object of the definition the run holds; `-validate=<object>`,
+`-requirement` and `-satisfy` run a verification case a definition owns once per object of it the
+check is about, naming the object on its verdict.
 
 What stops a case is reported as an error naming it, never as a silent empty result: a
 `subject` nothing binds (`analysis An::CostAnalysis: s subject is unbound: bind it
@@ -1774,8 +1782,8 @@ $ sysml -analysis L::checkSlow landing.sysml
 ```
 
 The two verdicts are independent: an objective stating no condition of its own —
-`objective { verify touchdown; }` alone — stays `undecided` and leaves the case unresolved, while
-the body verdict beside it still reports what the body answered.
+`objective { verify touchdown; }` alone — is `satisfied`, so the case's status is the body verdict
+beside it, which reports what the body answered.
 
 A verification case's objective checks the case's subject, not its verdict: the library binds it
 so (`VerificationCases::VerificationCase::obj` redefines `Cases::Case::obj` with `subject subj =
