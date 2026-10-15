@@ -126,8 +126,8 @@
     page-break-after: avoid;
   }
 
-  /* Seven+ written header cells (.sysml-table-landscape) or backend tables
-     laid out on the dense landscape line (.sysml-table-wide) use smaller landscape pages with heading/lead-in; nested :has() handles cssselect2's "+ p + table" misread. */
+  /* A table of seven or more header cells, or one laid out on the dense landscape
+     line, goes landscape with its heading and lead-in; :has() nests since cssselect2 misreads "+ p + table". */
   @page wide {
     size: var(--sysml-page-size) landscape;
   }
