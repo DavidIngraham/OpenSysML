@@ -289,6 +289,7 @@ func (m *migration) viewRef(v *view, scope *sysmlv1.Element) string {
 	for i, s := range chain {
 		if s == host {
 			if !m.hidden(v.name) && !m.shadows(chain[:i], v.name) {
+				m.refer(chain[:i], v.name)
 				return name
 			}
 			break
@@ -298,6 +299,7 @@ func (m *migration) viewRef(v *view, scope *sysmlv1.Element) string {
 		if m.hidden(v.name) || m.shadows(chain, v.name) {
 			return "$::" + name
 		}
+		m.refer(chain, v.name)
 		return name
 	}
 	return m.memberRef(host, scope) + "::" + name

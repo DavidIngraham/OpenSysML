@@ -223,6 +223,27 @@ func TestPrivateLayoutAliasAvoidsNameTheOwnerRefersTo(t *testing.T) {
 	}
 }
 
+// A view's name written bare from a nested scope is recorded against every
+// scope it resolves past, like any other simple reference, so an alias planned
+// in one of them later cannot capture it.
+func TestViewRefRecordsTheNameItResolvesPast(t *testing.T) {
+	pkg := &sysmlv1.Element{Type: "Package", Name: "P"}
+	owner := &sysmlv1.Element{Type: "Class", Name: "A", Parent: pkg}
+	pkg.Children = []*sysmlv1.Element{owner}
+	m := &migration{referenced: map[*sysmlv1.Element]map[string]bool{}}
+	v := &view{name: "x (A)", host: pkg}
+	if got := m.viewRef(v, owner); got != "'x (A)'" {
+		t.Fatalf("viewRef = %q, want the bare name", got)
+	}
+	if !m.referredPast(owner, "x (A)") || m.referredPast(pkg, "x (A)") {
+		t.Fatalf("referred past A = %t, past P = %t; want true, false", m.referredPast(owner, "x (A)"), m.referredPast(pkg, "x (A)"))
+	}
+	top := &view{name: "Top"}
+	if got := m.viewRef(top, owner); got != "Top" || !m.referredPast(owner, "Top") || !m.referredPast(pkg, "Top") {
+		t.Fatalf("top-level viewRef = %q, referred past A = %t, past P = %t", got, m.referredPast(owner, "Top"), m.referredPast(pkg, "Top"))
+	}
+}
+
 func TestPrivateLayoutAliasHoleIsWrittenInAncestorOwner(t *testing.T) {
 	owner := &sysmlv1.Element{Type: "Class", Name: "A"}
 	target := &sysmlv1.Element{Type: "Property", Name: "x", Parent: owner}
