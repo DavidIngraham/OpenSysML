@@ -992,6 +992,88 @@ func migratePrivateLayoutAliasWithMetadataMember(t *testing.T) *migrate.Result {
 	return r
 }
 
+// A private layout alias never takes a name the owner's body already refers
+// to unqualified: part c keeps its top-level type 'x (A)', and the alias for
+// the shadowed private part takes the numbered name.
+func TestPrivateLayoutAliasKeepsReferencedNameResolving(t *testing.T) {
+	const docName = "private_layout_alias_referenced.sysml"
+	data := document(`
+    <packagedElement xmi:type="uml:Class" xmi:id="_a" name="A">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_x" name="x" visibility="private" type="_b" aggregation="composite"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_c" name="c" type="_taken" aggregation="composite"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_b" name="B">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_b_x" name="x"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_taken" name="x (A)"/>
+    <xmi:Extension extender="Example UML Tool 1.0">
+      <ownedDiagram xmi:type="uml:Diagram" xmi:id="_diag" name="A BDD" ownerOfDiagram="_a">
+        <xmi:Extension extender="Example UML Tool 1.0">
+          <diagramRepresentation>
+            <diagram:DiagramRepresentationObject xmlns:diagram="http://www.example.com/tool/diagram" type="SysML Block Definition Diagram" umlType="Class Diagram">
+              <diagramContents>
+                <usedElements>_a_x</usedElements>
+                <usedElements>_b_x</usedElements>
+              </diagramContents>
+            </diagram:DiagramRepresentationObject>
+          </diagramRepresentation>
+        </xmi:Extension>
+      </ownedDiagram>
+    </xmi:Extension>`, `
+  <sysml:Block xmi:id="_s_a" base_Class="_a"/>
+  <sysml:Block xmi:id="_s_b" base_Class="_b"/>
+  <sysml:Block xmi:id="_s_taken" base_Class="_taken"/>`)
+	layout := &mtip.Export{Diagrams: []mtip.Diagram{{
+		ID: "_diag",
+		Placements: []mtip.Placement{
+			{ID: "_a_x", X: 10, Y: 10, Width: 80, Height: 40},
+			{ID: "_b_x", X: 110, Y: 10, Width: 80, Height: 40},
+		},
+		Unsupported: map[string]int{},
+	}}}
+	r, err := migrate.MigrateOptions("private_layout_alias_referenced.xmi", data, migrate.Options{
+		Layout: layout, LayoutSource: "private_layout_alias_referenced.layout.xml",
+	})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	if l := r.Report.Layout; l == nil || l.PlacementsWritten != 2 || l.PlacementsUnexposed != 0 {
+		t.Fatalf("layout summary: %+v", l)
+	}
+	for _, d := range errors(t, docName, r.Notation) {
+		t.Errorf("%v", d)
+	}
+	wantLine(t, r.Notation, "part c : 'x (A)';")
+	wantLine(t, r.Notation, "private alias 'x (A) 2' for x;")
+	wantLine(t, r.Notation, "metadata DiagramLayout::Layout about 'x (A) 2' {")
+	assertPrivateLayoutAliasTarget(t, docName, r.Notation, []string{"A"}, "A BDD", "x (A) 2", "A::x", "B::x")
+
+	ws := model.NewWorkspace()
+	ws.Open(docName, r.Notation, 1)
+	doc := ws.Document(docName)
+	if doc == nil {
+		t.Fatalf("workspace did not open %s", docName)
+	}
+	part, ok := ws.ResolveQualifiedInDoc(docName, doc.Scope, ast.QualifiedNameOf("A", "c"))
+	if !ok {
+		t.Fatal("A::c is unresolved")
+	}
+	var types []string
+	if err := ws.Read(func(reading *model.Reading) error {
+		reading.Query(docName, func(_ *resolve.Resolver, semantic *semantics.Model) {
+			for _, typ := range semantic.FeatureTypes(part) {
+				types = append(types, symbols.FQNOf(typ))
+			}
+		})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(types, []string{"x (A)"}) {
+		t.Fatalf("A::c is typed by %v, want the top-level block x (A)", types)
+	}
+}
+
 func TestStrictPrivateLayoutAliasIsOmitted(t *testing.T) {
 	r := migrateLaidOutOptions(t, "private_layout_alias", migrate.Options{Strict: true})
 	if strings.Contains(string(r.Notation), "private alias ") {

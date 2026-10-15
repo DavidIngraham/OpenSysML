@@ -289,6 +289,7 @@ func (m *migration) viewRef(v *view, scope *sysmlv1.Element) string {
 	for i, s := range chain {
 		if s == host {
 			if !m.hidden(v.name) && !m.shadows(chain[:i], v.name) {
+				m.refer(chain[:i], v.name)
 				return name
 			}
 			break
@@ -298,6 +299,7 @@ func (m *migration) viewRef(v *view, scope *sysmlv1.Element) string {
 		if m.hidden(v.name) || m.shadows(chain, v.name) {
 			return "$::" + name
 		}
+		m.refer(chain, v.name)
 		return name
 	}
 	return m.memberRef(host, scope) + "::" + name
@@ -841,7 +843,7 @@ func (m *migration) planPrivateLayoutAlias(target, owner *sysmlv1.Element) *priv
 		if i > 1 {
 			name = fmt.Sprintf("%s %d", base, i)
 		}
-		if m.nameTaken(owner, name) || !m.privateLayoutAliasAvailable(target, owner, name) {
+		if m.nameTaken(owner, name) || m.referredPast(owner, name) || !m.privateLayoutAliasAvailable(target, owner, name) {
 			continue
 		}
 		alias := &privateLayoutAlias{owner: owner, target: target, name: name}
