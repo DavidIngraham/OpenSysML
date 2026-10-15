@@ -311,9 +311,13 @@ func (m *migration) reachedPlaces(e *sysmlv1.Element, of func(edgeMember) []edge
 // connector written as flows of both directions is routed once per direction.
 func (m *migration) routeLines(e *sysmlv1.Element, f viewForm, refs []string, points []float64) ([]string, [][]float64) {
 	places := m.reachedPlaces(e, func(em edgeMember) []edgePlace { return em.routed(f) })
+	if len(places) != len(refs) {
+		// A connection def's or backed attribute's line is referred to without edge members.
+		return []string{strings.Join(refs, ", ")}, [][]float64{points}
+	}
 	var along, against []string
 	for i, ref := range refs {
-		if i < len(places) && places[i].reversed {
+		if places[i].reversed {
 			against = append(against, ref)
 			continue
 		}
