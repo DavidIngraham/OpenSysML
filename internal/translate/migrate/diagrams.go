@@ -1314,8 +1314,7 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 			if !m.draws(p.x, p.form, v.host, el, refs[0]) {
 				why = routeNotExposed
 			}
-			refs = []string{strings.Join(refs, ", ")}
-			points = [][]float64{m.linePoints(el, c)}
+			refs, points = m.routeLines(el, p.form, refs, m.linePoints(el, c))
 		}
 		ref := strings.Join(refs, ", ")
 		if why == "" && pinned[ref] {

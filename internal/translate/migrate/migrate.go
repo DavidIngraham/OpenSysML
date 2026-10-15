@@ -3448,8 +3448,8 @@ func (m *migration) flowsAlone(c *sysmlv1.Element, segs [][]*sysmlv1.Element, kw
 }
 
 // flowWritable reports whether itemFlow writes every conveyed classifier of f
-// over connector c with nothing to note: the flow's ends tell its direction and
-// both carry a flow property for each conveyed classifier.
+// over connector c with nothing to note: the flow's ends tell its direction, both
+// carry a flow property for each conveyed classifier, and each classifier is written.
 func (m *migration) flowWritable(f, c *sysmlv1.Element, segs [][]*sysmlv1.Element) bool {
 	conveyed := m.model.Refs(f, "conveyed")
 	if len(conveyed) == 0 || m.dangling(f, "conveyed") != "" {
@@ -3462,6 +3462,9 @@ func (m *migration) flowWritable(f, c *sysmlv1.Element, segs [][]*sysmlv1.Elemen
 	src, dst := flowEnds(segs, reversed)
 	for _, item := range conveyed {
 		if m.flowProperty(src, item) == nil || m.flowProperty(dst, item) == nil {
+			return false
+		}
+		if typ, _ := m.typeRef(item, c.Parent); typ == "" {
 			return false
 		}
 	}
@@ -3608,8 +3611,10 @@ func (m *migration) itemFlow(f, c *sysmlv1.Element, segs [][]*sysmlv1.Element, p
 			o.target = m.placeTarget(m.edgePlaceIn(m.scope, nil, name))
 		}
 		if m.asFlows[c] {
-			m.wroteEdgeAlso(c, m.scope, "flow", nil, name)
-			m.wroteEdgeAlso(f, m.scope, "flow", nil, name)
+			place := m.edgePlaceIn(m.scope, nil, name)
+			place.keyword, place.reversed = "flow", reversed
+			m.wroteEdgePlace(c, place)
+			m.wroteEdgePlace(f, place)
 		}
 		written = append(written, item.Name)
 		names = append(names, name)

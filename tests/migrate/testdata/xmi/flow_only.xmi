@@ -54,7 +54,7 @@
       </packagedElement>
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_pwr" informationSource="_pt_supply_out" informationTarget="_pt_load_in" conveyed="_blk_pwr" realizingConnector="_c_pwr"/>
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_cmd" name="cmd" informationSource="_pt_ctrl_bus" informationTarget="_pt_unit_bus" conveyed="_blk_cmd" realizingConnector="_c_bus"/>
-      <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_tlm" name="tlm" informationSource="_pt_ctrl_bus" informationTarget="_pt_unit_bus" conveyed="_blk_tlm" realizingConnector="_c_bus"/>
+      <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_tlm" name="tlm" informationSource="_pt_unit_bus" informationTarget="_pt_ctrl_bus" conveyed="_blk_tlm" realizingConnector="_c_bus"/>
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_spare" name="spare pwr" informationSource="_pt_supply_out" informationTarget="_pt_load_in" conveyed="_blk_pwr" realizingConnector="_c_spare"/>
       <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if_aux" name="aux" informationSource="_pt_supply_out" informationTarget="_pt_load_in" conveyed="_blk_cmd" realizingConnector="_c_aux"/>
     </packagedElement>
@@ -96,7 +96,7 @@
   <sysml:InterfaceBlock xmi:id="_s_ib_bus" base_Class="_ib_bus"/>
   <sysml:FlowProperty xmi:id="_s_fp_pwr" base_Property="_fp_pwr" direction="out"/>
   <sysml:FlowProperty xmi:id="_s_fp_cmd" base_Property="_fp_cmd" direction="out"/>
-  <sysml:FlowProperty xmi:id="_s_fp_tlm" base_Property="_fp_tlm" direction="out"/>
+  <sysml:FlowProperty xmi:id="_s_fp_tlm" base_Property="_fp_tlm" direction="in"/>
   <sysml:Block xmi:id="_s_supply" base_Class="_blk_supply"/>
   <sysml:Block xmi:id="_s_load" base_Class="_blk_load"/>
   <sysml:Block xmi:id="_s_ctrl" base_Class="_blk_ctrl"/>

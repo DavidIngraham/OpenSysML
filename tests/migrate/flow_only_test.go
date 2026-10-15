@@ -31,7 +31,7 @@ func TestGoldenFlowOnlyConnectors(t *testing.T) {
 	for _, line := range []string{
 		"flow 'supply.pwr out to load.pwr in' of Pwr from supply.'pwr out'.pwr to load.'pwr in'.pwr;",
 		"flow cmd of Cmd from ctrl.bus.cmd to unit.bus.cmd;",
-		"flow tlm of Tlm from ctrl.bus.tlm to unit.bus.tlm;",
+		"flow tlm of Tlm from unit.bus.tlm to ctrl.bus.tlm;",
 		"connection 'spare feed' connect supply.'pwr out' to spare.'pwr in';",
 		"flow 'spare pwr' of Pwr from supply.'pwr out'.pwr to spare.'pwr in'.pwr;",
 		"connection 'supply.pwr out to aux.pwr in' connect supply.'pwr out' to aux.'pwr in';",
@@ -41,7 +41,8 @@ func TestGoldenFlowOnlyConnectors(t *testing.T) {
 		"expose 'spare feed';",
 		"expose 'supply.pwr out to aux.pwr in';",
 		"metadata DiagramLayout::Route about 'supply.pwr out to load.pwr in' { points = (120, 140, 190, 140, 190, 50, 260, 50); }",
-		"metadata DiagramLayout::Route about cmd, tlm { points = (470, 80, 470, 220); }",
+		"metadata DiagramLayout::Route about cmd { points = (470, 80, 470, 220); }",
+		"metadata DiagramLayout::Route about tlm { points = (470, 220, 470, 80); }",
 		"metadata DiagramLayout::Route about 'spare feed' { points = (120, 150, 260, 150); }",
 		"metadata MigrationMetadata::SynthesizedName about 'supply.pwr out to load.pwr in', 'supply.pwr out to aux.pwr in';",
 	} {
@@ -193,5 +194,42 @@ func TestFlowConveyingTwoClassifiersIsTwoNamedFlows(t *testing.T) {
 	}
 	for _, d := range errors(t, "two.sysml", r.Notation) {
 		t.Errorf("%v", d)
+	}
+}
+
+// An item flow conveying a classifier the migration does not write — a UML
+// node has no v2 form — cannot stand for the connection, so the connector keeps it.
+func TestFlowOfUnwrittenClassifierKeepsTheConnection(t *testing.T) {
+	r := migrateDocument(t, `
+    <packagedElement xmi:type="uml:Node" xmi:id="_ext" name="Ext"/>
+    <packagedElement xmi:type="uml:Class" xmi:id="_ib" name="iExt">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_fp" name="ext" type="_ext"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_supply" name="Supply">
+      <ownedAttribute xmi:type="uml:Port" xmi:id="_pt_out" name="pOut" type="_ib" aggregation="composite"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_load" name="Load">
+      <ownedAttribute xmi:type="uml:Port" xmi:id="_pt_in" name="pIn" type="_ib" aggregation="composite" isConjugated="true"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_sys" name="Sys">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_p_supply" name="supply" type="_supply" aggregation="composite"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_p_load" name="load" type="_load" aggregation="composite"/>
+      <ownedConnector xmi:type="uml:Connector" xmi:id="_c">
+        <end xmi:type="uml:ConnectorEnd" xmi:id="_e1" role="_pt_out" partWithPort="_p_supply"/>
+        <end xmi:type="uml:ConnectorEnd" xmi:id="_e2" role="_pt_in" partWithPort="_p_load"/>
+      </ownedConnector>
+    </packagedElement>
+    <packagedElement xmi:type="uml:InformationFlow" xmi:id="_if" name="ext" informationSource="_pt_out" informationTarget="_pt_in" conveyed="_ext" realizingConnector="_c"/>`, `
+  <sysml:InterfaceBlock xmi:id="_s3" base_Class="_ib"/>
+  <sysml:FlowProperty xmi:id="_s4" base_Property="_fp" direction="out"/>
+  <sysml:Block xmi:id="_s6" base_Class="_supply"/>
+  <sysml:Block xmi:id="_s7" base_Class="_load"/>
+  <sysml:Block xmi:id="_s8" base_Class="_sys"/>
+  <sysml:ProxyPort xmi:id="_s9" base_Port="_pt_out"/>
+  <sysml:ProxyPort xmi:id="_s10" base_Port="_pt_in"/>
+  <sysml:ItemFlow xmi:id="_s11" base_InformationFlow="_if"/>`)
+	wantLine(t, r.Notation, "connect supply.pOut to load.pIn;")
+	if es := entriesFor(r, "_c"); len(es) != 1 || strings.Contains(es[0].Note, "alone") {
+		t.Errorf("entries for _c = %+v, want the connection kept", es)
 	}
 }
