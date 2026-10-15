@@ -250,8 +250,8 @@ Active tokens (1):
     streamed = 15
 ```
 
-`%break <node>` stops at a node — `%break sync` to see the join wait for both
-branches, one of them still inside the retrieval flow:
+`%break <node>` stops at a node — `%break sync` to see both branches parked at
+the join, which fires once the second token arrives:
 
 ```
 %action RobotBehavior::DisposalRun

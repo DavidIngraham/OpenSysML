@@ -499,8 +499,8 @@ fuel at 0.25  -> Landers::hauler
 fuel at 0.5   -> Landers::relay
 
 == the watch and the flight mode on one clock
-sawBraking = False (1 order): t=5.0: action GroundWatch first of state machine flightMode of object #1, action GroundWatch
-sawBraking = True  (1 order): t=5.0: state machine flightMode of object #1 first of state machine flightMode of object #1, action GroundWatch
+sawBraking = False (1 order): t=5.0: action watchDescent first of state machine flightMode of object #1, action watchDescent
+sawBraking = True  (1 order): t=5.0: state machine flightMode of object #1 first of state machine flightMode of object #1, action watchDescent
 ```
 
 The calls map one to one onto the command line: `Model.run_analysis(case,
