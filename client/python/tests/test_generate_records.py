@@ -91,6 +91,32 @@ def test_deterministic_and_standard_library_only():
     assert 'from opensysml' not in render_dataclasses(defs)
 
 
+def test_declaration_order_and_numeric_protocols():
+    from fractions import Fraction
+    cls = load([definition('Demo::Design', features=[scalar('width'), scalar('height')])]).Design
+    assert [f.name for f in dataclasses.fields(cls)] == ['width', 'height']
+    assert cls(width=Fraction(3, 2), height=2).width == 1.5
+
+
+@pytest.mark.integration
+def test_live_declaration_order_defaults_and_multifile_inheritance(tmp_path):
+    from opensysml import Connection
+    from opensysml.generate import generate_source
+    base = 'package DemoBase { private import ScalarValues::*; part def Parent { attribute z : Real default = 2 * 3; } }'
+    child = 'package Demo { private import ScalarValues::*; part def Child :> DemoBase::Parent { attribute a : Real = 4; } }'
+    with Connection() as connection:
+        model = connection.parse_sources([('base.sysml', base), ('child.sysml', child)], strict=True)
+        source = generate_source(model, base + child, format='dataclass', selected=['Demo::Child'])
+        module = types.ModuleType('ordered_snapshot_test')
+        sys.modules[module.__name__] = module
+        exec(compile(source, '<generated>', 'exec'), module.__dict__)
+        assert [f.name for f in dataclasses.fields(module.Child)] == ['z', 'a']
+        value = module.Child.from_instance(model.instantiate('Demo::Child'))
+        assert value.to_mapping() == {'z': 6., 'a': 4.}
+        with pytest.raises(TypeError):
+            module.Child(a=4)
+
+
 @pytest.mark.integration
 def test_live_cli_generation_check_and_snapshot(tmp_path):
     from opensysml import Connection

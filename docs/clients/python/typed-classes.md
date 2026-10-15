@@ -169,3 +169,9 @@ These structural checks do not execute constraints or establish requirement
 compliance. Search brackets remain separate from record validity.
 
 The same `--check` option works with `--format dataclass` and `--definition`.
+
+Snapshot fields preserve declaration order, with inherited fields first and
+redefinitions retaining their inherited position. The live-view format keeps its
+existing alphabetical ordering. Numeric inputs implementing the standard-library
+`numbers` protocols are normalized to Python scalars, so numerical libraries can
+supply scalar values without becoming dependencies of the generated module.

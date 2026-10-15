@@ -148,36 +148,38 @@ class PythonType:
     comment: str = ""
 
 
-def collect_definitions(*roots) -> List[Definition]:
+def collect_definitions(*roots, declaration_order=False) -> List[Definition]:
     """Collect the definitions in one or more :class:`~opensysml.symbol.Symbol`
     trees, sorted by FQN, each feature taking the type and multiplicity it
     inherits.
 
     A model of several documents has one tree per document; passing them all
     resolves a redefinition or type that crosses documents.
+    ``declaration_order`` preserves each definition's feature order for snapshots.
     """
     definitions: List[Definition] = []
     facts_by_id: Dict[str, SymbolFacts] = {}
     for root in roots:
-        _collect(root, definitions, facts_by_id)
+        _collect(root, definitions, facts_by_id, declaration_order)
     definitions = [_with_inherited_facts(definition, facts_by_id) for definition in definitions]
     definitions.sort(key=lambda definition: definition.id)
     return definitions
 
 
-def _collect(symbol, out: List[Definition], facts_by_id: Dict[str, SymbolFacts]) -> None:
+def _collect(symbol, out: List[Definition], facts_by_id: Dict[str, SymbolFacts],
+             declaration_order=False) -> None:
     children = symbol.children()
     facts = symbol.facts()
     facts_by_id[facts.id] = facts
     if is_definition_kind(symbol.kind):
         features = tuple(
             Feature(child.facts())
-            for child in sorted(children, key=lambda child: child.id)
+            for child in (children if declaration_order else sorted(children, key=lambda child: child.id))
             if is_feature_kind(child.kind)
         )
         out.append(Definition(facts, features))
     for child in children:
-        _collect(child, out, facts_by_id)
+        _collect(child, out, facts_by_id, declaration_order)
 
 
 def _with_inherited_facts(
@@ -590,7 +592,7 @@ def generate_source(model, source_text: str, *, format: str = "view",
     several documents (:meth:`Connection.parse_sources`) is generated whole,
     from every document's root.
     """
-    definitions = collect_definitions(*model.roots)
+    definitions = collect_definitions(*model.roots, declaration_order=format == "dataclass")
     if selected:
         by_id = {d.id: d for d in definitions}
         keep = set()
