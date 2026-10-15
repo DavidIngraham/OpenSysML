@@ -1502,6 +1502,8 @@ func (m *migration) deferralsOf(v *sysmlv1.Element) *deferrals {
 	if d, ok := m.deferralPlans[v]; ok {
 		return d
 	}
+	// A name asked for while v is being planned, as of a signal its do behavior declares, finds it unplanned.
+	m.deferralPlans[v] = nil
 	m.nameMachine(machineOf(v))
 	d := m.region(v.Parent).deferrals(v, m.behaviorIn(v, "doActivity"), m.behaviorIn(v, "exit"))
 	m.deferralPlans[v] = d

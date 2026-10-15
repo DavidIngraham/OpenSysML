@@ -104,3 +104,18 @@ func TestTableQueriesNameActionsInADeferralBuffer(t *testing.T) {
 		}
 	}
 }
+
+// A signal the do behavior itself declares is named while that behavior's
+// state plans its deferrals, which must not plan them again.
+func TestDeferredSignalDeclaredInTheBufferedBehavior(t *testing.T) {
+	machine := strings.Replace(bufferedCallMachine, `<packagedElement xmi:type="uml:Signal" xmi:id="_ping" name="Ping"/>`, "", 1)
+	machine = strings.Replace(machine, `<node xmi:type="uml:InitialNode" xmi:id="_ai"/>`,
+		`<nestedClassifier xmi:type="uml:Signal" xmi:id="_ping" name="Ping"/>
+                <node xmi:type="uml:InitialNode" xmi:id="_ai"/>`, 1)
+	r := migrateDocument(t, machine, bufferedCallTables)
+	wantClean(t, "buffered_signal_tables.sysml", r)
+	got := rows(t, session(t, r), "Model::Tables::'Listed Calls Rows'")
+	if !strings.Contains(got, "Executive::Behavior::Acquiring::buffer::Acquire::call") {
+		t.Errorf("Listed Calls rows lack the buffered call:\n%s", got)
+	}
+}
