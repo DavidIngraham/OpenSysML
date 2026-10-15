@@ -5,10 +5,8 @@ import (
 	"testing"
 )
 
-// TestRuntimeRobustnessHeldHomonym exercises a feature a frame holds without a
-// value while an enclosing frame holds another feature of the same name: the read
-// is decided by the frame holding the feature named, as it is with no homonym in
-// reach, and never falls through to the other feature's value.
+// TestRuntimeRobustnessHeldHomonym: a feature a frame holds without a value is read as
+// unset, never falling through to a same-named feature an enclosing frame holds.
 func TestRuntimeRobustnessHeldHomonym(t *testing.T) {
 	t.Run("unset_state_attribute_is_no_value_beside_a_machine_homonym", testHeldHomonymUnsetStateAttributeIsNoValue)
 }

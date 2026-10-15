@@ -681,8 +681,7 @@ func (ec *EvalContext) evalName(qn *ast.QualifiedName) (Value, error) {
 }
 
 // evalNameGeneral evaluates a name through every source that may answer it, in
-// shadowing order. unset is the feature the name resolves to when a frame holds it
-// without a value, which no other feature of the name may answer for.
+// shadowing order; no other feature of the name answers for unset, a held feature with no value.
 func (ec *EvalContext) evalNameGeneral(qn *ast.QualifiedName, unset *symbols.Symbol) (Value, error) {
 	if qn == nil || len(qn.Parts) == 0 {
 		return Value{}, fmt.Errorf("empty feature reference")

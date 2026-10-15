@@ -75,10 +75,8 @@ func (ctx *Context) holdResolved(held *map[*symbols.Symbol]string, adopted map[*
 	}
 }
 
-// lookupHeld reads the name qn spells as the feature it resolves to, from the innermost
-// frame holding that feature. A frame holding it with no value decides the read too: the
-// feature is returned as unset, so no other feature of the name answers for it. It reports
-// false for a name no frame holds, or one a nearer frame binds without a feature recorded.
+// lookupHeld reads the name qn spells from the innermost frame holding the feature it
+// resolves to; a frame holding it with no value decides the read too, returning it unset.
 func (ec *EvalContext) lookupHeld(qn *ast.QualifiedName) (val Value, ok bool, unset *symbols.Symbol, err error) {
 	if ec.ctx.model.resolver == nil || ec.scope == nil {
 		return Value{}, false, nil, nil

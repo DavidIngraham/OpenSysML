@@ -251,10 +251,8 @@ func containsError(errs []error, substr string) bool {
 	return false
 }
 
-// The objects a feature value holds are charged as each is reached, so the ones the
-// budget admits are walked and their feature values read: a budget the objects held
-// exhaust exactly still reports the errors of the objects whose reads fit, and one
-// covering every read is not bounded.
+// Objects are charged as each is reached, so the ones the budget admits are read and a
+// budget the objects held exhaust exactly still reports the errors of the reads that fit.
 func TestMaterializationErrorsWalksEveryObjectWithinBudget(t *testing.T) {
 	inst, ctx := instantiateHolder(t, `
 		package test {
