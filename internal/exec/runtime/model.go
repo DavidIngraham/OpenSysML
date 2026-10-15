@@ -94,8 +94,9 @@ type Model struct {
 	activitySplits   map[activitySplitKey]activitySplit
 	constraintBodies sync.Map
 	// names memoizes the resolver's unqualified lookups by scope, name and
-	// exclusion (nameKey → nameHit): a run reads the same names on every step.
-	names sync.Map
+	// exclusion: a run reads the same names on every step. A plain map, under
+	// the Model's one-goroutine contract like the other memos.
+	names map[nameKey]nameHit
 
 	// predicateShapes memoizes the invocation interfaces of constraints and
 	// requirements applied as predicates.
@@ -351,9 +352,8 @@ type nameHit struct {
 // every step of a loop is resolved once.
 func (m *Model) resolvedName(scope *symbols.Scope, name string, excluding ast.Node) (*symbols.Symbol, bool) {
 	key := nameKey{scope: scope, name: name, excluding: excluding}
-	if hit, ok := m.names.Load(key); ok {
-		found := hit.(nameHit)
-		return found.sym, found.ok
+	if hit, ok := m.names[key]; ok {
+		return hit.sym, hit.ok
 	}
 	var sym *symbols.Symbol
 	var ok bool
@@ -362,6 +362,9 @@ func (m *Model) resolvedName(scope *symbols.Scope, name string, excluding ast.No
 	} else {
 		sym, ok = m.resolver.LookupNameExcluding(scope, name, excluding)
 	}
-	m.names.Store(key, nameHit{sym: sym, ok: ok})
+	if m.names == nil {
+		m.names = map[nameKey]nameHit{}
+	}
+	m.names[key] = nameHit{sym: sym, ok: ok}
 	return sym, ok
 }
