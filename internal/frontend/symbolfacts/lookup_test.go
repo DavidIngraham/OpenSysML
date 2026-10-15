@@ -87,3 +87,19 @@ part def Twice :> Base;
 		t.Errorf("MemberChain resolved an ambiguous prefix to %q", fqn)
 	}
 }
+
+func TestMemberChainDoesNotWalkAroundADuplicateThroughItsPackage(t *testing.T) {
+	idx, sc := modelWithLibrary(t, `
+package Demo {
+	part def A { action run { first start; then done; } }
+	part def B { action run { first start; then done; } }
+	part def Part :> A;
+	part def Part :> B;
+}
+`)
+	// Demo::Part is declared twice; the walk from the one Demo must not pick
+	// either Part for it.
+	if sym, fqn := MemberChain(idx, sc.Semantics, "Demo::Part::run"); sym != nil {
+		t.Errorf("MemberChain resolved Demo::Part::run through the package to %q", fqn)
+	}
+}

@@ -61,7 +61,11 @@ func MemberChain(idx *symbols.Index, model *semantics.Model, name string) (*symb
 	// The longest prefix is tried first, so a nested feature is preferred over
 	// the type it happens to share a name with.
 	for i := len(segments) - 1; i > 0; i-- {
-		sym := soleDeclaration(idx, strings.Join(segments[:i], "::"))
+		sym, ambiguous := soleDeclaration(idx, strings.Join(segments[:i], "::"))
+		if ambiguous {
+			// A shorter prefix would walk into one of the duplicates at random.
+			return nil, ""
+		}
 		if sym == nil {
 			continue
 		}
@@ -88,17 +92,21 @@ func MemberChain(idx *symbols.Index, model *semantics.Model, name string) (*symb
 
 // soleDeclaration is the one declaration a qualified name denotes: the model's
 // when the model declares the name, since that shadows the library's, else the
-// library's; nil when nothing or more than one declaration answers.
-func soleDeclaration(idx *symbols.Index, fqn string) *symbols.Symbol {
+// library's; nil when nothing or more than one declaration answers. ambiguous
+// reports a name the model itself declares more than once.
+func soleDeclaration(idx *symbols.Index, fqn string) (sym *symbols.Symbol, ambiguous bool) {
 	matches := modelFirst(idx, idx.LookupQualified(fqn))
 	declared := 0
 	for declared < len(matches) && !idx.Library(matches[declared]) {
 		declared++
 	}
-	if declared == 1 || (declared == 0 && len(matches) == 1) {
-		return matches[0]
+	switch {
+	case declared == 1, declared == 0 && len(matches) == 1:
+		return matches[0], false
+	case declared > 1:
+		return nil, true
 	}
-	return nil
+	return nil, false
 }
 
 // modelFirst reorders matches so the ones the model declares precede the ones
