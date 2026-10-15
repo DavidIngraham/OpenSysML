@@ -5,7 +5,9 @@ The release-gate measurement of 0.10.1 — the head of `hotfix/0.10.1` at
 below, with the other four applied on top —
 measured against the `v0.10.0` tag (`08ef39784`, 2026-10-12). It follows
 the method of the [0.9.2 against 0.9.1](performance-release-0.9.2-vs-0.9.1.md)
-record and of the 0.10.0 against 0.9.2 record that preceded it: every
+record and of the 0.10.0 against 0.9.2 record that preceded it (written
+on `develop`, where the 0.10.0 release was measured; it reaches this
+branch's line with the release's back-merge): every
 benchmark on both revisions, `benchstat` over six runs, the rows the
 machine left in doubt re-run interleaved, and whole-binary timings on
 generated and real models. See [performance](../internals/performance.md)
@@ -100,8 +102,12 @@ Machine: `INTEL(R) XEON(R) PLATINUM 8559C`, 8 CPUs, 31 GiB, Go
 here (no rebuild mid-run). 0.10.0 is a worktree at the `v0.10.0` tag,
 built and benchmarked with its own tree; the unfixed head `50933ba4e`
 and the final candidate (the `hotfix/0.10.1` head `5e9d673df`, which
-includes #1155, with the branches of #1167, #1168, #1172 and #1173
-merged) are worktrees treated the same way.
+includes #1155, with the branches of #1167, #1168, #1172 and #1173 merged
+at `3823af21e`, `bc660758b`, `dfd6c5a6a` and `ca39121f5`) are worktrees
+treated the same way. The record was measured and written before those
+four pull requests merged, so that it measures the release as it ships;
+it is to be read with them in `hotfix/0.10.1`, and the unfixed-head
+column shows what each of them changed.
 Package benchmarks are
 `go test ./<pkg> -run '^$' -bench . -benchmem -count 6` on each
 revision, compared with `benchstat` (rows are significant at p < 0.05;
