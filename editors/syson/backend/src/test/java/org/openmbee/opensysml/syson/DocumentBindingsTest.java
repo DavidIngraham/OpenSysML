@@ -70,7 +70,7 @@ class DocumentBindingsTest {
 
         assertThat(DocumentBindings.bind(model, project(), Map.of("item", qualifiedName)).get("item"))
                 .containsExactly(new DocumentValue.ElementRef(qualifiedName, ""));
-        verify(model, never()).eval(org.mockito.ArgumentMatchers.anyString());
+        verify(model, never()).eval(anyString());
     }
 
     @Test
