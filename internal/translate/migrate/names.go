@@ -19,6 +19,20 @@ func writeName(name string) string {
 	return source.UnrestrictedNameText(name)
 }
 
+// queryName is a name as the index reads it from notation, without its quotes.
+func queryName(name string) string {
+	text := source.UnrestrictedNameText(name)
+	return text[1 : len(text)-1]
+}
+
+// pathSegment spells a query name as one segment of a metadata path.
+func pathSegment(name string) string {
+	if strings.Contains(name, "'") {
+		return "'" + name + "'"
+	}
+	return name
+}
+
 // nameOf returns the v2 name of an element: its own, or the one synthesized
 // for an anonymous element that something refers to; "" when it is anonymous
 // and stays so.
