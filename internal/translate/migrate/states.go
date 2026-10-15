@@ -9,6 +9,10 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/translate/xmi/sysmlv1"
 )
 
+const (
+	writtenAsA = "written as a "
+)
+
 // stateKw opens a state usage; isA, outsideRegion and outsideMachine are the
 // note fragments the unmappable-vertex diagnostics share.
 const (
@@ -380,7 +384,7 @@ func (m *migration) entryPointForm(v, owner *sysmlv1.Element) pointForm {
 	}
 	regions := m.regionsCrossed(out, owner, "target")
 	if len(out) < 2 || len(regions) < 2 {
-		return pointForm{kw: "junction", note: "written as a " + m.junctionSpelling() + " of its state; a transition entering through it runs the state's entry behavior, then the transition leaving the junction"}
+		return pointForm{kw: "junction", note: writtenAsA + m.junctionSpelling() + " of its state; a transition entering through it runs the state's entry behavior, then the transition leaving the junction"}
 	}
 	if len(regions) < len(out) {
 		return pointForm{why: "the entry point starts several regions of " + describe(owner) + ", as a fork does, but two of its outgoing transitions enter the same region"}
@@ -443,7 +447,7 @@ func (m *migration) exitPointForm(v, owner *sysmlv1.Element) pointForm {
 	}
 	regions := m.regionsCrossed(in, owner, "source")
 	if len(in) < 2 || len(regions) < 2 {
-		return pointForm{kw: "junction", note: "written as a " + m.junctionSpelling() + " of its state; a transition leaving through it runs the transition into the junction, the state's exit behavior, then the transition leaving it"}
+		return pointForm{kw: "junction", note: writtenAsA + m.junctionSpelling() + " of its state; a transition leaving through it runs the transition into the junction, the state's exit behavior, then the transition leaving it"}
 	}
 	joinBut := "several regions of " + describe(owner) + " leave through the exit point, as through a join, but "
 	if len(regions) < len(in) {
@@ -1157,7 +1161,7 @@ func (s *stateRegion) vertex(v *sysmlv1.Element) {
 			name := writeName(s.name(v))
 			s.m.w.line(pseudoKind(v) + " " + name + ";")
 			s.m.madeUp(v, name)
-			s.m.add(v, Mapped, name, "written as a "+pseudoKind(v)+" pseudostate, whose segments the runtime fires together")
+			s.m.add(v, Mapped, name, writtenAsA+pseudoKind(v)+" pseudostate, whose segments the runtime fires together")
 		case "shallowHistory", "deepHistory":
 			kind := pseudoKind(v)
 			if s.m.strict {

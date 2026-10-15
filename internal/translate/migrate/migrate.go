@@ -17,6 +17,11 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/translate/xmi/sysmlv1"
 )
 
+const (
+	emptyComment = "empty comment"
+	itsEnd       = "its end "
+)
+
 // The v2 keywords the writer prefixes a declaration or annotation with.
 const (
 	privatePrefix = "private "
@@ -3363,7 +3368,7 @@ func (m *migration) placeholderEnds() {
 				if m.verdictOf(end) == Unmapped {
 					pl.fail(p.target)
 				}
-				pl.notes = append(pl.notes, "its end "+qualifiedName(end)+" is written only as a placeholder of a node that is not migrated")
+				pl.notes = append(pl.notes, itsEnd+qualifiedName(end)+" is written only as a placeholder of a node that is not migrated")
 				break
 			}
 		}
@@ -3662,7 +3667,7 @@ func (m *migration) dependencyPair(d *sysmlv1.Element, pl *placement, name strin
 	var nodes []*sysmlv1.Element
 	for _, end := range []*sysmlv1.Element{client, supplier} {
 		if !m.written(end) {
-			return "", false, "its end " + qualifiedName(end) + " is not migrated"
+			return "", false, itsEnd + qualifiedName(end) + " is not migrated"
 		}
 		if act, _ := m.nodeGraph(end); act != nil {
 			nodes = append(nodes, end)
@@ -3875,11 +3880,11 @@ func (m *migration) allocationFallbackNote(client, supplier *sysmlv1.Element) st
 			continue
 		}
 		if m.packageFeature(e) {
-			notes = append(notes, "its end "+qualifiedName(e)+" is a feature of a package, which no allocation end can be typed by, so a plain dependency stands for it")
+			notes = append(notes, itsEnd+qualifiedName(e)+" is a feature of a package, which no allocation end can be typed by, so a plain dependency stands for it")
 		} else if owner != nil {
-			notes = append(notes, "its end "+qualifiedName(e)+" has no feature path relative to its enclosing written definition, so a plain dependency stands for it")
+			notes = append(notes, itsEnd+qualifiedName(e)+" has no feature path relative to its enclosing written definition, so a plain dependency stands for it")
 		} else {
-			notes = append(notes, "its end "+qualifiedName(e)+" has no enclosing written definition to type an allocation end, so a plain dependency stands for it")
+			notes = append(notes, itsEnd+qualifiedName(e)+" has no enclosing written definition to type an allocation end, so a plain dependency stands for it")
 		}
 	}
 	return strings.Join(notes, "; ")
@@ -4000,7 +4005,7 @@ func (m *migration) writeComments(e *sysmlv1.Element, first bool) {
 		missing := m.dangling(c, "annotatedElement")
 		text := m.commentBody(c)
 		if text == "" {
-			m.add(c, Skipped, "", "empty comment")
+			m.add(c, Skipped, "", emptyComment)
 			continue
 		}
 		if note := m.concernCommentFallback(c); note != "" {
@@ -4037,8 +4042,8 @@ func (m *migration) writeConcern(c *sysmlv1.Element) {
 		}
 	})
 	note := ""
-	if text := m.commentBody(c); text == "" {
-		note = "empty comment"
+	if m.commentBody(c) == "" {
+		note = emptyComment
 	}
 	if m.annotatesOthers(c, c.Parent) {
 		note = joinNotes(note, "a v2 concern annotates nothing, so the comment's annotations are not carried")
@@ -4113,7 +4118,7 @@ func (m *migration) commentAbout(c *sysmlv1.Element, about []*sysmlv1.Element, t
 func (m *migration) comment(c *sysmlv1.Element) {
 	text := m.commentBody(c)
 	if text == "" {
-		m.add(c, Skipped, "", "empty comment")
+		m.add(c, Skipped, "", emptyComment)
 		return
 	}
 	if note := m.concernCommentFallback(c); note != "" {
