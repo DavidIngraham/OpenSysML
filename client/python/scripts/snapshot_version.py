@@ -60,7 +60,7 @@ TAG_PREFIX = check_version.TAG_PREFIX
 #: The dist-tag npm snapshots are published under, and the moving release alias.
 CHANNEL = "nightly"
 
-DATE_FORM = re.compile(r"\d{8}\Z")
+DATE_FORM = re.compile(r"[0-9]{8}\Z")
 COMMIT_FORM = re.compile(r"[0-9a-f]{7,40}\Z")
 
 
