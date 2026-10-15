@@ -184,6 +184,45 @@ func TestPrivateLayoutAliasAvoidsImportedViewName(t *testing.T) {
 	}
 }
 
+// A name the owner's body already refers to unqualified (here the type of
+// part c, the top-level block 'x (A)') is not free for an alias: declared in
+// the owner, the alias would capture that reference.
+func TestPrivateLayoutAliasAvoidsNameTheOwnerRefersTo(t *testing.T) {
+	members := `<packagedElement xmi:type="uml:Class" xmi:id="_a" name="A">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_x" name="x" visibility="private" type="_pump" aggregation="composite"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_a_c" name="c" type="_taken" aggregation="composite"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_b" name="B">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_b_x" name="x"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_taken" name="x (A)"/>`
+	data := diagramModel(members, diagram("_d", "Inside", "_a", "SysML Block Definition Diagram", "_x", "_b_x"),
+		`<sysml:Block xmi:id="_s_a" base_Class="_a"/>`,
+		`<sysml:Block xmi:id="_s_b" base_Class="_b"/>`,
+		`<sysml:Block xmi:id="_s_taken" base_Class="_taken"/>`)
+	layout := &mtip.Export{Diagrams: []mtip.Diagram{{
+		ID: "_d",
+		Placements: []mtip.Placement{
+			{ID: "_x", X: 10, Y: 10, Width: 20, Height: 20},
+		},
+		Unsupported: map[string]int{},
+	}}}
+	r, err := MigrateOptions("referenced_alias_name.xmi", []byte(data), Options{Layout: layout, LayoutSource: "referenced_alias_name.layout.xml"})
+	if err != nil {
+		t.Fatalf("MigrateOptions: %v", err)
+	}
+	notation := string(r.Notation)
+	if !strings.Contains(notation, "part c : 'x (A)';") {
+		t.Fatalf("part c is not typed by the top-level block by its simple name:\n%s", notation)
+	}
+	if !strings.Contains(notation, "private alias 'x (A) 2' for x;") || strings.Contains(notation, "private alias 'x (A)' for x;") {
+		t.Fatalf("private layout alias took the name the owner's body refers to:\n%s", notation)
+	}
+	if !strings.Contains(notation, "metadata DiagramLayout::Layout about 'x (A) 2' {") {
+		t.Fatalf("layout placement does not name the alias:\n%s", notation)
+	}
+}
+
 func TestPrivateLayoutAliasHoleIsWrittenInAncestorOwner(t *testing.T) {
 	owner := &sysmlv1.Element{Type: "Class", Name: "A"}
 	target := &sysmlv1.Element{Type: "Property", Name: "x", Parent: owner}

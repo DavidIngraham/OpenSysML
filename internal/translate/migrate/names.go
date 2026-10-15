@@ -467,6 +467,7 @@ func (m *migration) refMember(owner *sysmlv1.Element, name string, path []segmen
 			}
 		}
 		if !shadowed {
+			m.refer(chain[:i], path[len(path)-1].name)
 			return writeName(path[len(path)-1].name)
 		}
 	}
@@ -480,9 +481,27 @@ func (m *migration) refMember(owner *sysmlv1.Element, name string, path []segmen
 				return m.qualifiedFrom(path, chain, chained)
 			}
 		}
+		m.refer(chain, path[len(path)-1].name)
 		return writeName(path[len(path)-1].name)
 	}
 	return m.qualifiedFrom(path, chain, chained)
+}
+
+// refer records that a reference written inside the scopes of chain resolves
+// name past every one of them, so none may later declare a member named so.
+func (m *migration) refer(chain []*sysmlv1.Element, name string) {
+	for _, scope := range chain {
+		if m.referenced[scope] == nil {
+			m.referenced[scope] = map[string]bool{}
+		}
+		m.referenced[scope][name] = true
+	}
+}
+
+// referredPast reports whether a reference written in owner's body resolves
+// name in an enclosing scope: a member of owner named so would capture it.
+func (m *migration) referredPast(owner *sysmlv1.Element, name string) bool {
+	return m.referenced[owner][name]
 }
 
 // namespaces is the path of a qualified name whose every segment is a namespace.
@@ -504,6 +523,8 @@ func (m *migration) qualifiedFrom(path []segment, chain []*sysmlv1.Element, chai
 	var b strings.Builder
 	if m.hidden(path[0].name) || m.shadows(chain, path[0].name) {
 		b.WriteString("$::")
+	} else {
+		m.refer(chain, path[0].name)
 	}
 	for i, s := range path {
 		switch {

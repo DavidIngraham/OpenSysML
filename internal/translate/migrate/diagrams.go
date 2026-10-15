@@ -841,7 +841,7 @@ func (m *migration) planPrivateLayoutAlias(target, owner *sysmlv1.Element) *priv
 		if i > 1 {
 			name = fmt.Sprintf("%s %d", base, i)
 		}
-		if m.nameTaken(owner, name) || !m.privateLayoutAliasAvailable(target, owner, name) {
+		if m.nameTaken(owner, name) || m.referredPast(owner, name) || !m.privateLayoutAliasAvailable(target, owner, name) {
 			continue
 		}
 		alias := &privateLayoutAlias{owner: owner, target: target, name: name}
