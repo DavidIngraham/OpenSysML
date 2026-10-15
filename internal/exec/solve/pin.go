@@ -723,14 +723,14 @@ func ChainPins(ctx *runtime.Context, q *Query, read Reader, self *runtime.Instan
 			unfixed = append(unfixed, Unfixed{Feature: v.Symbol, Name: v.Name, Var: v.Name, Reason: err.Error(), Err: err})
 			continue
 		}
-		if u := value.Undetermined(); u != nil && u.Unset() != nil && !slices.Contains(v.Steps, u.Unset()) {
+		if unset := unsetOutside(value.Undetermined(), v.Steps); unset != nil {
 			// A declared value open for a feature nothing gives a value to does not evaluate,
 			// as a failed read does; a chain whose own step holds nothing stays free.
 			spelled := v.Name
 			if i := strings.LastIndex(spelled, "::"); i >= 0 {
 				spelled = spelled[i+2:]
 			}
-			noValue := &runtime.NoValueError{Feature: u.Unset().Name, Symbol: u.Unset()}
+			noValue := &runtime.NoValueError{Feature: unset.Name, Symbol: unset}
 			err := &runtime.FeatureValueError{Err: fmt.Errorf("feature value %s: %w", spelled, noValue)}
 			unfixed = append(unfixed, Unfixed{Feature: v.Symbol, Name: v.Name, Var: v.Name, Reason: err.Error(), Err: err})
 			continue
@@ -887,4 +887,15 @@ func (q *Query) ReachedError() error {
 	}
 	return fmt.Errorf("%s %s reads %s under some assignment of its free features, whose values could not be read: %w",
 		q.Kind, q.Element, strings.Join(names, ", "), errors.Join(errs...))
+}
+
+// unsetOutside is the first feature with no value u is open for that is none of the
+// chain's own steps, nil when u is determined or open only for its own steps or a count.
+func unsetOutside(u *runtime.Undetermined, steps []*symbols.Symbol) *symbols.Symbol {
+	for _, unset := range u.Unsets() {
+		if !slices.Contains(steps, unset) {
+			return unset
+		}
+	}
+	return nil
 }

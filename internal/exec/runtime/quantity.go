@@ -66,6 +66,9 @@ func (ec *EvalContext) evalIndexExpr(n *ast.IndexExpr) (Value, error) {
 		return Value{}, err
 	}
 	if magnitude.Kind == ValUndetermined {
+		if !ec.ctx.openMagnitudeMayBe(magnitude) {
+			return Value{}, fmt.Errorf("%w: magnitude of a quantity is %s, want a number or a vector", ErrNotAQuantity, ec.ctx.describeOpenOperand(magnitude))
+		}
 		// A quantity of a magnitude the model leaves open is as open as the magnitude.
 		return undeterminedOf(countOf(magnitude), magnitude), nil
 	}
