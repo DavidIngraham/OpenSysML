@@ -26,7 +26,8 @@ const (
 	VerdictPass VerdictKind = "pass"
 	// VerdictFail is a body whose verdict value is VerdictKind::fail.
 	VerdictFail VerdictKind = "fail"
-	// VerdictInconclusive is a body that ran and produced no verdict value.
+	// VerdictInconclusive is a body that ran and produced no verdict value, or
+	// one a definition owns with no object of the definition to run on.
 	VerdictInconclusive VerdictKind = "inconclusive"
 	// VerdictError is a body whose run could not be carried out.
 	VerdictError VerdictKind = "error"
@@ -130,6 +131,13 @@ func (ctx *Context) RunVerification(sym *symbols.Symbol, args AnalysisArgs, scop
 	if err != nil {
 		if badRequest(err) || errors.Is(err, ErrToolDryRun) {
 			return VerificationResult{}, err
+		}
+		if errors.Is(err, ErrNeedsObject) {
+			// Nothing is wrong with the case: it decided nothing for want of an
+			// object of its owner, which is no verdict and no fault of the run.
+			return VerificationResult{
+				Verdict: VerificationVerdict{Case: name, Symbol: sym, Kind: VerdictInconclusive, Detail: err.Error()},
+			}, nil
 		}
 		return VerificationResult{
 			Verdict: VerificationVerdict{Case: name, Symbol: sym, Kind: VerdictError, Detail: err.Error(), Subject: performer},

@@ -337,7 +337,8 @@ func (ctx *Context) runCase(sym *symbols.Symbol, args AnalysisArgs, scope *symbo
 // casePerformer is the object a type-owned case runs as a feature of. The object supplied binds the
 // subject the case declares and nothing else binds when the case already has an owner (one holding
 // it); otherwise it is the owner (over one found for the type), binding such a subject too. Given
-// none, the single object carrying the case, as a type-owned constraint is checked.
+// none, the single object carrying the case, as a type-owned constraint is checked; a definition
+// with no object at all cannot run its case (ErrNeedsObject), the case being a feature of one.
 func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Instance) (*Instance, AnalysisArgs, error) {
 	owner := declaringType(shape.Sym)
 	if owner == nil {
@@ -360,6 +361,9 @@ func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Ins
 	reached, err := ctx.conditionSubject(shape.Sym, self)
 	if err != nil {
 		return nil, args, fmt.Errorf("%s %s: %w", shape.Kind, shape.Name, err)
+	}
+	if _, isDef := owner.Decl.(*ast.Definition); isDef && reached.instance == nil {
+		return nil, args, fmt.Errorf("%w of %s: none is instantiated", ErrNeedsObject, ctx.qualifiedSymbolName(owner))
 	}
 	args.Subject = given
 	if given == nil && unbound && reached.instance != nil {
