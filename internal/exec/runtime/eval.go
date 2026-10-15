@@ -1160,6 +1160,13 @@ func (ec *EvalContext) declaredValue(sym *symbols.Symbol, value ast.Node) (Value
 	if val, ok := ec.ctx.namespaceBindings[sym]; ok {
 		return val, nil
 	}
+	// A value reaching back to the declaration being evaluated, by qualified name
+	// (`attribute a = test::self::a`) or through another's, is a cycle, not a recursion.
+	if ec.ctx.binding(sym) {
+		return Value{}, &CyclicBindingError{Usage: sym, Stated: ec.ctx.qualifiedSymbolName(sym)}
+	}
+	ec.ctx.bindingStack = append(ec.ctx.bindingStack, sym)
+	defer func() { ec.ctx.bindingStack = ec.ctx.bindingStack[:len(ec.ctx.bindingStack)-1] }()
 	if !namespaceObjectUsage(sym) {
 		return ec.evaluateDeclared(sym, value)
 	}
@@ -1179,11 +1186,6 @@ func (ec *EvalContext) declaredValue(sym *symbols.Symbol, value ast.Node) (Value
 			}
 		}
 	}
-	if ec.ctx.binding(sym) {
-		return Value{}, &CyclicBindingError{Usage: sym, Stated: ec.ctx.qualifiedSymbolName(sym)}
-	}
-	ec.ctx.bindingStack = append(ec.ctx.bindingStack, sym)
-	defer func() { ec.ctx.bindingStack = ec.ctx.bindingStack[:len(ec.ctx.bindingStack)-1] }()
 	// The binding is made whole or not at all: a value refused after constructing
 	// objects leaves none of them, nor their behaviors, behind.
 	commit, rollback := ec.ctx.beginJournal()
