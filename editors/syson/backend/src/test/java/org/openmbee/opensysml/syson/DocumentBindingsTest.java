@@ -94,20 +94,25 @@ class DocumentBindingsTest {
         Symbol symbol = mock(Symbol.class);
         when(symbol.id()).thenReturn("resolved");
         String apostropheName = "'Frank\\'s Braindump'::x";
-        String backslashName = "'a\\b'";
+        String backslashName = "'a\\\\b'";
+        String backspaceName = "'a\\bc'";
         String tabName = "'tab\\tx'";
         when(model.find(apostropheName)).thenReturn(Optional.of(symbol));
         when(model.find(backslashName)).thenReturn(Optional.of(symbol));
+        when(model.find(backspaceName)).thenReturn(Optional.of(symbol));
         when(model.find(tabName)).thenReturn(Optional.of(symbol));
 
         Map<String, List<DocumentValue>> bindings = DocumentBindings.bind(model, project(),
-                Map.of("apostrophe", apostropheName, "backslash", backslashName, "tab", tabName));
+                Map.of("apostrophe", apostropheName, "backslash", backslashName, "backspace", backspaceName,
+                        "tab", tabName));
 
         assertThat(bindings.get("apostrophe")).containsExactly(new DocumentValue.ElementRef("resolved", ""));
         assertThat(bindings.get("backslash")).containsExactly(new DocumentValue.ElementRef("resolved", ""));
+        assertThat(bindings.get("backspace")).containsExactly(new DocumentValue.ElementRef("resolved", ""));
         assertThat(bindings.get("tab")).containsExactly(new DocumentValue.ElementRef("resolved", ""));
         verify(model).find(apostropheName);
         verify(model).find(backslashName);
+        verify(model).find(backspaceName);
         verify(model).find(tabName);
         verify(model, never()).eval(anyString());
     }
