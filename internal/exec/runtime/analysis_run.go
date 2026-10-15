@@ -363,6 +363,10 @@ func (ctx *Context) casePerformer(shape *calcShape, args AnalysisArgs, self *Ins
 		return nil, args, fmt.Errorf("%s %s: %w", shape.Kind, shape.Name, err)
 	}
 	if _, isDef := owner.Decl.(*ast.Definition); isDef && reached.instance == nil {
+		// Arguments the case cannot take are refused first, as they are with an object.
+		if _, err := shape.analysisArgs(args); err != nil {
+			return nil, args, err
+		}
 		return nil, args, fmt.Errorf("%w of %s: none is instantiated", ErrNeedsObject, ctx.qualifiedSymbolName(owner))
 	}
 	args.Subject = given
