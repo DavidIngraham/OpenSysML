@@ -164,9 +164,10 @@ beside `performers`, on a calc, constraint, requirement or instance case, or
 with an entry that states nothing. The `events` a state case injects are its
 input and stay at the top level: every outcome is a result of the same run.
 
-The schema does not represent runtime-error outcomes in `outcomes`; an
-exploration that reaches one is reported as an unexpected failure. The set is
-exact. Besides checking the default run, `TestExecutionConformance`
+An entry may state `error` in place of a result: text a schedule's run must
+fail with, for an action or state case one order of which reaches a diagnostic
+(an unset output read before the step producing it). An exploration reaching an
+error no entry states is reported as an unexpected failure. The set is exact. Besides checking the default run, `TestExecutionConformance`
 explores every case with `outcomes` under the `explore` policy: the case is
 replayed from the start once per linearization the library admits, each run on a
 fresh context over the same lowering, and the case fails when a listed outcome
