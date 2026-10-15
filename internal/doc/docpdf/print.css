@@ -126,8 +126,8 @@
     page-break-after: avoid;
   }
 
-  /* Wide tables and their lead-in go on landscape pages; nested :has()
-     combines adjacent paragraph and heading rules. */
+  /* Seven+ written header cells (.sysml-table-landscape) or backend tables
+     laid out on the dense landscape line (.sysml-table-wide) use smaller landscape pages with heading/lead-in; nested :has() handles cssselect2's "+ p + table" misread. */
   @page wide {
     size: var(--sysml-page-size) landscape;
   }

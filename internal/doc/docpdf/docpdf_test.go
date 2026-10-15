@@ -828,7 +828,10 @@ func TestRenderForPandoc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(css), "header#title-block-header { page-break-after: always;") || strings.Contains(stripCSSComments(string(css)), ".sysml-document") {
+	pandocCSS := stripCSSComments(string(css))
+	pandocCSS = strings.ReplaceAll(pandocCSS, ".sysml-table-landscape", "")
+	pandocCSS = strings.ReplaceAll(pandocCSS, ".sysml-table-dense", "")
+	if !strings.Contains(string(css), "header#title-block-header { page-break-after: always;") || strings.Contains(pandocCSS, ".sysml-") {
 		t.Fatalf("pandoc stylesheet:\n%s", css)
 	}
 }

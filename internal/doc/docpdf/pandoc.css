@@ -78,8 +78,8 @@ thead { display: table-header-group; }
 p:has(.caption) { break-after: avoid; page-break-after: avoid; }
 p:has(+ table) { break-after: avoid; page-break-after: avoid; }
 
-/* A table of seven or more written header cells goes on a landscape page in
-   smaller type with the heading, caption and group key ahead of it. */
+/* Seven+ written headers (.sysml-table-landscape) and their heading/lead-in
+   use smaller landscape pages; nested :has() handles cssselect2 misreading "+ p + table". */
 @page wide { size: A4 landscape; }
 table.sysml-table-landscape { page: wide; font-size: 9pt; table-layout: fixed; }
 

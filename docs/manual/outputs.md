@@ -390,8 +390,12 @@ wide-headed columns therefore goes landscape or splits sooner than one of many
 short-headed ones, and a table that fits its own line is never moved or split.
 The `weasyprint` and `prince` engines split the HTML table; the `pandoc` engine
 gets the same split in the Markdown it converts, then its Lua filter marks
-each generated table by its written header-cell count. Each engine therefore
-sets the same column sets and the PDF stylesheets select wide tables by class.
+each generated table by its written header-cell count. A Pandoc split part
+with fewer than seven columns has no `sysml-table-wide` class (Markdown has no
+class for it), so it stays on a portrait page in the ordinary type. The table
+rules select by class, but the heading and lead-in rules still use `:has()`;
+an engine without `:has()` can set the table landscape while leaving its
+heading and lead-in on the preceding portrait page.
 
 ### Hierarchical rows
 

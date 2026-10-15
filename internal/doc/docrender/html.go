@@ -620,6 +620,7 @@ const (
 	DenseTableColumns = 11
 )
 
+// tableColumnClasses returns print classes for a table's written header width.
 func tableColumnClasses(n int) string {
 	classes := ""
 	if n >= WideTableColumns {

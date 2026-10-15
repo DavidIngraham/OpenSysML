@@ -10,8 +10,8 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
 )
 
-// This file hands a Markdown-reading converter table classes, drawn diagrams,
-// typeset formulas and captions as a pandoc Lua filter.
+// This file gives pandoc the Markdown backend's text as written and marks
+// tables and artwork on pandoc's syntax tree with a Lua filter.
 
 // artworkFilterName is the Lua filter Render writes beside the Markdown.
 const artworkFilterName = "artwork.lua"

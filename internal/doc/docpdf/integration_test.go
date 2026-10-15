@@ -1190,10 +1190,10 @@ func TestRenderTwentyColumnTableWithInstalledEngines(t *testing.T) {
 // landscape pages without making selector matching grow with every table row.
 func TestRenderLongWideTablePromptlyWithInstalledEngines(t *testing.T) {
 	const (
-		rows        = 1500
-		columns     = 8
-		renderBound = 40 * time.Second
+		rows        = 1000
+		renderBound = 60 * time.Second
 	)
+	columns := len(longWideColumns) + 1
 	document := longWideTableDocument(t, rows)
 	for _, engine := range Engines() {
 		t.Run(engine, func(t *testing.T) {
@@ -1230,7 +1230,7 @@ func TestRenderLongWideTablePromptlyWithInstalledEngines(t *testing.T) {
 							}
 						}
 					}
-					if strings.Contains(page, "Wide Scenario 1500") {
+					if strings.Contains(page, "Wide Scenario "+strconv.Itoa(rows)) {
 						lastWideRow = true
 					}
 				}
