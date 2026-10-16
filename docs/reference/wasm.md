@@ -4,11 +4,12 @@ OpenSysML is Go, and Go compiles it for two WebAssembly targets. This page says 
 for, how to build and run them, what works in them, and what a WebAssembly host cannot do —
 with the message each limitation answers with, so a refusal is never mistaken for a defect.
 
-Stable releases ship `sysml-wasm.wasm` with its matching `wasm_exec.js`, list
-both in the signed `SHA256SUMS.txt`, and cover them with SLSA provenance.
+Stable releases ship `sysml-wasm.wasm` and `sysml-prod.wasm.gz` (the gzip-compressed
+browser build of the `sysml` REPL) with their matching `wasm_exec.js`, list all three
+in the signed `SHA256SUMS.txt`, and cover them with SLSA provenance.
 Nightly snapshots list the same assets in their cosign-signed checksum
 manifest; like every nightly asset, they have no SLSA provenance. The npm
-package `@openmbee/opensysml-wasm` carries both assets. Other WebAssembly builds
+package `@openmbee/opensysml-wasm` carries all three assets. Other WebAssembly builds
 remain available from source for hosts that run modules rather than executables.
 
 ## Building
@@ -252,15 +253,21 @@ Measured on a `go1.25` `js/wasm` build: 20,601,256 raw bytes, 5,444,030 bytes wi
 The Node and browser client adapter is documented in
 [WebAssembly, without a service](../../client/node/README.md#webassembly-without-a-service).
 Stable and nightly releases include the module and matching runtime; the npm
-package is `@openmbee/opensysml-wasm`.
+package is `@openmbee/opensysml-wasm`. The same assets and package carry
+`sysml-prod.wasm.gz`, the gzip-compressed [`sysml_prod`](#building) browser build of the
+`sysml` REPL (about 13 MB; 54 MB inflated). It is not a JSON-RPC module: a page inflates
+it with `DecompressionStream` and runs it under `wasm_exec.js` with an emulated file
+system and stdin, as the site's REPL page does.
 
 `sysml-wasm` combines the parsing, validation and execution methods of `sysml-core` and
 `sysml-engine` in one WebAssembly module. It serves `ParseSources`, `ParseFile`,
-`GetDiagnostics`, `GetSymbol`, `Evaluate`, `Instantiate`, `ExecuteAction`, `ExecuteState`
-and `GetServerInfo`. Parsing and symbol facts route through the core; evaluation and
-execution route through the engine. `ParseSources` and `ParseFile` check that both frontends
-produce the same model hash and return the core response, including roots and diagnostics.
-It does not dispatch the engine's `RenderView` call.
+`GetDiagnostics`, `GetSymbol`, `Evaluate`, `Instantiate`, `ExecuteAction`, `ExecuteState`,
+`RenderView` and `GetServerInfo`. Parsing and symbol facts route through the core;
+evaluation, execution and view rendering route through the engine. `ParseSources` and
+`ParseFile` check that both frontends produce the same model hash and return the core
+response, including roots and diagnostics. `RenderView` answers with [the engine's drawing
+shape](#the-execution-engine), not the protojson `RenderViewResponse` the service returns, so the
+module does not advertise the `render_view` capability a service client would key on.
 
 A hash from either parse method is shared by every method that takes a `modelHash`, including
 `GetDiagnostics`, `GetSymbol`, `Evaluate`, `Instantiate`, `ExecuteAction` and `ExecuteState`.
