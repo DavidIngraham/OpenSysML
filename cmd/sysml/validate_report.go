@@ -68,7 +68,7 @@ type baselineKey struct{ code, file, message string }
 // readBaseline reads the diagnostics of a JSON report, as -validate -json -o
 // wrote it, into the set of findings it accepts.
 func readBaseline(root, path string) (baseline, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- the baseline is the file the command line names
 	if err != nil {
 		return nil, err
 	}
@@ -176,8 +176,8 @@ func (r *reporter) junitReport() *junit.Testsuites {
 	for _, file := range r.files {
 		byFile[workspacePath(r.root, file)] = nil
 	}
-	if len(r.report.Errors) > 0 {
-		byFile[""] = byFile[""]
+	if _, present := byFile[""]; !present && len(r.report.Errors) > 0 {
+		byFile[""] = nil
 	}
 	unexplained := len(r.report.Errors) > 0 && !r.hasErrorDiagnostics()
 	for _, d := range r.report.Diagnostics {

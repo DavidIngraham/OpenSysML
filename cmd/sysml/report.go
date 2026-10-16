@@ -858,6 +858,7 @@ func (r *reporter) finish() int {
 		return exitUnevaluable
 	}
 	if r.output != "" {
+		// #nosec G306 -- a report is not a secret; the service it is written for reads it.
 		if err := os.WriteFile(r.output, out, 0o644); err != nil {
 			fmt.Fprintln(r.err, commandPrefix+err.Error())
 			return exitUnevaluable
