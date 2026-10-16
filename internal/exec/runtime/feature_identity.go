@@ -203,3 +203,24 @@ func heldKey(ctx *Context, held map[*symbols.Symbol]string, own, scope *symbols.
 	}
 	return name
 }
+
+// heldDeclaration is the scope and name a write to the feature f binds under key
+// is checked against: a hidden inherited feature's own declaration, found through
+// the held index, else scope and key as written.
+func heldDeclaration(f *actionFrame, scope *symbols.Scope, key string) (*symbols.Scope, string) {
+	if f == nil || !f.shadowed {
+		return scope, key
+	}
+	return declarationHeldUnder(f.declared, scope, key)
+}
+
+// declarationHeldUnder finds the feature held binds under key when that key is not
+// the feature's own name, and answers its declaring scope and name.
+func declarationHeldUnder(held map[*symbols.Symbol]string, scope *symbols.Scope, key string) (*symbols.Scope, string) {
+	for sym, bound := range held {
+		if bound == key && sym.Name != key && sym.OwnerScope != nil {
+			return sym.OwnerScope, sym.Name
+		}
+	}
+	return scope, key
+}

@@ -1233,7 +1233,8 @@ func (e *performances) setFrameFeature(f *actionFrame, name string, value Value)
 		e.noteFrameWrite(f, name, value)
 		return nil
 	}
-	if err := e.ctx.checkNamedWriteAs(f.scope, f.describe, name, &value); err != nil {
+	scope, declared := heldDeclaration(f, f.scope, name)
+	if err := e.ctx.checkNamedWriteAs(scope, f.describe, declared, &value); err != nil {
 		return err
 	}
 	e.ctx.writeBodyValue(f.cells, f.data, f.key(name), value)

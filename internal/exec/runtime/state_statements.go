@@ -417,7 +417,18 @@ func (h *stateStmtHost) assignStateAttribute(name string, value Value) (bool, er
 	if !ok {
 		return false, nil
 	}
-	if err := h.exec.ctx.checkNamedWriteAs(scope, h.describe, name, &value); err != nil {
+	declared := name
+	if h.exec.holdsShadowed() {
+		for _, ancestor := range h.exec.getParentChain(h.behavior.Owner) {
+			if _, held := h.exec.stateAttrs[ancestor]; held {
+				_, declared = declarationHeldUnder(h.exec.stateAttrIndex[ancestor], scope, name)
+				if declared != name {
+					break
+				}
+			}
+		}
+	}
+	if err := h.exec.ctx.checkNamedWriteAs(scope, h.describe, declared, &value); err != nil {
 		return true, err
 	}
 	h.exec.ctx.writeBodyValue(cells, data, name, value)

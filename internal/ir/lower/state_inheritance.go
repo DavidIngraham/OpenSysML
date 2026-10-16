@@ -618,13 +618,11 @@ func vertexName(node ast.Node) string {
 }
 
 // keptAttributes are the attributes a body holds, inherited ones first: a nearer
-// declaration of a name takes the place of a farther one it redefines, and hides
-// one it does not redefine, which stays held under its ShadowedKey (KerML 1.0
-// §8.2.3.5.3: a name resolves in the namespace it is written in).
+// declaration of a name — a body's own or a nearer general's — takes the place of
+// a farther one it redefines, and hides one it does not redefine, which stays
+// held under its ShadowedKey (KerML 1.0 §8.2.3.5.3: a name resolves in the
+// namespace it is written in).
 func (g *StateGraph) keptAttributes(inherited, own []Attribute) []Attribute {
-	if len(own) == 0 {
-		return inherited
-	}
 	kept := make([]Attribute, 0, len(inherited)+len(own))
 	for _, attr := range slices.Concat(inherited, own) {
 		i := slices.IndexFunc(kept, func(k Attribute) bool { return k.Name == attr.Name })

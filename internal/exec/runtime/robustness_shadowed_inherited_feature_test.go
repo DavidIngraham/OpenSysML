@@ -3,14 +3,18 @@ package runtime
 import (
 	"errors"
 	"testing"
+
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 )
 
 // TestRuntimeRobustnessShadowedInheritedFeature exercises a specialization whose
 // feature duplicates an inherited name without redefining it: the two are held
-// apart, so an unvalued one is read as unset rather than as its namesake.
+// apart, so an unvalued one is read as unset rather than as its namesake, and a
+// write to the hidden one is checked against its own declaration.
 func TestRuntimeRobustnessShadowedInheritedFeature(t *testing.T) {
 	t.Run("unvalued_shadowing_feature_does_not_hide_the_inherited_one", testShadowedUnvaluedShadowingFeature)
 	t.Run("unvalued_inherited_feature_is_not_read_from_the_shadowing_one", testShadowedUnvaluedInheritedFeature)
+	t.Run("inherited_write_to_the_hidden_feature_is_checked_against_its_declaration", testShadowedHiddenWriteChecked)
 }
 
 func testShadowedUnvaluedShadowingFeature(t *testing.T) {
@@ -63,5 +67,32 @@ func testShadowedUnvaluedInheritedFeature(t *testing.T) {
 	}
 	if noValue.Feature != "Base::go" {
 		t.Fatalf("NoValueError.Feature = %q, want Base::go", noValue.Feature)
+	}
+}
+
+// testShadowedHiddenWriteChecked needs the scalar library loaded, so the write's
+// declared type is one the run can judge.
+func testShadowedHiddenWriteChecked(t *testing.T) {
+	src := `package test {
+		private import ScalarValues::*;
+		action def Base {
+			attribute go : Boolean := true;
+			attribute n : Integer := 42;
+			first start;
+			then assign go := n;
+			then done;
+		}
+		action def Derived :> Base {
+			attribute go : Boolean := false;
+		}
+	}`
+	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, src))
+	sym := findSymbolByName(idx.DocumentRoot("<test>"), "Derived", ast.DefAction)
+	if sym == nil {
+		t.Fatal("action Derived not found")
+	}
+	_, err := ctx.ExecuteAction(sym)
+	if !errors.Is(err, ErrTypeMismatch) {
+		t.Fatalf("error = %v, want ErrTypeMismatch for an Integer written to the hidden Boolean Base::go", err)
 	}
 }

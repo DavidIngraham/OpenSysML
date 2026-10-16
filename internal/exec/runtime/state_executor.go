@@ -634,6 +634,9 @@ func (e *StateExecutor) stateAttributeValues(state *ast.StateNode, name string) 
 			if scope == nil {
 				scope = e.graph.Scope
 			}
+			if attr.Shadowed && attr.Symbol != nil && attr.Symbol.OwnerScope != nil {
+				scope = attr.Symbol.OwnerScope
+			}
 			return data, scope, e.stateAttrCells[ancestor], true
 		}
 	}
@@ -737,10 +740,14 @@ func (e *StateExecutor) assignAttribute(name string, value Value) error {
 		// No occurrence holds this feature, so its declaration is checked here
 		// rather than by the write to that occurrence.
 		where := func() string { return "state machine " + symbolText(e.stateMachine) }
-		if err := e.ctx.checkMutable(e.graph.Scope, func() string { return where() + ": assignment to " + name }, name); err != nil {
+		scope, declared := e.graph.Scope, name
+		if e.holdsShadowed() {
+			scope, declared = declarationHeldUnder(e.heldAttributes(), scope, name)
+		}
+		if err := e.ctx.checkMutable(scope, func() string { return where() + ": assignment to " + name }, declared); err != nil {
 			return err
 		}
-		if err := e.ctx.checkNamedWriteAs(e.graph.Scope, where, name, &value); err != nil {
+		if err := e.ctx.checkNamedWriteAs(scope, where, declared, &value); err != nil {
 			return err
 		}
 	}

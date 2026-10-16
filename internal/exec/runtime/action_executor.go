@@ -1507,6 +1507,9 @@ func (e *ActionExecutor) materializeOccurrence() (*Instance, error) {
 	e.occurrence = inst
 	e.performances.occurrence = inst
 	for _, attr := range e.features {
+		if attr.Shadowed {
+			continue // the performance's alone: the occurrence's slots are keyed by name
+		}
 		if value, held := e.root.data[e.root.key(attr.Name)]; held {
 			if cell := e.root.cells.existingCell(e.root.key(attr.Name)); cell != nil && cell.binding != nil && !cell.fv.Written {
 				if _, err := e.mirrorBindingOccurrence(attr.Name, value, cell); err != nil {
@@ -1585,10 +1588,13 @@ func (e *ActionExecutor) setFeature(name string, value Value) error {
 		if value, err = e.mirrorOccurrence(name, value); err != nil {
 			return err
 		}
-	} else if err := e.ctx.checkNamedWriteAs(e.graph.Scope, func() string { return actionLabelPrefix + symbolText(e.action) }, name, &value); err != nil {
+	} else {
 		// No occurrence holds this feature, so its declaration is checked here
 		// rather than by the write to that occurrence.
-		return err
+		scope, declared := heldDeclaration(e.root, e.graph.Scope, name)
+		if err := e.ctx.checkNamedWriteAs(scope, func() string { return actionLabelPrefix + symbolText(e.action) }, declared, &value); err != nil {
+			return err
+		}
 	}
 	e.ctx.writeBodyValue(e.root.cells, e.root.data, e.root.key(name), value)
 	e.moved = true
