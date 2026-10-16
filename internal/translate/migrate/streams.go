@@ -118,11 +118,8 @@ func (m *migration) layoutRecord(v *view) (*mtip.Diagram, layoutSources) {
 			onPath[p.ID] = p.OnPath
 		}
 	}
-	// Nor about the compartments a symbol suppresses: the stream's settings
-	// stay with the export's box when the element's symbols agree on which
-	// compartments they hide; symbols of one element that differ leave the
-	// export's box as it is. The unsupported properties are the first
-	// symbol's, as its placement is the one written.
+	// Nor about suppressed compartments: the stream's settings stay with the
+	// export's box when the element's symbols agree on the hidden kinds.
 	compartments := map[string]mtip.Placement{}
 	disagree := map[string]bool{}
 	for _, p := range stream.Placements {
