@@ -1166,6 +1166,11 @@ func (ec *EvalContext) declaredValue(sym *symbols.Symbol, value ast.Node) (Value
 		return val, nil
 	}
 	if !namespaceObjectUsage(sym) {
+		leave, err := ec.ctx.enterBinding(sym)
+		if err != nil {
+			return Value{}, err
+		}
+		defer leave()
 		return ec.evaluateDeclared(sym, value)
 	}
 	// A binding connector joining this usage makes its ends denote the same
@@ -1184,11 +1189,11 @@ func (ec *EvalContext) declaredValue(sym *symbols.Symbol, value ast.Node) (Value
 			}
 		}
 	}
-	if ec.ctx.binding(sym) {
-		return Value{}, &CyclicBindingError{Usage: sym, Stated: ec.ctx.qualifiedSymbolName(sym)}
+	leave, err := ec.ctx.enterBinding(sym)
+	if err != nil {
+		return Value{}, err
 	}
-	ec.ctx.bindingStack = append(ec.ctx.bindingStack, sym)
-	defer func() { ec.ctx.bindingStack = ec.ctx.bindingStack[:len(ec.ctx.bindingStack)-1] }()
+	defer leave()
 	// The binding is made whole or not at all: a value refused after constructing
 	// objects leaves none of them, nor their behaviors, behind.
 	commit, rollback := ec.ctx.beginJournal()
@@ -1206,6 +1211,17 @@ func (ec *EvalContext) declaredValue(sym *symbols.Symbol, value ast.Node) (Value
 // binding reports whether sym's value is being evaluated.
 func (ctx *Context) binding(sym *symbols.Symbol) bool {
 	return slices.Contains(ctx.bindingStack, sym)
+}
+
+// enterBinding keeps sym on the binding stack until leave is called: a value reaching
+// back to a declaration being evaluated, by qualified name (`attribute a = test::self::a`)
+// or through another's, is a cycle, not a recursion.
+func (ctx *Context) enterBinding(sym *symbols.Symbol) (leave func(), err error) {
+	if ctx.binding(sym) {
+		return nil, &CyclicBindingError{Usage: sym, Stated: ctx.qualifiedSymbolName(sym)}
+	}
+	ctx.bindingStack = append(ctx.bindingStack, sym)
+	return func() { ctx.bindingStack = ctx.bindingStack[:len(ctx.bindingStack)-1] }, nil
 }
 
 // bindNamespace records the value a namespace-level usage denotes for the run; a probe
