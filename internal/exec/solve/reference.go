@@ -76,11 +76,14 @@ func (t *translator) resolvePath(node ast.Node, scope *symbols.Scope, segments [
 	// and is read through it, so two objectives' `best` are two values.
 	sym, ok := t.localTo(t.within, scope, segments[0])
 	if !ok {
-		sym, ok = t.localTo(t.stage, scope, segments[0])
-	}
-	if !ok {
 		if sym, ok = t.model.LookupMember(t.within, segments[0]); ok {
+			// A nested objective's member is read through its stage too, as the
+			// stage's own conditions read it (`goal.weight`), so it is one value.
+			if t.stage != nil {
+				chain = append(chain, t.stage)
+			}
 			chain = append(chain, t.within)
+		} else if sym, ok = t.localTo(t.stage, scope, segments[0]); ok {
 		} else if sym, ok = t.model.LookupMember(t.stage, segments[0]); ok {
 			chain = append(chain, t.stage)
 		} else if sym, ok = t.features[segments[0]]; !ok {
@@ -110,10 +113,8 @@ func (t *translator) resolvePath(node ast.Node, scope *symbols.Scope, segments [
 	return chain, nil
 }
 
-// localTo resolves name to a declaration nested inside owner (the objective or
-// the nested analysis being translated), or one of its types, that is not a
-// member of owner itself: a condition's own parameter or attribute, which
-// owner's members do not shadow.
+// localTo resolves name to a declaration nested inside owner (an objective or a
+// nested analysis) or its types, other than owner's own members: a condition's parameter.
 func (t *translator) localTo(owner *symbols.Symbol, scope *symbols.Scope, name string) (*symbols.Symbol, bool) {
 	if owner == nil {
 		return nil, false

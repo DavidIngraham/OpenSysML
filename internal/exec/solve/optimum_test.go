@@ -128,8 +128,7 @@ func TestLexicographicOptima(t *testing.T) {
 }
 
 // TestNestedStageConditionBoundsTheOptimum: a nested analysis's own conditions
-// bound its stage, so its objective is improved within them, not only within
-// the enclosing case's.
+// bound its objective, not only the enclosing case's.
 func TestNestedStageConditionBoundsTheOptimum(t *testing.T) {
 	result := optimized(t, "CostThenBoundedMargin")
 	if result.Status != StatusSat {
@@ -149,8 +148,7 @@ func TestNestedStageConditionBoundsTheOptimum(t *testing.T) {
 }
 
 // TestNestedStageShadowsAndBoundsTheCase: a nested analysis's own `cap` is a value
-// of its own, read by its condition and objective, and its conditions hold for the
-// case, so the cost the case alone would raise to 9 is held to the nested cap.
+// of its own, and its conditions hold for the case: cost is held to the nested cap.
 func TestNestedStageShadowsAndBoundsTheCase(t *testing.T) {
 	result := optimized(t, "ShadowedStage")
 	if result.Status != StatusSat {
@@ -169,8 +167,7 @@ func TestNestedStageShadowsAndBoundsTheCase(t *testing.T) {
 }
 
 // TestNestedStageConstraintParameterIsItsOwn: a nested analysis's constraint reads
-// its own `cap` parameter (3), not the analysis's `cap` attribute (5), so the two
-// hold together and the case is satisfiable.
+// its own `cap` parameter (3), not the analysis's `cap` attribute (5).
 func TestNestedStageConstraintParameterIsItsOwn(t *testing.T) {
 	result := optimized(t, "StageLocalParameter")
 	if result.Status != StatusSat {
@@ -184,6 +181,22 @@ func TestNestedStageConstraintParameterIsItsOwn(t *testing.T) {
 	}
 	if cap := result.Optima[1]; cap.Status != OptimumAttained || cap.Value != "5" {
 		t.Errorf("the nested cap is %s %q, want 5: %s", cap.Status, cap.Value, cap.Detail)
+	}
+}
+
+// TestNestedObjectiveAttributeIsOneValue: a nested objective's own attribute is one
+// value whether read inside the objective or as `goal.weight` from the analysis.
+func TestNestedObjectiveAttributeIsOneValue(t *testing.T) {
+	result := optimized(t, "NestedObjectiveAttribute")
+	if result.Status != StatusSat {
+		t.Fatalf("NestedObjectiveAttribute answered %s, want sat", result.Status)
+	}
+	if len(result.Optima) != 2 {
+		t.Fatalf("reported %d optima, want 2", len(result.Optima))
+	}
+	if weight := result.Optima[1]; weight.Status != OptimumAttained || weight.Value != "5" {
+		t.Errorf("the nested objective's weight is %s %q, want the 5 the analysis binds: %s",
+			weight.Status, weight.Value, weight.Detail)
 	}
 }
 

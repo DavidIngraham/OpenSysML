@@ -412,4 +412,23 @@ package test {
 			}
 		}
 	}
+
+	// A nested objective's own attribute is one value, read inside the objective
+	// and as `goal.weight` by the nested analysis's condition.
+	analysis def NestedObjectiveAttribute {
+		attribute cost : Integer;
+		assert constraint { cost >= 3 and cost <= 9 }
+		objective costliest : MaximizeObjective {
+			subject :>> selectedAlternative;
+			in calc :>> eval { cost }
+		}
+		analysis within {
+			assert constraint { goal.weight == 5 }
+			objective goal : MaximizeObjective {
+				subject :>> selectedAlternative;
+				attribute weight : Integer;
+				in calc :>> eval { weight }
+			}
+		}
+	}
 }
