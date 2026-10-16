@@ -133,19 +133,23 @@ func constraintTierPasses(t *testing.T, root string) map[string][]string {
 
 // TestConstraintTierPassesAreAccountedFor: every constraint-tier pass is cited
 // by a row's implementation or listed among the manifest's extensions with its
-// basis, and no extension names a file that is not such a pass.
+// basis, and no extension names a file that is not such a pass. A file
+// declaring one pass is credited by any citation into it; a file declaring
+// several needs each pass type cited (`file.go:Type.method`) or listed.
 func TestConstraintTierPassesAreAccountedFor(t *testing.T) {
 	root, m := loadCommittedManifest(t)
 	passes := constraintTierPasses(t, root)
-	cited := map[string]bool{}
+	citedFiles, citedTypes := map[string]bool{}, map[string]bool{}
 	for _, c := range m.Constraints {
 		for _, ref := range implementationRef.FindAllStringSubmatch(c.Implementation, -1) {
-			cited[ref[1]] = true
+			citedFiles[ref[1]] = true
+			if typeName, _, isMethod := strings.Cut(ref[2], "."); isMethod {
+				citedTypes[ref[1]+":"+typeName] = true
+			}
 		}
 	}
-	extensions := map[string]manifest.Extension{}
+	listed := map[string]bool{}
 	for _, e := range m.Extensions {
-		extensions[e.File] = e
 		types, ok := passes[e.File]
 		if !ok {
 			t.Errorf("extension %s is not a constraint-tier pass file under internal/check/passes", e.File)
@@ -154,9 +158,10 @@ func TestConstraintTierPassesAreAccountedFor(t *testing.T) {
 		if !slicesContains(types, e.Pass) {
 			t.Errorf("extension %s names pass %s; the file declares %s", e.File, e.Pass, strings.Join(types, ", "))
 		}
-		if cited[e.File] {
-			t.Errorf("extension %s is also cited by a row; a pass is one or the other", e.File)
+		if citedTypes[e.File+":"+e.Pass] || (len(types) == 1 && citedFiles[e.File]) {
+			t.Errorf("extension %s is also cited by a row; a pass is one or the other", e.Pass)
 		}
+		listed[e.File+":"+e.Pass] = true
 		switch e.Basis {
 		case "spec", "extension":
 		default:
@@ -164,9 +169,13 @@ func TestConstraintTierPassesAreAccountedFor(t *testing.T) {
 		}
 	}
 	var unaccounted []string
-	for file := range passes {
-		if _, ok := extensions[file]; !ok && !cited[file] {
-			unaccounted = append(unaccounted, file)
+	for file, types := range passes {
+		for _, typeName := range types {
+			key := file + ":" + typeName
+			if listed[key] || citedTypes[key] || (len(types) == 1 && citedFiles[file]) {
+				continue
+			}
+			unaccounted = append(unaccounted, key)
 		}
 	}
 	sort.Strings(unaccounted)
