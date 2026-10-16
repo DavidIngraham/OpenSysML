@@ -97,8 +97,8 @@ func (r *Renderer) lifelinesOf(elem *symbols.Symbol) []*symbols.Symbol {
 type message struct {
 	flow     *symbols.Symbol
 	from, to *symbols.Symbol
-	// Whether each end is an occurrence of its own on the lifeline, with a time
-	// the orders can state, rather than the lifeline or a port of it.
+	// Whether each end is an event of its own on the lifeline, with a time the
+	// orders can state, rather than the lifeline itself or a port of it.
 	fromTimed, toTimed bool
 	edge               Edge
 }
@@ -416,13 +416,9 @@ func declaredBefore(a, b *symbols.Symbol) bool {
 	return a.DeclSpan.Offset < b.DeclSpan.Offset
 }
 
-// orderMessages is the messages in the order the model states. A message is one
-// row, so its send and receive events share that row's time: the rows are sorted
-// by the orders stated between the events on them, through events no message
-// attaches to, and declaration order stands between rows nothing orders. An
-// order against a message's own direction, or orders that run a row both above
-// and below another, cannot be drawn as rows, so the cycle is reported and
-// declaration order stands for the whole rendering.
+// orderMessages is the messages in the order the model states: each one a row
+// its events share, sorted by the orders between those events (declaration order
+// between rows nothing orders); a cycle is reported and declaration order stands.
 func (r *Renderer) orderMessages(messages []message, orders []order, out *Rendering) []Edge {
 	occurrences := sequencedOccurrences(messages, orders)
 	at := make(map[*symbols.Symbol]int, len(occurrences))
@@ -437,8 +433,8 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 			}
 		}
 	}
-	// The events first: a message runs from its send event to its receive event,
-	// so an order against that cannot hold on one row however the rows are placed.
+	// The events first: an order against a message's own send → receive
+	// direction cannot hold on one row however the rows are placed.
 	eventsLater := make([][]int, len(occurrences))
 	eventsIndegree := make([]int, len(occurrences))
 	for _, msg := range messages {
@@ -492,12 +488,8 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 	return edges
 }
 
-// messageRows numbers the rows the orders are sorted over: a message is a row,
-// messages sharing an event are one row, and an event no message attaches to
-// that an order joins to one is a row of its own. Those are numbered first, then
-// the messages in declaration order, so a sort taking the lowest ready row
-// passes an order through a bare event at once and takes the earliest-declared
-// message where nothing is stated. The row of each message and of each event.
+// messageRows numbers the rows the orders sort: events on no message first (one
+// each), then the messages in declaration order, those sharing an event as one.
 func messageRows(messages []message, occurrences []*symbols.Symbol) ([]int, map[*symbols.Symbol]int, int) {
 	parent := make([]int, len(messages))
 	for i := range parent {
@@ -544,8 +536,7 @@ func messageRows(messages []message, occurrences []*symbols.Symbol) ([]int, map[
 	return rowOf, row, rows
 }
 
-// events are the ends of a message that are events of their own on a lifeline,
-// whose time the row's is.
+// events are the ends of a message that are events of their own on a lifeline.
 func (m message) events() []*symbols.Symbol {
 	var events []*symbols.Symbol
 	if m.fromTimed {

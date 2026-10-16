@@ -117,10 +117,8 @@ func TestSequenceRenderingHonoursStatedOrder(t *testing.T) {
 	}
 }
 
-// A send and a receive on one lifeline order the two messages they belong to,
-// whichever lifelines the messages are received on: q receives a, then sends b
-// to r, then sends c to p, so the rows are a, b, c — not the order the receive
-// events of b and c happen to be declared in.
+// A send and a receive on one lifeline order their two messages whichever
+// lifelines receive them: q receives a, sends b, sends c, so the rows are a, b, c.
 func TestSequenceRenderingOrdersMessagesByTheirLifelines(t *testing.T) {
 	for _, view := range []string{"LifelineViews::relayView", "LifelineViews::relayReversedView"} {
 		rendering := render(t, "sequence-lifelines.sysml", view)
@@ -156,10 +154,8 @@ func TestSequenceRenderingKeepsDeclarationOrderWhereNothingIsStated(t *testing.T
 	}
 }
 
-// Orders no row can satisfy are a cycle too: one running against a message's
-// own direction, and ones placing one row both above and below another even
-// though the events themselves could be ordered. Each is reported, naming the
-// succession, and declaration order stands.
+// An order against a message's own direction, or rows ordered both ways, is a
+// cycle too: reported naming the succession, and declaration order stands.
 func TestSequenceRenderingReportsOrdersNoRowCanSatisfy(t *testing.T) {
 	for _, tc := range []struct {
 		view     string
@@ -184,9 +180,8 @@ func TestSequenceRenderingReportsOrdersNoRowCanSatisfy(t *testing.T) {
 	}
 }
 
-// A message attached to a lifeline itself, or to a port of it, has no event of
-// its own to order: two such messages running opposite ways are no cycle, and
-// the orders stated between other messages' events are still honoured.
+// A message attached to a lifeline itself has no event of its own to order: two
+// running opposite ways are no cycle, and the other messages' orders still hold.
 func TestSequenceRenderingLeavesUntimedMessageEndsUnordered(t *testing.T) {
 	rendering := render(t, "sequence-lifelines.sysml", "LifelineViews::reciprocalView")
 	if got := messageLabels(rendering); !slices.Equal(got, []string{"forward", "backward", "early", "late"}) {

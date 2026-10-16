@@ -1,6 +1,5 @@
-// Messages ordered by the successions on the lifelines their events are on:
-// the send of one message and the receive of another on one lifeline order the
-// two messages, whichever lifeline each message is received on.
+// Messages ordered by the successions on the lifelines their events are on,
+// whichever lifeline each message is received on.
 package Signals {
 	item def A;
 	item def B;
@@ -106,9 +105,8 @@ package Lifelines {
 		succession first q.received then p.sent;
 	}
 
-	// The events can be ordered but the rows cannot: `first` must be above
-	// `second` for its send to precede second's receive, and below it for
-	// second's send to precede its receive.
+	// The events can be ordered but the rows cannot: each succession puts
+	// `one` on the other side of `two`.
 	occurrence def Crossed {
 		part p {
 			event occurrence firstSent;
@@ -126,9 +124,8 @@ package Lifelines {
 		succession crossing first q.secondSent then q.firstTaken;
 	}
 
-	// Messages attached to the lifelines themselves state no time of their own:
-	// two running opposite ways order nothing, and the order stated between the
-	// events of the other two still holds.
+	// Messages attached to the lifelines themselves have no time of their own:
+	// two running opposite ways order nothing; the other two's order still holds.
 	occurrence def Reciprocal {
 		part p {
 			event occurrence lateSent;
