@@ -108,7 +108,7 @@ func TestValidateAcceptsAFormalNameThePilotMisspells(t *testing.T) {
 	if err := testManifest(row, other).Validate(); err == nil || !strings.Contains(err.Error(), "own name") {
 		t.Fatalf("a spec name that is another row's name must be refused, got %v", err)
 	}
-	row.Spec.Name = "checkViewRendering"
+	row.Spec.Name = "ViewRendering"
 	if err := testManifest(row).Validate(); err == nil || !strings.Contains(err.Error(), "not a constraint name") {
 		t.Fatalf("a spec name that is no constraint name must be refused, got %v", err)
 	}
