@@ -57,8 +57,8 @@ func TestExtractionMatchesBaseline(t *testing.T) {
 	if err := matches(base, extracted); err != nil {
 		t.Fatal(err)
 	}
-	if len(extracted) != len(base.Constraints) {
-		t.Fatalf("extracted %d constraints, manifest records %d", len(extracted), len(base.Constraints))
+	if pilot := base.PilotRows(); len(extracted) != len(pilot) {
+		t.Fatalf("extracted %d constraints, manifest records %d", len(extracted), len(pilot))
 	}
 }
 

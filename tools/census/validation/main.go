@@ -158,7 +158,7 @@ func runCheck(root string, opts options, out io.Writer) error {
 	if len(failures) > 0 {
 		return errors.New(strings.Join(failures, "\n"))
 	}
-	fmt.Fprintf(out, "validation-census: %d constraints, census document and manifest agree\n", len(base.Constraints))
+	fmt.Fprintf(out, "validation-census: %d constraints, census document and manifest agree\n", len(base.PilotRows()))
 	return nil
 }
 
@@ -205,11 +205,12 @@ func runUpdate(root string, opts options, out io.Writer) error {
 		c.Raw, c.Source = e.Raw, e.Source
 		next.Constraints = append(next.Constraints, c)
 	}
+	next.Constraints = append(next.Constraints, previous.SpecRows()...)
 	next.Recorded = recordedDate(previous, &next)
 	if err := manifest.Write(root, &next); err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "validation-census: recorded %d constraints from %s\n", len(next.Constraints), filepath.Base(jar))
+	fmt.Fprintf(out, "validation-census: recorded %d constraints from %s\n", len(extracted), filepath.Base(jar))
 	return nil
 }
 
