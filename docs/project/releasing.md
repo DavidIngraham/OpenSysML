@@ -1558,6 +1558,11 @@ pom property or the settings), and `central-publishing-maven-plugin` with
 deployment itself and waits until it is published, so a green job means the
 version is on Central. The irreversible step is guarded by running last, on a
 revision proven green, and by the refusal of a version already published.
+The plugin's pin has to track Sonatype's Portal API: `0.7.0` rejected the
+`warnings` field the deployment-status response gained in October 2026 and
+reported the `v0.10.1` publish failed after Central had published it, so a red
+publish job is checked against Central's component listing before any rerun
+(the refusal step fails a rerun of a published version by design).
 
 The same checks run locally before a release, without uploading:
 
