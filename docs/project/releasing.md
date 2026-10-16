@@ -165,7 +165,12 @@ branch that moves the integration state onto `main`:
    to the SemVer spelling of the same version (`0.9.1`;
    `0.9.0-rc.1` for `0.9.0rc1`), and run `npm install --package-lock-only` in
    `client/node` so the lockfile agrees; the release workflow fails before
-   building anything when package.json disagrees. `client/java/pom.xml` follows
+   building anything when package.json disagrees, and `npm ci` refuses a
+   lockfile that still locks the platform packages at the previous version
+   (`TestNodeLockfileAgreesWithTheClientVersion` in `tests/hygiene` catches
+   that without a Node toolchain). Before the tag the new platform packages
+   are not on npm, so that run drops their entries from the lockfile; that is
+   fine for `npm ci`, and the pin step below locks them once they exist. `client/java/pom.xml` follows
    the same version too: set the parent pom's `<version>`, both modules'
    `<parent><version>`, and the client version in `editors/mdk/pom.xml`
    (`opensysml.client.version`) and `editors/syson/backend/pom.xml` to the same
@@ -201,7 +206,11 @@ branch that moves the integration state onto `main`:
    them before they existed — so run that on the pin branch and commit the
    lockfile first. Then merge
    `main` back into `develop` — a plain merge, no rebase — so the folded
-   changelog, and any hotfix that landed on `main` in the meantime, flow down:
+   changelog, and any hotfix that landed on `main` in the meantime, flow down.
+   When the release was a `hotfix/` branch, `develop`'s lockfile still locks
+   the platform packages of the previous release: run the same
+   `npm install --package-lock-only` on the back-merge branch, or its Node
+   client job fails on `npm ci`:
 
    ```bash
    git checkout develop && git pull
