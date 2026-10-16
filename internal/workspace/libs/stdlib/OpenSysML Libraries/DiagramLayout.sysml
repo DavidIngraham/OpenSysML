@@ -17,8 +17,13 @@ library package DiagramLayout {
 
     metadata def Route {
         doc /* The waypoints a connection, transition, succession or flow is
-             * drawn through, in order, flattened as x0, y0, x1, y1, ... */
+             * drawn through, in order, flattened as x0, y0, x1, y1, ...
+             * A specialization has no element of its own to annotate: its
+             * Route is stated about the specific element and names the
+             * general it is drawn to, `ref :>> general : Sup;`, one Route
+             * per general. */
         attribute points : ScalarValues::Real[0..*] ordered nonunique;
+        ref general : Base::Anything[0..1];
     }
 
     metadata def Canvas {
