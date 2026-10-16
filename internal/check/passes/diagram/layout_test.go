@@ -388,6 +388,26 @@ func TestDiagramLayoutViewLocalAnnotationsFollowInheritedBehavior(t *testing.T) 
 	}
 }
 
+func TestDiagramLayoutParallelRegionIsDrawn(t *testing.T) {
+	src := layoutModel(`	state def Machine {
+		entry; then Active;
+		state Active parallel {
+			state r1 {
+				entry; then inside;
+				state inside;
+			}
+		}
+	}
+	view lifecycle : StandardViewDefinitions::StateTransitionView {
+		expose Machine;
+		metadata Layout about Machine::Active::r1 { x = 10; y = 20; width = 300; height = 100; }
+	}
+`)
+	if diags := layoutDiags(t, src); len(diags) != 0 {
+		t.Fatalf("got %d diagnostics, want none: %v", len(diags), diags)
+	}
+}
+
 // Every action body inherits one start from the library; a Layout naming it as
 // one body's positions that body's start alone, so the checker judges it by
 // whether the view draws that body, not by whether it draws any start.

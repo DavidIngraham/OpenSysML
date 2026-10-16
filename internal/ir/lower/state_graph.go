@@ -695,6 +695,15 @@ func (g *StateGraph) DeclOf(state *ast.StateNode) ast.Node {
 	return state
 }
 
+// RegionDeclOf is the declaration region was built from: the direct substate of a
+// parallel state or machine that supplies its body, else the region itself.
+func (g *StateGraph) RegionDeclOf(region *ast.StateRegion) ast.Node {
+	if decl := g.regionDecl[region]; decl != nil {
+		return decl
+	}
+	return region
+}
+
 // Completes reports whether entering state completes the region it belongs to:
 // it is the `done` end shot of the state or machine whose body names it.
 func (g *StateGraph) Completes(state *ast.StateNode) bool {
@@ -1322,7 +1331,7 @@ func (g *StateGraph) regionScope(scope *symbols.Scope, region *ast.StateRegion) 
 	if inherited := g.regionScopeOf[region]; inherited != nil {
 		return inherited
 	}
-	if decl := g.regionDecl[region]; decl != nil {
+	if decl := g.RegionDeclOf(region); decl != region {
 		return childScope(scope, decl)
 	}
 	return childScope(scope, region)
