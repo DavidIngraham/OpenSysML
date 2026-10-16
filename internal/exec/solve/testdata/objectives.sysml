@@ -83,8 +83,10 @@ package test {
 		}
 	}
 
-	// Two objectives, improved lexicographically in the order declared: the least
-	// cost first, and among the assignments achieving it the greatest margin.
+	// Two objectives improved lexicographically: a case states one objective
+	// (SysML 8.3.22.2), so the second is the objective of a nested analysis, which
+	// refines the optimum the enclosing one settled: the least cost first, and
+	// among the assignments achieving it the greatest margin.
 	analysis def CostThenMargin {
 		attribute cost : Integer;
 		attribute margin : Integer;
@@ -104,9 +106,11 @@ package test {
 			subject :>> selectedAlternative;
 			in calc :>> eval { cost }
 		}
-		objective widestMargin : MaximizeObjective {
-			subject :>> selectedAlternative;
-			in calc :>> eval { margin }
+		analysis thenMargin {
+			objective widestMargin : MaximizeObjective {
+				subject :>> selectedAlternative;
+				in calc :>> eval { margin }
+			}
 		}
 	}
 

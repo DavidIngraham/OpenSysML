@@ -33,7 +33,7 @@ func AnalysisWith(ctx *runtime.Context, sym *symbols.Symbol, scope *symbols.Scop
 		return nil, err
 	}
 	conds := ctx.CaseConditionsOf(sym, scope)
-	objectives := ctx.ObjectivesOf(sym, scope)
+	objectives := ctx.OptimizationObjectivesOf(sym, scope)
 	// A shape validation rejects is refused as such even when no goal is stated.
 	if len(objectives) == 0 && !conflictsResult(conds) {
 		return nil, &NoObjectiveError{Element: sym.Name}

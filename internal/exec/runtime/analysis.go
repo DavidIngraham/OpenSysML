@@ -156,6 +156,59 @@ func (ctx *Context) ObjectivesOf(sym *symbols.Symbol, scope *symbols.Scope) []Ob
 	return out
 }
 
+// OptimizationObjectivesOf returns the objectives an optimization improves, in
+// order: the case's own, then those of each analysis nested in it in declaration
+// order, each stage refining the optimum the stages before it settled.
+func (ctx *Context) OptimizationObjectivesOf(sym *symbols.Symbol, scope *symbols.Scope) []Objective {
+	return ctx.stagedObjectives(sym, scope, map[*symbols.Symbol]bool{})
+}
+
+func (ctx *Context) stagedObjectives(sym *symbols.Symbol, scope *symbols.Scope, seen map[*symbols.Symbol]bool) []Objective {
+	if sym == nil || seen[sym] {
+		return nil
+	}
+	seen[sym] = true
+	if scope == nil {
+		scope = sym.OwnerScope
+	}
+	out := ctx.ObjectivesOf(sym, scope)
+	for _, stage := range ctx.analysisStagesOf(sym, scope) {
+		out = append(out, ctx.stagedObjectives(stage, stage.OwnerScope, seen)...)
+	}
+	return out
+}
+
+// analysisStagesOf returns the analysis usages sym's body and its generals'
+// declare, inherited ones first; one restating an inherited one, by name or by
+// redefinition, is the same stage declared again and keeps its place.
+func (ctx *Context) analysisStagesOf(sym *symbols.Symbol, scope *symbols.Scope) []*symbols.Symbol {
+	var out []*symbols.Symbol
+	for _, member := range ctx.chainMembers(sym, scope) {
+		usage, ok := member.node.(*ast.Usage)
+		if !ok || usage.Kind != ast.UsageAnalysisCase {
+			continue
+		}
+		if stage := memberSymbol(member.scope, member.node); stage != nil {
+			out = ctx.placeStage(out, stage)
+		}
+	}
+	return out
+}
+
+func (ctx *Context) placeStage(out []*symbols.Symbol, stage *symbols.Symbol) []*symbols.Symbol {
+	redefined := ctx.model.semantics.AllRedefinedFeatures(stage)
+	for i, prev := range out {
+		if prev == stage || slices.Contains(ctx.model.semantics.AllRedefinedFeatures(prev), stage) {
+			return out
+		}
+		if slices.Contains(redefined, prev) || (stage.Name != "" && stage.Name == prev.Name) {
+			out[i] = stage
+			return out
+		}
+	}
+	return append(out, stage)
+}
+
 // placeObjective adds obj to out: in place of the first objective it restates,
 // nowhere when it is already placed or redefined by a placed one, at the end otherwise.
 func (ctx *Context) placeObjective(out []Objective, obj Objective) []Objective {
