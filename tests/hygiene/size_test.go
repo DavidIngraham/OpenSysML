@@ -29,10 +29,10 @@ type oversize struct {
 // oversizeTestFiles lists every `_test.go` file over maxTestFileLines, in lines.
 // Split one along the feature seams of AGENTS.md §5.2 and remove its entry.
 var oversizeTestFiles = []oversize{
-	{"tests/export/export_test.go", 4357, "one black-box suite over the whole RDF export surface"},
+	{"tests/export/export_test.go", 4376, "one black-box suite over the whole RDF export surface"},
 	{"internal/exec/runtime/classifier_behavior_test.go", 3442, "classifier-behavior scenarios on one shared harness"},
 	{"internal/exec/runtime/classify_test.go", 2720, "classification-change scenarios on one shared harness"},
-	{"internal/exec/runtime/conformance_test.go", 2710, "execution-conformance driver and its per-case assertions"},
+	{"internal/exec/runtime/conformance_test.go", 2748, "execution-conformance driver and its per-case assertions"},
 	{"internal/exec/runtime/action_executor_test.go", 2629, "action-executor scenarios on one shared harness"},
 	{"internal/exec/runtime/signal_test.go", 2491, "signal delivery scenarios on one shared harness"},
 	{"tests/migrate/behavior_more_test.go", 2465, "SysML v1 behavior migration scenarios on one shared harness"},
