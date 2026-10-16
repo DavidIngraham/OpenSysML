@@ -74,7 +74,10 @@ func (t *translator) resolvePath(node ast.Node, scope *symbols.Scope, segments [
 	var chain []*symbols.Symbol
 	// A member the objective being translated owns or inherits shadows the case's
 	// and is read through it, so two objectives' `best` are two values.
-	sym, ok := t.objectiveLocal(scope, segments[0])
+	sym, ok := t.localTo(t.within, scope, segments[0])
+	if !ok {
+		sym, ok = t.localTo(t.stage, scope, segments[0])
+	}
 	if !ok {
 		if sym, ok = t.model.LookupMember(t.within, segments[0]); ok {
 			chain = append(chain, t.within)
@@ -107,23 +110,24 @@ func (t *translator) resolvePath(node ast.Node, scope *symbols.Scope, segments [
 	return chain, nil
 }
 
-// objectiveLocal resolves name to a declaration nested inside the objective being
-// translated, or one of its types, that is not a member of the objective itself:
-// a condition's own parameter or attribute, which the objective's members do not shadow.
-func (t *translator) objectiveLocal(scope *symbols.Scope, name string) (*symbols.Symbol, bool) {
-	if t.within == nil {
+// localTo resolves name to a declaration nested inside owner (the objective or
+// the nested analysis being translated), or one of its types, that is not a
+// member of owner itself: a condition's own parameter or attribute, which
+// owner's members do not shadow.
+func (t *translator) localTo(owner *symbols.Symbol, scope *symbols.Scope, name string) (*symbols.Symbol, bool) {
+	if owner == nil {
 		return nil, false
 	}
 	sym, ok := t.ctx.Resolver().LookupName(scope, name)
 	if !ok {
 		return nil, false
 	}
-	if member, own := t.model.LookupMember(t.within, name); own && member == sym {
+	if member, own := t.model.LookupMember(owner, name); own && member == sym {
 		return nil, false
 	}
 	for s := sym.OwnerScope; s != nil; s = s.Parent() {
-		owner := s.Owner()
-		if owner == t.within || (owner != nil && t.model.Conforms(t.within, owner)) {
+		o := s.Owner()
+		if o == owner || (o != nil && t.model.Conforms(owner, o)) {
 			return sym, true
 		}
 	}

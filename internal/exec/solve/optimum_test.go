@@ -168,6 +168,25 @@ func TestNestedStageShadowsAndBoundsTheCase(t *testing.T) {
 	}
 }
 
+// TestNestedStageConstraintParameterIsItsOwn: a nested analysis's constraint reads
+// its own `cap` parameter (3), not the analysis's `cap` attribute (5), so the two
+// hold together and the case is satisfiable.
+func TestNestedStageConstraintParameterIsItsOwn(t *testing.T) {
+	result := optimized(t, "StageLocalParameter")
+	if result.Status != StatusSat {
+		t.Fatalf("StageLocalParameter answered %s, want sat (the parameter is not the attribute)", result.Status)
+	}
+	if len(result.Optima) != 2 {
+		t.Fatalf("reported %d optima, want 2", len(result.Optima))
+	}
+	if cost := result.Optima[0]; cost.Status != OptimumAttained || cost.Value != "5" {
+		t.Errorf("greatest cost under the nested cap is %s %q: %s", cost.Status, cost.Value, cost.Detail)
+	}
+	if cap := result.Optima[1]; cap.Status != OptimumAttained || cap.Value != "5" {
+		t.Errorf("the nested cap is %s %q, want 5: %s", cap.Status, cap.Value, cap.Detail)
+	}
+}
+
 // TestUnboundedOptimum: an objective the conditions do not bound has no optimum,
 // which is its own answer rather than a number.
 func TestUnboundedOptimum(t *testing.T) {

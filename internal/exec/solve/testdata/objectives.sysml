@@ -389,4 +389,27 @@ package test {
 			}
 		}
 	}
+
+	// A nested analysis's constraint reads its own parameter ahead of the
+	// analysis's same-named attribute, as a case's constraint does.
+	analysis def StageLocalParameter {
+		attribute cost : Integer;
+		assert constraint { cost >= 3 and cost <= 9 }
+		objective costliest : MaximizeObjective {
+			subject :>> selectedAlternative;
+			in calc :>> eval { cost }
+		}
+		analysis within {
+			attribute cap : Integer;
+			assert constraint { cap == 5 and cost <= cap }
+			assert constraint local {
+				in cap : Integer = 3;
+				cap == 3
+			}
+			objective tightest : MinimizeObjective {
+				subject :>> selectedAlternative;
+				in calc :>> eval { cap }
+			}
+		}
+	}
 }
