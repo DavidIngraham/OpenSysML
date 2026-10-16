@@ -106,4 +106,11 @@ var methodCodes = []Entry{
 			"Type the subject.",
 		Spec: "OOSEM extension library",
 	},
+	{
+		Code: "self-check-rule", Tier: TierMethod, Severity: "error",
+		Summary: "a model's own rule failing for one of its elements",
+		Meaning: "A `-self-check-package` runs each constraint of the named package as a predicate over every element of the model whose metaclass its parameter accepts, and this element makes the rule false. " +
+			"Change the element so the rule holds, or amend the rule in the package.",
+		Spec: "Model-defined rule; the predicate is a KerML constraint evaluated over the model's metaobjects",
+	},
 }

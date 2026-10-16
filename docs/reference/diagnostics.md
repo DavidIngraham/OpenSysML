@@ -2006,6 +2006,7 @@ A transition's `accept when <name>` or `when <name>` trigger names something no 
 | [`oosem-requirement-not-derived`](#oosem-requirement-not-derived) | warning | a requirement derived from no higher-level requirement |
 | [`oosem-requirement-not-satisfied`](#oosem-requirement-not-satisfied) | warning | a requirement nothing satisfies |
 | [`oosem-use-case-subject`](#oosem-use-case-subject) | warning | a use case whose subject is untyped |
+| [`self-check-rule`](#self-check-rule) | error | a model's own rule failing for one of its elements |
 
 #### `mosa-boundary-not-designated`
 
@@ -2086,6 +2087,14 @@ Specification: OOSEM extension library
 The subject of a use case is the system it serves; OOSEM expects it typed by that system's definition. Type the subject.
 
 Specification: OOSEM extension library
+
+#### `self-check-rule`
+
+**error** · Method rules · a model's own rule failing for one of its elements
+
+A `-self-check-package` runs each constraint of the named package as a predicate over every element of the model whose metaclass its parameter accepts, and this element makes the rule false. Change the element so the rule holds, or amend the rule in the package.
+
+Specification: Model-defined rule; the predicate is a KerML constraint evaluated over the model's metaobjects
 
 ### Documents and queries
 
