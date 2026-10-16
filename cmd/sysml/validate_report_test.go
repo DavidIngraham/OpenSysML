@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -34,6 +35,26 @@ func reportWorkspace(t *testing.T) string {
 		}
 	}
 	return dir
+}
+
+// severityLine matches a diagnostic line's severity marker, with or without
+// the code a line may carry after it: `warning:` or `warning[some-code]:`.
+func severityLine(severity string) *regexp.Regexp {
+	return regexp.MustCompile(`(?m)\b` + regexp.QuoteMeta(severity) + `(\[[^\]]*\])?:`)
+}
+
+func wantSeverity(t *testing.T, got runOutcome, severity string) {
+	t.Helper()
+	if !severityLine(severity).MatchString(got.output()) {
+		t.Errorf("report has no %s line:\n%s", severity, got.output())
+	}
+}
+
+func rejectSeverity(t *testing.T, got runOutcome, severity string) {
+	t.Helper()
+	if severityLine(severity).MatchString(got.output()) {
+		t.Errorf("report has a %s line:\n%s", severity, got.output())
+	}
 }
 
 func decodeSARIF(t *testing.T, data []byte) sarif.Log {
@@ -191,7 +212,7 @@ func TestValidateBaselineRoundTrip(t *testing.T) {
 
 	again := checkPathsIn(t, dir, binary, append(strict, "-baseline", "baseline.json", "models/notation.sysml")...)
 	wantReport(t, again, exitHolds, "1 known finding(s) suppressed by baseline.json", "no errors")
-	rejectReport(t, again, "warning:")
+	rejectSeverity(t, again, "warning")
 
 	// The finding moves down two lines and stays known.
 	notation := filepath.Join(dir, "models", "notation.sysml")
@@ -306,9 +327,11 @@ func TestValidateWarningsAsErrors(t *testing.T) {
 	binary := buildCLI(t)
 	dir := reportWorkspace(t)
 	lenient := checkPathsIn(t, dir, binary, "-validate", "models/notation.sysml")
-	wantReport(t, lenient, exitHolds, "warning:", "no errors")
+	wantReport(t, lenient, exitHolds, "no errors")
+	wantSeverity(t, lenient, "warning")
 	strict := checkPathsIn(t, dir, binary, "-validate", "-warnings-as-errors", "models/notation.sysml")
-	wantReport(t, strict, exitUnevaluable, "warning:", "-warnings-as-errors judges errors")
+	wantReport(t, strict, exitUnevaluable, "-warnings-as-errors judges errors")
+	wantSeverity(t, strict, "warning")
 	rejectReport(t, strict, "no errors")
 	asSARIF := checkPathsIn(t, dir, binary, "-validate", "-warnings-as-errors", "-format", "sarif", "models/notation.sysml")
 	log := decodeSARIF(t, []byte(asSARIF.stdout))
@@ -338,5 +361,27 @@ func TestValidateFormatMisuse(t *testing.T) {
 	} {
 		got := checkPathsIn(t, dir, binary, tc.args...)
 		wantReport(t, got, exitUnevaluable, tc.want)
+	}
+}
+
+// TestSeverityLineMatchesWithOrWithoutCode: the severity matcher the tests
+// above use reads a line with or without a code after the severity, and
+// nothing that merely mentions the word.
+func TestSeverityLineMatchesWithOrWithoutCode(t *testing.T) {
+	for _, line := range []string{
+		"models/notation.sysml:4:5: warning: `choice pick;` is an OpenSysML extension",
+		"models/notation.sysml:4:5: warning[nonstandard-notation]: `choice pick;` is an OpenSysML extension",
+	} {
+		if !severityLine("warning").MatchString(line) {
+			t.Errorf("%q not read as a warning line", line)
+		}
+	}
+	for _, line := range []string{
+		"sysml: models has warnings, which -warnings-as-errors judges errors; no check was made",
+		"models/m.sysml:2:3: error: import without a visibility indicator",
+	} {
+		if severityLine("warning").MatchString(line) {
+			t.Errorf("%q read as a warning line", line)
+		}
 	}
 }
