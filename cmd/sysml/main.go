@@ -850,6 +850,7 @@ func runCLI() int {
 
 	// Checking mode: load, check what was named, and exit on the verdict.
 	if modelChecks.requested() {
+		modelChecks.output = outputPath
 		return runChecks(args, evalExprs, modelChecks)
 	}
 
