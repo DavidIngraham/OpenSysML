@@ -625,6 +625,10 @@ func vertexName(node ast.Node) string {
 func (g *StateGraph) keptAttributes(inherited, own []Attribute) []Attribute {
 	kept := make([]Attribute, 0, len(inherited)+len(own))
 	for _, attr := range slices.Concat(inherited, own) {
+		// One declaration reached along two generalization paths is one feature.
+		if attr.Symbol != nil && slices.ContainsFunc(kept, func(k Attribute) bool { return k.Symbol == attr.Symbol }) {
+			continue
+		}
 		i := slices.IndexFunc(kept, func(k Attribute) bool { return k.Name == attr.Name })
 		if i >= 0 {
 			key := ShadowedKey(kept[i].Symbol)

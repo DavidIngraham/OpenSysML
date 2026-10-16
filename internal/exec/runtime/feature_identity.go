@@ -214,11 +214,12 @@ func heldDeclaration(f *actionFrame, scope *symbols.Scope, key string) (*symbols
 	return declarationHeldUnder(f.declared, scope, key)
 }
 
-// declarationHeldUnder finds the feature held binds under key when that key is not
-// the feature's own name, and answers its declaring scope and name.
+// declarationHeldUnder finds the hidden feature held binds under key — the one
+// whose ShadowedKey it is, not a feature it redefines, which the index binds under
+// the same key — and answers its declaring scope and name.
 func declarationHeldUnder(held map[*symbols.Symbol]string, scope *symbols.Scope, key string) (*symbols.Scope, string) {
 	for sym, bound := range held {
-		if bound == key && sym.Name != key && sym.OwnerScope != nil {
+		if bound == key && sym.OwnerScope != nil && lower.ShadowedKey(sym) == key {
 			return sym.OwnerScope, sym.Name
 		}
 	}
