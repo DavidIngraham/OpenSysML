@@ -38,10 +38,11 @@ sha256() {
 	if command -v sha256sum >/dev/null 2>&1; then sha256sum "$@"; else shasum -a 256 "$@"; fi
 }
 
-# fake_tool <path> <tool> <version>: a stand-in binary that only knows --version.
+# fake_tool <path> <tool> <version>: a stand-in binary that only knows --version,
+# answering it over the several lines the real ones do.
 fake_tool() {
 	local path=$1 tool=$2 version=$3
-	printf '#!/bin/sh\necho "%s"\n' "$tool $version" >"$path"
+	printf '#!/bin/sh\necho "%s"\necho "  Commit:     0000000"\necho "  Build time: 2000-01-01_00:00:00"\necho "  Go version: go1.0"\n' "$tool $version" >"$path"
 	chmod +x "$path"
 }
 

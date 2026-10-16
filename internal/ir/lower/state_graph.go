@@ -333,7 +333,7 @@ func ToStateGraphWithEndpoints(stateMachineDecl ast.Node, scope *symbols.Scope, 
 	graph.recordRunToCompletion(nil, body, DescribeMember(stateMachineDecl))
 
 	graph.Connections = lowerConnections(members, OwnerBehavior, scope)
-	graph.Attributes = keptAttributes(lowerStateAttributes(graph, inherited), lowerStateAttributes(graph, ownMembers(members, scope)))
+	graph.Attributes = graph.keptAttributes(lowerStateAttributes(graph, inherited), lowerStateAttributes(graph, ownMembers(members, scope)))
 	parallelMachine := stateMachineIsParallel(stateMachineDecl)
 	for _, owner := range owners {
 		parallelMachine = parallelMachine || stateMachineIsParallel(owner)
@@ -611,7 +611,7 @@ func stateNodeFromUsage(graph *StateGraph, usage *ast.Usage, scope *symbols.Scop
 	}
 
 	replaced := redeclare(state, base.node, own.node)
-	if attrs := keptAttributes(base.attrs, own.attrs); len(attrs) > 0 {
+	if attrs := graph.keptAttributes(base.attrs, own.attrs); len(attrs) > 0 {
 		graph.StateAttributes[state] = attrs
 	}
 	graph.bodyOf[state] = body
