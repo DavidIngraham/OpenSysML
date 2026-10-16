@@ -154,11 +154,11 @@ func TestEveryEmittedCodeIsRegistered(t *testing.T) {
 }
 
 // productionLiterals collects the string literals of the module's production Go
-// sources (tests and testdata left out), the evidence that a code has an emitter
-// when no model in the tree happens to raise it.
+// sources (tests, testdata and the registry itself left out), the evidence that a
+// code has an emitter when no model in the tree happens to raise it.
 func productionLiterals(t *testing.T) map[string]bool {
 	t.Helper()
-	cmd := exec.Command("git", "ls-files", "-z", "--", "*.go", ":!:*_test.go", ":!:*/testdata/*", ":!:tools/*")
+	cmd := exec.Command("git", "ls-files", "-z", "--", "*.go", ":!:*_test.go", ":!:*/testdata/*", ":!:tools/*", ":!:internal/check/codes/*")
 	cmd.Dir = repoRoot
 	out, err := cmd.Output()
 	if err != nil {

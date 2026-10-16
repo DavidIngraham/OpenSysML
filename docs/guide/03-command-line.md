@@ -198,7 +198,8 @@ exit=2
 The bracketed word after the severity is the diagnostic's *code*, the stable name of the rule
 that reported it, the same under `-json` and in the editor. `sysml -explain syntax` says what a
 code means and how to resolve it; bare `-explain` lists them all, as does the
-[diagnostics reference](../reference/diagnostics.md#catalogue).
+[diagnostics reference](../reference/diagnostics.md#catalogue). At the prompt, `%explain-code syntax`
+answers the same question without leaving the session.
 
 An explicitly named API element-form `.json` file is converted before validation. Diagnostic
 positions refer to the converted SysML notation, not to positions in the JSON document.
