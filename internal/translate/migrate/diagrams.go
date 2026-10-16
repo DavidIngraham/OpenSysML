@@ -1382,8 +1382,7 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 			if !m.draws(p.x, p.form, v.host, el, refs[0]) || general != "" && !p.x.exposed(general) {
 				why = routeNotExposed
 			}
-			refs = []string{strings.Join(refs, ", ")}
-			points = [][]float64{m.linePoints(el, c, boxes)}
+			refs, points = m.routeLines(el, p.form, refs, m.linePoints(el, c, boxes))
 		}
 		ref := strings.Join(refs, ", ")
 		if why == "" && pinned[ref+" :> "+general] {
@@ -1537,6 +1536,9 @@ func (m *migration) drawnRef(x exposures, f viewForm, host *sysmlv1.Element, id 
 		return ""
 	}
 	if ref := m.shownRef(el, host, f); ref != "" && m.places(x, f, el, ref) {
+		return ref
+	}
+	if ref := m.inheritedNodeRef(el, host); ref != "" && m.places(x, f, el, ref) {
 		return ref
 	}
 	refs, _, why := m.routeTarget(el, host, f)

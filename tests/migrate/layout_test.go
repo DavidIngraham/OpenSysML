@@ -330,15 +330,20 @@ func TestGoldenRefusedVertexLayout(t *testing.T) {
 		t.Errorf("%v", d)
 	}
 	for _, kind := range []string{"Style", "Note"} {
-		found := false
-		for _, line := range strings.Split(string(r.Notation), "\n") {
-			if strings.Contains(line, "DiagramLayout::"+kind+" about ") && strings.Contains(line, "::junction") {
-				found = true
+		for _, node := range []string{"::junction", "::start"} {
+			found := false
+			for _, line := range strings.Split(string(r.Notation), "\n") {
+				if strings.Contains(line, "DiagramLayout::"+kind+" about ") && strings.Contains(line, node) {
+					found = true
+				}
+			}
+			if !found {
+				t.Errorf("non-strict output has no %s about %s:\n%s", kind, node, r.Notation)
 			}
 		}
-		if !found {
-			t.Errorf("non-strict output has no %s about the junction:\n%s", kind, r.Notation)
-		}
+	}
+	if l := r.Report.Layout; l == nil || l.Styles != 2 || l.StylesWritten != 2 || l.Notes != 2 || l.NotesAnchored != 2 || l.NotesFreed != 0 {
+		t.Errorf("the styled initial pseudostate and the note anchored to it are not counted as written: %+v", l)
 	}
 }
 

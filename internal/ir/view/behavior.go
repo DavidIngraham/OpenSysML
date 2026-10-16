@@ -83,7 +83,9 @@ func (r *Renderer) stateMachineNode(view, machine *symbols.Symbol, graph *lower.
 			record(r.declaredSymbol(machine, graph.DeclOf(state)), node)
 		}
 		if graph.Completes(state) {
-			node.Geometry = r.memberGeometryOf(view, r.bodySymbol(machine, graph, bodyOwning(graph, state)), ast.DoneFeature, out)
+			body := r.bodySymbol(machine, graph, bodyOwning(graph, state))
+			node.Geometry = r.memberGeometryOf(view, body, ast.DoneFeature, out)
+			r.memberDress(view, body, ast.DoneFeature, node, out)
 		}
 		nodes[state] = node
 		for _, region := range graph.CompositeStates[state] {
@@ -158,8 +160,9 @@ func (r *Renderer) entryEdges(view, machine *symbols.Symbol, graph *lower.StateG
 	if len(entries) == 0 {
 		return
 	}
-	start := &Node{ID: ids.take(), Kind: startKind,
-		Geometry: r.memberGeometryOf(view, r.bodySymbol(machine, graph, body.owner), ast.StartFeature, out)}
+	bodySym := r.bodySymbol(machine, graph, body.owner)
+	start := &Node{ID: ids.take(), Kind: startKind, Geometry: r.memberGeometryOf(view, bodySym, ast.StartFeature, out)}
+	r.memberDress(view, bodySym, ast.StartFeature, start, out)
 	body.node.Children = append([]*Node{start}, body.node.Children...)
 	for _, entry := range entries {
 		entryTarget := ast.Node(entry.Target)
@@ -615,10 +618,11 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 			Type: nodeType(node), Origin: nodeOrigin(nodeDoc, node)}
 		if languageNamed(node) {
 			child.Geometry = r.memberGeometryOf(subject.view, owner, behaviorNodeName(node), out)
+			r.memberDress(subject.view, owner, behaviorNodeName(node), child, out)
 		} else {
 			child.Geometry = r.nodeGeometryOf(subject.view, subject.elem, owner, node, behaviorNodeName(node), out)
+			r.declaredDress(subject.view, subject.elem, node, child, out)
 		}
-		r.declaredDress(subject.view, subject.elem, node, child, out)
 		child.Ports = r.inheritedPorts(subject.elem, node, child.ID, actionPorts(child.ID, graph.Features[node], nodeDoc))
 		if record != nil {
 			record(r.declaredSymbol(subject.elem, node), child)

@@ -47,3 +47,4 @@ transitions:
 
 notes:
   "guide on the current star" on Aligning at (300, 250) size 150×40
+  "phasing begins" on start of Phasing at (600, 40) size 100×30
