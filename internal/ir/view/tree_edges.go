@@ -2,7 +2,6 @@ package view
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
@@ -91,8 +90,9 @@ func (r *Renderer) treeEdges(out *Rendering) {
 
 // associationLines redraws each connection def the tree would show as a box
 // as a line between the nodes of its two end types, the way a block definition
-// diagram draws an association, and drops its node. Its ends are labelled on
-// the line; its own name is, unless a migration made the name up.
+// diagram draws an association, and drops its node. Each end is named at its
+// end of the line; the def's own name is the line's, unless a migration made
+// the name up.
 func (g *treeGraph) associationLines() {
 	var prune func(nodes []*Node) []*Node
 	prune = func(nodes []*Node) []*Node {
@@ -106,9 +106,9 @@ func (g *treeGraph) associationLines() {
 				if !g.r.model.NameSynthesized(def) {
 					name = localName(def)
 				}
-				edge := Edge{From: line.from.ID, To: line.to.ID, Kind: EdgeAssociation, Name: name, Origin: symbolOrigin(def),
+				edge := Edge{From: line.from.ID, To: line.to.ID, Kind: EdgeAssociation, Name: name, Label: name, Origin: symbolOrigin(def),
 					Route: g.r.routeOf(site.view, def, g.out), Style: node.Style}
-				var labels []string
+				var labels [2]string
 				for i, end := range line.ends {
 					label := ""
 					if p := line.crossed[i]; p != nil {
@@ -131,11 +131,12 @@ func (g *treeGraph) associationLines() {
 					} else if !g.r.model.NameSynthesized(end) {
 						label = g.r.usageLabel(end)
 					}
-					if label != "" {
-						labels = append(labels, label)
-					}
+					labels[i] = label
 				}
-				edge.Label = associationLabel(name, labels)
+				edge.FromLabel, edge.ToLabel = labels[0], labels[1]
+				if g.node(line.types[0]).ID == edge.To && g.node(line.types[1]).ID != edge.To {
+					edge.FromLabel, edge.ToLabel = labels[1], labels[0]
+				}
 				g.add(edge, def)
 				for i := range g.out.Notes {
 					if n := &g.out.Notes[i]; n.Anchor == node.ID {
@@ -221,19 +222,6 @@ func (g *treeGraph) associationLine(node *Node, site treeSite) (line association
 	return line, true
 }
 
-// associationLabel labels the line a connection def is drawn as: its name, if
-// it has one of its own, and the labels of its ends.
-func associationLabel(name string, ends []string) string {
-	label := strings.Join(ends, " / ")
-	switch {
-	case name == "":
-		return label
-	case label == "":
-		return name
-	}
-	return name + ": " + label
-}
-
 // edgesOf draws what the element of node states of itself and of the usages
 // drawn beneath it; a member the depth bound hides is not drawn as an edge
 // either. Its typing is drawn from the node itself only when its owner is not
@@ -256,7 +244,8 @@ func (g *treeGraph) edgesOf(node *Node, site treeSite) {
 			continue
 		}
 		if to := g.node(target); to != nil && to != node && !g.nested(node, to) {
-			g.add(Edge{From: node.ID, To: to.ID, Kind: kind, Label: label, Origin: nodeOrigin(sym.DocName, rel)}, nil)
+			g.add(Edge{From: node.ID, To: to.ID, Kind: kind, Label: label, Origin: nodeOrigin(sym.DocName, rel),
+				Route: g.r.specializationRouteOf(site.view, sym, target, g.out)}, nil)
 		}
 	}
 	for _, child := range node.Children {
@@ -273,7 +262,7 @@ func (g *treeGraph) edgesOf(node *Node, site treeSite) {
 			if to == nil || to == node || g.nested(node, to) || g.lined[linedEdge{symbols.KeyOf(member), symbols.KeyOf(typ)}] {
 				continue
 			}
-			g.add(Edge{From: node.ID, To: to.ID, Kind: kind, Label: g.r.usageLabel(member), Origin: symbolOrigin(member),
+			g.add(Edge{From: node.ID, To: to.ID, Kind: kind, ToLabel: g.r.usageLabel(member), Origin: symbolOrigin(member),
 				Route: g.r.routeOf(site.view, member, g.out), Style: g.r.styleOf(site.view, member, g.out)}, member)
 		}
 	}
@@ -316,7 +305,7 @@ func (g *treeGraph) encloses(outer, inner string) bool {
 // add records an edge once; usage is the member the edge stands for, nil for
 // a relationship clause.
 func (g *treeGraph) add(edge Edge, usage *symbols.Symbol) {
-	key := treeEdgeKey{from: edge.From, to: edge.To, label: edge.Label, kind: edge.Kind, usage: symbols.KeyOf(usage)}
+	key := treeEdgeKey{from: edge.From, to: edge.To, label: edge.text(), kind: edge.Kind, usage: symbols.KeyOf(usage)}
 	if g.edges[key] {
 		return
 	}

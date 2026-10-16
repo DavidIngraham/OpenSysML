@@ -558,6 +558,9 @@ func (ctx *Context) denotedObjects(sym *symbols.Symbol) ([]*Instance, error) {
 // denotedValue is what a usage carrying no value reads as: its object, the collection of its
 // objects, or undetermined of its count where that admits more than the lower bound it holds.
 func (ctx *Context) denotedValue(sym *symbols.Symbol) (Value, error) {
+	// A reader of another document's scope tree holds its own symbol for the
+	// usage; its occurrences are recorded under the declaring tree's.
+	sym = ctx.declaredSymbol(sym)
 	if !ctx.namesObjects(sym) {
 		inst, err := ctx.occurrenceOf(sym)
 		if err != nil {
@@ -759,6 +762,10 @@ func (feat *EffectiveFeature) heldBy() *symbols.Symbol {
 // admitted is the value an admitted val is stored as: a collection for a multi-valued
 // feature, its elements charged, the objects a declared value holds classified by the feature.
 func (ctx *Context) admitted(feat *EffectiveFeature, val Value, how admission) (Value, error) {
+	if val.Kind == ValUndetermined {
+		// A value the model leaves open is held as it is: it is of no fixed count to collect.
+		return val, nil
+	}
 	if !feat.Scalar() && (val.Kind != ValSequence && val.Kind != ValSet || feat.HoldsSet != (val.Kind == ValSet)) {
 		// A multi-valued feature holds a collection however it was written, so a
 		// single value written to one is that collection's one element.
