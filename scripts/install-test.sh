@@ -217,11 +217,6 @@ unsaid() {
 	[[ "$out" != *"$1"* ]] || { echo "FAIL: expected output not to mention '$1'" >&2; printf '%s\n' "$out" >&2; failures=$((failures + 1)); }
 }
 
-# unsaid <text>: the last run's output must not mention it.
-unsaid() {
-	[[ "$out" != *"$1"* ]] || { echo "FAIL: expected output not to mention '$1'" >&2; printf '%s\n' "$out" >&2; failures=$((failures + 1)); }
-}
-
 # installed <paths...>: files the last run must have left executable under $prefix.
 installed() {
 	local path
