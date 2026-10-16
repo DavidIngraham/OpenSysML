@@ -93,6 +93,9 @@ type Context struct {
 	// bindingStack holds the namespace-level usages whose values are being evaluated, innermost
 	// last, so a value reaching back to its own usage is a cycle, and an extent finds no object of it yet.
 	bindingStack []*symbols.Symbol
+	// chainStack holds the chains being read through package-level usages no object
+	// stands for, innermost last, so a value reading its own chain again is a cycle.
+	chainStack []chainRead
 	// bindingReads holds, per bound usage, the declarations its value read to arrive at the binding,
 	// so a re-analysis carries the binding only while every one of them still reads the same.
 	bindingReads map[*symbols.Symbol]*bindingReads
@@ -159,9 +162,9 @@ type Context struct {
 	// behavior starts when an object is materialized (see DeclaredReader).
 	declarative bool
 
-	// coverageNotes holds the distinct reasons this run's coverage is narrower
-	// than its schedules, recorded once each (coverage_note.go).
-	coverageNotes map[string]bool
+	// coverageGaps holds the constructs this run performed in one order without
+	// a choice point, recorded once each (coverage_gap.go).
+	coverageGaps map[CoverageGap]bool
 
 	// heldBehaviors are the behaviors already holding work when the outermost
 	// start under way began: a driver put it in flight, and dispatches it.
@@ -261,6 +264,8 @@ type Context struct {
 	sharedTaken    int64
 	// verdicts is the span sharing verdicts between objects of one shape; nil outside one.
 	verdicts *verdictMemo
+	// exemplars are the objects `this` denotes in the check about no object under way (exemplar.go).
+	exemplars *exemplars
 	// behaviorsAttached counts the object behaviors attached so far, so a
 	// derivation knows whether one was attached under it.
 	behaviorsAttached int64
@@ -755,6 +760,9 @@ type runState struct {
 	steps    int64
 	elements int64
 	notes    []RunNote
+	// performers are the objects the run's executors have performed on, kept
+	// after an executor leaves the clock so a value of theirs is still matched.
+	performers []*Instance
 	// scheduler is the resolutions the run's choices draw from (scheduler.go).
 	scheduler *scheduler
 	// calcUsageRuns holds, per activation under way, the evaluation of each calc
@@ -763,6 +771,13 @@ type runState struct {
 	// extentCandidates holds, per type an extent was taken of, the namespace usages
 	// that may hold one (extent.go).
 	extentCandidates map[*symbols.Symbol]*extentCandidates
+}
+
+// notePerformer records the object an executor joining the clock performs on.
+func (r *runState) notePerformer(w clockWaiter) {
+	if self := executorSelf(w); self != nil && !slices.Contains(r.performers, self) {
+		r.performers = append(r.performers, self)
+	}
 }
 
 // newRunState is the state a run starts with, under the schedule policy set now.
@@ -1187,7 +1202,9 @@ func (ctx *Context) registerInstance(inst *Instance) {
 
 // EvaluateConstraint evaluates a constraint definition/usage naming no object:
 // against the single object of this runtime carrying it, the declared defaults
-// when there is none, ErrAmbiguousSubject when there are several.
+// when there is none, ErrAmbiguousSubject when there are several. Checked against
+// the defaults, `this` denotes an exemplar of the type made for the check and
+// abandoned with it (exemplar.go).
 // Returns (satisfied, error). If IsAssert=true, violation is an error.
 // If IsAssert=false (assume), always returns (true, nil) but logs assumptions.
 func (ctx *Context) EvaluateConstraint(sym *symbols.Symbol, scope *symbols.Scope) (bool, error) {

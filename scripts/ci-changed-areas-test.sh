@@ -10,6 +10,10 @@ trap 'rm -rf "$work"' EXIT
 git -C "$work" init -q
 git -C "$work" config user.email ci@example.com
 git -C "$work" config user.name CI
+# Auto maintenance detaches after a commit and writes under .git while the trap
+# removes it; a throwaway repository needs none.
+git -C "$work" config maintenance.auto false
+git -C "$work" config gc.auto 0
 mkdir -p "$work/scripts"
 cp "$script" "$work/scripts/"
 git -C "$work" add scripts
@@ -85,6 +89,7 @@ case_ go-tools docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,v
 case_ proto docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode api/proto/sysml.proto
 case_ install-script docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode install.sh
 case_ install-script-windows docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode install.ps1
+case_ action docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode action.yml
 case_ conformance docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode conformance/scenarios/01-server-info.json
 case_ workflow docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode .github/workflows/pr.yml
 case_ unclaimed docs,go,java,julia,jupyterlab,matlab,mdk,node,python,rust,syson,vscode some-new-top-level/thing.txt

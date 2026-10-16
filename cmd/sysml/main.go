@@ -109,6 +109,7 @@ var (
 	renderRuns       stringSlice
 	schedule         schedulePolicy
 	listEngines      bool
+	explainCodes     codeNames
 	probeEngines     bool
 	engine           engineSelection
 	jobsFlag         jobsSetting
@@ -131,6 +132,8 @@ var (
 	renderUnplaced   string
 	renderStyle      string
 	renderPorts      string
+	renderLines      string
+	renderShow       string
 	renderOverlay    string
 	renderDoc        string
 	listWhat         string
@@ -352,6 +355,13 @@ func runCLI() int {
 		return 0
 	}
 
+	// A diagnostic code is a property of the build too: it is explained without a
+	// model, and the run ends there.
+	if explainCodes.given {
+		// An -explain run reads no model, so every positional word is a code too.
+		return explainDiagnostics(os.Stdout, os.Stderr, append(explainCodes.codes, flag.Args()...))
+	}
+
 	// The engines a build knows are a property of the build, like its version, so
 	// they are listed without a model and the run ends there.
 	if listEngines {
@@ -436,12 +446,20 @@ func runCLI() int {
 		fmt.Fprintln(os.Stderr, "sysml: -render-ports is how much of a part's ports -render or -render-all draws on an interconnection or mixed rendering; name the view to render with -render or a directory with -render-all")
 		return 2
 	}
+	if renderLines != "" && renderView == "" && renderAllDir == "" {
+		fmt.Fprintln(os.Stderr, "sysml: -render-lines is how the dot or plantuml form of -render or -render-all routes its edges; name the view to render with -render or a directory with -render-all")
+		return 2
+	}
 	if renderUnplaced != "" && renderView == "" && renderAllDir == "" && renderDoc == "" && renderDocsDir == "" {
 		fmt.Fprintln(os.Stderr, "sysml: -render-unplaced places the unplaced nodes of a positioned DOT drawing; name what to render with -render, -render-all, -render-document or -render-documents")
 		return 2
 	}
 	if renderStyle != "" && renderView == "" && renderAllDir == "" && renderDoc == "" && renderDocsDir == "" {
 		fmt.Fprintln(os.Stderr, "sysml: -render-style is the drawing style of a DOT or Mermaid diagram; name what to render with -render, -render-all, -render-document or -render-documents")
+		return 2
+	}
+	if renderShow != "" && renderView == "" && renderAllDir == "" && renderDoc == "" && renderDocsDir == "" {
+		fmt.Fprintln(os.Stderr, "sysml: -render-show is the optional notation elements a diagram draws; name what to render with -render, -render-all, -render-document or -render-documents")
 		return 2
 	}
 
@@ -614,7 +632,7 @@ func runCLI() int {
 		case convertFormat != "" || migrateFormat != "" || renderView != "" || renderDoc != "" || renderAllDir != "" || renderDocsDir != "" || queryText != "" || graphsSubject != "" || len(evalExprs) > 0:
 			fmt.Fprintf(os.Stderr, "sysml: %s syncs a change set; it cannot be combined with -convert, -migrate, -render, -render-all, -render-document, -render-documents, -query, -graphs or -eval\n", mode)
 			return 2
-		case outputPath != "" || fromFormat != "" || renderForm != "" || renderPalette != "" || renderLink != "" || renderUnplaced != "" || renderStyle != "" || renderPorts != "" || docForm != "" || diagramForm != "" || pdfEngine != "" || pdfTitlePage || pdfTOC || pdfNumbering || docNumberFigures:
+		case outputPath != "" || fromFormat != "" || renderForm != "" || renderPalette != "" || renderLink != "" || renderUnplaced != "" || renderStyle != "" || renderPorts != "" || renderLines != "" || renderShow != "" || docForm != "" || diagramForm != "" || pdfEngine != "" || pdfTitlePage || pdfTOC || pdfNumbering || docNumberFigures:
 			fmt.Fprintf(os.Stderr, "sysml: %s reads SysML or Turtle inputs and reports the change set; -output, -from and the render options do not apply\n", mode)
 			return 2
 		case modelChecks.requested():
@@ -830,6 +848,7 @@ func runCLI() int {
 
 	// Checking mode: load, check what was named, and exit on the verdict.
 	if modelChecks.requested() {
+		modelChecks.output = outputPath
 		return runChecks(args, evalExprs, modelChecks)
 	}
 
