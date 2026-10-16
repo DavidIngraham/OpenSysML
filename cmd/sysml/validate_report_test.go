@@ -364,9 +364,8 @@ func TestValidateFormatMisuse(t *testing.T) {
 	}
 }
 
-// TestSeverityLineMatchesWithOrWithoutCode: the severity matcher the tests
-// above use reads a line with or without a code after the severity, and
-// nothing that merely mentions the word.
+// TestSeverityLineMatchesWithOrWithoutCode: the severity matcher reads a line
+// with or without a code after the severity, not one that mentions the word.
 func TestSeverityLineMatchesWithOrWithoutCode(t *testing.T) {
 	for _, line := range []string{
 		"models/notation.sysml:4:5: warning: `choice pick;` is an OpenSysML extension",
