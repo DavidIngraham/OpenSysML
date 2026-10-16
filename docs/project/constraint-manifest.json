@@ -88,7 +88,7 @@
       "message": "`'actor' declares an actor of a requirement or case and is only allowed in a requirement or case body; move it into the requirement or case it belongs to`",
       "negativeCase": "`grammar/g61-actor-outside-requirement-body.sysml`",
       "codes": [
-        "syntax"
+        "actor-membership-owning-type"
       ],
       "passes": [
         "syntax"
@@ -195,7 +195,7 @@
       "message": "`assert target must be a constraint usage, found partUsage`",
       "negativeCase": "`semantic/s04-assert-references-non-constraint.sysml`, `semantic/s93-assert-through-owner-of-unnamed-assertion.sysml`",
       "codes": [
-        "type"
+        "relationship-target-kind"
       ],
       "passes": [
         "type"
@@ -913,7 +913,7 @@
       "message": "`x of C is already bound by an earlier argument` — at the repeated label, including a label repeated qualified or through a redefinition",
       "negativeCase": "`semantic/k34-constructor-feature-bound-twice.kerml`",
       "codes": [
-        "type.expr"
+        "constructor-expression-no-duplicate-feature-redefinition"
       ],
       "passes": [
         "type"
@@ -1395,7 +1395,7 @@
       "message": "`'expose' declares what a view usage exposes and is only allowed in a view usage body`. Stays approximate: `expose` in a view definition body is a deliberate extension (warning), see spec-compliance.md.",
       "negativeCase": "`grammar/g67-expose-outside-view-body.sysml`",
       "codes": [
-        "syntax"
+        "expose-owning-namespace"
       ],
       "passes": [
         "syntax"
@@ -2430,7 +2430,7 @@
       "message": "`F binds parameter \"x\" twice` — the duplicate is found by the resolved parameter (a positional argument followed by a named binding of the same parameter, an alias or a redefining name count), reported at the second binding",
       "negativeCase": "`semantic/k33-parameter-bound-twice.kerml`",
       "codes": [
-        "type.expr"
+        "invocation-argument"
       ],
       "passes": [
         "type"
@@ -2471,7 +2471,7 @@
       "message": "same wording at the argument, followed by the cause (`Must correspond to one input parameter of the invoked type: F has no parameter named \"y\"`, `…: F takes 2 argument(s), found 3` at the first excess argument); the invoked type may be a behavior or a feature typed by one",
       "negativeCase": "`semantic/k32-too-many-arguments.kerml`",
       "codes": [
-        "type.expr"
+        "invocation-argument"
       ],
       "passes": [
         "type"
@@ -2790,7 +2790,7 @@
       "message": "`'objective' declares the objective of a case and is only allowed in a case body; move it into the case it belongs to`",
       "negativeCase": "`grammar/g63-objective-outside-case-body.sysml`",
       "codes": [
-        "syntax"
+        "objective-membership-owning-type"
       ],
       "passes": [
         "syntax"
@@ -3382,7 +3382,7 @@
       "message": "warning `` `require` outside a requirement body is an OpenSysML extension with no SysML v2 production `` (error under `-strict`). Stays approximate: a deliberate extension — warning by default, an error under `-strict`, which matches the pilot.",
       "negativeCase": "`extensions/x08-require-outside-requirement-body.sysml`",
       "codes": [
-        "syntax"
+        "requirement-constraint-membership-owning-type"
       ],
       "passes": [
         "syntax"
@@ -3597,7 +3597,7 @@
       "message": "`satisfy target must be a requirement usage, found partUsage`",
       "negativeCase": "`semantic/s32-satisfy-references-non-requirement.sysml`",
       "codes": [
-        "type"
+        "relationship-target-kind"
       ],
       "passes": [
         "type"
@@ -3702,7 +3702,7 @@
       "message": "`'stakeholder' declares a stakeholder of a requirement and is only allowed in a requirement body; move it into the requirement it belongs to`",
       "negativeCase": "`grammar/g64-stakeholder-outside-requirement-body.sysml`",
       "codes": [
-        "syntax"
+        "stakeholder-membership-owning-type"
       ],
       "passes": [
         "syntax"
@@ -3766,7 +3766,7 @@
       "message": "`'entry' declares the entry action of a state and is only allowed in a state body; move it into the state it belongs to` (likewise for `do` and `exit`)",
       "negativeCase": "`grammar/g07-entry-outside-state-body.sysml`, `grammar/g08-do-outside-state-body.sysml`, `grammar/g65-entry-action-outside-state-body.sysml`",
       "codes": [
-        "syntax"
+        "state-subaction-membership-owning-type"
       ],
       "passes": [
         "syntax"
@@ -3875,7 +3875,7 @@
       "message": "`'subject' declares the subject of a requirement or case and is only allowed in a requirement or case body; move it into the requirement or case it belongs to`",
       "negativeCase": "`grammar/g62-subject-outside-requirement-body.sysml`",
       "codes": [
-        "syntax"
+        "subject-membership-owning-type"
       ],
       "passes": [
         "syntax"
@@ -4021,7 +4021,7 @@
       "message": "`transition guard must be Boolean, found String`",
       "negativeCase": "`semantic/s81-guarded-succession-guard-not-boolean.sysml`",
       "codes": [
-        "type.expr"
+        "transition-feature-membership-guard-expression"
       ],
       "passes": [
         "type"
@@ -4528,7 +4528,7 @@
       "message": "`'render' declares the rendering of a view and is only allowed in a view body; move it into the view it belongs to`",
       "negativeCase": "`grammar/g66-render-outside-view-body.sysml`",
       "codes": [
-        "syntax"
+        "view-rendering-membership-owning-type"
       ],
       "passes": [
         "syntax"
