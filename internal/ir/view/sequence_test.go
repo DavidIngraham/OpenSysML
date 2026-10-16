@@ -117,6 +117,45 @@ func TestSequenceRenderingHonoursStatedOrder(t *testing.T) {
 	}
 }
 
+// A send and a receive on one lifeline order the two messages they belong to,
+// whichever lifelines the messages are received on: q receives a, then sends b
+// to r, then sends c to p, so the rows are a, b, c — not the order the receive
+// events of b and c happen to be declared in.
+func TestSequenceRenderingOrdersMessagesByTheirLifelines(t *testing.T) {
+	for _, view := range []string{"LifelineViews::relayView", "LifelineViews::relayReversedView"} {
+		rendering := render(t, "sequence-lifelines.sysml", view)
+		if got := messageLabels(rendering); !slices.Equal(got, []string{"a", "b", "c"}) {
+			t.Errorf("%s: messages = %v, want a, b, c as the successions on q state", view, got)
+		}
+		if len(rendering.Notices) != 0 {
+			t.Errorf("%s: notices = %v, want none", view, rendering.Notices)
+		}
+	}
+}
+
+// An order carried through an event no message attaches to still orders the
+// messages on either side of it.
+func TestSequenceRenderingFollowsOrdersThroughUnmessagedEvents(t *testing.T) {
+	rendering := render(t, "sequence-lifelines.sysml", "LifelineViews::settledView")
+	if got := messageLabels(rendering); !slices.Equal(got, []string{"ask", "reply"}) {
+		t.Errorf("messages = %v, want ask before reply through the settle event", got)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+}
+
+// Messages nothing orders keep declaration order.
+func TestSequenceRenderingKeepsDeclarationOrderWhereNothingIsStated(t *testing.T) {
+	rendering := render(t, "sequence-lifelines.sysml", "LifelineViews::unorderedView")
+	if got := messageLabels(rendering); !slices.Equal(got, []string{"pong", "ping"}) {
+		t.Errorf("messages = %v, want declaration order", got)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+}
+
 // Successions that contradict each other cannot be ordered: the cycle is
 // reported, naming the successions, and declaration order stands.
 func TestSequenceRenderingReportsASuccessionCycle(t *testing.T) {
