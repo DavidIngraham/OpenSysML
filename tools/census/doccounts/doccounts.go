@@ -424,11 +424,19 @@ func rowStatus(number int, line string, column int) (string, error) {
 	}
 }
 
-// CountRules counts the rule rows of the compliance map by the marker in their
-// table's Status column. A row stating no status or several, a row with a marker
-// outside a table or in a table without a Status column, is an error.
-func CountRules(content string) (RuleCounts, error) {
-	counts := RuleCounts{}
+// RuleRow is one rule row of the compliance map: its line number, its text and
+// the one marker in its table's Status column.
+type RuleRow struct {
+	Line   int
+	Text   string
+	Marker string
+}
+
+// RuleRows lists the compliance map's rule rows in page order. A row stating no
+// status or several, a row with a marker outside a table or in a table without
+// a Status column, is an error.
+func RuleRows(content string) ([]RuleRow, error) {
+	var rows []RuleRow
 	lines := strings.Split(content, "\n")
 	for start := 0; start < len(lines); {
 		end := start
@@ -442,18 +450,18 @@ func CountRules(content string) (RuleCounts, error) {
 			switch {
 			case !isTable:
 				if strings.HasPrefix(text, "|") && carriesMarker(text) {
-					return RuleCounts{}, fmt.Errorf("%s:%d: a row with a status marker outside a table", SpecCompliancePath, number)
+					return nil, fmt.Errorf("%s:%d: a row with a status marker outside a table", SpecCompliancePath, number)
 				}
 			case column < 0:
 				if offset >= 2 && carriesMarker(text) {
-					return RuleCounts{}, fmt.Errorf("%s:%d: a row with a status marker in a table without a %s column", SpecCompliancePath, number, statusColumnHeading)
+					return nil, fmt.Errorf("%s:%d: a row with a status marker in a table without a %s column", SpecCompliancePath, number, statusColumnHeading)
 				}
 			case offset >= 2:
 				marker, err := rowStatus(number, line, column)
 				if err != nil {
-					return RuleCounts{}, err
+					return nil, err
 				}
-				counts.add(marker)
+				rows = append(rows, RuleRow{Line: number, Text: line, Marker: marker})
 			}
 		}
 		if end > start {
@@ -461,6 +469,20 @@ func CountRules(content string) (RuleCounts, error) {
 		} else {
 			start++
 		}
+	}
+	return rows, nil
+}
+
+// CountRules counts the rule rows of the compliance map by the marker in their
+// table's Status column, refusing the drifts RuleRows refuses.
+func CountRules(content string) (RuleCounts, error) {
+	rows, err := RuleRows(content)
+	if err != nil {
+		return RuleCounts{}, err
+	}
+	counts := RuleCounts{}
+	for _, row := range rows {
+		counts.add(row.Marker)
 	}
 	counts.Total = counts.Faithful + counts.Extension + counts.Approximate + counts.NotImplemented + counts.Deliberate + counts.KnownFailure
 	return counts, nil
