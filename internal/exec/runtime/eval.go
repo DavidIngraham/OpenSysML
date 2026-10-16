@@ -1106,7 +1106,7 @@ func (ec *EvalContext) undeterminedFeature(sym *symbols.Symbol, spelled string) 
 		}
 		return sequenceOf(nil)
 	}
-	return undeterminedFeatureValue(noValueReason(spelled), count, sym)
+	return unsetFeatureValue(spelled, count, sym)
 }
 
 // declaresType reports a symbol that declares a type: a definition, or a KerML
@@ -1407,9 +1407,14 @@ func (ec *EvalContext) selfFeatureValue(name string) (Value, bool, error) {
 	if _, ok := ec.self.FeatureValues[name]; !ok {
 		return Value{}, false, nil
 	}
-	fv, err := ec.self.GetFeatureValue(ec.ctx, name)
+	fv, open, err := ec.memberFeatureValue(ec.self, name)
 	if err != nil {
 		return Value{}, true, err
+	}
+	// Read on an object only the model stands behind, a feature whose count the
+	// model leaves open has no fixed sequence of values, as a chain reads it.
+	if value, ok := ec.openFeatureRead(ec.self, fv, open, "", name); ok {
+		return value, true, nil
 	}
 	value, err := ec.ctx.readFeatureValue(fv, name)
 	if err != nil {

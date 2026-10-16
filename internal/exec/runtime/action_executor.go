@@ -1454,6 +1454,8 @@ func (e *ActionExecutor) materializeOccurrence() (*Instance, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The run's own object: what it holds is the run's, not the model's alone.
+	inst.explicit = true
 	e.occurrence = inst
 	e.performances.occurrence = inst
 	for _, attr := range e.features {
@@ -3401,6 +3403,8 @@ func (e *ActionExecutor) collectPartsHeld(into map[string]Value) {
 		if !live || len(objects) != 1 {
 			continue
 		}
+		// The object a performance denotes is the run's: what it holds is read as held.
+		objects[0].explicit = true
 		for name, value := range e.ctx.attributesHeld(objects[0]) {
 			into[sym.Name+"."+name] = value
 		}

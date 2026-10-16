@@ -347,7 +347,8 @@ behavior engine, RDF exporter and document generator. The same runtime sits behi
 
 <span class="osml-prompt">$</span> sysml -quiet -e MassRollup::saturnVWithIU.totalMass mass-rollup.sysml
 <span class="osml-ok">✓ package MassRollup</span>
-<span class="osml-err">sysml: evaluation failed: feature value saturnVWithIU.totalMass: feature value InstrumentUnit.totalMass: no value for feature mass</span>
+<span class="osml-ok">✓ MassRollup::saturnVWithIU.totalMass</span>
+  = &lt;undetermined&gt;
 
 <span class="osml-prompt">$</span> sysml -quiet -calc "DeltaVBudget::InjectionDeltaV(3.986E14 [SI::N], 6563000 [SI::m], 384400000 [SI::m])" delta-v-budget.sysml
 <span class="osml-ok">✓ package DeltaVBudget</span>
