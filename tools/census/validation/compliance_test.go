@@ -15,7 +15,8 @@ const compliancePage = "# Compliance\n\n" +
 	"| `validateB_` holds (raw spelling) | b | t | ⚠️ Approximate |\n" +
 	"| `validateCFormal` by its formal name | c | t | ⚠️ Approximate |\n" +
 	"| a sub-case of `validateA` (census faithful), beside `validateD` (census unknown; unobservable) | d | probes `validateD.sysml` (census unknown) | 🧩 Extension |\n" +
-	"| the specification's `spec:validateLib` | e | t | ⚠️ Approximate |\n"
+	"| the specification's `spec:validateLib` | e | t | ⚠️ Approximate |\n" +
+	"| a probe `tools/census/validation/testdata/probes/validateD.sysml` (census unknown) and the helper `checker.validateHelper` | f | p | ✅ Faithful |\n"
 
 func complianceManifest() *manifest.Manifest {
 	rowB := testRow("validateB", "kerml", manifest.StatusApproximate)
@@ -37,7 +38,7 @@ func complianceRoot(t *testing.T) string {
 
 // TestCheckComplianceAcceptsTheConventions: the pilot name, the raw identifier,
 // the formal document's name, a `(census …)` reference stating the right status,
-// a `spec:` name the library states and a Go helper all pass.
+// a `spec:` name the library states, a probe path and a Go helper all pass.
 func TestCheckComplianceAcceptsTheConventions(t *testing.T) {
 	if err := checkCompliance(complianceRoot(t), compliancePage, complianceManifest()); err != nil {
 		t.Fatalf("a consistent page must pass: %v", err)
@@ -65,6 +66,11 @@ func TestCheckComplianceRejectsDrift(t *testing.T) {
 		{"probe reference states the wrong status", mutate("`validateD.sysml` (census unknown)", "`validateD.sysml` (census faithful)"), ":10: `validateD` is cited as (census faithful) but the census row is unknown"},
 		{"spec name the library does not state", mutate("`spec:validateLib`", "`spec:validateLibrary`"), ":11: `spec:validateLibrary` is not a constraint of SysMLValidation.sysml"},
 		{"spec name cited bare", mutate("`spec:validateLib`", "`validateLib`"), ":11: `validateLib` is neither a constraint"},
+		{"a span is checked whole", mutate("`validateA` holds", "`validateA-extra` holds"), ":7: `validateA-extra` is not a constraint citation"},
+		{"a brace shorthand is no citation", mutate("`validateA` holds", "`validateA{One,Two}` holds"), ":7: `validateA{One,Two}` is not a constraint citation"},
+		{"a prose name is taken whole", mutate("Prose may cite `validateA`", "Prose may cite validateA-extra"), ":3: `validateA-extra` is neither a constraint"},
+		{"a reference covers its own citation only", mutate("| a sub-case of `validateA` (census faithful), beside", "| `validateA` bare and a sub-case of `validateA` (census faithful), beside"), ":10: a 🧩 row cites `validateA`, whose census status is faithful"},
+		{"a reference must follow the citation", mutate("`validateD.sysml` (census unknown)", "`validateD.sysml` and (census unknown)"), ":10: a 🧩 row cites `validateD`, whose census status is unknown"},
 	}
 	for _, tc := range pageCases {
 		err := checkCompliance(root, tc.page, complianceManifest())

@@ -21,8 +21,11 @@ const validationLibraryPath = "internal/workspace/libs/stdlib/OpenSysML Librarie
 var goSourceDirs = []string{"cmd", "internal", "tools"}
 
 var (
-	citedNamePattern     = regexp.MustCompile(`(spec:)?\bvalidate[A-Z][A-Za-z0-9]*_?`)
-	censusReferencePat   = regexp.MustCompile("`(validate[A-Z][A-Za-z0-9]*_?)[^`]*` \\(census ([a-z]+(?: [a-z]+)?)[;,)]")
+	codeSpanPattern      = regexp.MustCompile("`([^`]+)`")
+	spanNamePattern      = regexp.MustCompile(`\bvalidate[A-Z]`)
+	spanCitationPattern  = regexp.MustCompile(`^(spec:)?(?:\S*[./])?(validate[A-Z][A-Za-z0-9]*_?)(?:\.[A-Za-z0-9_.{},]+)?$`)
+	proseCitationPattern = regexp.MustCompile(`(spec:)?\bvalidate[A-Z][A-Za-z0-9_-]*`)
+	censusReferencePat   = regexp.MustCompile(`^ \(census ([a-z]+(?: [a-z]+)?)[;,)]`)
 	constraintDefPattern = regexp.MustCompile(`(?m)^\s*constraint def (validate[A-Za-z0-9]+)`)
 	goDeclPattern        = regexp.MustCompile(`(?m)^func (?:\([^)]*\) )?(validate[A-Za-z0-9_]*)\(`)
 )
@@ -109,8 +112,9 @@ func goValidateFunctions(root string) (map[string]bool, error) {
 // it cites is a manifest row (by pilot, raw or formal name), a `spec:` name the
 // validation library states, or a Go function of the tree; and a rule row's
 // status is the census status of every row it cites bare, a citation followed
-// by `(census faithful)` deferring to the census row's status instead, which it must
-// state correctly.
+// by `(census faithful)` deferring to the census row's status instead, which it
+// must state correctly. A code span citing a name is the name alone, qualified
+// by a Go receiver, a package or a path, or followed by a probe file's suffix.
 func checkCompliance(root, content string, m *manifest.Manifest) error {
 	rows, err := doccounts.RuleRows(content)
 	if err != nil {
@@ -130,45 +134,59 @@ func checkCompliance(root, content string, m *manifest.Manifest) error {
 		markers[row.Line] = row.Marker
 	}
 	var problems []string
+	problem := func(number int, format string, args ...any) {
+		problems = append(problems, fmt.Sprintf("%s:%d: ", doccounts.SpecCompliancePath, number)+fmt.Sprintf(format, args...))
+	}
 	for i, line := range strings.Split(content, "\n") {
 		number := i + 1
-		references := make(map[string]string)
-		for _, ref := range censusReferencePat.FindAllStringSubmatch(line, -1) {
-			references[ref[1]] = ref[2]
-		}
-		claimed, seen := make(map[string]bool), make(map[string]bool)
-		for _, token := range citedNamePattern.FindAllString(line, -1) {
-			if seen[token] {
-				continue
-			}
-			seen[token] = true
-			if name, ok := strings.CutPrefix(token, "spec:"); ok {
+		marker, isRow := markers[number]
+		claimed := make(map[string]bool)
+		cite := func(isSpec bool, name, reference string) {
+			if isSpec {
 				if !library[name] {
-					problems = append(problems, fmt.Sprintf("%s:%d: `spec:%s` is not a constraint of %s", doccounts.SpecCompliancePath, number, name, filepath.Base(validationLibraryPath)))
+					problem(number, "`spec:%s` is not a constraint of %s", name, filepath.Base(validationLibraryPath))
 				}
-				continue
+				return
 			}
-			c, ok := index[token]
+			c, ok := index[name]
 			if !ok {
-				if !goFuncs[token] {
-					problems = append(problems, fmt.Sprintf("%s:%d: `%s` is neither a constraint of %s nor a Go function of the tree", doccounts.SpecCompliancePath, number, token, manifest.Path))
+				if !goFuncs[name] {
+					problem(number, "`%s` is neither a constraint of %s nor a Go function of the tree", name, manifest.Path)
 				}
-				continue
+				return
 			}
-			if stated, ok := references[token]; ok {
-				if want := statusWord(c.Status); stated != want {
-					problems = append(problems, fmt.Sprintf("%s:%d: `%s` is cited as (census %s) but the census row is %s", doccounts.SpecCompliancePath, number, token, stated, want))
+			if reference != "" {
+				if want := statusWord(c.Status); reference != want {
+					problem(number, "`%s` is cited as (census %s) but the census row is %s", name, reference, want)
 				}
-				continue
+				return
 			}
-			marker, isRow := markers[number]
 			if !isRow || claimed[c.Name] {
-				continue
+				return
 			}
 			claimed[c.Name] = true
 			if rowMarkerStatus[plainMarker(marker)] != c.Status {
-				problems = append(problems, fmt.Sprintf("%s:%d: a %s row cites `%s`, whose census status is %s; move one status or cite it as (census %s)", doccounts.SpecCompliancePath, number, plainMarker(marker), token, c.Status, statusWord(c.Status)))
+				problem(number, "a %s row cites `%s`, whose census status is %s; move one status or cite it as (census %s)", plainMarker(marker), name, c.Status, statusWord(c.Status))
 			}
+		}
+		for _, loc := range codeSpanPattern.FindAllStringSubmatchIndex(line, -1) {
+			span := line[loc[2]:loc[3]]
+			if !spanNamePattern.MatchString(span) {
+				continue
+			}
+			parts := spanCitationPattern.FindStringSubmatch(span)
+			if parts == nil {
+				problem(number, "`%s` is not a constraint citation (a name, a qualified Go function or a probe file)", span)
+				continue
+			}
+			reference := ""
+			if ref := censusReferencePat.FindStringSubmatch(line[loc[1]:]); ref != nil {
+				reference = ref[1]
+			}
+			cite(parts[1] != "", parts[2], reference)
+		}
+		for _, parts := range proseCitationPattern.FindAllStringSubmatch(codeSpanPattern.ReplaceAllString(line, " "), -1) {
+			cite(parts[1] != "", strings.TrimPrefix(parts[0], parts[1]), "")
 		}
 	}
 	if len(problems) == 0 {
