@@ -90,6 +90,13 @@ func (r *Renderer) admits(filters []symbols.ElementFilter, sym *symbols.Symbol) 
 	return true
 }
 
+// collapsedIn reports whether a Layout in view folds sym's children away — what
+// collapsed reads off the drawn node, for a walk that draws nothing.
+func (r *Renderer) collapsedIn(view, sym *symbols.Symbol) bool {
+	site, ok := r.model.LayoutOf(view, sym)
+	return ok && site.Layout != nil && site.Layout.Collapsed
+}
+
 // collapsed reports whether the Layout drawn for node folds its children away.
 func collapsed(node *Node) bool {
 	return node != nil && node.Geometry != nil && node.Geometry.Collapsed

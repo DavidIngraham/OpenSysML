@@ -538,7 +538,7 @@ func (s *Session) metaRender(args []string) ([]string, bool, error) {
 // renderOptionWord reports whether word is a rendering option rather than a
 // form, so the text form is understood before it.
 func renderOptionWord(word string) bool {
-	if strings.HasPrefix(word, "show=") || strings.HasPrefix(word, "link=") {
+	if strings.HasPrefix(word, "show=") || strings.HasPrefix(word, "link=") || strings.HasPrefix(word, "depth=") {
 		return true
 	}
 	if o, ok := view.ParseOverlay(word); ok && o != "" {
@@ -577,7 +577,7 @@ func parseRenderArgs(args []string) (name string, form view.Form, opts view.Opti
 			return renderUsageOf(fmt.Sprintf("unknown form %q; %s", args[1], renderUsage))
 		}
 	}
-	linkSet := false
+	linkSet, depthSet := false, false
 	for _, word := range args[options:] {
 		if o, ok := view.ParseOverlay(word); ok && o != "" {
 			if overlay != "" {
@@ -598,9 +598,10 @@ func parseRenderArgs(args []string) (name string, form view.Form, opts view.Opti
 			continue
 		}
 		if strings.HasPrefix(word, "depth=") {
-			if depth != 0 {
+			if depthSet {
 				return renderUsageOf(renderUsage)
 			}
+			depthSet = true
 			levels, err := view.ParseDepth(strings.TrimPrefix(word, "depth="))
 			if err != nil {
 				return renderUsageOf(err.Error() + "; " + renderUsage)

@@ -33,3 +33,11 @@ func TestRenderDepthOption(t *testing.T) {
 	wants(t, run(t, s, "%render Deep::structure text depth=x"), `depth "x" is no non-negative integer`, "usage: %render")
 	wants(t, run(t, s, "%render Deep::structure text depth=1 depth=2"), "usage: %render")
 }
+
+// depth= is an option word: it reads right after the view name, and twice is a usage error whatever the first value.
+func TestRenderDepthOptionWord(t *testing.T) {
+	s := NewSession()
+	s.Submit(depthModel)
+	wants(t, run(t, s, "%render Deep::structure depth=1"), "part wheel (nested deeper than 1 level; not shown)")
+	wants(t, run(t, s, "%render Deep::structure depth=0 depth=2"), "usage: %render")
+}

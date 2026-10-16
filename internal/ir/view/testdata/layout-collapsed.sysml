@@ -40,6 +40,15 @@ package FoldedViews {
 		metadata Layout about vehicle::tank { x = 240; y = 40; }
 	}
 
+	// An exposed element under a collapsed exposed element is drawn as a root of
+	// its own: the fold draws nothing beneath vehicle, so engine is not its descendant.
+	view both {
+		expose vehicle;
+		expose vehicle::engine;
+		render asTreeDiagram;
+		metadata Layout about vehicle { x = 0; y = 0; collapsed = true; }
+	}
+
 	// showParts = false hides the nested parts in the text form as in DOT.
 	view noParts {
 		expose vehicle;

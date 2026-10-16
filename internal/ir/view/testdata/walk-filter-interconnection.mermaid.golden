@@ -23,6 +23,7 @@ config:
 ---
 %% FilteredWalk::links — interconnection rendering (render asInterconnectionDiagram)
 %% not represented: connect FilteredWalk::rover::'' attaches to 'telemetry.tx', which the view's filter conditions exclude; no edge is drawn
+%% not represented: connect FilteredWalk::rover::'' attaches to 'gps.fix', which the view's filter conditions exclude; no edge is drawn
 flowchart LR
   subgraph n0 ["`*«part»* **rover**`"]
     direction LR
@@ -35,9 +36,8 @@ flowchart LR
       n4("`*«part»*
 **axle**`")
     end
-    subgraph n5 ["`*«part»* **radio**`"]
-      direction LR
-      n6("`*«port»*
-**rx**`")
-    end
+    n5("`*«part»*
+**radio**`")
+    n6("`*«part»*
+**gps**`")
   end

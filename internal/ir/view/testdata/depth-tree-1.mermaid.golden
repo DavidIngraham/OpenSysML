@@ -22,7 +22,7 @@ config:
     edgeLabelBackground: "#FFFFFF"
 ---
 %% DepthViews::depth1 — tree rendering (render asTreeDiagram)
-%% not represented: 4 elements nested deeper than 1 level not shown
+%% not represented: 3 elements nested deeper than 1 level not shown
 flowchart TD
   n0("`*«part»*
 **vehicle**`")
@@ -36,4 +36,7 @@ nested deeper than 1 level; not shown`")
     n3("`*«part»*
 **engine**
 nested deeper than 1 level; not shown`")
+      n4("`*«port»*
+**fuelIn**`")
+  n3 --- n4
   n0 --- n3

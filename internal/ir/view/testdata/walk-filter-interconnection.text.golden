@@ -6,7 +6,8 @@ part rover
     attribute length
     part axle
   part radio
-    port rx
+  part gps
 
 not represented:
   - connect FilteredWalk::rover::'' attaches to 'telemetry.tx', which the view's filter conditions exclude; no edge is drawn
+  - connect FilteredWalk::rover::'' attaches to 'gps.fix', which the view's filter conditions exclude; no edge is drawn

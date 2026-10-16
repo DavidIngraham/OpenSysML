@@ -5,6 +5,10 @@ package FilteredWalk {
 
 	port def Signal;
 
+	part def Radio {
+		port rx : Signal;
+	}
+
 	part rover {
 		attribute mass;
 		part chassis {
@@ -14,10 +18,12 @@ package FilteredWalk {
 		#Hidden part telemetry {
 			port tx : Signal;
 		}
-		part radio {
-			port rx : Signal;
+		part radio : Radio;
+		part gps {
+			#Hidden port fix : Signal;
 		}
 		connect radio.rx to telemetry.tx;
+		connect gps.fix to radio.rx;
 	}
 
 	// The filters admit the root and prune the walk: no attribute, nothing
@@ -29,10 +35,19 @@ package FilteredWalk {
 		render asTreeDiagram;
 	}
 
-	// The connector to telemetry.tx ends at a pruned element: it is reported, not drawn.
+	// The connectors to telemetry.tx and gps.fix end at pruned elements: each is
+	// reported, not drawn, and not rerouted to the pruned element's owner.
 	view links {
 		expose rover;
 		filter not @Hidden;
+		render asInterconnectionDiagram;
+	}
+
+	// A type filter prunes the ports a part has from its definition as well as
+	// the ones it declares; neither is pinned.
+	view partsOnly {
+		expose rover;
+		filter @SysML::PartUsage;
 		render asInterconnectionDiagram;
 	}
 }

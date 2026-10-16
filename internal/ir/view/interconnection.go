@@ -32,7 +32,7 @@ func (r *Renderer) renderInterconnectionWithIDs(view *symbols.Symbol, exposed []
 			roots = append(roots, elem)
 		}
 	}
-	descendants := r.exposedDescendants(roots, r.walkBound(view), w.nestedFeatures)
+	descendants := r.exposedDescendants(view, roots, w.nestedFeatures)
 	var ports []*symbols.Symbol
 	for _, elem := range exposed {
 		switch {
@@ -216,14 +216,33 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 // at `heating.durationIn` ends at that pin.
 func (w *featureWalk) pinPorts(node *Node, sym *symbols.Symbol) {
 	for _, port := range w.r.typedPorts(sym) {
+		if !w.admitted(port) {
+			continue
+		}
 		w.pin(node, port, PortUndirected, false, w.r.memberGeometryOf(w.view, sym, localName(port), w.out))
 	}
+}
+
+// admitted reports whether the view's filter conditions admit an inherited port
+// or parameter sym pins; one they reject is pruned like a declared member.
+func (w *featureWalk) admitted(sym *symbols.Symbol) bool {
+	if w.r.admits(w.r.walkFilters(w.view), sym) {
+		return true
+	}
+	if w.pruned == nil {
+		w.pruned = map[*symbols.Symbol]bool{}
+	}
+	w.pruned[sym] = true
+	return false
 }
 
 // pinParameters draws on node's border the parameters sym has from its constraint
 // def without declaring them: `constraint c : Law` shows the `in x` Law declares.
 func (w *featureWalk) pinParameters(node *Node, sym *symbols.Symbol) {
 	for _, parameter := range w.r.typedParameters(sym) {
+		if !w.admitted(parameter) {
+			continue
+		}
 		w.pin(node, parameter, pinDirection(parameter), false, w.r.memberGeometryOf(w.view, sym, localName(parameter), w.out))
 	}
 }
@@ -558,6 +577,11 @@ func (w *featureWalk) endNode(connector *symbols.Symbol, attachment ast.Node) ed
 		if base := w.endNode(connector, operand); base.node != nil {
 			if at := w.memberEnd(base.node, target); at.node != nil {
 				return at
+			}
+			// A member the view's filters exclude ends no edge at its owner; one
+			// below the depth bound or a collapsed body does.
+			if resolved && w.excluded(target) {
+				return edgeEnd{}
 			}
 			return base
 		}

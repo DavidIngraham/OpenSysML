@@ -4,6 +4,7 @@ part vehicle
   attribute mass
   part wheel (nested deeper than 1 level; not shown)
   part engine (nested deeper than 1 level; not shown)
+    port fuelIn
 
 not represented:
-  - 4 elements nested deeper than 1 level not shown
+  - 3 elements nested deeper than 1 level not shown

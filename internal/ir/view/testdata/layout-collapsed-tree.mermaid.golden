@@ -22,19 +22,21 @@ config:
     edgeLabelBackground: "#FFFFFF"
 ---
 %% FoldedViews::folded — tree rendering (render asTreeDiagram)
-%% not represented: 2 node(s) without a position, drawn as compartment rows of the node above them
+%% not represented: 3 node(s) without a position, drawn as compartment rows of the node above them
 %% not represented: 2 node(s) without a position, left undrawn
 %% layout: n1 x=0 y=40
 %% layout: n3 x=120 y=40 collapsed
-%% layout: n4 x=240 y=40
+%% layout: n5 x=240 y=40
 flowchart TD
   n1("`*«part»*
 **wheel**
 parts
 hub`")
   n3("`*«part»*
-**engine**`")
-  n4("`*«part»*
+**engine**
+ports
+fuelIn`")
+  n5("`*«part»*
 **tank**
 ports
 'out'`")

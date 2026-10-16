@@ -1,6 +1,7 @@
 package view
 
 import (
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 	"strings"
 	"testing"
 )
@@ -44,8 +45,8 @@ func TestWalkDepthIsNoticedOnce(t *testing.T) {
 	for _, notice := range rendering.Notices {
 		if strings.Contains(notice, "nested deeper than 1 level") {
 			cuts++
-			if !strings.HasPrefix(notice, "4 elements") {
-				t.Errorf("notice counts %q, want the 4 elements below wheel and engine", notice)
+			if !strings.HasPrefix(notice, "3 elements") {
+				t.Errorf("notice counts %q, want the 3 elements below wheel and engine, fuelIn kept", notice)
 			}
 		}
 	}
@@ -59,12 +60,12 @@ func TestWalkDepthIsNoticedOnce(t *testing.T) {
 func TestWalkFiltersPruneContainedMembers(t *testing.T) {
 	rendering := render(t, "walk-filter.sysml", "FilteredWalk::structure")
 	names := nodeNames(rendering.Roots)
-	for _, want := range []string{"FilteredWalk::rover", "chassis", "axle", "radio", "rx"} {
+	for _, want := range []string{"FilteredWalk::rover", "chassis", "axle", "radio", "gps"} {
 		if !names[want] {
 			t.Errorf("%s is not drawn; nodes: %v", want, names)
 		}
 	}
-	for _, hidden := range []string{"mass", "length", "telemetry", "tx"} {
+	for _, hidden := range []string{"mass", "length", "telemetry", "tx", "fix"} {
 		if names[hidden] {
 			t.Errorf("%s is drawn, though the view's filters reject it; nodes: %v", hidden, names)
 		}
@@ -139,5 +140,77 @@ func TestTextOmitsHiddenCompartments(t *testing.T) {
 		if strings.Contains(text, hidden) {
 			t.Errorf("text lists %s, which showParts = false hides:\n%s", hidden, text)
 		}
+	}
+}
+
+// A type filter prunes the ports a part has from its definition as well as
+// the ones it declares: none is pinned, and a connector ending at one is noticed.
+func TestWalkFiltersPruneInheritedPorts(t *testing.T) {
+	rendering := render(t, "walk-filter.sysml", "FilteredWalk::partsOnly")
+	var pins int
+	var walk func(nodes []*Node)
+	walk = func(nodes []*Node) {
+		for _, node := range nodes {
+			pins += len(node.Ports)
+			walk(node.Children)
+		}
+	}
+	walk(rendering.Roots)
+	if pins != 0 || len(rendering.Edges) != 0 {
+		t.Errorf("%d pins and %d edges drawn, want none: the view admits part usages only", pins, len(rendering.Edges))
+	}
+}
+
+// A chain end naming a pruned member of a drawn element ends no edge at that
+// element; it is noticed as excluded.
+func TestWalkFilteredChainEndIsNotReroutedToItsOwner(t *testing.T) {
+	rendering := render(t, "walk-filter.sysml", "FilteredWalk::links")
+	if len(rendering.Edges) != 0 {
+		t.Errorf("edges = %+v, want none: tx and fix are pruned", rendering.Edges)
+	}
+	var excluded int
+	for _, notice := range rendering.Notices {
+		if strings.Contains(notice, "which the view's filter conditions exclude") {
+			excluded++
+		}
+	}
+	if excluded != 2 {
+		t.Errorf("%d connectors noticed as excluded, want both: %v", excluded, rendering.Notices)
+	}
+}
+
+// A tree keeps the ports of an element at the depth bound, as the
+// interconnection does: they count at their owner's depth.
+func TestWalkTreeKeepsPortsAtTheBound(t *testing.T) {
+	rendering := render(t, "depth-tree.sysml", "DepthViews::depth1")
+	names := nodeNames(rendering.Roots)
+	if !names["fuelIn"] || names["piston"] {
+		t.Errorf("at depth 1 the tree draws fuelIn=%v piston=%v; want the port kept and the part cut", names["fuelIn"], names["piston"])
+	}
+}
+
+// An exposed element beneath a collapsed exposed element is drawn as a root of
+// its own, since the fold draws nothing beneath the outer one.
+func TestWalkCollapsedRootKeepsExposedChildAsRoot(t *testing.T) {
+	rendering := render(t, "layout-collapsed.sysml", "FoldedViews::both")
+	var roots []string
+	for _, root := range rendering.Roots {
+		roots = append(roots, root.Name)
+	}
+	if len(rendering.Roots) != 2 || !nodeNames(rendering.Roots)["piston"] {
+		t.Errorf("roots = %v (piston drawn: %v); want vehicle and engine, engine with its members", roots, nodeNames(rendering.Roots)["piston"])
+	}
+}
+
+// A mixed diagram's structural subtrees carry their depth cuts into the notices.
+func TestWalkMixedCarriesDepthCuts(t *testing.T) {
+	r, idx := loadFixtures(t, "depth-tree.sysml")
+	r.SetDepth(1)
+	rendering, err := r.RenderExposed([]*symbols.Symbol{lookup(t, idx, "DepthViews::vehicle")}, KindMixed, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(rendering.Notices, "\n"), "nested deeper than 1 level not shown") {
+		t.Errorf("notices = %v, want the depth cut noticed", rendering.Notices)
 	}
 }
