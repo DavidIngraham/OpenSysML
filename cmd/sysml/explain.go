@@ -31,3 +31,10 @@ func explainDiagnostics(out, errw io.Writer, names []string) int {
 	}
 	return status
 }
+
+// codeNames are -explain's codes: an optional-value flag, so that the word
+// after a bare -explain is its code (`-explain unresolved`), as permuteArgs joins.
+type codeNames struct{ optionalNames }
+
+// TakesOptionalValue marks the flag for permuteArgs.
+func (codeNames) TakesOptionalValue() bool { return true }

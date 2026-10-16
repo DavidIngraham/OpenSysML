@@ -171,15 +171,13 @@ type Row struct {
 	Summary  string
 }
 
-// Rows lists every emitted code in catalogue order, families expanded, so a
-// listing names each code `sysml -explain <code>` accepts.
+// Rows lists every code in catalogue order, each family as its base code and
+// then its members, so a listing names each code `sysml -explain <code>` accepts.
 func Rows() []Row {
 	var out []Row
 	for _, e := range ordered {
-		if !e.IsFamily() {
-			out = append(out, Row{Code: e.Code, Severity: e.Severity, Tier: e.Tier, Summary: e.Summary})
-			continue
-		}
+		out = append(out, Row{Code: e.Code, Severity: e.Severity, Tier: e.Tier, Summary: e.Summary})
+		// A family's base code is emitted too, for an error outside its kinds.
 		for _, k := range e.Kinds {
 			out = append(out, Row{Code: e.Code + "-" + k, Severity: e.Severity, Tier: e.Tier, Summary: e.Summary + " (rule " + k + ")"})
 		}

@@ -87,7 +87,11 @@ func TestListNamesEveryEmittedCode(t *testing.T) {
 	for _, r := range Rows() {
 		rows[r.Code] = true
 	}
-	for _, code := range Codes() {
+	var all []string
+	for _, e := range All() {
+		all = append(all, e.Code)
+	}
+	for _, code := range append(all, Codes()...) {
 		if !rows[code] {
 			t.Errorf("Rows lacks %s", code)
 		}
