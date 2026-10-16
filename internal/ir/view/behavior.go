@@ -613,7 +613,7 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 	}
 	// Every action has a start even when no succession leaves it; draw it when
 	// the view's Layout positions it, first among the body's nodes.
-	if r.placedStart(subject.view, owner, graph) {
+	if r.placedStart(subject.view, owner, graph, out) {
 		start := &Node{ID: ids.take(), Kind: actionNodeKind(&ast.InitialNode{}, nil),
 			Name: nameText("start"), NameSynthesized: true}
 		start.Geometry = r.memberGeometryOf(subject.view, owner, "start", out)
@@ -669,7 +669,7 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 // placedStart reports whether view positions the start graph never draws: one
 // no succession leaves lowers to no InitialNode, so a Layout about it has no
 // node to hang on and is drawn as one of its own.
-func (r *Renderer) placedStart(view, owner *symbols.Symbol, graph *lower.ActionGraph) bool {
+func (r *Renderer) placedStart(view, owner *symbols.Symbol, graph *lower.ActionGraph, out *Rendering) bool {
 	if owner == nil {
 		return false
 	}
@@ -681,7 +681,14 @@ func (r *Renderer) placedStart(view, owner *symbols.Symbol, graph *lower.ActionG
 		}
 	}
 	site, ok := r.model.MemberLayoutOf(view, owner, "start")
-	return ok && site.Layout != nil
+	if !ok {
+		return false
+	}
+	if site.Layout == nil {
+		r.noteLayoutProblems(site, owner, out)
+		return false
+	}
+	return true
 }
 
 // actionEdges draws the action's successions and object flows between its own

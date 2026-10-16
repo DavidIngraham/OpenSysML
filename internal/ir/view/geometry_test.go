@@ -430,8 +430,9 @@ func TestPlacedStartOnlyWhenTheBodyHasNoStartOfItsOwn(t *testing.T) {
 }
 `
 	rendering, _, _ := renderModel(t, []string{"flows.sysml"}, []string{src}, "Flows::v", "Flows::D")
-	if len(rendering.Notices) != 0 {
-		t.Errorf("notices = %v, want none", rendering.Notices)
+	if len(rendering.Notices) != 1 || !strings.Contains(rendering.Notices[0],
+		"Layout annotation of action def Flows::A is not applied: y of Layout is not a constant number") {
+		t.Errorf("notices = %v, want the one notice that A's start Layout is not applied", rendering.Notices)
 	}
 	for _, body := range []string{"Flows::D", "Flows::E"} {
 		var starts []*Node
