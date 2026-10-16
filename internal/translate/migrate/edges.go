@@ -35,6 +35,9 @@ type edgePlace struct {
 	// standIn marks a member ending at a node the migrator made up, such as the
 	// join gathering several edges: no diagram symbol stands at that end.
 	standIn bool
+	// reversed marks a member running from the edge's second end to its first,
+	// as a flow against its connector's end order does: its route runs the other way.
+	reversed bool
 }
 
 func (p edgePlace) equal(q edgePlace) bool {
@@ -186,14 +189,20 @@ func (m *migration) edgePlaceIn(owner *sysmlv1.Element, nest []string, name stri
 // wroteEdgeAlso records one more member edge e was written as, the first when none
 // is recorded yet: a transition per trigger, a dependency per client–supplier pair.
 func (m *migration) wroteEdgeAlso(e, owner *sysmlv1.Element, keyword string, nest []string, name string) {
-	em, ok := m.edgeMembers[e]
-	if !ok {
-		m.wroteNestedEdge(e, owner, keyword, nest, name)
-		return
-	}
 	p := m.edgePlaceIn(owner, nest, name)
 	p.keyword = keyword
-	if em.none || em.name == "" || name == "" || slices.ContainsFunc(em.places(), p.equal) {
+	m.wroteEdgePlace(e, p)
+}
+
+// wroteEdgePlace records the member at p as one more edge e was written as, the
+// first when none is recorded yet; see wroteEdgeAlso.
+func (m *migration) wroteEdgePlace(e *sysmlv1.Element, p edgePlace) {
+	em, ok := m.edgeMembers[e]
+	if !ok {
+		m.edgeMembers[e] = edgeMember{edgePlace: p, keyword: p.keyword}
+		return
+	}
+	if em.none || em.name == "" || p.name == "" || slices.ContainsFunc(em.places(), p.equal) {
 		return
 	}
 	em.also = append(em.also, p)
@@ -237,7 +246,12 @@ func (m *migration) edgeTarget(e *sysmlv1.Element) string {
 	if !ok || em.name == "" {
 		return ""
 	}
-	path := m.edgePath(em.edgePlace)
+	return m.placeTarget(em.edgePlace)
+}
+
+// placeTarget is the qualified name a report entry records for the member declared at p.
+func (m *migration) placeTarget(p edgePlace) string {
+	path := m.edgePath(p)
 	segs := make([]string, len(path))
 	for i, s := range path {
 		segs[i] = s.name
@@ -269,17 +283,55 @@ func (m *migration) routeRefs(e, scope *sysmlv1.Element, f viewForm) []string {
 // refPlaces writes a reference to each of the members of e that of selects and
 // a name reaches, from inside scope's body.
 func (m *migration) refPlaces(e, scope *sysmlv1.Element, of func(edgeMember) []edgePlace) []string {
+	var refs []string
+	for _, p := range m.reachedPlaces(e, of) {
+		refs = append(refs, m.refEdge(p, scope))
+	}
+	return refs
+}
+
+// reachedPlaces lists the members of e that of selects and a name reaches.
+func (m *migration) reachedPlaces(e *sysmlv1.Element, of func(edgeMember) []edgePlace) []edgePlace {
 	em, ok := m.edgeMembers[e]
 	if !ok || !m.written(e) {
 		return nil
 	}
-	var refs []string
+	var places []edgePlace
 	for _, p := range of(em) {
 		if m.reaches(p.owner) {
-			refs = append(refs, m.refEdge(p, scope))
+			places = append(places, p)
 		}
 	}
-	return refs
+	return places
+}
+
+// routeLines groups the references a route of edge e is pinned to, in refs as
+// routeRefs lists them, by the way each member runs along the line points: a
+// member running against the edge's end order takes the points reversed, so one
+// connector written as flows of both directions is routed once per direction.
+func (m *migration) routeLines(e *sysmlv1.Element, f viewForm, refs []string, points []float64) ([]string, [][]float64) {
+	places := m.reachedPlaces(e, func(em edgeMember) []edgePlace { return em.routed(f) })
+	if len(places) != len(refs) {
+		// A connection def's or backed attribute's line is referred to without edge members.
+		return []string{strings.Join(refs, ", ")}, [][]float64{points}
+	}
+	var along, against []string
+	for i, ref := range refs {
+		if places[i].reversed {
+			against = append(against, ref)
+			continue
+		}
+		along = append(along, ref)
+	}
+	var groups []string
+	var lines [][]float64
+	if len(along) > 0 {
+		groups, lines = append(groups, strings.Join(along, ", ")), append(lines, points)
+	}
+	if len(against) > 0 {
+		groups, lines = append(groups, strings.Join(against, ", ")), append(lines, reversePoints(points))
+	}
+	return groups, lines
 }
 
 // refEdge writes a reference from inside scope's body to the member declared at p.
@@ -549,7 +601,7 @@ func (f viewForm) drawsEdge(keyword string) bool {
 	}
 	switch f.rendering {
 	case interconnectionRendering:
-		return keyword == "connection" || keyword == "binding"
+		return keyword == "connection" || keyword == "binding" || keyword == "flow"
 	case treeRendering:
 		return keyword == "connection def" || keyword == "attribute"
 	}

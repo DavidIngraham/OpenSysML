@@ -428,4 +428,14 @@ func TestDOTCameoPseudoNodeEnds(t *testing.T) {
 			t.Errorf("%s is not placed at %s:\n%s", node, want, line)
 		}
 	}
+	// The unplaced start keeps its Style, and the notes about the unplaced start
+	// and done are anchored to them.
+	if line := dotLine(source, `"n11"`); !strings.Contains(line, `fillcolor="#C00000"`) {
+		t.Errorf("the styled start is not filled with its Style:\n%s", line)
+	}
+	for _, want := range []string{`"note:0" -> "n11"`, `"note:1" -> "n12"`} {
+		if !strings.Contains(source, want) {
+			t.Errorf("no note anchored as %s in:\n%s", want, source)
+		}
+	}
 }

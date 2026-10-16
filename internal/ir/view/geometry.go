@@ -233,6 +233,28 @@ func (r *Renderer) memberGeometryOf(view, owner *symbols.Symbol, name string, ou
 	return geometryFromLayout(site.Layout)
 }
 
+// memberDress gives node the Style of, and adds the Notes anchored to, the
+// member owner has under name in view, resolved as memberGeometryOf resolves
+// its Layout.
+func (r *Renderer) memberDress(view, owner *symbols.Symbol, name string, node *Node, out *Rendering) *Node {
+	if owner == nil {
+		return node
+	}
+	if site, ok := r.model.MemberStyleOf(view, owner, name); ok {
+		r.noteLayoutProblems(site, owner, out)
+		if s := site.Style; s != nil {
+			node.Style = &Style{Fill: s.Fill, Line: s.Line, Text: s.Text, Font: s.Font, FontSize: s.FontSize, Bold: s.Bold, Italic: s.Italic}
+		}
+	}
+	for _, site := range r.model.MemberNotesOf(view, owner, name) {
+		r.noteLayoutProblems(site, owner, out)
+		if n := site.Note; n != nil {
+			out.Notes = append(out.Notes, Note{Text: n.Text, Anchor: node.ID, X: n.X, Y: n.Y, Width: n.Width, Height: n.Height, HasSize: n.HasSize, Origin: site.Origin()})
+		}
+	}
+	return node
+}
+
 // routeOf is the waypoints the edge declared as elem follows in view, nil when
 // no Route annotation gives any, resolved as geometryOf resolves a Layout.
 func (r *Renderer) routeOf(view, elem *symbols.Symbol, out *Rendering) []Point {
