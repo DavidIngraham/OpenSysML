@@ -374,8 +374,8 @@ events on them (`sequence.go`, `orderMessages`): a member-attached `then` and a
 an order running through an event no message attaches to is carried through it, and
 declaration order decides only between messages nothing orders. A relay whose successions on
 one lifeline order message `b`'s send before message `c`'s is drawn `b` above `c` whatever order
-the receiving events are declared in. Successions that order one message both above and below
-another cannot be drawn as rows, so the cycle is reported as not represented and the messages
+the receiving events are declared in. A succession running against a message's own direction (its receive before its send), or
+successions that order one message both above and below another, cannot be drawn as rows, so the cycle is reported as not represented and the messages
 keep declaration order. The Mermaid, PlantUML and D2 forms write the messages in that order.
 
 ## Mermaid
