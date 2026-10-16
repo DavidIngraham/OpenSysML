@@ -209,6 +209,7 @@ var metaCommandTable = []metaCommand{
 	{name: "%verbosity", group: groupSettings, args: "[level]", desc: "show or set output level: quiet, normal or debug"},
 	{name: "%trace", group: groupSettings, args: "[on|off]", desc: "show or set execution tracing (evaluation, calc, action and state steps)"},
 	{name: "%strict", group: groupSettings, args: "[on|off]", desc: "show or set strict conformance: report notation no SysML v2 production admits as an error"},
+	{name: "%explain-code", group: groupSettings, args: "[<code>...]", desc: "explain a diagnostic code — what it means, how to resolve it and the clause or constraint behind it — or, bare, list every code with a one-line summary"},
 	{name: "%lint", group: groupSettings, args: "[<code> on|off]", desc: "list the lints — warnings about models the specification accepts — each on or off, or switch one by its code: undeclared-signal, port-type-mismatch, deferred-keeper-unmarked, rounded-real-literal (opt-in, off by default)"},
 	{name: "%schedule", group: groupSettings, args: "[<policy>]", desc: "show or set the scheduling policy runs started from here on resolve choice points under: declared, reverse or seed:<n>"},
 	{name: "%seed", group: groupSettings, args: "[<n>|off]", desc: "show or set the seed runs started from here on draw their modeled randomness from — Probability-weighted decisions, RandomFunctions — whatever the schedule; off leaves it to the schedule's seed:<n>"},
@@ -435,6 +436,8 @@ func (s *Session) metaSessionCommand(fields []string, line string) (metaResult, 
 		return metaOut(s.doTrace(fields[1:]), false, nil), true
 	case "%strict":
 		return metaOut(s.doStrict(fields[1:]), false, nil), true
+	case "%explain-code":
+		return metaOut(s.doExplainCode(fields[1:]), false, nil), true
 	case "%lint":
 		return metaOut(s.doLint(fields[1:]), false, nil), true
 	case "%schedule":
