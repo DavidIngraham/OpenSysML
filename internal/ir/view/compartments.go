@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 )
 
@@ -137,6 +138,18 @@ func (l labeller) compartments(node *Node) []Compartment {
 		return nil
 	}
 	return node.Compartments
+}
+
+// referenceRow reports whether sym lists as a reference row, the `ref part`
+// a tool's references compartment holds: a structural usage that refers to
+// its value rather than owning it. An attribute, referential by definition,
+// is an attribute row.
+func referenceRow(sym *symbols.Symbol) bool {
+	switch sym.Kind {
+	case symbols.SymbolAttributeUsage, symbols.SymbolEnumerationUsage:
+		return false
+	}
+	return structuralUsage(sym) && !compositeUsage(sym)
 }
 
 // hiddenRow reports whether node's Layout hides the compartment row would

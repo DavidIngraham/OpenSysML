@@ -118,9 +118,21 @@ func (m *migration) layoutRecord(v *view) (*mtip.Diagram, layoutSources) {
 			onPath[p.ID] = p.OnPath
 		}
 	}
+	// Nor about the compartments a symbol suppresses: the stream's settings
+	// stay with the export's box.
+	compartments := map[string]mtip.Placement{}
+	for _, p := range stream.Placements {
+		if _, ok := compartments[p.ID]; !ok && (len(p.HiddenCompartments) > 0 || len(p.UnsupportedCompartments) > 0) {
+			compartments[p.ID] = p
+		}
+	}
 	for i := range merged.Placements {
 		if onPath[merged.Placements[i].ID] {
 			merged.Placements[i].OnPath = true
+		}
+		if c, ok := compartments[merged.Placements[i].ID]; ok {
+			merged.Placements[i].HiddenCompartments = c.HiddenCompartments
+			merged.Placements[i].UnsupportedCompartments = c.UnsupportedCompartments
 		}
 	}
 	routed := map[string]bool{}
