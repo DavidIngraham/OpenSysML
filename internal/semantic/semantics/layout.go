@@ -257,14 +257,40 @@ func (m *Model) LayoutOf(view, elem *symbols.Symbol) (*LayoutSite, bool) {
 // the declaring owner, or one stated unqualified where no other namespace has
 // the member. A site naming the member as another inheritor's is not owner's.
 func (m *Model) MemberLayoutOf(view, owner *symbols.Symbol, name string) (*LayoutSite, bool) {
+	return pickSite(view, m.memberSitesOf(owner, name, LayoutFQN))
+}
+
+// MemberStyleOf resolves the Style of the member owner has under name, as drawn
+// in view, as MemberLayoutOf resolves a Layout.
+func (m *Model) MemberStyleOf(view, owner *symbols.Symbol, name string) (*LayoutSite, bool) {
+	return pickSite(view, m.memberSitesOf(owner, name, StyleFQN))
+}
+
+// MemberNotesOf lists every Note of the member owner has under name, drawn in
+// view: those naming the member as owner's, as MemberLayoutOf resolves them,
+// then the declaring owner's; every one applying in view applies, as NotesOf.
+func (m *Model) MemberNotesOf(view, owner *symbols.Symbol, name string) []*LayoutSite {
+	var out []*LayoutSite
+	for _, site := range m.memberSitesOf(owner, name, NoteFQN) {
+		if site.InView(view) {
+			out = append(out, site)
+		}
+	}
+	return out
+}
+
+// memberSitesOf lists the annotations of type typeFQN naming the member owner
+// has under name as owner's, then those of the declaring owner an inheriting
+// owner falls back to, each in declaration order.
+func (m *Model) memberSitesOf(owner *symbols.Symbol, name, typeFQN string) []*LayoutSite {
 	member, ok := m.LookupMember(owner, name)
 	if !ok {
-		return nil, false
+		return nil
 	}
 	declares := sameElement(member.Owner(), owner)
 	var owners, inherited []*LayoutSite
 	for _, site := range m.LayoutSitesOf(member) {
-		if site.TypeFQN != LayoutFQN {
+		if site.TypeFQN != typeFQN {
 			continue
 		}
 		switch via := m.memberSiteOwner(site, member, name); {
@@ -274,7 +300,7 @@ func (m *Model) MemberLayoutOf(view, owner *symbols.Symbol, name string) (*Layou
 			inherited = append(inherited, site)
 		}
 	}
-	return pickSite(view, append(owners, inherited...))
+	return append(owners, inherited...)
 }
 
 // MemberLayoutOwner is the namespace a Layout site positions member as a member

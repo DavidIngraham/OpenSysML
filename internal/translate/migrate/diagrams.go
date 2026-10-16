@@ -1521,6 +1521,9 @@ func (m *migration) drawnRef(x exposures, f viewForm, host *sysmlv1.Element, id 
 	if ref := m.shownRef(el, host, f); ref != "" && m.places(x, f, el, ref) {
 		return ref
 	}
+	if ref := m.inheritedNodeRef(el, host); ref != "" && m.places(x, f, el, ref) {
+		return ref
+	}
 	refs, why := m.routeTarget(el, host, f)
 	if why != "" || !m.draws(x, f, host, el, refs[0]) {
 		return ""
