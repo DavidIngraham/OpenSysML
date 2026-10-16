@@ -1,7 +1,7 @@
 // Package codes is the registry of diagnostic codes: every code a diagnostic
 // of the parser, the semantic layer, the checker or the runtime carries, with
 // the rule it names, how to satisfy the rule and the specification clause or
-// validation constraint behind it. The CLI (-explain), the REPL (%explain),
+// validation constraint behind it. The CLI (-explain), the REPL (%explain-code),
 // the MCP server and the language server's code descriptions read it, and the
 // catalogue in docs/reference/diagnostics.md is generated from it.
 package codes
@@ -162,26 +162,49 @@ func Explain(code string) (string, error) {
 	return b.String(), nil
 }
 
+// Row is one line of a listing: an emitted code with its severity, tier and
+// summary. A family contributes one row per member, named after the rule.
+type Row struct {
+	Code     string
+	Severity string
+	Tier     Tier
+	Summary  string
+}
+
+// Rows lists every emitted code in catalogue order, families expanded, so a
+// listing names each code `sysml -explain <code>` accepts.
+func Rows() []Row {
+	var out []Row
+	for _, e := range ordered {
+		if !e.IsFamily() {
+			out = append(out, Row{Code: e.Code, Severity: e.Severity, Tier: e.Tier, Summary: e.Summary})
+			continue
+		}
+		for _, k := range e.Kinds {
+			out = append(out, Row{Code: e.Code + "-" + k, Severity: e.Severity, Tier: e.Tier, Summary: e.Summary + " (rule " + k + ")"})
+		}
+	}
+	return out
+}
+
 // List writes every code with its one-line summary, as `sysml -explain` with
 // no code prints them: grouped by tier, in catalogue order.
 func List() string {
 	var b strings.Builder
+	rows := Rows()
 	for _, t := range Tiers() {
-		entries := ByTier(t)
-		if len(entries) == 0 {
-			continue
-		}
-		fmt.Fprintf(&b, "%s\n", t.Title())
-		for _, e := range entries {
-			code := e.Code
-			if e.IsFamily() {
-				code += "-<kind>"
+		first := true
+		for _, r := range rows {
+			if r.Tier != t {
+				continue
 			}
-			fmt.Fprintf(&b, "  %-44s %-8s %s\n", code, e.Severity, e.Summary)
+			if first {
+				fmt.Fprintf(&b, "%s\n", t.Title())
+				first = false
+			}
+			fmt.Fprintf(&b, "  %-56s %-8s %s\n", r.Code, r.Severity, r.Summary)
 		}
-		b.WriteString("\n")
 	}
-	b.WriteString("sysml -explain <code> prints what a code means and how to resolve it.\n")
 	return b.String()
 }
 

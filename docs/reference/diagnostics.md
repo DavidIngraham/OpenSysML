@@ -13,7 +13,7 @@ model.sysml:3:12: error[unresolved]: unresolved reference: Engine
 One rule has one code however it words its message, so a CI filter, a baseline or a
 quick-fix can key on it. `sysml -explain <code>` prints what a code means, how to resolve
 it and the clause or validation constraint behind it; bare `-explain` lists every code with
-a one-line summary, as the [catalogue](#catalogue) below does. The REPL and the MCP tool
+a one-line summary, as the [catalogue](#catalogue) below does. The REPL's `%explain-code` and the MCP tool
 `explain_diagnostic` answer the same question. Where a code reports a pilot validation
 constraint, its name is the constraint's, so [validation-constraints.md](../project/validation-constraints.md)
 and [spec-compliance.md](../project/spec-compliance.md) line up with it.

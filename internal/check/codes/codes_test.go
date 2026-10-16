@@ -79,3 +79,20 @@ func TestExplainAndList(t *testing.T) {
 		}
 	}
 }
+
+// Every code a diagnostic can carry is a row of the listing, families expanded.
+func TestListNamesEveryEmittedCode(t *testing.T) {
+	listing := List()
+	rows := map[string]bool{}
+	for _, r := range Rows() {
+		rows[r.Code] = true
+	}
+	for _, code := range Codes() {
+		if !rows[code] {
+			t.Errorf("Rows lacks %s", code)
+		}
+		if !strings.Contains(listing, "  "+code+" ") {
+			t.Errorf("List lacks %s", code)
+		}
+	}
+}

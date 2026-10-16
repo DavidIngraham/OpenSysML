@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -26,6 +27,13 @@ func TestExplainPrintsACode(t *testing.T) {
 
 	got = check(t, binary, "", "-explain=unresolved", "-explain=syntax")
 	wantReport(t, got, 0, "unresolved: error", "\n\nsyntax: error (syntax)")
+
+	out = run(t, binary, "-explain", "unresolved")
+	if !strings.HasPrefix(out, "unresolved: error (name-resolution)") || strings.Contains(out, "Syntax\n") {
+		t.Errorf("-explain <code> as a separate word:\n%s", out)
+	}
+	got = check(t, binary, "part x", "-explain", "unresolved")
+	wantReport(t, got, 0, "unresolved: error (name-resolution)")
 }
 
 // TestExplainRefusesAnUnknownCode checks that a code the catalogue lacks is a
@@ -37,5 +45,15 @@ func TestExplainRefusesAnUnknownCode(t *testing.T) {
 	wantReport(t, got, 2, `unknown diagnostic code "bogus"`, "-explain")
 	if got.stdout != "" {
 		t.Errorf("stdout = %q, want nothing", got.stdout)
+	}
+}
+
+func TestExplainSkipsNoLineForAnUnknownFirstCode(t *testing.T) {
+	var out, errw bytes.Buffer
+	if status := explainDiagnostics(&out, &errw, []string{"no-such", "syntax"}); status != 2 {
+		t.Fatalf("status = %d", status)
+	}
+	if strings.HasPrefix(out.String(), "\n") || !strings.HasPrefix(out.String(), "syntax") {
+		t.Errorf("output starts %q", out.String()[:20])
 	}
 }

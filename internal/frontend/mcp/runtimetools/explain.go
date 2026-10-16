@@ -43,10 +43,10 @@ func (g *group) registerExplain(s *mcp.Server) {
 		Annotations: toolkit.ReadOnly("Explain diagnostic"),
 	}, func(_ context.Context, _ *mcp.CallToolRequest, in ExplainDiagnosticInput) (*mcp.CallToolResult, DiagnosticExplanation, error) {
 		if in.Code == "" {
-			all := codes.All()
-			out := DiagnosticExplanation{Codes: make([]DiagnosticSummary, 0, len(all))}
-			for _, e := range all {
-				out.Codes = append(out.Codes, DiagnosticSummary{Code: e.Code, Severity: e.Severity, Tier: string(e.Tier), Summary: e.Summary})
+			rows := codes.Rows()
+			out := DiagnosticExplanation{Codes: make([]DiagnosticSummary, 0, len(rows))}
+			for _, r := range rows {
+				out.Codes = append(out.Codes, DiagnosticSummary{Code: r.Code, Severity: r.Severity, Tier: string(r.Tier), Summary: r.Summary})
 			}
 			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: codes.List()}}}, out, nil
 		}

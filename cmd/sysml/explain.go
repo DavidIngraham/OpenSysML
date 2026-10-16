@@ -15,18 +15,19 @@ func explainDiagnostics(out, errw io.Writer, names []string) int {
 		fmt.Fprint(out, codes.List())
 		return 0
 	}
-	status := 0
-	for i, name := range names {
+	status, printed := 0, false
+	for _, name := range names {
 		text, err := codes.Explain(name)
 		if err != nil {
 			fmt.Fprintf(errw, "sysml: %v\n", err)
 			status = 2
 			continue
 		}
-		if i > 0 {
+		if printed {
 			fmt.Fprintln(out)
 		}
 		fmt.Fprint(out, text)
+		printed = true
 	}
 	return status
 }
