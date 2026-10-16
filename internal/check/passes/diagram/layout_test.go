@@ -459,6 +459,20 @@ func TestDiagramLayoutUnconnectedStartIsDrawn(t *testing.T) {
 		"Layout positions", "start", "action rendering of view P::flow does not draw as a node")
 }
 
+// A body declaring `action start` of its own draws it, so a view's Layout
+// about it is placed by that node like any declared member's.
+func TestDiagramLayoutDeclaredStartIsDrawn(t *testing.T) {
+	src := layoutModel(`	action def D { action start; action d; first start then d; }
+	view flow : StandardViewDefinitions::ActionFlowView {
+		expose D;
+		metadata Layout about D::start { x = 1; y = 1; }
+	}
+`)
+	if diags := layoutDiags(t, src); len(diags) != 0 {
+		t.Fatalf("got %d diagnostics, want none: %v", len(diags), diags)
+	}
+}
+
 func TestDiagramLayoutDuplicateViewLocalAnnotationWarnsOnTheSecond(t *testing.T) {
 	src := layoutModel(`	part def Pump;
 	part def Loop {

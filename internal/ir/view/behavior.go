@@ -660,7 +660,7 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 	}
 	r.actionEdges(subject, graph, nodes, out)
 	r.bindingEdges(subject, graph, root, nodes, drawn, out)
-	if subject.frame == nil && len(root.Children) == 0 {
+	if subject.frame == nil && len(graph.Nodes) == 0 {
 		root.Detail = detailWith(root.Detail, "declares no nodes")
 	}
 	return root, true
@@ -674,12 +674,14 @@ func (r *Renderer) placedStart(view, owner *symbols.Symbol, graph *lower.ActionG
 		return false
 	}
 	for _, node := range graph.Nodes {
-		if _, ok := node.(*ast.InitialNode); ok {
+		// A declared `action start` is an ordinary node named start: the
+		// member already has a node and the Layout belongs to it.
+		if _, ok := node.(*ast.InitialNode); ok || behaviorNodeName(node) == "start" {
 			return false
 		}
 	}
-	_, ok := r.model.MemberLayoutOf(view, owner, "start")
-	return ok
+	site, ok := r.model.MemberLayoutOf(view, owner, "start")
+	return ok && site.Layout != nil
 }
 
 // actionEdges draws the action's successions and object flows between its own
