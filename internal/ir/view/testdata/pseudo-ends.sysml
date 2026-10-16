@@ -1,6 +1,7 @@
 // An action-flow view positioned the way a migrated Cameo activity diagram is
 // when its initial and final node symbols carry no Layout: a nested action's
 // start and final have a Route, or a successor, and nothing else to place them.
+// The unplaced start and done keep the colour and the notes their symbols carry.
 package Imaging {
 	action def Acquire {
 		action position;
@@ -49,5 +50,8 @@ package ImagingViews {
 		metadata Route about Imaging::Acquire::'initiate to final' { points = (92, 253, 92, 290); }
 		metadata Route about Imaging::Acquire::'Position Not Correct'::'start to adjust' { points = (386, 102, 386, 118); }
 		metadata Route about Imaging::Acquire::'Position Not Correct'::'adjust to final' { points = (391, 151, 391, 180); }
+		metadata Style about Imaging::Acquire::'Vacuum Fault'::start { fill = "#C00000"; }
+		metadata Note about Imaging::Acquire::'Vacuum Fault'::start { text = "resumes after the fault"; x = 200; y = 200; width = 100; height = 30; }
+		metadata Note about Imaging::Acquire::'Vacuum Fault'::done { text = "back to the flow"; x = 200; y = 290; width = 100; height = 30; }
 	}
 }
