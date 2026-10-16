@@ -239,9 +239,8 @@
 
   var modules = {};
 
-  // compile fetches the binary once per URL, reporting bytes as they arrive. A
-  // .wasm.gz asset is inflated here; a plain .wasm (a CDN compresses it in
-  // transit) is compiled as the browser hands it over.
+  // compile fetches the binary once per URL, reporting bytes as they arrive; only a
+  // .wasm.gz asset is inflated here (a CDN compresses a plain .wasm in transit).
   function compile(url, onProgress) {
     if (!modules[url]) {
       var gzipped = /\.gz(?:[?#]|$)/.test(String(url));
