@@ -102,8 +102,11 @@ the hidden one is keyed by its owner-qualified name, `Base::go`
 
 The hidden feature is the performance's alone: a performance occurrence's slots
 are keyed by name and hold the visible one, so `declaresAttribute` and the
-occurrence seeding pass over it. Results, traces and the gRPC feature values list
-it under its key beside the visible feature.
+occurrence seeding pass over it. A write to it is checked against its own
+declaration (`declarationHeldUnder`: the feature whose key it is, not one it
+redefines), and one declaration reached along two generalization paths is held
+once. Results, traces and the gRPC feature values list it under its key beside
+the visible feature.
 
 ## What stays the same
 
@@ -128,7 +131,7 @@ name walk's nearest-frame rule is the contract for it.
 
 ## Tests
 
-`conformance/frame_scoping_*` (twelve cases, with trace goldens for the accept
+`conformance/frame_scoping_*` (fifteen cases, with trace goldens for the accept
 payload and the transition), `robustness_frame_scoping_test.go`
 `TestRuntimeRobustnessFrameScoping`, `robustness_shadowed_inherited_feature_test.go`
 `TestRuntimeRobustnessShadowedInheritedFeature`, and the reduction ratchet
