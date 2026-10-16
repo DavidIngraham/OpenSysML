@@ -37,6 +37,16 @@
                <id _dtype="str">_blk_camera</id>
                <type _dtype="str">sysml.Block</type>
             </element>
+            <element _dtype="dict" key="1">
+               <relationship_metadata _dtype="dict">
+                  <top _dtype="int">-230</top>
+                  <bottom _dtype="int">-290</bottom>
+                  <left _dtype="int">60</left>
+                  <right _dtype="int">180</right>
+               </relationship_metadata>
+               <id _dtype="str">_blk_lens</id>
+               <type _dtype="str">sysml.Block</type>
+            </element>
          </element>
       </relationships>
       <type _dtype="str">sysml.BlockDefinitionDiagram</type>

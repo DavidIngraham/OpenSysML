@@ -5,7 +5,7 @@
 ## layout
 # source: the diagrams' own symbol streams
 # 1 views laid out from their own symbol stream, 0 without layout
-# placements: 4 of 4 written (0 not exposed, 0 resolving to no element); routes: 0 of 0 written (0 not pinned, 0 resolving to no element); malformed: 0
+# placements: 4 of 5 written (0 not exposed, 0 resolving to no element); routes: 0 of 0 written (0 not pinned, 0 resolving to no element); malformed: 0
 # styles: 0 of 0 written; notes: 0 written (0 anchored, 0 freed of an anchor the view does not lay out)
 # compartments suppressed: 8 on 2 symbols
 # unsupported presentation properties, dropped: SUPPRESS_STRUCTURE (2)
@@ -14,7 +14,7 @@
 Model	Model	_m	-> Model	(written as package Model)
 Package	Optics	_pkg_optics	-> Model::Optics
 «Block» Class	Optics::Camera	_blk_camera	-> Model::Optics::Camera
-Diagram	Optics::Camera BDD	_diag_bdd	-> Model::Optics::'Camera BDD'	(a SysML Block Definition Diagram written as a view rendered asTreeDiagram; 6 of 10 shown elements are compartment rows or end labels of exposed elements, not exposed; laid out from the diagram's own symbol stream: 4 of 4 shown elements positioned, 0 of 0 connectors routed)
+Diagram	Optics::Camera BDD	_diag_bdd	-> Model::Optics::'Camera BDD'	(a SysML Block Definition Diagram written as a view rendered asTreeDiagram; 6 of 10 shown elements are compartment rows or end labels of exposed elements, not exposed; laid out from the diagram's own symbol stream: 4 of 5 shown elements positioned, 0 of 0 connectors routed)
 Operation	Optics::Camera::capture	_op_capture	-> Model::Optics::Camera::capture	(written as an action usage of Optics::Camera, which a call on an object performs, so its body runs on the object and reaches its features)
 Port	Optics::Camera::data	_port_data	-> Model::Optics::Camera::data
 Property	Optics::Camera::lens	_prop_lens	-> Model::Optics::Camera::lens

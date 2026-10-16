@@ -3,7 +3,8 @@
      symbol. The Camera box states one setting itself and inherits the rest
      from the diagram's symbol style for blocks; the Lens box keeps the
      style's settings alone; the Mount box is drawn in no style and states a
-     property with no value, the tool's default. -->
+     property with no value, the tool's default; a second Lens symbol, drawn
+     in no style, shows every compartment. -->
 <xmi:XMI xmi:version="2.5.1" xmlns:xmi="http://www.omg.org/spec/XMI/20131001"
          xmlns:uml="http://www.omg.org/spec/UML/20161101"
          xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML"

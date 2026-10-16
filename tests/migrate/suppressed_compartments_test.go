@@ -49,17 +49,19 @@ func TestGoldenSuppressedCompartments(t *testing.T) {
 }
 
 // An MTIP export places a symbol but records nothing of its compartments: the
-// export's box wins and the stream's suppressions stay with it.
+// export's box wins and the stream's suppressions stay with it when the
+// element's symbols agree; Lens has two symbols that differ, so its export
+// box takes neither's.
 func TestSuppressedCompartmentsSurviveAnExportRecord(t *testing.T) {
 	r := migrateStreamLaidOut(t, "suppressed_compartments", false)
 	l := r.Report.Layout
-	if l == nil || l.Diagrams != 1 || l.StreamSupplemented != 1 || l.CompartmentsSuppressed != 8 || l.SymbolsSuppressing != 2 {
+	if l == nil || l.Diagrams != 1 || l.StreamSupplemented != 1 || l.CompartmentsSuppressed != 4 || l.SymbolsSuppressing != 1 {
 		t.Fatalf("layout summary: %+v", l)
 	}
 	notation := string(r.Notation)
 	for _, want := range []string{
 		"metadata DiagramLayout::Layout about Camera { x = 50; y = 30; width = 200; height = 100; showAttributes = false; showParts = false; showPorts = false; showReferences = false; }",
-		"metadata DiagramLayout::Layout about Lens { x = 40; y = 220; width = 120; height = 33; showActions = false; showAttributes = false; showPorts = false; showReferences = false; }",
+		"metadata DiagramLayout::Layout about Lens { x = 60; y = 230; width = 120; height = 60; }",
 	} {
 		if !strings.Contains(notation, want) {
 			t.Errorf("output lacks %q", want)

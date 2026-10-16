@@ -30,6 +30,10 @@
     <symbolStyleID>_style_blocks</symbolStyleID>
     <geometry>40, 220, 120, 33</geometry>
   </mdElement>
+  <mdElement elementClass='Class' xmi:id='_sym_lens_again'>
+    <elementID xmi:idref='_blk_lens'></elementID>
+    <geometry>200, 220, 120, 60</geometry>
+  </mdElement>
   <mdElement elementClass='Class' xmi:id='_sym_mount'>
     <elementID xmi:idref='_blk_mount'></elementID>
     <properties>
