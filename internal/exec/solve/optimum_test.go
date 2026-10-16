@@ -148,6 +148,26 @@ func TestNestedStageConditionBoundsTheOptimum(t *testing.T) {
 	}
 }
 
+// TestNestedStageShadowsAndBoundsTheCase: a nested analysis's own `cap` is a value
+// of its own, read by its condition and objective, and its conditions hold for the
+// case, so the cost the case alone would raise to 9 is held to the nested cap.
+func TestNestedStageShadowsAndBoundsTheCase(t *testing.T) {
+	result := optimized(t, "ShadowedStage")
+	if result.Status != StatusSat {
+		t.Fatalf("ShadowedStage answered %s, want sat (the two caps are two values)", result.Status)
+	}
+	if len(result.Optima) != 2 {
+		t.Fatalf("reported %d optima, want 2", len(result.Optima))
+	}
+	cost, cap := result.Optima[0], result.Optima[1]
+	if cost.Status != OptimumAttained || cost.Value != "5" {
+		t.Errorf("greatest cost under the nested cap is %s %q: %s", cost.Status, cost.Value, cost.Detail)
+	}
+	if cap.Status != OptimumAttained || cap.Value != "5" {
+		t.Errorf("the nested cap is %s %q, want the nested 5 rather than the case's 9: %s", cap.Status, cap.Value, cap.Detail)
+	}
+}
+
 // TestUnboundedOptimum: an objective the conditions do not bound has no optimum,
 // which is its own answer rather than a number.
 func TestUnboundedOptimum(t *testing.T) {

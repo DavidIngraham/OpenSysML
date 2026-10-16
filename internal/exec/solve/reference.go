@@ -78,6 +78,8 @@ func (t *translator) resolvePath(node ast.Node, scope *symbols.Scope, segments [
 	if !ok {
 		if sym, ok = t.model.LookupMember(t.within, segments[0]); ok {
 			chain = append(chain, t.within)
+		} else if sym, ok = t.model.LookupMember(t.stage, segments[0]); ok {
+			chain = append(chain, t.stage)
 		} else if sym, ok = t.features[segments[0]]; !ok {
 			sym, ok = resolver.LookupName(scope, segments[0])
 		}

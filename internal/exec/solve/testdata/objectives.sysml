@@ -367,4 +367,26 @@ package test {
 			}
 		}
 	}
+
+
+	// A nested analysis's members shadow the case's for its own conditions and
+	// objective (`cap` is two values), and what it asserts holds for the whole
+	// case: the cost the case alone would raise to 9 is held to the nested cap.
+	analysis def ShadowedStage {
+		attribute cost : Integer;
+		attribute cap : Integer;
+		assert constraint { cost >= 3 and cost <= 9 and cap == 9 }
+		objective costliest : MaximizeObjective {
+			subject :>> selectedAlternative;
+			in calc :>> eval { cost }
+		}
+		analysis within {
+			attribute cap : Integer;
+			assert constraint { cap == 5 and cost <= cap }
+			objective tightest : MinimizeObjective {
+				subject :>> selectedAlternative;
+				in calc :>> eval { cap }
+			}
+		}
+	}
 }
