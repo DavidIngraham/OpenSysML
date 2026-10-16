@@ -46,6 +46,7 @@ type Testcase struct {
 // Message carries a case's failure, error or skip reason.
 type Message struct {
 	Text string `xml:"message,attr,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
 	Body string `xml:",chardata"`
 }
 

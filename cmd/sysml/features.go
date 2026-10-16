@@ -329,7 +329,7 @@ func outputUsage() string {
 	if codegenFeature.linked {
 		modes = append(modes, "-compile")
 	}
-	text := "Write what " + strings.Join(modes, ", ") + ", -render or -render-document produces to this file instead of stdout"
+	text := "Write what " + strings.Join(modes, ", ") + ", -render or -render-document produces, or a -validate report in a -format other than text, to this file instead of stdout"
 	if syncFeature.linked {
 		text += "; with " + pushes + ", a Flexo branch URL pushes the graph to the branch"
 	}
