@@ -72,7 +72,14 @@
         "y",
         "width",
         "height",
-        "collapsed"
+        "collapsed",
+        "showAttributes",
+        "showParts",
+        "showReferences",
+        "showPorts",
+        "showConstraints",
+        "showItems",
+        "showActions"
       ],
       "migratorEmitted": true,
       "consumers": [

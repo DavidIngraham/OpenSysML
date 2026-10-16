@@ -201,16 +201,18 @@ a case that hits it fails with a message telling the author to raise it:
   timeout; the referee's completion query still proves every run ends within N, so a
   budget too low fails the case rather than hiding behavior.
 
-- `exploreNotes`: optional; the coverage notes exploring the case must record,
-  each matched exactly and in canonical order — a schedule oracle's own
-  disclaimer about the orders it could not vary. Stating it explores the case
-  even without `outcomes`; the exact set it explores to is then asserted only
-  where the case also carries `outcomes` or `outputs`. Where the default budget
-  leaves that exploration incomplete, a case pairs `exploreNotes` with
-  `exploreBudget` for completeness only — a budget never changes a result's
-  standing.
+- `exploreGaps`: optional; the coverage gaps exploring the case must record,
+  by identifier (`runtime.CoverageGap`), each matched exactly and in canonical
+  order — the constructs whose orders the exploration could not vary, so it
+  reports itself incomplete short of them rather than complete. No construct
+  records one today, so no case states any; a case stating none must explore
+  complete. Stating it explores the case even without
+  `outcomes`; the exact set it explores to is then asserted only where the case
+  also carries `outcomes` or `outputs`. Where the default budget leaves that
+  exploration short, a case pairs `exploreGaps` with `exploreBudget` for the
+  budget only — a budget never changes a result's standing.
 
-`TestExecutionConformance` explores cases with `outcomes` or `exploreNotes`; the
+`TestExecutionConformance` explores cases with `outcomes` or `exploreGaps`; the
 check corpus can also explore a single-result case with a `.check.expected.json`
 entry. The default schedule is deterministic, so a case with an admissible set
 still keeps its exact golden trace.
@@ -426,8 +428,8 @@ JSON number past 2^53 is read through a float64 that may round its digits.
 
 - `verdict`: the `VerdictKind` the run of the case's body produced — `pass` or
   `fail` as the library's `PassIf` calculation computed it, `inconclusive` for a
-  body that bound no verdict value, `error` for a body whose run could not be
-  carried out.
+  body that bound no verdict value or a case a definition owns with no object of
+  the definition to run on, `error` for a body whose run could not be carried out.
 - `verdictDetail`: text the verdict carries, matched as a substring — the
   message of an `error` verdict, or why an `inconclusive` one decided nothing.
 - `subcases`: the verdict of each verification case the body performs, by
@@ -571,6 +573,8 @@ Supported types:
   or any other feature the library declares unique and unordered
 - `Instance`: an object, whose identity a case does not pin (no `value`)
 - `Unset`: a valueless feature of a value type, holding no value (no `value`)
+- `Undetermined`: a value the model leaves open, optionally pinned to the count
+  it is undetermined of, as a JSON string (`{"type": "Undetermined", "value": "[1..*]"}`)
 - `Variant`: the name of the variant a variation feature is bound to, as a JSON
   string (`{"type": "Variant", "value": "cutIdeal"}`)
 - `EnumLiteral`: the enumeration literal a value is, written as the enumeration

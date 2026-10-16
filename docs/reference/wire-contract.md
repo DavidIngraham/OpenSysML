@@ -1477,9 +1477,11 @@ what they meant before.
 - `caseId` — the qualified name of the verification case that ran.
 - `kind` — `"pass"` or `"fail"` as the library's own `VerificationCases::PassIf` calculation
   computed it, the `VerdictKind` literal a body bound directly, `"inconclusive"` for a body that
-  produced no verdict value, or `"error"` for a body whose run could not be carried out.
+  produced no verdict value or for a case a definition owns that no object of the definition
+  exists to run on, or `"error"` for a body whose run could not be carried out.
 - `detail` — why an `error` or `inconclusive` verdict decided nothing, carrying the message the
-  run failed with. Omitted for `pass` and `fail`.
+  run failed with (`needs an object of <Definition>: none is instantiated` for a case with no
+  object to run on, which then carries no `instanceId`). Omitted for `pass` and `fail`.
 - `subcase` — true for a verification case the run performed as a step of another. The library
   states no roll-up of a subcase's verdict into its parent's, so each is reported on its own.
 - `requirementId` — the qualified name of the requirement the case was reported for, the one its

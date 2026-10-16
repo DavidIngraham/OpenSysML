@@ -572,7 +572,8 @@ pub struct Outcome {
 /// within the budget was run, and which budget stopped it when not.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExplorationStatus {
-    /// True when every linearization was run, so `outcomes` is the whole set.
+    /// True when every linearization the library admits was run, so `outcomes`
+    /// is the whole set: no budget was hit and nothing was left unenumerated.
     #[prost(bool, tag="1")]
     pub complete: bool,
     /// How many runs were made.
@@ -594,6 +595,11 @@ pub struct ExplorationStatus {
     /// How many linearizations ended in runtime-error outcomes.
     #[prost(int32, tag="7")]
     pub failed_linearizations: i32,
+    /// The constructs whose unordered alternatives the runs took in one order
+    /// without a choice point, by identifier; `complete` is false while any is
+    /// listed, since fewer orders were run than the library admits.
+    #[prost(string, repeated, tag="8")]
+    pub unenumerated: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// ListEnginesRequest asks for the analysis engines registered in this build.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]

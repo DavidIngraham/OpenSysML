@@ -1335,6 +1335,16 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 			m.diagramLayoutAttributeForHost(p.prefix, "Layout", "width", layoutNumber(pl.Width), v.host, p.x),
 			m.diagramLayoutAttributeForHost(p.prefix, "Layout", "height", layoutNumber(pl.Height), v.host, p.x),
 		}
+		for _, kind := range pl.HiddenCompartments {
+			attrs = append(attrs, m.diagramLayoutAttributeForHost(p.prefix, "Layout", "show"+kind, "false", v.host, p.x))
+		}
+		if len(pl.HiddenCompartments) > 0 {
+			s.CompartmentsSuppressed += len(pl.HiddenCompartments)
+			s.SymbolsSuppressing++
+		}
+		for _, id := range pl.UnsupportedCompartments {
+			s.Unsupported[id]++
+		}
 		placements = append(placements, fmt.Sprintf("metadata %sLayout about %s { %s; }",
 			p.prefix, ref, strings.Join(attrs, "; ")))
 		p.grow(pl.X+pl.Width, pl.Y+pl.Height)

@@ -214,13 +214,13 @@ func TestVerificationRunsRecordTheRunsMade(t *testing.T) {
 }
 
 // TestDefinitionOwnedCaseWithoutAnObject pins the run made when no object is
-// given: on no object when the run holds none, so the owner's feature has no
-// value; on the single object of the definition; a refusal naming several.
+// given: inconclusive, asking for an object, when the run holds none; on the
+// single object of the definition; a refusal naming several.
 func TestDefinitionOwnedCaseWithoutAnObject(t *testing.T) {
 	idx, ctx, _ := definitionOwnedCase(t)
 	got := runOn(t, idx, ctx, "test::Definition::costTest", nil)
-	if got.Kind != VerdictError || !strings.Contains(got.Detail, "no value for feature cost") || got.Subject != nil {
-		t.Errorf("costTest with no object = %s (%s) about %v, want an error verdict about no object", got.Kind, got.Detail, got.Subject)
+	if got.Kind != VerdictInconclusive || got.Detail != "needs an object of test::Definition: none is instantiated" || got.Subject != nil {
+		t.Errorf("costTest with no object = %s (%s) about %v, want inconclusive, needing an object of the definition", got.Kind, got.Detail, got.Subject)
 	}
 
 	idx, ctx, objects := definitionOwnedCase(t, "test::dear")

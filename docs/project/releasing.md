@@ -268,8 +268,10 @@ so that `dist/` holds:
   `.sha256` sidecar for the same reason: `jupyter-opensysml-kernel`'s sdist downloads
   and verifies it (`client/jupyter-kernel/jupyter_opensysml_kernel/binary.py`) when it
   registers the kernelspec, and its platform wheels bundle it;
-- `wasm/sysml-wasm.wasm` and `wasm/wasm_exec.js`, the combined WebAssembly
-  module and matching Go runtime, each with a `.sha256` sidecar;
+- `wasm/sysml-wasm.wasm`, `wasm/sysml-prod.wasm.gz` and `wasm/wasm_exec.js`, the
+  combined WebAssembly module, the gzip-compressed browser build of the `sysml` REPL
+  (`-tags sysml_prod`, what the site's REPL page runs) and the matching Go runtime,
+  each with a `.sha256` sidecar;
 - the Python client's distribution, `opensysml-<x.y.z>-py3-none-any.whl` and
   `opensysml-<x.y.z>.tar.gz`, built by `build-python-package` from those
   `sysml-grpc` binaries' digests and the same files `publish-pypi` uploads (see
@@ -280,7 +282,7 @@ so that `dist/` holds:
   digests (see
   [Releasing jupyter-opensysml-kernel to PyPI](#releasing-jupyter-opensysml-kernel-to-pypi));
 - `SHA256SUMS.txt` over every archive, every wheel and sdist, every `sysml-grpc` and
-  `sysml-jupyter-kernel` binary and both WebAssembly assets,
+  `sysml-jupyter-kernel` binary and all three WebAssembly assets,
   with its cosign signature `SHA256SUMS.txt.bundle` (see
   [The signed checksum manifest](#the-signed-checksum-manifest));
 - `provenance.intoto.json`, the SLSA provenance statement naming every artifact
@@ -1569,6 +1571,11 @@ pom property or the settings), and `central-publishing-maven-plugin` with
 deployment itself and waits until it is published, so a green job means the
 version is on Central. The irreversible step is guarded by running last, on a
 revision proven green, and by the refusal of a version already published.
+The plugin's pin has to track Sonatype's Portal API: `0.7.0` rejected the
+`warnings` field the deployment-status response gained in October 2026 and
+reported the `v0.10.1` publish failed after Central had published it, so a red
+publish job is checked against Central's component listing before any rerun
+(the refusal step fails a rerun of a published version by design).
 
 The same checks run locally before a release, without uploading:
 

@@ -333,7 +333,7 @@ func ToStateGraphWithEndpoints(stateMachineDecl ast.Node, scope *symbols.Scope, 
 	graph.recordRunToCompletion(nil, body, DescribeMember(stateMachineDecl))
 
 	graph.Connections = lowerConnections(members, OwnerBehavior, scope)
-	graph.Attributes = keptAttributes(lowerStateAttributes(graph, inherited), lowerStateAttributes(graph, ownMembers(members, scope)))
+	graph.Attributes = graph.keptAttributes(lowerStateAttributes(graph, inherited), lowerStateAttributes(graph, ownMembers(members, scope)))
 	parallelMachine := stateMachineIsParallel(stateMachineDecl)
 	for _, owner := range owners {
 		parallelMachine = parallelMachine || stateMachineIsParallel(owner)
@@ -611,7 +611,7 @@ func stateNodeFromUsage(graph *StateGraph, usage *ast.Usage, scope *symbols.Scop
 	}
 
 	replaced := redeclare(state, base.node, own.node)
-	if attrs := keptAttributes(base.attrs, own.attrs); len(attrs) > 0 {
+	if attrs := graph.keptAttributes(base.attrs, own.attrs); len(attrs) > 0 {
 		graph.StateAttributes[state] = attrs
 	}
 	graph.bodyOf[state] = body
@@ -693,6 +693,15 @@ func (g *StateGraph) DeclOf(state *ast.StateNode) ast.Node {
 		return decl
 	}
 	return state
+}
+
+// RegionDeclOf is the declaration region was built from: the direct substate of a
+// parallel state or machine that supplies its body, else the region itself.
+func (g *StateGraph) RegionDeclOf(region *ast.StateRegion) ast.Node {
+	if decl := g.regionDecl[region]; decl != nil {
+		return decl
+	}
+	return region
 }
 
 // Completes reports whether entering state completes the region it belongs to:
@@ -1322,7 +1331,7 @@ func (g *StateGraph) regionScope(scope *symbols.Scope, region *ast.StateRegion) 
 	if inherited := g.regionScopeOf[region]; inherited != nil {
 		return inherited
 	}
-	if decl := g.regionDecl[region]; decl != nil {
+	if decl := g.RegionDeclOf(region); decl != region {
 		return childScope(scope, decl)
 	}
 	return childScope(scope, region)

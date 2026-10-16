@@ -821,7 +821,11 @@ maximum model-draw probability over schedulers; a range that collapses to one va
 incomplete exploration prefixes numeric cells with `≥` and adds `; probabilities are lower bounds`
 only when a weighted choice occurred, since the runs not taken can only add. Six
 linearizations, three outcomes, two each; `complete (6 runs)` says every choice sequence was
-tried. Under `explore` an action step is one token advancing one node — not, as under the fixed
+tried. `complete` is a claim about the model, not the budget: were the runtime to perform a
+construct in one order without offering the alternatives as a choice point (no construct does
+today), the status would read `incomplete after N runs; not enumerated: …` naming the
+construct, the standing *observed* rather than *proved*, and the gRPC and client results list
+it under `unenumerated`. Under `explore` an action step is one token advancing one node — not, as under the fixed
 policies, every steppable token moving once — so the picks fall in consecutive steps and a branch
 of several nodes can run ahead of, or be overtaken by, a concurrent one at each of them. A
 `complete` exploration therefore covers every interleaving of the nodes the library leaves
@@ -1830,7 +1834,10 @@ as for any case.
 A body whose result is a `VerificationCases::PassIf(...)` call is `pass` or `fail` as that library
 calculation computes it; one binding `verdict` to a `VerdictKind` literal reports that literal; one
 producing no verdict value is `inconclusive`; and one whose run could not be carried out is `error`
-carrying the same message the run failed with. Each nested `verification` step is reported on its
+carrying the same message the run failed with. A case a part definition owns, swept with no object
+of the definition instantiated, is `inconclusive` saying it needs an object of the definition — the
+case is a feature of such an object, so there is nothing for it to run on, and nothing wrong with the
+model. Each nested `verification` step is reported on its
 own line, marked `(subcase)`, since the library states no roll-up of a subcase's verdict into its
 parent's.
 
