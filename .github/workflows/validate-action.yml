@@ -66,12 +66,14 @@ jobs:
           format: junit
           upload-sarif: "false"
 
+      # A warning analysis ran through is what a baseline accepts; under
+      # -warnings-as-errors it fails the run until the baseline knows it.
       - name: Write a model with a finding and its baseline
         run: |
           mkdir -p "$RUNNER_TEMP/model"
-          printf 'package P {\n  part def A;\n  part b : Missing;\n}\n' > "$RUNNER_TEMP/model/p.sysml"
-          sysml -validate -json -o "$RUNNER_TEMP/baseline.json" "$RUNNER_TEMP/model" || true
-          python3 -c 'import json,sys; n = len(json.load(open(sys.argv[1]))["diagnostics"]); assert n == 1, n' "$RUNNER_TEMP/baseline.json"
+          printf 'package S {\n  state def M {\n    entry; then pick;\n    choice pick;\n    transition pick then a;\n    state a;\n  }\n}\n' > "$RUNNER_TEMP/model/s.sysml"
+          sysml -validate -warnings-as-errors -json -o "$RUNNER_TEMP/baseline.json" "$RUNNER_TEMP/model" || true
+          python3 -c 'import json,sys; d = json.load(open(sys.argv[1]))["diagnostics"]; assert [x["code"] for x in d] == ["nonstandard-notation"], d' "$RUNNER_TEMP/baseline.json"
       - name: The finding fails the run without the baseline
         id: without
         continue-on-error: true
@@ -80,12 +82,14 @@ jobs:
           install: "false"
           path: ${{ runner.temp }}/model
           format: text
+          warnings-as-errors: "true"
       - name: The baseline accepts it
         uses: ./
         with:
           install: "false"
           path: ${{ runner.temp }}/model
           format: text
+          warnings-as-errors: "true"
           baseline: ${{ runner.temp }}/baseline.json
       - name: Check both verdicts
         env:
