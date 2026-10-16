@@ -266,7 +266,7 @@ system and stdin, as the site's REPL page does.
 evaluation, execution and view rendering route through the engine. `ParseSources` and
 `ParseFile` check that both frontends produce the same model hash and return the core
 response, including roots and diagnostics. `RenderView` answers with [the engine's drawing
-shape](#renderview), not the protojson `RenderViewResponse` the service returns, so the
+shape](#the-execution-engine), not the protojson `RenderViewResponse` the service returns, so the
 module does not advertise the `render_view` capability a service client would key on.
 
 A hash from either parse method is shared by every method that takes a `modelHash`, including
