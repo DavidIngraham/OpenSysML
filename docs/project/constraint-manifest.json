@@ -1146,7 +1146,7 @@
       },
       "checks": "An owned usage of a variation definition is a variant; an objective in a variation case definition is reported by both tools, unlike one in a variation case usage",
       "implementation": "internal/check/passes/w8d_variability.go:W8DVariabilityPass.Run",
-      "message": "The OCL (`isVariation implies ownedFeatureMembership->isEmpty()`) rejects an objective in a variation, but `w8d_variability.go` `checkMembers` exempts it, as the pilot does; see [gap register §27](spec-pilot-gap-register.md#27-variation-parameters-and-stakeholder-specialization)",
+      "message": "same wording, at the member; the objective exemption of [gap register §27](spec-pilot-gap-register.md#27-variation-parameters-and-stakeholder-specialization) applies to a variation usage only, so an objective in a variation definition is reported as the pilot reports it",
       "negativeCase": "`xpect/p09-variation-member-not-variant.sysml`",
       "codes": [
         "variation-member-not-variant"
