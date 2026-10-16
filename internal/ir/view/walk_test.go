@@ -102,3 +102,42 @@ func TestWalkDepthKeepsPortsAndReroutesCrossingConnectors(t *testing.T) {
 		t.Errorf("edges = %d, want the two connectors from controller", len(rendering.Edges))
 	}
 }
+
+// A collapsed Layout folds an element's children away in every form, keeping
+// the collapsed tag; its ports stay, and a connector still ends at them.
+func TestCollapsedLayoutFoldsChildrenInEveryForm(t *testing.T) {
+	for _, viewName := range []string{"FoldedViews::folded", "FoldedViews::links"} {
+		rendering := render(t, "layout-collapsed.sysml", viewName)
+		for _, form := range []Form{FormText, FormMermaid, FormDot, FormPlantUML, FormD2} {
+			artifact, err := rendering.Write(form)
+			if err != nil {
+				t.Fatalf("%s as %s: %v", viewName, form, err)
+			}
+			for _, folded := range []string{"piston", "pump"} {
+				if strings.Contains(artifact, folded) {
+					t.Errorf("%s as %s draws %s under the collapsed engine:\n%s", viewName, form, folded, artifact)
+				}
+			}
+			if !strings.Contains(artifact, "collapsed") {
+				t.Errorf("%s as %s lost the collapsed tag:\n%s", viewName, form, artifact)
+			}
+		}
+		if rendering.Kind == KindInterconnection && len(rendering.Edges) != 1 {
+			t.Errorf("%s draws %d edges, want the connector to engine's port", viewName, len(rendering.Edges))
+		}
+	}
+}
+
+// The text form omits the members a Layout's showParts = false hides, as DOT does.
+func TestTextOmitsHiddenCompartments(t *testing.T) {
+	rendering := render(t, "layout-collapsed.sysml", "FoldedViews::noParts")
+	text, err := rendering.Write(FormText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, hidden := range []string{"wheel", "engine", "tank"} {
+		if strings.Contains(text, hidden) {
+			t.Errorf("text lists %s, which showParts = false hides:\n%s", hidden, text)
+		}
+	}
+}

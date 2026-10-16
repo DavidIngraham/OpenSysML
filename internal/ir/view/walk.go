@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 )
@@ -108,4 +109,22 @@ func (r *Renderer) noteDepthCuts(view *symbols.Symbol, out *Rendering) {
 	bound := r.walkBound(view)
 	out.Notices = append(out.Notices, fmt.Sprintf("%d %s nested deeper than %d %s not shown",
 		out.depthCut, plural(out.depthCut, "element", "elements"), bound, plural(bound, "level", "levels")))
+}
+
+// DepthError is a depth option naming no non-negative integer.
+type DepthError struct {
+	Value string
+}
+
+func (e *DepthError) Error() string {
+	return fmt.Sprintf("depth %q is no non-negative integer; a depth is how many levels of nested elements to draw below each exposed element, 0 for every level", e.Value)
+}
+
+// ParseDepth reads a depth option: a non-negative integer, 0 for every level.
+func ParseDepth(value string) (int, error) {
+	depth, err := strconv.Atoi(value)
+	if err != nil || depth < 0 {
+		return 0, &DepthError{Value: value}
+	}
+	return depth, nil
 }
