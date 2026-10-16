@@ -428,8 +428,8 @@ JSON number past 2^53 is read through a float64 that may round its digits.
 
 - `verdict`: the `VerdictKind` the run of the case's body produced — `pass` or
   `fail` as the library's `PassIf` calculation computed it, `inconclusive` for a
-  body that bound no verdict value, `error` for a body whose run could not be
-  carried out.
+  body that bound no verdict value or a case a definition owns with no object of
+  the definition to run on, `error` for a body whose run could not be carried out.
 - `verdictDetail`: text the verdict carries, matched as a substring — the
   message of an `error` verdict, or why an `inconclusive` one decided nothing.
 - `subcases`: the verdict of each verification case the body performs, by

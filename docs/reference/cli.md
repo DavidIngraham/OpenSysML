@@ -457,7 +457,10 @@ model: a body whose result is a `VerificationCases::PassIf(...)` call is `pass`
 or `fail` as that library calculation computes it, a body binding `verdict` to a
 `VerdictKind` literal reports that literal, a body producing no verdict value is
 `inconclusive`, and a body whose run could not be carried out is `error` carrying
-the reason. Each nested `verification` step is reported on its own line, marked
+the reason. A case a part definition owns is a feature of the definition's objects:
+run with none instantiated it is `inconclusive` too, its detail saying it `needs an
+object of <Definition>: none is instantiated` as the definition's `satisfy` line does,
+since nothing is wrong with the model. Each nested `verification` step is reported on its own line, marked
 `(subcase)` and carrying `"subcase": true` in the JSON report: the library
 states no roll-up of a subcase's verdict into its parent's.
 
