@@ -178,10 +178,8 @@ func installedProjects(roots []string) []*Interchange {
 	return out
 }
 
-// walkInstalled calls found for every project directory under dir, not
-// descending into one found, into hidden directories or past the budget. A
-// linked directory is walked when it stays under root, each resolved directory
-// once so a cycle terminates; a link out of the root is not the root's to walk.
+// walkInstalled calls found for each project directory under dir, stopping at a
+// project, a hidden directory, a link leaving root, a directory seen or the budget.
 func walkInstalled(dir, root string, visited map[string]bool, budget *int, found func(dir string)) {
 	resolved, err := filepath.EvalSymlinks(dir)
 	if err != nil || visited[resolved] || *budget == 0 {
