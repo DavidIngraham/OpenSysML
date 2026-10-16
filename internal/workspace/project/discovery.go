@@ -1,6 +1,7 @@
 package project
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -171,7 +172,7 @@ func installedProjects(roots []string) []*Interchange {
 			continue
 		}
 		budget := maxLibraryDirs
-		walkInstalled(root, map[string]bool{}, &budget, found)
+		walkInstalled(root, root, map[string]bool{}, &budget, found)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Dir < out[j].Dir })
 	return out
@@ -179,9 +180,9 @@ func installedProjects(roots []string) []*Interchange {
 
 // walkInstalled calls found for every project directory under dir, not
 // descending into one found, into hidden directories or past the budget. A
-// linked directory is walked, as a project walk does — an installation may be
-// a link into a store — each resolved directory once, so a cycle terminates.
-func walkInstalled(dir string, visited map[string]bool, budget *int, found func(dir string)) {
+// linked directory is walked when it stays under root, each resolved directory
+// once so a cycle terminates; a link out of the root is not the root's to walk.
+func walkInstalled(dir, root string, visited map[string]bool, budget *int, found func(dir string)) {
 	resolved, err := filepath.EvalSymlinks(dir)
 	if err != nil || visited[resolved] || *budget == 0 {
 		return
@@ -197,6 +198,9 @@ func walkInstalled(dir string, visited map[string]bool, budget *int, found func(
 			continue
 		}
 		path := filepath.Join(dir, e.Name())
+		if e.Type()&fs.ModeSymlink != 0 && !linksWithin(path, root) {
+			continue
+		}
 		info, err := os.Stat(path) // resolves a link to what it points at
 		if err != nil || !info.IsDir() {
 			continue
@@ -205,8 +209,22 @@ func walkInstalled(dir string, visited map[string]bool, budget *int, found func(
 			found(path)
 			continue
 		}
-		walkInstalled(path, visited, budget, found)
+		walkInstalled(path, root, visited, budget, found)
 	}
+}
+
+// linksWithin reports whether the link at path resolves to somewhere under root.
+func linksWithin(path, root string) bool {
+	target, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return false
+	}
+	base, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(base, target)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 // used selects, among the installed projects, those the enclosing projects use,
