@@ -71,9 +71,10 @@ func (r *Renderer) stateMachineNode(view, machine *symbols.Symbol, graph *lower.
 	// Regions first: a state of an orthogonal region is nested in that region,
 	// and the region order is the order the machine enters and exits them in.
 	for _, region := range graph.TopRegions {
-		regions[region] = place(r.regionNode(region, graph, machine, ids), nil, region, region.Name)
+		decl := graph.RegionDeclOf(region)
+		regions[region] = place(r.regionNode(region, graph, machine, ids), nil, decl, region.Name)
 		if record != nil {
-			record(r.declaredSymbol(machine, region), regions[region])
+			record(r.declaredSymbol(machine, decl), regions[region])
 		}
 		root.Children = append(root.Children, regions[region])
 	}
@@ -87,9 +88,10 @@ func (r *Renderer) stateMachineNode(view, machine *symbols.Symbol, graph *lower.
 		}
 		nodes[state] = node
 		for _, region := range graph.CompositeStates[state] {
-			regions[region] = place(r.regionNode(region, graph, machine, ids), state, region, region.Name)
+			decl := graph.RegionDeclOf(region)
+			regions[region] = place(r.regionNode(region, graph, machine, ids), state, decl, region.Name)
 			if record != nil {
-				record(r.declaredSymbol(machine, region), regions[region])
+				record(r.declaredSymbol(machine, decl), regions[region])
 			}
 			node.Children = append(node.Children, regions[region])
 		}
@@ -233,8 +235,11 @@ func (r *Renderer) bodySymbol(machine *symbols.Symbol, graph *lower.StateGraph, 
 		return machine
 	}
 	decl := owner
-	if state, ok := owner.(*ast.StateNode); ok {
-		decl = graph.DeclOf(state)
+	switch owner := owner.(type) {
+	case *ast.StateNode:
+		decl = graph.DeclOf(owner)
+	case *ast.StateRegion:
+		decl = graph.RegionDeclOf(owner)
 	}
 	return r.declaredSymbol(machine, decl)
 }

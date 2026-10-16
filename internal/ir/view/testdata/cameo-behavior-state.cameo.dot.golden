@@ -52,20 +52,20 @@ digraph "NotationViews::alignmentView" {
           bb="790,30,910,130";
           "n6" [shape=point, style=invis, width=0, height=0, label="", pos="850,80!", pin=true];
           subgraph "cluster_n7" {
-            label=<<font point-size="9">«region»</font><br/><b>Guiding</b>>;
+            label=<<font point-size="8"><b>Guiding</b></font>>;
             style="rounded,dashed";
             color="#5B5B59";
             penwidth=1;
-            bb="802,67,898,113";
+            bb="790,70,910,110";
             "n7" [shape=point, style=invis, width=0, height=0, label="", pos="850,90!", pin=true];
             "n9" [style="rounded,filled", fillcolor="#FFFFCC:#FFFFF2", color="#5B5B59", label=<<b>guide</b>>, margin=0, pos="850,90!", pin=true, width=1.1111111111111112, height=0.4166666666666667, fixedsize=true];
           }
           subgraph "cluster_n8" {
-            label=<<font point-size="9">«region»</font><br/><b>Focusing</b>>;
+            label=<<font point-size="8"><b>Focusing</b></font>>;
             style="rounded,dashed";
             color="#5B5B59";
             penwidth=1;
-            bb="802,27,898,73";
+            bb="790,30,910,70";
             "n8" [shape=point, style=invis, width=0, height=0, label="", pos="850,50!", pin=true];
             "n10" [style="rounded,filled", fillcolor="#FFFFCC:#FFFFF2", color="#5B5B59", label=<<b>focus</b>>, margin=0, pos="850,50!", pin=true, width=1.1111111111111112, height=0.4166666666666667, fixedsize=true];
           }

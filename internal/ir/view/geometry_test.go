@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Open-MBEE/OpenSysML/internal/ir/lower"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 )
 
@@ -99,6 +100,84 @@ func TestTransitionRouteAndStateLayoutReachTheStateRendering(t *testing.T) {
 	}
 	if got, want := routeBetween(rendering, on.ID, off.ID), []Point{{30, 90}, {30, 10}}; !reflect.DeepEqual(got, want) {
 		t.Errorf("route of the unnamed transition = %v, want %v", got, want)
+	}
+}
+
+func TestParallelStateRegionLayoutsReachStateRendering(t *testing.T) {
+	r, idx := loadFixture(t, "region-layout.sysml")
+	view := lookup(t, idx, "RegionLayout::parallelLayouts")
+	rendering, err := r.Render(view)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Fatalf("notices = %v, want none", rendering.Notices)
+	}
+	drawn, err := r.DrawnIn(view)
+	if err != nil {
+		t.Fatalf("DrawnIn: %v", err)
+	}
+	regions := []struct {
+		name, symbol string
+		geometry     *Geometry
+	}{
+		{"r1", "RegionLayout::Machine::Active::r1", &Geometry{X: 10, Y: 20, Width: 300, Height: 100, HasSize: true}},
+		{"left", "RegionLayout::Machine::Busy::left", &Geometry{X: 110, Y: 120, Width: 310, Height: 140, HasSize: true}},
+		{"right", "RegionLayout::Machine::Busy::right", &Geometry{X: 210, Y: 220, Width: 320, Height: 150, HasSize: true}},
+		{"a", "RegionLayout::Ctl::a", &Geometry{X: 310, Y: 320, Width: 330, Height: 160, HasSize: true}},
+		{"b", "RegionLayout::Ctl::b", &Geometry{X: 410, Y: 420, Width: 340, Height: 170, HasSize: true}},
+	}
+	for _, tc := range regions {
+		node := findNode(t, rendering.Roots, tc.name)
+		if node.Kind != "region" {
+			t.Errorf("%s kind = %q, want region", tc.name, node.Kind)
+		}
+		if !reflect.DeepEqual(node.Geometry, tc.geometry) {
+			t.Errorf("%s geometry = %+v, want %+v", tc.name, node.Geometry, tc.geometry)
+		}
+		if symbol := lookup(t, idx, tc.symbol); !drawn.Node(symbol) {
+			t.Errorf("DrawnIn does not report %s as a node", tc.symbol)
+		}
+	}
+	inside := findNode(t, rendering.Roots, "inside")
+	if want := (&Geometry{X: 12, Y: 34, Width: 56, Height: 78, HasSize: true}); !reflect.DeepEqual(inside.Geometry, want) {
+		t.Errorf("inside geometry = %+v, want %+v", inside.Geometry, want)
+	}
+	left := findNode(t, rendering.Roots, "left")
+	if want := (&Style{Fill: "#FF0000"}); !reflect.DeepEqual(left.Style, want) {
+		t.Errorf("left style = %+v, want %+v", left.Style, want)
+	}
+	if len(rendering.Notes) != 1 || rendering.Notes[0].Text != "left region" || rendering.Notes[0].Anchor != left.ID {
+		t.Errorf("notes = %+v, want one note anchored to left", rendering.Notes)
+	}
+}
+
+func TestInheritedParallelRegionTakesUsageLayout(t *testing.T) {
+	rendering := render(t, "region-layout.sysml", "RegionLayout::inheritedLayout")
+	if len(rendering.Notices) != 0 {
+		t.Fatalf("notices = %v, want none", rendering.Notices)
+	}
+	usage := findNode(t, rendering.Roots, "RegionLayout::usage")
+	region := findNode(t, []*Node{usage}, "r1")
+	if want := (&Geometry{X: 510, Y: 520, Width: 350, Height: 180, HasSize: true}); !reflect.DeepEqual(region.Geometry, want) {
+		t.Errorf("inherited region geometry = %+v, want usage layout %+v", region.Geometry, want)
+	}
+}
+
+func TestBodySymbolResolvesSynthesizedRegionDeclaration(t *testing.T) {
+	r, idx := loadFixtures(t, "region-layout.sysml")
+	machine := lookup(t, idx, "RegionLayout::Ctl")
+	graph, err := lower.ToStateGraphWithEndpoints(machine.Decl, declScope(machine), lower.NewLibraryStateTypes(r.resolver))
+	if err != nil {
+		t.Fatalf("lower %s: %v", machine.Name, err)
+	}
+	if len(graph.TopRegions) == 0 {
+		t.Fatal("parallel state machine has no top regions")
+	}
+	region := graph.TopRegions[0]
+	got := r.bodySymbol(machine, graph, region)
+	if got == nil || got.Name != "a" {
+		t.Errorf("bodySymbol(region) = %v, want source substate symbol a", got)
 	}
 }
 
