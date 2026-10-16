@@ -92,14 +92,11 @@ func (b baseline) accepts(root string) func(file, code, message string) bool {
 	}
 }
 
-// ruleID is the SARIF rule a diagnostic is filed under: its code, else the
-// pass that produced it, else fallbackRuleID.
+// ruleID is the SARIF rule a diagnostic is filed under: its code, else
+// fallbackRuleID, the one rule for a finding that carries none.
 func ruleID(d diagnostic) string {
-	switch {
-	case d.Code != "":
+	if d.Code != "" {
 		return d.Code
-	case d.Pass != "":
-		return d.Pass
 	}
 	return fallbackRuleID
 }
@@ -113,6 +110,7 @@ func (r *reporter) sarifReport() *sarif.Log {
 		Version:        Version,
 	})
 	run := &log.Runs[0]
+	run.ColumnKind = "utf16CodeUnits"
 	rules := map[string]int{}
 	for _, d := range r.report.Diagnostics {
 		id := ruleID(d)
@@ -133,7 +131,7 @@ func (r *reporter) sarifReport() *sarif.Log {
 			Message:   sarif.Message{Text: d.Message},
 		}
 		if d.File != "" {
-			result.Locations = sarif.LocationAt(uri, d.Line, d.Column)
+			result.Locations = sarif.LocationAt(uri, d.Line, d.utf16Column)
 		}
 		for _, f := range d.Fixes {
 			result.Fixes = append(result.Fixes, sarifFix(uri, f))
@@ -147,14 +145,10 @@ func (r *reporter) sarifReport() *sarif.Log {
 	return log
 }
 
-// ruleDescription describes a rule by its id, which names what it finds; a
-// diagnostic filed under its pass is described as that pass's finding.
+// ruleDescription describes a rule by its id, which names what it finds.
 func ruleDescription(d diagnostic, id string) string {
-	switch {
-	case d.Code != "":
+	if d.Code != "" {
 		return "A finding of kind " + id + "."
-	case d.Pass != "":
-		return "A finding of the " + id + " pass that carries no code."
 	}
 	return "A finding that carries no code."
 }
@@ -163,7 +157,7 @@ func sarifFix(uri string, f fix) sarif.Fix {
 	change := sarif.ArtifactChange{ArtifactLocation: sarif.ArtifactLocation{URI: uri}}
 	for _, e := range f.Edits {
 		replacement := sarif.Replacement{DeletedRegion: sarif.Region{
-			StartLine: e.Line, StartColumn: e.Column, EndLine: e.EndLine, EndColumn: e.EndColumn,
+			StartLine: e.Line, StartColumn: e.utf16Column, EndLine: e.EndLine, EndColumn: e.utf16EndColumn,
 		}}
 		if e.NewText != "" {
 			replacement.InsertedContent = &sarif.ArtifactContent{Text: e.NewText}
@@ -174,12 +168,18 @@ func sarifFix(uri string, f fix) sarif.Fix {
 }
 
 // junitReport renders the diagnostics as JUnit XML: one suite per model file,
-// one failing case per finding and one passing case for a file with none.
+// one failing case per finding and one passing case for a file with none; what
+// stopped the run is an error case of the run's own suite, and a file with no
+// finding in a run stopped by something no finding explains is skipped.
 func (r *reporter) junitReport() *junit.Testsuites {
 	byFile := map[string][]diagnostic{}
 	for _, file := range r.files {
 		byFile[workspacePath(r.root, file)] = nil
 	}
+	if len(r.report.Errors) > 0 {
+		byFile[""] = byFile[""]
+	}
+	unexplained := len(r.report.Errors) > 0 && !r.hasErrorDiagnostics()
 	for _, d := range r.report.Diagnostics {
 		key := workspacePath(r.root, d.File)
 		byFile[key] = append(byFile[key], d)
@@ -197,8 +197,16 @@ func (r *reporter) junitReport() *junit.Testsuites {
 			suite.Name = "sysml"
 		}
 		found := byFile[name]
-		if len(found) == 0 {
-			suite.AddCase(junit.Testcase{Name: "no findings", Classname: name, File: name})
+		if name == "" {
+			for _, message := range r.report.Errors {
+				suite.AddCase(junit.Testcase{Name: "run", Classname: suite.Name, Error: &junit.Message{Text: message, Type: "error", Body: message}})
+			}
+		} else if len(found) == 0 {
+			c := junit.Testcase{Name: "no findings", Classname: name, File: name}
+			if unexplained {
+				c.Skipped = &junit.Message{Text: "validation did not complete: " + r.report.Errors[0]}
+			}
+			suite.AddCase(c)
 		}
 		for _, d := range found {
 			c := junit.Testcase{Name: junitCaseName(d), Classname: suite.Name, File: name}
@@ -219,6 +227,16 @@ func (r *reporter) junitReport() *junit.Testsuites {
 		suites.AddSuite(suite)
 	}
 	return suites
+}
+
+// hasErrorDiagnostics reports whether a finding of severity error was recorded.
+func (r *reporter) hasErrorDiagnostics() bool {
+	for _, d := range r.report.Diagnostics {
+		if d.Severity == "error" {
+			return true
+		}
+	}
+	return false
 }
 
 func junitCaseName(d diagnostic) string {

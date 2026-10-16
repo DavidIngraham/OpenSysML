@@ -54,6 +54,8 @@ type reporter struct {
 	files []string
 	// suppressed is how many findings the -baseline file kept out.
 	suppressed int
+	// warningsAsErrors is the exit policy -warnings-as-errors sets.
+	warningsAsErrors bool
 
 	verdicts       []repl.Verdict
 	statusVerdicts []repl.Verdict
@@ -95,6 +97,8 @@ type diagnostic struct {
 	Code   string `json:"code"`
 	// Fixes are the edits that resolve the finding, when analysis knows them.
 	Fixes []fix `json:"fixes,omitempty"`
+	// utf16Column is Column in UTF-16 code units, which SARIF counts columns in.
+	utf16Column int
 }
 
 // fix is one way to resolve a diagnostic, as the JSON report spells it.
@@ -112,6 +116,8 @@ type edit struct {
 	EndLine   int    `json:"endLine"`
 	EndColumn int    `json:"endColumn"`
 	NewText   string `json:"newText"`
+	// The columns in UTF-16 code units, for SARIF.
+	utf16Column, utf16EndColumn int
 }
 
 // namedValue is one value a check or run produced, as the JSON report spells it.
@@ -730,6 +736,8 @@ func (r *reporter) diags(diags []repl.Diagnostic) {
 			Pass:     d.Pass,
 			Code:     d.Code,
 			Fixes:    fixesOf(d.Fixes),
+
+			utf16Column: d.UTF16Column,
 		})
 	}
 }
@@ -742,7 +750,10 @@ func fixesOf(fixes []repl.Fix) []fix {
 	for _, f := range fixes {
 		converted := fix{Title: f.Title, Preferred: f.Preferred, Edits: []edit{}}
 		for _, e := range f.Edits {
-			converted.Edits = append(converted.Edits, edit{Line: e.Line, Column: e.Column, EndLine: e.EndLine, EndColumn: e.EndColumn, NewText: e.NewText})
+			converted.Edits = append(converted.Edits, edit{
+				Line: e.Line, Column: e.Column, EndLine: e.EndLine, EndColumn: e.EndColumn, NewText: e.NewText,
+				utf16Column: e.UTF16Column, utf16EndColumn: e.UTF16EndColumn,
+			})
 		}
 		out = append(out, converted)
 	}
@@ -804,6 +815,11 @@ func (r *reporter) reportVerdict(v repl.Verdict) {
 
 // finish reports the run's outcome and returns its exit status.
 func (r *reporter) finish() int {
+	// A warning the run reported, of the model or of a check, ends it under
+	// -warnings-as-errors as an error would when nothing else has.
+	if r.warningsAsErrors && len(r.report.Errors) == 0 && r.hasWarnings() {
+		r.failed("a warning was reported, which -warnings-as-errors judges an error")
+	}
 	status, exit := r.status()
 	if !r.machine {
 		return exit
@@ -857,6 +873,16 @@ func (r *reporter) finish() int {
 
 // status is the outcome of the whole run: a check that could not be made leaves
 // it unresolved, and otherwise the worst verdict decided stands.
+// hasWarnings reports whether a finding of severity warning was recorded.
+func (r *reporter) hasWarnings() bool {
+	for _, d := range r.report.Diagnostics {
+		if d.Severity == "warning" {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *reporter) status() (repl.VerdictStatus, int) {
 	worst := repl.WorstStatus(r.statusVerdicts)
 	if !r.clean() {

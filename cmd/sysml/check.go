@@ -246,7 +246,7 @@ func (a *advanceTime) Set(value string) error {
 // -json and -advance check nothing themselves, but are included so their misuse
 // is reported rather than leaving a script at a prompt it cannot answer.
 func (c *checks) requested() bool {
-	return c.validate.given || c.selfCheck || c.machine() || c.baseline != "" || c.warningsAsErrors || c.advance.given || c.satisfy.given || len(c.instantiate) > 0 ||
+	return c.validate.given || c.selfCheck || c.format != "" || c.jsonOut || c.baseline != "" || c.warningsAsErrors || c.advance.given || c.satisfy.given || len(c.instantiate) > 0 ||
 		len(c.constraints) > 0 || len(c.requirements) > 0 || len(c.calcs) > 0 || len(c.analyses) > 0 ||
 		len(c.toolDryRuns) > 0 || len(c.records) > 0 ||
 		len(c.queries) > 0 || len(c.actions) > 0 || len(c.states) > 0 ||
@@ -581,6 +581,7 @@ func runChecks(files []string, exprs []string, c checks) int {
 		return refuse(c, "-o names the file the report document is written to; ask for one with -json or -format json|sarif|junit")
 	}
 	rep := newReporter(format, c.output)
+	rep.warningsAsErrors = c.warningsAsErrors
 
 	var advance float64
 	if c.advance.given {
@@ -677,6 +678,16 @@ func runChecks(files []string, exprs []string, c checks) int {
 		}
 		return rep.finish()
 	}
+	// The report must not land on a file the run read: a model, or the baseline.
+	if c.output != "" {
+		for _, read := range append(sess.Files(), c.baseline) {
+			if read != "" && samePath(c.output, read) {
+				rep.output = ""
+				rep.failed(fmt.Sprintf("-o %s is a file this run reads; name another for the report", c.output))
+				return rep.finish()
+			}
+		}
+	}
 
 	// A model that did not analyse cleanly answers nothing, so its diagnostics end
 	// the run rather than a verdict being reported about a model nobody could read.
@@ -688,7 +699,13 @@ func runChecks(files []string, exprs []string, c checks) int {
 	if sess.HasErrors() {
 		rep.diags(sess.LocatedDiagnostics())
 		rep.problem(sess.DiagnosticLines())
-		rep.failed(fmt.Sprintf("%s did not analyse cleanly; no check was made", namedModels(files)))
+		if c.baseline != "" && !reportedErrors(sess.LocatedDiagnostics()) {
+			// A known error is still one: analysis stopped at it, so the tiers
+			// after it did not run and nothing can be said about the model.
+			rep.failed(fmt.Sprintf("%s did not analyse cleanly: an error the baseline knows stopped analysis before the later tiers ran; no check was made", namedModels(files)))
+		} else {
+			rep.failed(fmt.Sprintf("%s did not analyse cleanly; no check was made", namedModels(files)))
+		}
 		return rep.finish()
 	}
 	// -warnings-as-errors judges a warning as an error does: the report keeps

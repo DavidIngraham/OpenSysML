@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/Open-MBEE/OpenSysML/internal/exec/analysis"
 	"github.com/Open-MBEE/OpenSysML/internal/exec/runtime"
@@ -163,7 +164,7 @@ func (s *Session) HasErrors() bool {
 // running. Notation stops it only when asked strictly, which rejects the file outright.
 func (s *Session) hasAnalysisErrors() bool {
 	strict := s.ws.ConformanceMode().IsStrict()
-	for _, d := range s.diagnostics() {
+	for _, d := range s.allDiagnostics() {
 		if d.Blocking() || (strict && d.Severity == diag.SeverityError) {
 			return true
 		}
@@ -210,6 +211,8 @@ type Diagnostic struct {
 	File   string
 	Line   int
 	Column int
+	// UTF16Column is Column counted in UTF-16 code units, as SARIF counts.
+	UTF16Column int
 	// Pass names what produced the finding, and Code what it found.
 	Pass string
 	Code string
@@ -229,7 +232,9 @@ type Fix struct {
 type Edit struct {
 	Line, Column       int
 	EndLine, EndColumn int
-	NewText            string
+	// UTF16Column and UTF16EndColumn are the columns in UTF-16 code units.
+	UTF16Column, UTF16EndColumn int
+	NewText                     string
 }
 
 // LocatedDiagnostics reports the analysis of everything submitted so far, each
@@ -252,14 +257,15 @@ func (s *Session) LocatedDiagnostics() []Diagnostic {
 		}
 		p := lines.PosAt(d.Span.Offset - start)
 		out = append(out, Diagnostic{
-			Severity: d.Severity.String(),
-			Message:  d.Message,
-			File:     sn.origin,
-			Line:     p.Line,
-			Column:   p.Col,
-			Pass:     d.Source,
-			Code:     d.Code,
-			Fixes:    locatedFixes(d.Fixes, []byte(sn.src), lines, start),
+			Severity:    d.Severity.String(),
+			Message:     d.Message,
+			File:        sn.origin,
+			Line:        p.Line,
+			Column:      p.Col,
+			UTF16Column: utf16Column([]byte(sn.src), d.Span.Offset-start, p.Col),
+			Pass:        d.Source,
+			Code:        d.Code,
+			Fixes:       locatedFixes(d.Fixes, []byte(sn.src), lines, start),
 		})
 	}
 	return out
@@ -280,11 +286,23 @@ func locatedFixes(fixes []diag.Fix, content []byte, lines *source.LineIndex, sta
 			from, to := lines.PosAt(span.Offset), lines.PosAt(span.End())
 			fix.Edits = append(fix.Edits, Edit{
 				Line: from.Line, Column: from.Col, EndLine: to.Line, EndColumn: to.Col, NewText: text,
+				UTF16Column:    utf16Column(content, span.Offset, from.Col),
+				UTF16EndColumn: utf16Column(content, span.End(), to.Col),
 			})
 		}
 		out = append(out, fix)
 	}
 	return out
+}
+
+// utf16Column is the column of offset, whose byte column is col, counted in
+// UTF-16 code units as SARIF and the editors count; 0 stays the whole line.
+func utf16Column(content []byte, offset, col int) int {
+	lineStart := offset - (col - 1)
+	if col < 1 || lineStart < 0 || offset > len(content) {
+		return col
+	}
+	return len(utf16.Encode([]rune(string(content[lineStart:offset])))) + 1
 }
 
 // Suppress keeps the diagnostics the predicate accepts out of everything the

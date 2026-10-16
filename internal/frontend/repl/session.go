@@ -416,6 +416,18 @@ func (s *Session) Budgets() runtime.Budgets {
 	return s.budgets
 }
 
+// Files returns the path of every file loaded into the session, in load order.
+func (s *Session) Files() []string {
+	defer s.enter()()
+	var out []string
+	for _, sn := range s.snippets {
+		if sn.origin != "" {
+			out = append(out, sn.origin)
+		}
+	}
+	return out
+}
+
 // List returns a one-line summary per surviving snippet.
 func (s *Session) List() []string {
 	defer s.enter()()
@@ -816,7 +828,15 @@ func (s *Session) foreignSpans() []source.Span {
 
 // diagnostics reports the analysis of every session document and the syntax errors
 // of the masked submissions, each moved to where its text sits in the session buffer.
-func (s *Session) diagnostics() []diag.Diagnostic {
+func (s *Session) diagnostics() []diag.Diagnostic { return s.gather(true) }
+
+// allDiagnostics reports them all, suppression aside: whether an error stopped
+// analysis is decided over every error it found, known or not.
+func (s *Session) allDiagnostics() []diag.Diagnostic { return s.gather(false) }
+
+// gather collects the diagnostics, leaving out the ones Suppress accepted when
+// suppressing and counting them.
+func (s *Session) gather(suppressing bool) []diag.Diagnostic {
 	names := []string{docName}
 	for _, sn := range s.snippets {
 		if sn.origin != "" && !sn.open {
@@ -825,8 +845,10 @@ func (s *Session) diagnostics() []diag.Diagnostic {
 	}
 	// One batch: the documents not analyzed yet are analyzed at once.
 	analyzed := s.ws.DiagnosticsAll(names)
-	s.suppressed = 0
-	out := s.unsuppressed(nil, analyzed[0], "")
+	if suppressing {
+		s.suppressed = 0
+	}
+	out := s.keep(nil, analyzed[0], "", suppressing)
 	next := 1
 	acc := 0
 	for _, sn := range s.snippets {
@@ -841,7 +863,7 @@ func (s *Session) diagnostics() []diag.Diagnostic {
 		for _, d := range own {
 			d.Span.Offset += acc
 			d.Fixes = rebasedFixes(d.Fixes, acc)
-			out = s.unsuppressed(out, []diag.Diagnostic{d}, sn.origin)
+			out = s.keep(out, []diag.Diagnostic{d}, sn.origin, suppressing)
 		}
 		acc += len(sn.src) + 1 // the newline joined() writes between snippets
 	}
@@ -849,11 +871,11 @@ func (s *Session) diagnostics() []diag.Diagnostic {
 	return out
 }
 
-// unsuppressed appends to out the diagnostics of file the suppression keeps,
-// counting the ones it drops.
-func (s *Session) unsuppressed(out, diags []diag.Diagnostic, file string) []diag.Diagnostic {
+// keep appends to out the diagnostics of file, less the ones the suppression
+// accepts when suppressing, counting those.
+func (s *Session) keep(out, diags []diag.Diagnostic, file string, suppressing bool) []diag.Diagnostic {
 	for _, d := range diags {
-		if s.suppress != nil && s.suppress(file, d.Code, d.Message) {
+		if suppressing && s.suppress != nil && s.suppress(file, d.Code, d.Message) {
 			s.suppressed++
 			continue
 		}

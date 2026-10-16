@@ -24,8 +24,11 @@ type Log struct {
 
 // Run is one invocation of one tool and the results it produced.
 type Run struct {
-	Tool       Tool        `json:"tool"`
-	Results    []Result    `json:"results"`
+	Tool    Tool     `json:"tool"`
+	Results []Result `json:"results"`
+	// ColumnKind is what the columns count: "utf16CodeUnits" (the default
+	// readers assume) or "unicodeCodePoints".
+	ColumnKind string      `json:"columnKind,omitempty"`
 	Properties *Properties `json:"properties,omitempty"`
 }
 

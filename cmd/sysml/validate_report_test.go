@@ -67,6 +67,9 @@ func TestValidateSARIFReport(t *testing.T) {
 		t.Fatalf("run = %+v", log.Runs)
 	}
 	run := log.Runs[0]
+	if run.ColumnKind != "utf16CodeUnits" {
+		t.Fatalf("columnKind = %q", run.ColumnKind)
+	}
 	rules := map[string]int{}
 	for i, rule := range run.Tool.Driver.Rules {
 		if _, dup := rules[rule.ID]; dup {
@@ -135,7 +138,7 @@ func TestValidateJUnitReport(t *testing.T) {
 	if err := xml.Unmarshal([]byte(got.stdout), &suites); err != nil {
 		t.Fatalf("not JUnit XML: %v\n%s", err, got.stdout)
 	}
-	if len(suites.Suites) != 3 || suites.Tests != 3 || suites.Failures != 2 || suites.Errors != 0 {
+	if len(suites.Suites) != 4 || suites.Tests != 4 || suites.Failures != 2 || suites.Errors != 1 {
 		t.Fatalf("totals = %d suites, %d tests, %d failures, %d errors\n%s", len(suites.Suites), suites.Tests, suites.Failures, suites.Errors, got.stdout)
 	}
 	byName := map[string]junit.Testsuite{}
@@ -143,8 +146,12 @@ func TestValidateJUnitReport(t *testing.T) {
 		byName[s.Name] = s
 	}
 	clean := byName["models/clean.sysml"]
-	if clean.Tests != 1 || clean.Failures != 0 || len(clean.Cases) != 1 || clean.Cases[0].Failure != nil {
+	if clean.Tests != 1 || clean.Failures != 0 || len(clean.Cases) != 1 || clean.Cases[0].Failure != nil || clean.Cases[0].Skipped != nil {
 		t.Fatalf("clean file = %+v", clean)
+	}
+	run := byName["sysml"]
+	if run.Errors != 1 || len(run.Cases) != 1 || run.Cases[0].Error == nil || !strings.Contains(run.Cases[0].Error.Text, "did not analyse cleanly") {
+		t.Fatalf("run suite = %+v", run)
 	}
 	broken := byName["models/broken.sysml"]
 	if broken.Failures != len(broken.Cases) || broken.Failures == 0 {
@@ -167,7 +174,8 @@ func TestValidateJUnitReport(t *testing.T) {
 func TestValidateBaselineRoundTrip(t *testing.T) {
 	binary := buildCLI(t)
 	dir := reportWorkspace(t)
-	recorded := checkPathsIn(t, dir, binary, "-validate", "-json", "-o", "baseline.json", "models")
+	strict := []string{"-validate", "-warnings-as-errors"}
+	recorded := checkPathsIn(t, dir, binary, append(strict, "-json", "-o", "baseline.json", "models/notation.sysml")...)
 	if recorded.status != exitUnevaluable {
 		t.Fatalf("recording exit %d\n%s", recorded.status, recorded.output())
 	}
@@ -177,41 +185,118 @@ func TestValidateBaselineRoundTrip(t *testing.T) {
 	} else if err := json.Unmarshal(data, &baseline); err != nil {
 		t.Fatal(err)
 	}
-	known := len(baseline.Diagnostics)
-	if known < 2 {
-		t.Fatalf("baseline recorded %d findings\n%+v", known, baseline.Diagnostics)
+	if len(baseline.Diagnostics) != 1 || baseline.Diagnostics[0].Code != "nonstandard-notation" {
+		t.Fatalf("baseline recorded %+v", baseline.Diagnostics)
 	}
 
-	again := checkPathsIn(t, dir, binary, "-validate", "-baseline", "baseline.json", "models")
-	wantReport(t, again, exitHolds, "known finding(s) suppressed by baseline.json", "models: no errors")
-	rejectReport(t, again, "unresolved reference")
+	again := checkPathsIn(t, dir, binary, append(strict, "-baseline", "baseline.json", "models/notation.sysml")...)
+	wantReport(t, again, exitHolds, "1 known finding(s) suppressed by baseline.json", "no errors")
+	rejectReport(t, again, "warning:")
 
-	// The findings move down two lines and stay known.
-	broken := filepath.Join(dir, "models", "broken.sysml")
-	if err := os.WriteFile(broken, []byte("\n\n"+reportBrokenModel), 0o644); err != nil {
+	// The finding moves down two lines and stays known.
+	notation := filepath.Join(dir, "models", "notation.sysml")
+	if err := os.WriteFile(notation, []byte("\n\n"+reportNotationModel), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	moved := checkPathsIn(t, dir, binary, "-validate", "-baseline", "baseline.json", "-json", "models")
+	moved := checkPathsIn(t, dir, binary, append(strict, "-baseline", "baseline.json", "-json", "models/notation.sysml")...)
 	var report checkReport
 	if err := json.Unmarshal([]byte(moved.stdout), &report); err != nil {
 		t.Fatalf("%v\n%s", err, moved.output())
 	}
-	if moved.status != exitHolds || report.Suppressed != known || len(report.Diagnostics) != 0 {
+	if moved.status != exitHolds || report.Suppressed != 1 || len(report.Diagnostics) != 0 {
 		t.Fatalf("after moving lines: exit %d, %d suppressed, %d reported\n%s", moved.status, report.Suppressed, len(report.Diagnostics), moved.output())
 	}
 
 	// A finding the baseline does not know is the only one reported, and ends the run.
-	if err := os.WriteFile(broken, []byte("\n\n"+strings.Replace(reportBrokenModel, "part a : A;", "part a : A;\n  part c : AlsoMissing;", 1)), 0o644); err != nil {
+	fresh := strings.Replace(reportNotationModel, "    state a;\n", "    state a;\n    choice other;\n    transition other then a;\n", 1)
+	if err := os.WriteFile(notation, []byte("\n\n"+fresh), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	fresh := checkPathsIn(t, dir, binary, "-validate", "-baseline", "baseline.json", "models")
-	wantReport(t, fresh, exitUnevaluable, "unresolved reference: AlsoMissing", "did not analyse cleanly")
-	rejectReport(t, fresh, "unresolved reference: Missing\n")
-	sarifRun := checkPathsIn(t, dir, binary, "-validate", "-baseline", "baseline.json", "-format", "sarif", "models")
-	log := decodeSARIF(t, []byte(sarifRun.stdout))
-	if len(log.Runs[0].Results) != 1 || log.Runs[0].Properties == nil || log.Runs[0].Properties.Suppressed != known {
+	got := checkPathsIn(t, dir, binary, append(strict, "-baseline", "baseline.json", "models/notation.sysml")...)
+	wantReport(t, got, exitUnevaluable, "`choice other;` is an OpenSysML extension", "1 known finding(s) suppressed", "-warnings-as-errors judges")
+	rejectReport(t, got, "`choice pick;`")
+	asSARIF := checkPathsIn(t, dir, binary, append(strict, "-baseline", "baseline.json", "-format", "sarif", "models/notation.sysml")...)
+	log := decodeSARIF(t, []byte(asSARIF.stdout))
+	if len(log.Runs[0].Results) != 1 || log.Runs[0].Properties == nil || log.Runs[0].Properties.Suppressed != 1 {
 		t.Fatalf("SARIF after baseline: %d results, properties %+v", len(log.Runs[0].Results), log.Runs[0].Properties)
 	}
+}
+
+// TestValidateBaselineKnowsABlockingError: an error the baseline knows is kept
+// out of the report, but analysis still stopped at it, so the run is undecided
+// rather than clean, and JUnit says so instead of passing the other files.
+func TestValidateBaselineKnowsABlockingError(t *testing.T) {
+	binary := buildCLI(t)
+	dir := reportWorkspace(t)
+	recorded := checkPathsIn(t, dir, binary, "-validate", "-json", "-o", "baseline.json", "models")
+	if recorded.status != exitUnevaluable {
+		t.Fatalf("recording exit %d\n%s", recorded.status, recorded.output())
+	}
+	got := checkPathsIn(t, dir, binary, "-validate", "-baseline", "baseline.json", "models")
+	wantReport(t, got, exitUnevaluable, "2 known finding(s) suppressed by baseline.json", "an error the baseline knows stopped analysis before the later tiers ran; no check was made")
+	rejectReport(t, got, "unresolved reference", "no errors")
+
+	asJUnit := checkPathsIn(t, dir, binary, "-validate", "-baseline", "baseline.json", "-format", "junit", "models")
+	var suites junit.Testsuites
+	if err := xml.Unmarshal([]byte(asJUnit.stdout), &suites); err != nil {
+		t.Fatalf("not JUnit XML: %v\n%s", err, asJUnit.stdout)
+	}
+	if suites.Errors != 1 || suites.Failures != 0 || suites.Skipped != 3 {
+		t.Fatalf("totals = %d errors, %d failures, %d skipped\n%s", suites.Errors, suites.Failures, suites.Skipped, asJUnit.stdout)
+	}
+	for _, suite := range suites.Suites {
+		if suite.Name == "sysml" {
+			continue
+		}
+		if len(suite.Cases) != 1 || suite.Cases[0].Skipped == nil || !strings.Contains(suite.Cases[0].Skipped.Text, "validation did not complete") {
+			t.Fatalf("suite %s = %+v", suite.Name, suite.Cases)
+		}
+	}
+}
+
+// TestValidateSARIFCountsUTF16Columns: a column before which the line holds a
+// character of two UTF-8 bytes is one less in SARIF, which counts UTF-16 code
+// units, than in the JSON report, which counts bytes.
+func TestValidateSARIFCountsUTF16Columns(t *testing.T) {
+	binary := buildCLI(t)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "u.sysml"), []byte("package U {\n  part def A;\n  /*é*/ part b : Missing;\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	asJSON := checkPathsIn(t, dir, binary, "-validate", "-json", "u.sysml")
+	var report checkReport
+	if err := json.Unmarshal([]byte(asJSON.stdout), &report); err != nil {
+		t.Fatalf("%v\n%s", err, asJSON.output())
+	}
+	asSARIF := checkPathsIn(t, dir, binary, "-validate", "-format", "sarif", "u.sysml")
+	log := decodeSARIF(t, []byte(asSARIF.stdout))
+	if len(report.Diagnostics) != 1 || len(log.Runs[0].Results) != 1 {
+		t.Fatalf("%d JSON findings, %d SARIF results", len(report.Diagnostics), len(log.Runs[0].Results))
+	}
+	region := log.Runs[0].Results[0].Locations[0].PhysicalLocation.Region
+	if region.StartLine != 3 || region.StartColumn != report.Diagnostics[0].Column-1 {
+		t.Fatalf("SARIF region %+v for JSON column %d", region, report.Diagnostics[0].Column)
+	}
+}
+
+// TestValidateWarningsAsErrorsJudgesACheckWarning: a warning a check reports,
+// not the model, ends the run under -warnings-as-errors too.
+func TestValidateWarningsAsErrorsJudgesACheckWarning(t *testing.T) {
+	binary := buildCLI(t)
+	model := `package M {
+    private import ScalarValues::Real;
+    part def Leaf { attribute v : Real = 1.0; }
+    part def L3 { part leaves : Leaf[100]; }
+    part def L2 { part inner : L3[100]; }
+    part def L1 { part inner : L2[100]; }
+    part def Craft { part inner : L1[100]; }
+    part craft : Craft;
+}
+`
+	lenient := check(t, binary, model, "-instantiate", "M::craft", "-validate")
+	wantReport(t, lenient, exitHolds, "materialization is bounded")
+	strict := check(t, binary, model, "-instantiate", "M::craft", "-validate", "-warnings-as-errors")
+	wantReport(t, strict, exitUnevaluable, "materialization is bounded", "-warnings-as-errors judges an error")
 }
 
 // TestValidateWarningsAsErrors: a warning leaves the exit status alone until
@@ -245,6 +330,8 @@ func TestValidateFormatMisuse(t *testing.T) {
 		{[]string{"-validate", "-json", "-format", "sarif", "models"}, "-json reports JSON; it cannot be combined with -format sarif"},
 		{[]string{"-validate", "-o", "report.txt", "models"}, "-o names the file the report document is written to"},
 		{[]string{"-format", "sarif", "models"}, "-format reports a check; name one"},
+		{[]string{"-format", "text", "models"}, "-format reports a check; name one"},
+		{[]string{"-validate", "-json", "-o", "models/clean.sysml", "models"}, "-o models/clean.sysml is a file this run reads"},
 		{[]string{"-baseline", "baseline.json", "models"}, "-baseline accepts the known findings of a check"},
 		{[]string{"-warnings-as-errors", "models"}, "-warnings-as-errors judges the warnings of a check"},
 		{[]string{"-validate", "-baseline", "absent.json", "models"}, "-baseline open absent.json"},

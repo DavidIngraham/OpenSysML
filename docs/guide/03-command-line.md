@@ -661,9 +661,12 @@ the tool's name and version, one rule per diagnostic code, each finding's severi
 `level`, its file relative to the working directory with its line and column, and the fixes
 analysis offers as `fixes`. `-format junit` writes JUnit XML, the form every CI service's test
 tab reads: one testsuite per file, one failing testcase per finding, typed by its severity, and
-one passing testcase for a file with no finding. `-format json` is `-json`. A document goes to
-standard output, or to the file `-o` names; the summary line and whatever stopped the run keep
-going to standard error, since neither document has a place for them.
+one passing testcase for a file with no finding, and an error testcase under `sysml` for whatever
+stopped the run — a bad baseline, a file that could not be read. `-format json` is `-json`. A
+document goes to standard output, or to the file `-o` names, which may not be a file the run
+read; the summary line and whatever stopped the run keep going to standard error as well,
+since a SARIF document has no place for them. SARIF counts columns in UTF-16 code units, as
+its readers do, where the lines and the JSON report count bytes.
 
 ```bash
 $ sysml -validate -format sarif -o sysml.sarif models
@@ -721,7 +724,15 @@ carries the count as `suppressed`. The finding the baseline does not know is rep
 judged as it would be without a baseline, so the exit status says exactly whether anything new
 was found. Re-record the baseline when a known finding is fixed or deliberately accepted.
 
-`-warnings-as-errors` makes a warning end the run as an error does, exit status 2. It changes
+A baseline accepts what analysis ran through: a warning, or an error of the last tier. An error
+that stopped analysis — a syntax error, a reference that does not resolve — is still one when
+the baseline knows it: the tiers after it did not run, so nothing can be said about the model,
+and the run is undecided (exit status 2, `did not analyse cleanly: an error the baseline knows
+stopped analysis before the later tiers ran`) rather than clean. The finding itself stays out of
+the report, and the summary still counts it.
+
+`-warnings-as-errors` makes a warning end the run as an error does, exit status 2 — a warning
+of the model, or one a check reports, as a materialization the tool had to bound. It changes
 the exit status and nothing else: the report keeps each finding's own severity, so a SARIF
 `level` stays `warning` and a dashboard still tells the two apart. Rewriting the severity would
 misreport what analysis found; the policy belongs to the build, not to the finding.
