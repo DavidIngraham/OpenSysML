@@ -2442,7 +2442,8 @@ jobs:
               else
                 read_binary() { cat "$1"; }
               fi
-              if read_binary "$binary" | grep -qa -- "${CIRCLE_TAG}"; then
+              # grep -c reads the whole stream: under pipefail, -q would SIGPIPE the producer on an early match.
+              if read_binary "$binary" | grep -ac -- "${CIRCLE_TAG}" > /dev/null; then
                 echo "ok: $binary carries ${CIRCLE_TAG}"
               else
                 fail "$binary" "the version string is absent from the binary"

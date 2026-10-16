@@ -124,7 +124,8 @@ for binary in sysml-* grpc/sysml-grpc-* jupyter/sysml-jupyter-kernel-* wasm/sysm
       *" ${VERSION} "*) echo "ok: $binary reports ${VERSION}" ;;
       *) fail "$binary" "it reports '${reported}'" ;;
     esac
-  elif [[ "$binary" == *.gz ]] && gzip -dc "$binary" | grep -qa -- "${VERSION}"; then
+  # grep -c reads the whole stream: under pipefail, -q would SIGPIPE gzip on an early match.
+  elif [[ "$binary" == *.gz ]] && gzip -dc "$binary" | grep -ac -- "${VERSION}" > /dev/null; then
     echo "ok: $binary carries ${VERSION}"
   elif [[ "$binary" != *.gz ]] && grep -qa -- "${VERSION}" "$binary"; then
     echo "ok: $binary carries ${VERSION}"
