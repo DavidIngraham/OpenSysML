@@ -80,7 +80,7 @@ func URL(code string) string {
 	if e, _, ok := Lookup(code); ok {
 		code = e.Code
 	}
-	return CatalogueURL + "#" + code
+	return CatalogueURL + "#" + Anchor(code)
 }
 
 // Lookup finds the entry of a code. A member of a family (`document-plan-missing-title`)
