@@ -40,7 +40,7 @@ service serves.
   <a href="https://www.npmjs.com/package/@openmbee/opensysml">npm</a></p>
 </div>
 <div class="osml-eco__card">
-  <span class="osml-eco__tag">Maven Central</span>
+  <span class="osml-eco__tag">Published · Maven Central</span>
   <h3>Java</h3>
   <p><code>org.openmbee:opensysml</code> on Maven Central at the core's version.</p>
   <p class="osml-eco__links"><a href="java/">Java client</a> ·
