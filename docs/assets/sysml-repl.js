@@ -251,6 +251,7 @@
         var counted = r.body.pipeThrough(new TransformStream({
           transform: function (chunk, ctl) {
             got += chunk.length;
+            if (got > total) total = 0; // Content-Length was the encoded size
             if (onProgress) onProgress(got, total);
             ctl.enqueue(chunk);
           }
