@@ -581,7 +581,8 @@
       "passes": [
         "constraint"
       ],
-      "status": "faithful"
+      "status": "approximate",
+      "rationale": "an analysis case definition is exempt (the solver improves several objectives), where the pilot reports `Only one objective is allowed.`"
     },
     {
       "name": "validateCaseDefinitionOnlyOneSubject",
@@ -647,7 +648,8 @@
       "passes": [
         "constraint"
       ],
-      "status": "faithful"
+      "status": "approximate",
+      "rationale": "an analysis case usage is exempt (the solver improves several objectives), where the pilot reports `Only one objective is allowed.`"
     },
     {
       "name": "validateCaseUsageOnlyOneSubject",
@@ -1149,9 +1151,9 @@
         "clause": "8.3.6.2",
         "name": "validateDefinitionVariationOwnedFeatureMembership"
       },
-      "checks": "An owned usage of a variation definition is a variant",
+      "checks": "An owned usage of a variation definition is a variant; an objective in a variation case definition is reported by both tools, unlike one in a variation case usage",
       "implementation": "internal/check/passes/w8d_variability.go:W8DVariabilityPass.Run",
-      "message": "The OCL (`isVariation implies ownedFeatureMembership->isEmpty()`) rejects an objective in a variation, but `w8d_variability.go` `checkMembers` exempts it, as the pilot does; see [gap register §27](spec-pilot-gap-register.md#27-variation-parameters-and-stakeholder-specialization)",
+      "message": "same wording, at the member; the objective exemption of [gap register §27](spec-pilot-gap-register.md#27-variation-parameters-and-stakeholder-specialization) applies to a variation usage only, so an objective in a variation definition is reported as the pilot reports it",
       "negativeCase": "`xpect/p09-variation-member-not-variant.sysml`",
       "codes": [
         "variation-member-not-variant"
@@ -1159,8 +1161,7 @@
       "passes": [
         "constraint"
       ],
-      "status": "approximate",
-      "rationale": "an objective in a variation is exempted as the pilot does, where the OCL rejects it"
+      "status": "faithful"
     },
     {
       "name": "validateDefinitionVariationSpecialization",
@@ -1364,7 +1365,8 @@
       "passes": [
         "type"
       ],
-      "status": "faithful"
+      "status": "approximate",
+      "rationale": "reported on the reference form `exhibit p;`; the declared form `exhibit state e references p;` is silent where the pilot reports it"
     },
     {
       "name": "validateExposeIsImportAll",
@@ -3115,7 +3117,8 @@
       "passes": [
         "type"
       ],
-      "status": "faithful"
+      "status": "approximate",
+      "rationale": "reported on the reference form `perform p;`; the declared form `perform action f references p;` is silent where the pilot reports it"
     },
     {
       "name": "validatePortDefinitionConjugatedPortDefinition",
@@ -4502,7 +4505,8 @@
       "metaclass": "ViewDefinition",
       "spec": {
         "document": "sysml",
-        "clause": "8.3.26.7"
+        "clause": "8.3.26.7",
+        "name": "validateViewDefinitionOnlyOneViewRendering"
       },
       "checks": "A view definition has at most one view rendering (the pilot's constant is spelled `Onv`)",
       "implementation": "internal/check/passes/diagram/view_rendering.go:ViewRenderingPass.Run",
@@ -14153,26 +14157,6 @@
       },
       "checks": "The membershipOwningNamespace of a VariantMembership must be a variation-point Definition or Usage.",
       "ocl": "membershipOwningNamespace.oclIsKindOf(Definition) and\n    membershipOwningNamespace.oclAsType(Definition).isVariation or\nmembershipOwningNamespace.oclIsKindOf(Usage) and\n    membershipOwningNamespace.oclAsType(Usage).isVariation",
-      "implementation": "—",
-      "message": "—",
-      "negativeCase": "none",
-      "codes": [],
-      "passes": [],
-      "status": "unknown",
-      "rationale": "stated by the formal document; not yet assessed against the tree"
-    },
-    {
-      "name": "validateViewDefinitionOnlyOneViewRendering",
-      "source": "spec",
-      "kind": "validate",
-      "metaclass": "ViewDefinition",
-      "spec": {
-        "document": "sysml",
-        "clause": "8.3.26.7",
-        "name": "validateViewDefinitionOnlyOneViewRendering"
-      },
-      "checks": "A ViewDefinition must have at most one ViewRenderingMembership.",
-      "ocl": "featureMembership->\n    selectByKind(ViewRenderingMembership)->\n    size() <= 1",
       "implementation": "—",
       "message": "—",
       "negativeCase": "none",

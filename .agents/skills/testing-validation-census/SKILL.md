@@ -10,7 +10,9 @@ validation constraints does OpenSysML report?". Its denominator is read from the
 two validator classes and committed as `docs/project/constraint-manifest.json` together with
 each name's row (metaclass, spec clause, implementation, diagnostic codes, negative case, status,
 rationale); the page's table is rendered from it by `doc-counts` and by `validation-census`. The
-evidence for every ✅/⚠️ row is a violating model under `tools/census/validation/testdata/probes/`.
+evidence for a ✅/⚠️ `validate*` row is a violating model under `tools/census/validation/testdata/probes/`;
+a ✅/⚠️ `check*` or `derive*` row (an implied specialization or a derived property, which reports no
+diagnostic) is held to the declared function its `implementation` cites, with its unit test beside it.
 The manifest also carries the spec-sourced rows (`"source": "spec"`): the `check*`/`derive*`/`validate*`
 constraints the pinned formal documents state and the pilot does not name, read from the PDFs by
 `tools/census/formal`. They follow the pilot rows, are outside the census table and counts, and are

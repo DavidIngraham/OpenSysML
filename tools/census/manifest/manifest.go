@@ -135,8 +135,8 @@ type Constraint struct {
 	Kind      string `json:"kind"`
 	Metaclass string `json:"metaclass"`
 	// Spec cites the pinned document's clause stating the constraint, and the
-	// document's own name for it when the document states it (the pilot's name
-	// where the two differ is Name).
+	// document's own name for it when the document states it — the pilot's name,
+	// except where the pilot renames or misspells it.
 	Spec *SpecRef `json:"spec,omitempty"`
 	// Checks, Implementation, Message and NegativeCase are the census table's
 	// cells, in Markdown; a spec-sourced row's Checks is the document's prose.
@@ -302,8 +302,13 @@ func (m *Manifest) Validate() error {
 			if !clausePattern.MatchString(c.Spec.Clause) {
 				return fmt.Errorf("%s: %s cites clause %q", Path, c.Name, c.Spec.Clause)
 			}
-			if c.Spec.Name != "" && !constraintNamePattern.MatchString(c.Spec.Name) {
-				return fmt.Errorf("%s: %s cites the spec name %q, which is not a constraint name", Path, c.Name, c.Spec.Name)
+			if c.Spec.Name != "" && c.Spec.Name != c.Name {
+				if !constraintNamePattern.MatchString(c.Spec.Name) {
+					return fmt.Errorf("%s: %s cites the spec name %q, which is not a constraint name", Path, c.Name, c.Spec.Name)
+				}
+				if other, ok := m.Constraint(c.Spec.Name); ok {
+					return fmt.Errorf("%s: %s cites the spec name %q, which is %s's own name", Path, c.Name, c.Spec.Name, other.Name)
+				}
 			}
 		}
 		for _, cell := range []string{c.Checks, c.Implementation, c.Message, c.NegativeCase, c.Rationale} {

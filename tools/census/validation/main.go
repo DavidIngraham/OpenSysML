@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Open-MBEE/OpenSysML/tools/census/doccounts"
 	"github.com/Open-MBEE/OpenSysML/tools/census/manifest"
 	"github.com/Open-MBEE/OpenSysML/tools/oracle/baseline"
 	"github.com/Open-MBEE/OpenSysML/tools/oracle/repo"
@@ -175,9 +176,14 @@ func runCheck(root string, opts options, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	compliance, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(doccounts.SpecCompliancePath))) // #nosec G304 -- fixed repository path
+	if err != nil {
+		return err
+	}
 	var failures []string
 	for _, err := range []error{
 		checkDocument(root, string(content), base),
+		checkCompliance(root, string(compliance), base),
 		checkProbes(root, base),
 		compareJar(root, base, opts, out),
 	} {
@@ -188,7 +194,7 @@ func runCheck(root string, opts options, out io.Writer) error {
 	if len(failures) > 0 {
 		return errors.New(strings.Join(failures, "\n"))
 	}
-	fmt.Fprintf(out, "validation-census: %d constraints, census document and manifest agree\n", len(base.PilotRows()))
+	fmt.Fprintf(out, "validation-census: %d constraints, census document, compliance map and manifest agree\n", len(base.PilotRows()))
 	return nil
 }
 
