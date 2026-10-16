@@ -358,7 +358,8 @@ func runCLI() int {
 	// A diagnostic code is a property of the build too: it is explained without a
 	// model, and the run ends there.
 	if explainCodes.given {
-		return explainDiagnostics(os.Stdout, os.Stderr, explainCodes.names())
+		// An -explain run reads no model, so every positional word is a code too.
+		return explainDiagnostics(os.Stdout, os.Stderr, append(explainCodes.codes, flag.Args()...))
 	}
 
 	// The engines a build knows are a property of the build, like its version, so

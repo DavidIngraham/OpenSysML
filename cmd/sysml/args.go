@@ -32,9 +32,13 @@ func permuteArgs(fs *flag.FlagSet, args []string) []string {
 			positional = append(positional, arg)
 			continue
 		}
-		if takesOptionalValue(fs, arg) && i+1 < len(args) && !isFlag(args[i+1]) && args[i+1] != "--" {
-			i++
-			flags = append(flags, arg+"="+args[i])
+		if takesOptionalValue(fs, arg) {
+			if i+1 < len(args) && !isFlag(args[i+1]) && args[i+1] != "--" {
+				i++
+				flags = append(flags, arg+"="+args[i])
+			} else {
+				flags = append(flags, arg+"=")
+			}
 			continue
 		}
 		flags = append(flags, arg)
@@ -59,8 +63,8 @@ func isFlag(arg string) bool {
 }
 
 // takesOptionalValue reports whether a bare flag takes the word after it as its
-// value when that word is not a flag: `-explain unresolved`. Its position
-// decides, not the file system, so a model of the same name is no model here.
+// value when that word is not a flag (`-explain unresolved`), and is spelled
+// `-flag=` when none follows. Position decides, not the file system.
 func takesOptionalValue(fs *flag.FlagSet, arg string) bool {
 	name := strings.TrimLeft(arg, "-")
 	if strings.Contains(name, "=") {

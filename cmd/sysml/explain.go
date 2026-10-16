@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/Open-MBEE/OpenSysML/internal/check/codes"
 )
@@ -32,9 +33,23 @@ func explainDiagnostics(out, errw io.Writer, names []string) int {
 	return status
 }
 
-// codeNames are -explain's codes: an optional-value flag, so that the word
-// after a bare -explain is its code (`-explain unresolved`), as permuteArgs joins.
-type codeNames struct{ optionalNames }
+// codeNames are -explain's codes. The flag takes an optional value: permuteArgs
+// joins the word after a bare -explain as its code and spells a truly bare one
+// `-explain=`, so no code word is ever read as a boolean.
+type codeNames struct {
+	codes []string
+	given bool
+}
+
+func (c *codeNames) String() string { return strings.Join(c.codes, ",") }
+
+func (c *codeNames) Set(value string) error {
+	c.given = true
+	if value != "" {
+		c.codes = append(c.codes, value)
+	}
+	return nil
+}
 
 // TakesOptionalValue marks the flag for permuteArgs.
-func (codeNames) TakesOptionalValue() bool { return true }
+func (*codeNames) TakesOptionalValue() bool { return true }

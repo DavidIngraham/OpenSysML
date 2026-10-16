@@ -113,8 +113,10 @@ func TestPermuteArgsJoinsAnOptionalValue(t *testing.T) {
 	cases := []struct{ in, want []string }{
 		{[]string{"-explain", "unresolved"}, []string{"-explain=unresolved"}},
 		{[]string{"-explain", "syntax", "model.sysml"}, []string{"-explain=syntax", "--", "model.sysml"}},
-		{[]string{"-explain", "-validate"}, []string{"-explain", "-validate"}},
-		{[]string{"-explain"}, []string{"-explain"}},
+		{[]string{"-explain", "-validate"}, []string{"-explain=", "-validate"}},
+		{[]string{"-explain"}, []string{"-explain="}},
+		{[]string{"-explain", "--", "syntax"}, []string{"-explain=", "--", "syntax"}},
+		{[]string{"-explain", "true"}, []string{"-explain=true"}},
 		{[]string{"-explain=syntax", "unresolved"}, []string{"-explain=syntax", "--", "unresolved"}},
 	}
 	for _, c := range cases {
