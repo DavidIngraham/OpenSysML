@@ -72,6 +72,7 @@ func (m *migration) streamRecord(d *sysmlv1.Diagram) *mtip.Diagram {
 			b := s.Bounds
 			rec.Placements = append(rec.Placements, mtip.Placement{
 				ID: s.ElementID, Type: s.Class, X: b.X, Y: b.Y, Width: b.Width, Height: b.Height, OnPath: s.OnPath(),
+				HiddenCompartments: m.hiddenCompartments(s),
 			})
 		}
 	}
