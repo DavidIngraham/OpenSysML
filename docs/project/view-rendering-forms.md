@@ -372,7 +372,9 @@ share the row's time, and the rows are ordered by the successions the model stat
 events on them (`sequence.go`, `orderMessages`): a member-attached `then` and a
 `succession first a then b` between two events each order the two messages those events are on,
 an order running through an event no message attaches to is carried through it, and
-declaration order decides only between messages nothing orders. A relay whose successions on
+declaration order decides only between messages nothing orders. A message attached to a
+lifeline itself or to a port of it, rather than to an event on it, has no time of its own at that
+end, so it neither orders nor is ordered there. A relay whose successions on
 one lifeline order message `b`'s send before message `c`'s is drawn `b` above `c` whatever order
 the receiving events are declared in. A succession running against a message's own direction (its receive before its send), or
 successions that order one message both above and below another, cannot be drawn as rows, so the cycle is reported as not represented and the messages

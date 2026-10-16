@@ -125,6 +125,27 @@ package Lifelines {
 		succession first p.firstSent then p.secondTaken;
 		succession crossing first q.secondSent then q.firstTaken;
 	}
+
+	// Messages attached to the lifelines themselves state no time of their own:
+	// two running opposite ways order nothing, and the order stated between the
+	// events of the other two still holds.
+	occurrence def Reciprocal {
+		part p {
+			event occurrence lateSent;
+			event occurrence earlyTaken;
+		}
+
+		part q {
+			event occurrence lateTaken;
+			event occurrence earlySent;
+		}
+
+		message forward of A from p to q;
+		message backward of B from q to p;
+		message late of C from p.lateSent to q.lateTaken;
+		message early of A from q.earlySent to p.earlyTaken;
+		succession first p.earlyTaken then p.lateSent;
+	}
 }
 
 package LifelineViews {
@@ -152,5 +173,9 @@ package LifelineViews {
 
 	view crossedView : SequenceView {
 		expose Lifelines::Crossed;
+	}
+
+	view reciprocalView : SequenceView {
+		expose Lifelines::Reciprocal;
 	}
 }

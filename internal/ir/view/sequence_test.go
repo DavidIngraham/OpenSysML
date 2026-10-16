@@ -184,6 +184,19 @@ func TestSequenceRenderingReportsOrdersNoRowCanSatisfy(t *testing.T) {
 	}
 }
 
+// A message attached to a lifeline itself, or to a port of it, has no event of
+// its own to order: two such messages running opposite ways are no cycle, and
+// the orders stated between other messages' events are still honoured.
+func TestSequenceRenderingLeavesUntimedMessageEndsUnordered(t *testing.T) {
+	rendering := render(t, "sequence-lifelines.sysml", "LifelineViews::reciprocalView")
+	if got := messageLabels(rendering); !slices.Equal(got, []string{"forward", "backward", "early", "late"}) {
+		t.Errorf("messages = %v, want the lifeline-attached pair in declaration order, then early before late", got)
+	}
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+}
+
 // Successions that contradict each other cannot be ordered: the cycle is
 // reported, naming the successions, and declaration order stands.
 func TestSequenceRenderingReportsASuccessionCycle(t *testing.T) {

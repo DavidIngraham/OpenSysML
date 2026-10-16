@@ -97,7 +97,10 @@ func (r *Renderer) lifelinesOf(elem *symbols.Symbol) []*symbols.Symbol {
 type message struct {
 	flow     *symbols.Symbol
 	from, to *symbols.Symbol
-	edge     Edge
+	// Whether each end is an occurrence of its own on the lifeline, with a time
+	// the orders can state, rather than the lifeline or a port of it.
+	fromTimed, toTimed bool
+	edge               Edge
 }
 
 // order is a sequence the model states between two occurrences, and how a notice
@@ -277,6 +280,7 @@ func (r *Renderer) messages(flows []*symbols.Symbol, lifelines map[*symbols.Symb
 		}
 		var ends []*symbols.Symbol
 		var nodes []*Node
+		var timed []bool
 		for _, end := range []ast.Node{usage.FlowEnds.From, usage.FlowEnds.To} {
 			occurrence, node := r.messageEnd(flow, ast.EndTarget(end), lifelines)
 			if node == nil {
@@ -286,12 +290,13 @@ func (r *Renderer) messages(flows []*symbols.Symbol, lifelines map[*symbols.Symb
 				break
 			}
 			ends, nodes = append(ends, occurrence), append(nodes, node)
+			timed = append(timed, lifelines[occurrence] != node && lifelineLike(occurrence))
 		}
 		if len(nodes) != 2 {
 			continue
 		}
 		messages = append(messages, message{
-			flow: flow, from: ends[0], to: ends[1],
+			flow: flow, from: ends[0], to: ends[1], fromTimed: timed[0], toTimed: timed[1],
 			edge: Edge{From: nodes[0].ID, To: nodes[1].ID, Label: r.messageLabel(flow), Kind: EdgeFlow,
 				Origin: symbolOrigin(flow)},
 		})
@@ -432,12 +437,12 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 			}
 		}
 	}
-	// The events first: each message runs from its send to its receive, so an
-	// order against that cannot hold on one row however the rows are placed.
+	// The events first: a message runs from its send event to its receive event,
+	// so an order against that cannot hold on one row however the rows are placed.
 	eventsLater := make([][]int, len(occurrences))
 	eventsIndegree := make([]int, len(occurrences))
 	for _, msg := range messages {
-		if i, j := at[msg.from], at[msg.to]; i != j {
+		if i, j := at[msg.from], at[msg.to]; msg.fromTimed && msg.toTimed && i != j {
 			eventsLater[i] = append(eventsLater[i], j)
 			eventsIndegree[j]++
 		}
@@ -450,7 +455,7 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 	if placed, ok := stableTopological(eventsLater, eventsIndegree); !ok {
 		cyclic = r.cyclicOrders(stated, at, placed)
 	} else {
-		row, rows := messageRows(messages, occurrences, at)
+		rowOf, row, rows := messageRows(messages, occurrences)
 		later := make([][]int, rows)
 		indegree := make([]int, rows)
 		for _, o := range stated {
@@ -464,8 +469,12 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 			for place, i := range sorted {
 				rank[i] = place
 			}
+			place := make(map[*symbols.Symbol]int, len(messages))
+			for i, msg := range messages {
+				place[msg.flow] = rank[rowOf[i]]
+			}
 			sort.SliceStable(messages, func(i, j int) bool {
-				return rank[row[messages[i].from]] < rank[row[messages[j].from]]
+				return place[messages[i].flow] < place[messages[j].flow]
 			})
 		} else {
 			cyclic = r.cyclicOrders(stated, row, sorted)
@@ -483,14 +492,14 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 	return edges
 }
 
-// messageRows numbers the rows the orders are sorted over: the ends of a message
-// are one row, as are the ends of messages sharing an event, and an event no
-// message attaches to that an order joins to one is a row of its own. Those are
-// numbered first, then the message rows in declaration order, so a sort taking
-// the lowest ready row passes an order through a bare event at once and takes
-// the earliest-declared message where nothing is stated.
-func messageRows(messages []message, occurrences []*symbols.Symbol, at map[*symbols.Symbol]int) (map[*symbols.Symbol]int, int) {
-	parent := make([]int, len(occurrences))
+// messageRows numbers the rows the orders are sorted over: a message is a row,
+// messages sharing an event are one row, and an event no message attaches to
+// that an order joins to one is a row of its own. Those are numbered first, then
+// the messages in declaration order, so a sort taking the lowest ready row
+// passes an order through a bare event at once and takes the earliest-declared
+// message where nothing is stated. The row of each message and of each event.
+func messageRows(messages []message, occurrences []*symbols.Symbol) ([]int, map[*symbols.Symbol]int, int) {
+	parent := make([]int, len(messages))
 	for i := range parent {
 		parent[i] = i
 	}
@@ -501,34 +510,51 @@ func messageRows(messages []message, occurrences []*symbols.Symbol, at map[*symb
 		}
 		return i
 	}
-	for _, msg := range messages {
-		parent[find(at[msg.from])] = find(at[msg.to])
+	holder := make(map[*symbols.Symbol]int, 2*len(messages))
+	for i, msg := range messages {
+		for _, end := range msg.events() {
+			if j, ok := holder[end]; ok {
+				parent[find(i)] = find(j)
+			} else {
+				holder[end] = i
+			}
+		}
 	}
-	messaged := make([]bool, len(occurrences))
-	for _, msg := range messages {
-		messaged[find(at[msg.from])] = true
-	}
-	rowOf := make([]int, len(occurrences))
 	rows := 0
-	number := func(i int) {
-		if root := find(i); rowOf[root] == 0 {
-			rows++
-			rowOf[root] = rows
-		}
-	}
-	for i := range occurrences {
-		if !messaged[find(i)] {
-			number(i)
-		}
-	}
-	for _, msg := range messages {
-		number(at[msg.from])
-	}
 	row := make(map[*symbols.Symbol]int, len(occurrences))
-	for i, occurrence := range occurrences {
-		row[occurrence] = rowOf[find(i)] - 1
+	for _, occurrence := range occurrences {
+		if _, held := holder[occurrence]; !held {
+			row[occurrence] = rows
+			rows++
+		}
 	}
-	return row, rows
+	numbered := make([]int, len(messages))
+	rowOf := make([]int, len(messages))
+	for i := range messages {
+		root := find(i)
+		if numbered[root] == 0 {
+			rows++
+			numbered[root] = rows
+		}
+		rowOf[i] = numbered[root] - 1
+	}
+	for end, i := range holder {
+		row[end] = rowOf[i]
+	}
+	return rowOf, row, rows
+}
+
+// events are the ends of a message that are events of their own on a lifeline,
+// whose time the row's is.
+func (m message) events() []*symbols.Symbol {
+	var events []*symbols.Symbol
+	if m.fromTimed {
+		events = append(events, m.from)
+	}
+	if m.toTimed {
+		events = append(events, m.to)
+	}
+	return events
 }
 
 // sequencedOccurrences are the occurrences the message order is sorted over: the
