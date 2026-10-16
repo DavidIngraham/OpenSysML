@@ -213,6 +213,23 @@ type Diagnostic struct {
 	// Pass names what produced the finding, and Code what it found.
 	Pass string
 	Code string
+	// Fixes are the edits that resolve the finding, when analysis knows them.
+	Fixes []Fix
+}
+
+// Fix is one way to resolve a diagnostic: a set of edits to the file it is in.
+type Fix struct {
+	Title     string
+	Preferred bool
+	Edits     []Edit
+}
+
+// Edit replaces the text from Line:Column up to EndLine:EndColumn (exclusive,
+// 1-based, within the diagnostic's file) with NewText; an insertion has an empty span.
+type Edit struct {
+	Line, Column       int
+	EndLine, EndColumn int
+	NewText            string
 }
 
 // LocatedDiagnostics reports the analysis of everything submitted so far, each
@@ -242,9 +259,48 @@ func (s *Session) LocatedDiagnostics() []Diagnostic {
 			Column:   p.Col,
 			Pass:     d.Source,
 			Code:     d.Code,
+			Fixes:    locatedFixes(d.Fixes, []byte(sn.src), lines, start),
 		})
 	}
 	return out
+}
+
+// locatedFixes places a diagnostic's fixes in its file by line and column, the
+// edits rendered against the file so an own-line insertion carries its indent.
+func locatedFixes(fixes []diag.Fix, content []byte, lines *source.LineIndex, start int) []Fix {
+	if len(fixes) == 0 {
+		return nil
+	}
+	out := make([]Fix, 0, len(fixes))
+	for _, f := range fixes {
+		fix := Fix{Title: f.Title, Preferred: f.Preferred}
+		for _, e := range f.Edits {
+			e.Span.Offset -= start
+			span, text := e.Render(content)
+			from, to := lines.PosAt(span.Offset), lines.PosAt(span.End())
+			fix.Edits = append(fix.Edits, Edit{
+				Line: from.Line, Column: from.Col, EndLine: to.Line, EndColumn: to.Col, NewText: text,
+			})
+		}
+		out = append(out, fix)
+	}
+	return out
+}
+
+// Suppress keeps the diagnostics the predicate accepts out of everything the
+// session reports about its model: the lines, the located findings and whether
+// it has errors. Suppressed counts how many the last report left out.
+func (s *Session) Suppress(accept func(file, code, message string) bool) {
+	defer s.enter()()
+	s.suppress = accept
+}
+
+// Suppressed is how many diagnostics the predicate given to Suppress kept out
+// of the session's last report.
+func (s *Session) Suppressed() int {
+	defer s.enter()()
+	s.diagnostics()
+	return s.suppressed
 }
 
 // snippetAt returns the submission a session-buffer offset falls in and the

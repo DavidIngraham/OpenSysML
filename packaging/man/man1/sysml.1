@@ -108,6 +108,18 @@ is about it (repeatable)
 .TP
 .B \-json
 Report checks as one JSON document rather than as lines
+.TP
+.BR \-format " \fIformat\fP"
+Report checks as text, json, sarif or junit; json is \-json, and sarif (SARIF
+2.1.0) and junit (JUnit XML) carry \-validate's diagnostics to a CI service
+.TP
+.BR \-baseline " \fIfile\fP"
+A JSON report (as \-validate \-json \-o wrote) whose diagnostics are known: a
+finding with the same code, file and message is suppressed, whatever its line
+.TP
+.B \-warnings\-as\-errors
+Exit nonzero on a warning as on an error; the report keeps the warning's
+severity
 .SS Running behaviors
 .TP
 .BR \-action " \fIname\fP"

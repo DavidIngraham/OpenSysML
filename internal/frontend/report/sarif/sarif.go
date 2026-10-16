@@ -24,8 +24,16 @@ type Log struct {
 
 // Run is one invocation of one tool and the results it produced.
 type Run struct {
-	Tool    Tool     `json:"tool"`
-	Results []Result `json:"results"`
+	Tool       Tool        `json:"tool"`
+	Results    []Result    `json:"results"`
+	Properties *Properties `json:"properties,omitempty"`
+}
+
+// Properties is a run's property bag: what the run reports about itself
+// beyond its results.
+type Properties struct {
+	// Suppressed is how many findings a baseline kept out of the results.
+	Suppressed int `json:"suppressed,omitempty"`
 }
 
 // Tool names the analysis tool a run was made by.
@@ -60,7 +68,7 @@ type Result struct {
 	RuleIndex int        `json:"ruleIndex"`
 	Level     string     `json:"level"`
 	Message   Message    `json:"message"`
-	Locations []Location `json:"locations"`
+	Locations []Location `json:"locations,omitempty"`
 	Fixes     []Fix      `json:"fixes,omitempty"`
 }
 
@@ -160,7 +168,7 @@ func LocationAt(uri string, line, column int) []Location {
 // of the same findings is the same document whatever order they were found in.
 func SortResults(results []Result) {
 	sort.SliceStable(results, func(i, j int) bool {
-		a, b := results[i].Locations[0].PhysicalLocation, results[j].Locations[0].PhysicalLocation
+		a, b := firstLocation(results[i]), firstLocation(results[j])
 		if a.ArtifactLocation.URI != b.ArtifactLocation.URI {
 			return a.ArtifactLocation.URI < b.ArtifactLocation.URI
 		}
@@ -173,6 +181,14 @@ func SortResults(results []Result) {
 		}
 		return results[i].RuleID < results[j].RuleID
 	})
+}
+
+// firstLocation is where a result is placed, an unplaced result sorting first.
+func firstLocation(r Result) PhysicalLocation {
+	if len(r.Locations) == 0 {
+		return PhysicalLocation{}
+	}
+	return r.Locations[0].PhysicalLocation
 }
 
 func regionOf(r *Region) Region {

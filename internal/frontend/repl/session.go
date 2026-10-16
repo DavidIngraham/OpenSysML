@@ -99,7 +99,11 @@ type Session struct {
 	ws              *model.Workspace
 	sourceConverter SourceConverter
 	snippets        []snippet
-	version         int
+	// suppress, when set, names the diagnostics kept out of every report, and
+	// suppressed counts how many the last report left out.
+	suppress   func(file, code, message string) bool
+	suppressed int
+	version    int
 
 	// Runtime execution context
 	rtCtx *runtime.Context
@@ -821,7 +825,8 @@ func (s *Session) diagnostics() []diag.Diagnostic {
 	}
 	// One batch: the documents not analyzed yet are analyzed at once.
 	analyzed := s.ws.DiagnosticsAll(names)
-	out := append([]diag.Diagnostic{}, analyzed[0]...)
+	s.suppressed = 0
+	out := s.unsuppressed(nil, analyzed[0], "")
 	next := 1
 	acc := 0
 	for _, sn := range s.snippets {
@@ -835,11 +840,25 @@ func (s *Session) diagnostics() []diag.Diagnostic {
 		}
 		for _, d := range own {
 			d.Span.Offset += acc
-			out = append(out, d)
+			d.Fixes = rebasedFixes(d.Fixes, acc)
+			out = s.unsuppressed(out, []diag.Diagnostic{d}, sn.origin)
 		}
 		acc += len(sn.src) + 1 // the newline joined() writes between snippets
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Span.Offset < out[j].Span.Offset })
+	return out
+}
+
+// unsuppressed appends to out the diagnostics of file the suppression keeps,
+// counting the ones it drops.
+func (s *Session) unsuppressed(out, diags []diag.Diagnostic, file string) []diag.Diagnostic {
+	for _, d := range diags {
+		if s.suppress != nil && s.suppress(file, d.Code, d.Message) {
+			s.suppressed++
+			continue
+		}
+		out = append(out, d)
+	}
 	return out
 }
 
@@ -1564,4 +1583,23 @@ func qualifiedOr(fqn, typed string) string {
 		return fqn
 	}
 	return typed
+}
+
+// rebasedFixes copies fixes with every edit moved by delta into the session
+// buffer, leaving the snippet's own diagnostics untouched.
+func rebasedFixes(fixes []diag.Fix, delta int) []diag.Fix {
+	if len(fixes) == 0 || delta == 0 {
+		return fixes
+	}
+	out := make([]diag.Fix, len(fixes))
+	for i, f := range fixes {
+		edits := make([]diag.Edit, len(f.Edits))
+		for j, e := range f.Edits {
+			e.Span.Offset += delta
+			edits[j] = e
+		}
+		f.Edits = edits
+		out[i] = f
+	}
+	return out
 }
