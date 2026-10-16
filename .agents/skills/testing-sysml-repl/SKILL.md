@@ -6301,7 +6301,7 @@ None for these local REPL/gRPC checks.
 
 - If other agents own branches or worktrees, create detached testing worktrees at the PR and
   `origin/develop` revisions and record both hashes; do not switch a shared checkout.
-- Build the PR twice, `go build -tags sysml_re -o <external-dir>/sysml-re ./cmd/sysml` and
+- Build the PR twice, `go build -tags sysml_re -o <external-dir>/re/sysml ./cmd/sysml` and
   without the tag to a separate binary, and build `origin/develop` untagged to a third. Raw builds
   avoid unrelated version-string differences when comparing behavior.
 - Keep fixtures, output files, transcripts and comparison scripts outside source checkouts.

@@ -108,12 +108,12 @@ build-sysml: ## Build bin/sysml, the DK build with every feature group
 # The RE (Runtime Environment) sysml leaves out the optional and developer-only
 # feature groups (sysml_re; see cmd/sysml/features.go); the DK (Development Kit)
 # build is the default one. Opt-in: nothing builds the RE by default.
-build-re: ## Build bin/sysml-re, the RE build without the optional features (-tags sysml_re)
-	@echo "Building sysml-re (RE)..."
-	@mkdir -p $(BIN_DIR)
+build-re: ## Build bin/re/sysml, the RE build without the optional features (-tags sysml_re)
+	@echo "Building sysml (RE)..."
+	@mkdir -p $(BIN_DIR)/re
 	$(call winres,sysml)
-	$(GO_BUILD) -tags sysml_re -o $(BIN_DIR)/sysml-re ./cmd/sysml
-	@echo "✓ Built $(BIN_DIR)/sysml-re ($(VERSION))"
+	$(GO_BUILD) -tags sysml_re -o $(BIN_DIR)/re/sysml ./cmd/sysml
+	@echo "✓ Built $(BIN_DIR)/re/sysml ($(VERSION))"
 
 build-lsp: ## Build sysml-lsp binary
 	@echo "Building sysml-lsp..."
@@ -199,13 +199,13 @@ build-wasm-js: ## Build bin/wasm/js/*.wasm plus the wasm_exec.js that runs them
 	@cp "$(shell go env GOROOT)/lib/wasm/wasm_exec.js" $(WASM_DIR)/js/wasm_exec.js
 	@echo "✓ Built $(WASM_DIR)/js ($(VERSION))"
 
-build-wasm-re: ## Build bin/wasm/{js,wasip1}/sysml-re.wasm, the RE build, with -tags sysml_re
-	@echo "Building WebAssembly sysml-re (RE)..."
-	@mkdir -p $(WASM_DIR)/js $(WASM_DIR)/wasip1
-	GOOS=wasip1 GOARCH=wasm $(GO_BUILD) -tags sysml_re -o $(WASM_DIR)/wasip1/sysml-re.wasm ./cmd/sysml
-	GOOS=js GOARCH=wasm $(GO_BUILD) -tags sysml_re -o $(WASM_DIR)/js/sysml-re.wasm ./cmd/sysml
+build-wasm-re: ## Build bin/wasm/{js,wasip1}/re/sysml.wasm, the RE build, with -tags sysml_re
+	@echo "Building WebAssembly sysml (RE)..."
+	@mkdir -p $(WASM_DIR)/js/re $(WASM_DIR)/wasip1/re
+	GOOS=wasip1 GOARCH=wasm $(GO_BUILD) -tags sysml_re -o $(WASM_DIR)/wasip1/re/sysml.wasm ./cmd/sysml
+	GOOS=js GOARCH=wasm $(GO_BUILD) -tags sysml_re -o $(WASM_DIR)/js/re/sysml.wasm ./cmd/sysml
 	@cp "$(shell go env GOROOT)/lib/wasm/wasm_exec.js" $(WASM_DIR)/js/wasm_exec.js
-	@echo "✓ Built $(WASM_DIR)/{js,wasip1}/sysml-re.wasm ($(VERSION))"
+	@echo "✓ Built $(WASM_DIR)/{js,wasip1}/re/sysml.wasm ($(VERSION))"
 
 wasm-check: ## Run the WebAssembly build-and-run gate (needs Node; fails rather than skipping)
 	OPENSYSML_REQUIRE_WASM=1 go test -count=1 -v ./tests/wasm

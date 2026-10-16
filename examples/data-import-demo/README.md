@@ -200,11 +200,11 @@ error: missing.csv line 2: no element named RoverDemo::rover3: RoverDemo has no 
 ## The RE binary
 
 Import is part of the RE build (`-tags sysml_re`, the Runtime Environment without the
-optional feature groups), so every command above runs the same with `bin/sysml-re` in
+optional feature groups), so every command above runs the same with the RE `bin/re/sysml` in
 place of the DK `bin/sysml`:
 
 ```bash
-make build-re                                  # writes bin/sysml-re
+make build-re                                  # writes bin/re/sysml
 ```
 
 ## What this does not do yet
