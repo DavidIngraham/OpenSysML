@@ -61,12 +61,20 @@ package Demo {
 
 === "Java"
 
+    ```xml
+    <dependency>
+      <groupId>org.openmbee</groupId>
+      <artifactId>opensysml</artifactId>
+      <version>0.10.1</version>
+    </dependency>
+    ```
+
+    For unreleased changes, install from a checkout instead:
+
     ```sh
     make build-grpc
     mvn -f client/java/pom.xml install
     ```
-
-    The artifact is on Maven Central from 0.10.1; the checkout install is for unreleased changes.
 
 === "Rust"
 
