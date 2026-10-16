@@ -1537,13 +1537,15 @@ const (
 	dotCompartmentChrome  = 4 * dotCellPadding
 )
 
-// dotFittedLabel is a node's label composed to fit a stated box: the head wrapped
-// at the box's width and shrunk from the node's size to the largest at which it
-// fits, the keyword and detail lines after it while height remains. A head too
-// tall even at the floor is cut to the lines that fit and ellipsized. A Cameo
-// label with detail lines is set in the compartment table, so it is fitted to
-// the box less the table's chrome; when no detail line fits there, no table is
-// written and the title alone is fitted to the whole box.
+// dotFittedLabel is a node's label composed to fit a stated box, in a fixed
+// order: the head and its keyword line together, wrapped at the box's width
+// and shrunk from the node's size to the largest at which both fit; failing
+// that at the floor, the head alone, shrunk the same way, and the keyword
+// dropped; then the detail lines, then the compartments, each while height
+// remains. A head too tall even at the floor is cut to the lines that fit and
+// ellipsized. A Cameo label with detail lines is set in the compartment table,
+// so it is fitted to the box less the table's chrome; when no detail line fits
+// there, no table is written and the title alone is fitted to the whole box.
 func (l labeller) dotFittedLabel(node *Node, width, height float64) (label string, clipped int) {
 	if l.compartmented(node) {
 		parts := l.fitParts(node, width-dotCompartmentPadding, height-dotCompartmentChrome)
@@ -1558,37 +1560,28 @@ func (l labeller) dotFittedLabel(node *Node, width, height float64) (label strin
 	return dotLabelAttribute(l.assemble(parts)), parts.clipped
 }
 
-// fitParts is a node's label fitted to a box, by part.
+// fitParts is a node's label fitted to a box, by part, in dotFittedLabel's order.
 func (l labeller) fitParts(node *Node, width, height float64) labelParts {
 	base := l.sizeOf(node)
-	size, head, fits := dotFitText(l.headLines(node), true, width, height, base)
+	size, head, keyword, fits := l.fitHead(node, width, height, base)
 	var parts labelParts
 	parts.head = l.sized(base, size, "<b>"+dotEscapeLines(head)+"</b>")
 	left := height - float64(len(head))*dotLineHeight(size)
-	rest := l.details(node)
-	keyword := l.keyword(node)
-	if keyword != "" {
-		rest = append([]string{keyword}, rest...)
+	if len(keyword) > 0 {
+		keywordSize := l.fittedKeywordSize(size, base)
+		left -= float64(len(keyword)) * dotLineHeight(keywordSize)
+		parts.keyword = l.sized(base, keywordSize, l.keywordText(dotEscapeLines(keyword)))
 	}
 	room := fits
-	for i, line := range rest {
-		lineSize := size
-		if i == 0 && keyword != "" {
-			lineSize = math.Round(size * l.keywordSize() / base)
-		}
-		wrapped := dotWrap(line, width, lineSize, false)
-		used := float64(len(wrapped)) * dotLineHeight(lineSize)
-		if !room || used > left || dotOverruns(wrapped, width, lineSize, false) {
+	for _, line := range l.details(node) {
+		wrapped := dotWrap(line, width, size, false)
+		used := float64(len(wrapped)) * dotLineHeight(size)
+		if !room || used > left || dotOverruns(wrapped, width, size, false) {
 			room = false
 			break
 		}
 		left -= used
-		text := dotEscapeLines(wrapped)
-		if i == 0 && keyword != "" {
-			parts.keyword = l.sized(base, lineSize, l.keywordText(text))
-			continue
-		}
-		parts.details = append(parts.details, l.sized(base, lineSize, text))
+		parts.details = append(parts.details, l.sized(base, size, dotEscapeLines(wrapped)))
 	}
 	nameSize := math.Round(size * l.keywordSize() / base)
 	for _, compartment := range l.compartments(node) {
@@ -1612,6 +1605,44 @@ func (l labeller) fitParts(node *Node, width, height float64) labelParts {
 		parts.compartments = append(parts.compartments, fitted)
 	}
 	return parts
+}
+
+// fitHead fits a node's head and, when the node shows one, its keyword line
+// into a box together: at each size from the node's down to the floor the head
+// is wrapped at the box's width and the keyword set at its size under that,
+// and the largest size at which both fit is taken, whole words before broken
+// ones. When no size holds them both the keyword is dropped and the head alone
+// is fitted as dotFitText fits it. The keyword is returned wrapped, empty when
+// dropped or not shown.
+func (l labeller) fitHead(node *Node, width, height, base float64) (size float64, head, keyword []string, fits bool) {
+	text := l.headLines(node)
+	if word := l.keyword(node); word != "" {
+		for _, whole := range []bool{true, false} {
+			for size = base; size >= dotFitFloor; size-- {
+				head, ok := dotWrapAll(text, width, size, true, whole)
+				if !ok {
+					continue
+				}
+				keywordSize := l.fittedKeywordSize(size, base)
+				keyword := dotWrap(word, width, keywordSize, false)
+				if dotOverruns(keyword, width, keywordSize, false) {
+					continue
+				}
+				used := float64(len(head))*dotLineHeight(size) + float64(len(keyword))*dotLineHeight(keywordSize)
+				if used <= height {
+					return size, head, keyword, true
+				}
+			}
+		}
+	}
+	size, head, fits = dotFitText(text, true, width, height, base)
+	return size, head, nil, fits
+}
+
+// fittedKeywordSize is the keyword line's font size under a head shrunk from
+// its node's size: shrunk in the same proportion, never below the floor.
+func (l labeller) fittedKeywordSize(size, base float64) float64 {
+	return math.Max(dotFitFloor, math.Round(size*l.keywordSize()/base))
 }
 
 // compartmented reports whether a node's label is set in a compartment table:
@@ -1691,16 +1722,8 @@ func (l labeller) assemble(parts labelParts) string {
 func dotFitText(text []string, bold bool, width, height, from float64) (size float64, lines []string, fits bool) {
 	for _, whole := range []bool{true, false} {
 		for size = from; size >= dotFitFloor; size-- {
-			lines = lines[:0]
-			broken := false
-			for _, entry := range text {
-				if whole && dotBreaksAWord(entry, width, size, bold) {
-					broken = true
-					break
-				}
-				lines = append(lines, dotWrap(entry, width, size, bold)...)
-			}
-			if broken || dotOverruns(lines, width, size, bold) {
+			var ok bool
+			if lines, ok = dotWrapAll(text, width, size, bold, whole); !ok {
 				continue
 			}
 			if float64(len(lines))*dotLineHeight(size) <= height {
@@ -1709,10 +1732,7 @@ func dotFitText(text []string, bold bool, width, height, from float64) (size flo
 		}
 	}
 	size = dotFitFloor
-	lines = lines[:0]
-	for _, entry := range text {
-		lines = append(lines, dotWrap(entry, width, size, bold)...)
-	}
+	lines, _ = dotWrapAll(text, width, size, bold, false)
 	down := max(1, int(height/dotLineHeight(size)))
 	cut := len(lines) > down
 	if cut {
@@ -1724,6 +1744,19 @@ func dotFitText(text []string, bold bool, width, height, from float64) (size flo
 		}
 	}
 	return size, lines, false
+}
+
+// dotWrapAll wraps each entry of a text at a box's width and concatenates the
+// wrappings; it fails when a line is still wider than the box or, when words
+// are to stay whole, when any entry must break one.
+func dotWrapAll(text []string, width, size float64, bold, whole bool) (lines []string, ok bool) {
+	for _, entry := range text {
+		if whole && dotBreaksAWord(entry, width, size, bold) {
+			return nil, false
+		}
+		lines = append(lines, dotWrap(entry, width, size, bold)...)
+	}
+	return lines, !dotOverruns(lines, width, size, bold)
 }
 
 // dotOverruns reports whether any line is wider than a width at a font size.

@@ -394,6 +394,15 @@ func (m *migration) diagramLayoutAttributeForHost(prefix, definition, name, valu
 	return diagramLayoutAttributeText(prefix, definition, name, value, x.shadows(name) || m.shadows(scopeChain(host), name))
 }
 
+// diagramLayoutFeatureForHost names a feature redefined in an annotation body,
+// qualified when the view or its containing scopes shadow its name.
+func (m *migration) diagramLayoutFeatureForHost(prefix, definition, name string, host *sysmlv1.Element, x exposures) string {
+	if x.shadows(name) || m.shadows(scopeChain(host), name) {
+		return prefix + definition + "::" + name
+	}
+	return name
+}
+
 func diagramLayoutAttributeText(prefix, definition, name, value string, shadowed bool) string {
 	if shadowed {
 		return ":>> " + prefix + definition + "::" + name + " = " + value
@@ -1378,15 +1387,15 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 		kind := routeKindName(c.Type, el)
 		var refs []string
 		var points [][]float64
-		why := ""
-		if refs, why = m.routeTarget(el, v.host, p.form); why == "" {
-			if !m.draws(p.x, p.form, v.host, el, refs[0]) {
+		general, why := "", ""
+		if refs, general, why = m.routeTarget(el, v.host, p.form); why == "" {
+			if !m.draws(p.x, p.form, v.host, el, refs[0]) || general != "" && !p.x.exposed(general) {
 				why = routeNotExposed
 			}
 			refs, points = m.routeLines(el, p.form, refs, m.linePoints(el, c, boxes))
 		}
 		ref := strings.Join(refs, ", ")
-		if why == "" && pinned[ref] {
+		if why == "" && pinned[ref+" :> "+general] {
 			p.refOf[c.ID] = ref
 			why = routeDuplicate
 		}
@@ -1396,20 +1405,21 @@ func (p *layoutPlan) routes(rec *mtip.Diagram) []string {
 			m.routeKinds.add(kind, why)
 			continue
 		}
-		pinned[ref] = true
+		pinned[ref+" :> "+general] = true
 		p.refOf[c.ID] = ref
 		s.RoutesWritten++
 		p.reasons[routeWritten]++
 		m.routeKinds.add(kind, routeWritten)
 		for i, r := range refs {
-			routes = append(routes, p.route(r, points[i]))
+			routes = append(routes, p.route(r, general, points[i]))
 		}
 	}
 	return routes
 }
 
-// route writes a Route pinning points, x then y per point, to the member ref names.
-func (p *layoutPlan) route(ref string, points []float64) string {
+// route writes a Route pinning points, x then y per point, to the member ref
+// names; a general names the element a specialization edge is steered to.
+func (p *layoutPlan) route(ref, general string, points []float64) string {
 	var b strings.Builder
 	b.WriteString("metadata " + p.prefix + "Route about " + ref + " { ")
 	b.WriteString(p.m.diagramLayoutAttributeForHost(p.prefix, "Route", "points", "(", p.v.host, p.x))
@@ -1424,7 +1434,11 @@ func (p *layoutPlan) route(ref string, points []float64) string {
 			p.grow(p.maxX, n)
 		}
 	}
-	b.WriteString("); }")
+	b.WriteString(");")
+	if general != "" {
+		b.WriteString(" ref :>> " + p.m.diagramLayoutFeatureForHost(p.prefix, "Route", "general", p.v.host, p.x) + " : " + general + ";")
+	}
+	b.WriteString(" }")
 	return b.String()
 }
 
@@ -1478,6 +1492,9 @@ func (m *migration) lineEnds(el *sysmlv1.Element) (first, second *sysmlv1.Elemen
 	}
 	if prop := m.backedProperty(el); prop != nil {
 		return prop.Parent, m.model.Ref(prop, "type")
+	}
+	if el.Type == "Generalization" {
+		return el.Parent, m.model.Ref(el, "general")
 	}
 	if !m.associationDef(el) {
 		return nil, nil
@@ -1534,7 +1551,7 @@ func (m *migration) drawnRef(x exposures, f viewForm, host *sysmlv1.Element, id 
 	if ref := m.inheritedNodeRef(el, host); ref != "" && m.places(x, f, el, ref) {
 		return ref
 	}
-	refs, why := m.routeTarget(el, host, f)
+	refs, _, why := m.routeTarget(el, host, f)
 	if why != "" || !m.draws(x, f, host, el, refs[0]) {
 		return ""
 	}

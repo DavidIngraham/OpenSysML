@@ -69,6 +69,7 @@ library package DiagramLayout {
 
     metadata def Route {
         attribute points : ScalarValues::Real[0..*] ordered nonunique;
+        ref general : Base::Anything[0..1];
     }
 
     metadata def Canvas {
@@ -198,6 +199,16 @@ Decisions, each with its reason:
   waypoints are one flattened sequence (`x0, y0, x1, y1, …`) because a metadata feature
   holds scalars: a sequence of pairs would need a second attribute definition for the
   pair, which no other tool would read as a point.
+- **A specialization edge is routed from its specific element, naming the general.** A
+  `:>`, `:` or `:>>` clause declares no element of its own that an `about` could name, so
+  the Route of the line a tree draws for it is stated about the specific element and
+  types its `general` with the element the line is drawn to:
+  `metadata Route about Sub { points = (…); ref :>> general : Sup; }`. One Route per
+  general steers each line of a subtype with several, and a Route naming a general
+  never steers an edge the specific element declares itself (a `connection def Sub :>
+  Base` keeps its own Route for its line). A standalone KerML `specialization` member
+  could be named instead, but SysML v2 textual notation does not admit one, and the
+  pilot rejects it in a `.sysml` file.
 - **`Route.points` is `nonunique`.** The specification's default for a feature is
   uniqueness (KerML 7.3.4.4), and OpenSysML's type checker enforces it on a sequence
   written at a unique feature. A vertical segment repeats its x coordinate and a route
