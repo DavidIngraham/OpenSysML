@@ -7,12 +7,8 @@ import (
 	"testing"
 )
 
-// TestNodeLockfileAgreesWithTheClientVersion checks that client/node's lockfile
-// never pins an @openmbee package at a version other than package.json's: npm
-// ci refuses such a lockfile, and a release bump that edits package.json alone
-// leaves the platform packages pinned at the previous release. An absent entry
-// is fine — before the tag publishes them the new platform packages cannot be
-// locked, and npm ci tolerates an unresolvable optional dependency.
+// TestNodeLockfileAgreesWithTheClientVersion: client/node's lockfile must not lock an
+// @openmbee package at another version than package.json's (npm ci refuses it); absent is fine.
 func TestNodeLockfileAgreesWithTheClientVersion(t *testing.T) {
 	var manifest struct {
 		Version              string            `json:"version"`

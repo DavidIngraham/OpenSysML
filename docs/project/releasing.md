@@ -215,6 +215,7 @@ branch that moves the integration state onto `main`:
    ```bash
    git checkout develop && git pull
    git merge main
+   (cd client/node && npm install --package-lock-only --ignore-scripts)   # after a hotfix
    git push origin develop
    ```
 
