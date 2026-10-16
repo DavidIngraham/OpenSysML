@@ -224,6 +224,9 @@ type Resolver struct {
 	// namespaces met on the way that could not be settled: each is computed
 	// once per outermost computation and dropped when it ends.
 	provisional map[*symbols.Scope]*importCollisions
+	// belowCut holds the namespaces whose hidesBelow walk a collision
+	// computation in progress cut; dropped, like provisional, when it ends.
+	belowCut map[*symbols.Scope]bool
 	// collisionCut is set when a collision computation met one in progress,
 	// so what it computed is not memoized.
 	collisionCut bool

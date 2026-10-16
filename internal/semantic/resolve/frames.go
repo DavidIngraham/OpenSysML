@@ -350,7 +350,9 @@ func (r *Resolver) captureDep(doc string) {
 		return
 	}
 	for _, c := range r.captures {
-		c.deps = append(c.deps, doc)
+		if n := len(c.deps); n == 0 || c.deps[n-1] != doc {
+			c.deps = append(c.deps, doc)
+		}
 	}
 }
 

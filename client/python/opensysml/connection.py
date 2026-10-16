@@ -2271,6 +2271,7 @@ class Connection:
             depth_budget=status.depth_budget,
             probabilities_lower_bound=status.probabilities_lower_bound,
             failed_linearizations=status.failed_linearizations,
+            unenumerated=list(status.unenumerated),
         )
 
     def _outcome_of(self, pb):

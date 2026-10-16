@@ -1,4 +1,4 @@
-//go:build sysml_prod
+//go:build sysml_re
 
 package main
 
@@ -9,12 +9,12 @@ import (
 	"testing"
 )
 
-func init() { cliBuildFlags = []string{"-tags", "sysml_prod"} }
+func init() { cliBuildFlags = []string{"-tags", "sysml_re"} }
 
-// TestProdBuild checks the sysml_prod binary refuses the flags of the groups it
+// TestREBuild checks the RE binary (sysml_re) refuses the flags of the groups it
 // leaves out and keeps them out of -help. The REPL keeps %print, %save and
 // %query and -query stays a core flag; only %features ... json is left out.
-func TestProdBuild(t *testing.T) {
+func TestREBuild(t *testing.T) {
 	binary := buildCLI(t)
 	model := write(t, filepath.Join(t.TempDir(), "m.sysml"), "package P { part def A; }\n")
 
