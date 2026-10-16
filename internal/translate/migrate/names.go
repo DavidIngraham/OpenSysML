@@ -25,12 +25,10 @@ func queryName(name string) string {
 	return text[1 : len(text)-1]
 }
 
-// pathSegment spells a query name as one segment of a metadata path.
+// pathSegment spells a query name as one segment of a metadata path: quoted
+// unless it is a basic name no keyword reserves, so one holding `::` stays one.
 func pathSegment(name string) string {
-	if strings.Contains(name, "'") {
-		return "'" + name + "'"
-	}
-	return name
+	return source.NameText(name)
 }
 
 // nameOf returns the v2 name of an element: its own, or the one synthesized
@@ -512,6 +510,7 @@ func (m *migration) refMember(owner *sysmlv1.Element, name string, path []segmen
 			}
 		}
 		if !shadowed && !(chained && path[len(path)-1].feature && m.isUsage(owner) && m.definitionBetween(chain[:i])) {
+			m.refer(chain[:i], path[len(path)-1].name)
 			return writeName(path[len(path)-1].name)
 		}
 	}
@@ -525,6 +524,7 @@ func (m *migration) refMember(owner *sysmlv1.Element, name string, path []segmen
 				return m.qualifiedFrom(path, chain, chained)
 			}
 		}
+		m.refer(chain, path[len(path)-1].name)
 		return writeName(path[len(path)-1].name)
 	}
 	return m.qualifiedFrom(path, chain, chained)
@@ -558,6 +558,23 @@ func (m *migration) relativeTo(path []segment, chain []*sysmlv1.Element) []segme
 	return nil
 }
 
+// refer records that a reference written inside the scopes of chain resolves
+// name past every one of them, so none may later declare a member named so.
+func (m *migration) refer(chain []*sysmlv1.Element, name string) {
+	for _, scope := range chain {
+		if m.referenced[scope] == nil {
+			m.referenced[scope] = map[string]bool{}
+		}
+		m.referenced[scope][name] = true
+	}
+}
+
+// referredPast reports whether a reference written in owner's body resolves
+// name in an enclosing scope: a member of owner named so would capture it.
+func (m *migration) referredPast(owner *sysmlv1.Element, name string) bool {
+	return m.referenced[owner][name]
+}
+
 // namespaces is the path of a qualified name whose every segment is a namespace.
 func namespaces(segs []string) []segment {
 	path := make([]segment, len(segs))
@@ -586,6 +603,8 @@ func (m *migration) qualifiedWhole(path []segment, chain []*sysmlv1.Element, cha
 	var b strings.Builder
 	if m.hidden(path[0].name) || m.shadows(chain, path[0].name) {
 		b.WriteString("$::")
+	} else {
+		m.refer(chain, path[0].name)
 	}
 	for i, s := range path {
 		switch {
