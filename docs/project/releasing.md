@@ -1464,7 +1464,7 @@ The Java client in `client/java/` is published to Maven Central as
 — by the `release` workflow's `publish-maven` job, from the same core
 `v<version>` tag that publishes the binaries, `opensysml` and
 `@openmbee/opensysml`, at that version. The `opensysml-java-v*` path was never
-tagged and is no longer used. **The Java artifacts are not on Maven Central yet.**
+tagged and is no longer used. The Java artifacts are on Maven Central from 0.10.1.
 
 ### What a maintainer must obtain first
 
