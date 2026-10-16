@@ -16,7 +16,8 @@ import (
 // never re-derived from the source text. Nodes and edges are placed by the
 // Layout and Route annotations positioning their elements in view, nil for a
 // rendering outside any view. An exposed feature another exposed feature draws
-// nested in it is not a second root.
+// nested in it is not a second root, nor is an exposed port a drawn feature
+// pins on its border from its type.
 func (r *Renderer) renderInterconnection(view *symbols.Symbol, exposed []*symbols.Symbol, out *Rendering) {
 	r.renderInterconnectionWithIDs(view, exposed, out, &nodeIDs{}, false)
 }
@@ -32,6 +33,7 @@ func (r *Renderer) renderInterconnectionWithIDs(view *symbols.Symbol, exposed []
 		}
 	}
 	descendants := r.exposedDescendants(roots, w.nestedFeatures)
+	var ports []*symbols.Symbol
 	for _, elem := range exposed {
 		switch {
 		case r.drawsConnector(elem):
@@ -40,11 +42,29 @@ func (r *Renderer) renderInterconnectionWithIDs(view *symbols.Symbol, exposed []
 			if descendants[symbols.KeyOf(elem)] {
 				continue
 			}
+			if elem.Kind == symbols.SymbolPortUsage {
+				ports = append(ports, elem)
+				continue
+			}
 			out.Roots = append(out.Roots, w.featureNode(elem, map[*symbols.Symbol]bool{}, 0, true))
 		default:
 			out.Notices = append(out.Notices, fmt.Sprintf(
 				"%s %s has no place in an interconnection rendering; it is not shown",
 				declKind(elem), r.notationName(elem)))
+		}
+	}
+	// A port one drawn usage of its owner pins is drawn there alone, whatever the display shows.
+	for _, port := range ports {
+		site := w.siteOf(port)
+		switch {
+		case site.node == nil:
+			out.Roots = append(out.Roots, w.featureNode(port, map[*symbols.Symbol]bool{}, 0, true))
+		case site.port != "":
+			for i := range site.node.Ports {
+				if site.node.Ports[i].ID == site.port {
+					site.node.Ports[i].Exposed = true
+				}
+			}
 		}
 	}
 	seen := map[*symbols.Symbol]bool{}
@@ -87,13 +107,7 @@ func (w *featureWalk) drawsFeature(sym *symbols.Symbol) bool {
 	if !w.mixed {
 		return true
 	}
-	switch sym.Kind {
-	case symbols.SymbolPartDef, symbols.SymbolPartUsage, symbols.SymbolItemDef, symbols.SymbolItemUsage,
-		symbols.SymbolPortDef, symbols.SymbolPortUsage, symbols.SymbolConnectionDef, symbols.SymbolConnectionUsage,
-		symbols.SymbolInterfaceDef, symbols.SymbolInterfaceUsage, symbols.SymbolAllocationDef, symbols.SymbolAllocationUsage:
-		return true
-	}
-	return false
+	return mixedStructural(sym)
 }
 
 // featureNode renders one exposed feature and the features nested in it,
@@ -115,6 +129,7 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 	w.nodes[sym] = node
 	w.drawn = append(w.drawn, sym)
 	w.pinPorts(node, sym)
+	w.pinParameters(node, sym)
 	r.notesOf(w.view, sym, node.ID, w.out)
 	if seen[sym] || depth >= r.treeDepth() {
 		return node
@@ -125,7 +140,9 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 		case r.drawsConnector(member):
 			w.connectors = append(w.connectors, member)
 		case casePin(sym, member):
-			w.pin(node, member, pinDirection(member))
+			w.pin(node, member, pinDirection(member), true, r.geometryOf(w.view, member, w.out))
+		case constraintParameter(sym, member):
+			w.pin(node, member, pinDirection(member), false, r.geometryOf(w.view, member, w.out))
 		case isReferencedIncludedCase(member):
 			// an `include u;` is drawn by the connection to the case it names
 		case w.drawsFeature(member):
@@ -143,15 +160,24 @@ func (w *featureWalk) featureNode(sym *symbols.Symbol, seen map[*symbols.Symbol]
 // at `heating.durationIn` ends at that pin.
 func (w *featureWalk) pinPorts(node *Node, sym *symbols.Symbol) {
 	for _, port := range w.r.typedPorts(sym) {
-		w.pin(node, port, PortUndirected)
+		w.pin(node, port, PortUndirected, false, w.r.memberGeometryOf(w.view, sym, localName(port), w.out))
 	}
 }
 
-// pin draws sym as a port on node's border, with the given direction.
-func (w *featureWalk) pin(node *Node, sym *symbols.Symbol, direction PortDirection) {
+// pinParameters draws on node's border the parameters sym has from its constraint
+// def without declaring them: `constraint c : Law` shows the `in x` Law declares.
+func (w *featureWalk) pinParameters(node *Node, sym *symbols.Symbol) {
+	for _, parameter := range w.r.typedParameters(sym) {
+		w.pin(node, parameter, pinDirection(parameter), false, w.r.memberGeometryOf(w.view, sym, localName(parameter), w.out))
+	}
+}
+
+// pin draws sym as a port on node's border, with the given direction and the geometry
+// a Layout gives it; a parameter pin stands for a case's subject or attribute, not a port.
+func (w *featureWalk) pin(node *Node, sym *symbols.Symbol, direction PortDirection, parameter bool, geometry *Geometry) {
 	id := portID(node.ID, len(node.Ports))
 	node.Ports = append(node.Ports, Port{ID: id, Name: localName(sym), NameSynthesized: w.r.model.NameSynthesized(sym),
-		Type: declType(sym), Direction: direction, Origin: symbolOrigin(sym)})
+		Type: declType(sym), Direction: direction, Parameter: parameter, Origin: symbolOrigin(sym), Geometry: geometry})
 	if w.pins[node] == nil {
 		w.pins[node] = map[*symbols.Symbol]string{}
 	}
@@ -165,12 +191,27 @@ func (w *featureWalk) siteOf(sym *symbols.Symbol) edgeEnd {
 	if node := w.nodes[sym]; node != nil {
 		return edgeEnd{node: node}
 	}
-	for node, pins := range w.pins {
-		if id, ok := pins[sym]; ok {
-			return edgeEnd{node: node, port: id}
+	return w.pinSite(sym)
+}
+
+// pinSite is the node that pins sym on its border, and the pin, when exactly
+// one drawn node does; the zero edgeEnd when none or several do, since a bare
+// name of the port names no one of them.
+func (w *featureWalk) pinSite(sym *symbols.Symbol) edgeEnd {
+	var site edgeEnd
+	for _, drawn := range w.drawn {
+		node := w.nodes[drawn]
+		if node == nil {
+			continue
+		}
+		if id, ok := w.pins[node][sym]; ok {
+			if site.node != nil {
+				return edgeEnd{}
+			}
+			site = edgeEnd{node: node, port: id}
 		}
 	}
-	return edgeEnd{}
+	return site
 }
 
 // casePin reports whether member, a member of a case drawn as a node, is
@@ -192,6 +233,22 @@ func casePin(owner, member *symbols.Symbol) bool {
 	}
 	usage, ok := member.Decl.(*ast.Usage)
 	return ok && (usage.Kind == ast.UsageSubject || usage.Kind == ast.UsageActor || usage.Kind == ast.UsageStakeholder)
+}
+
+// constraintParameter reports whether member is a parameter of the constraint owner —
+// a directed attribute or reference usage — drawn as a square on the constraint's border.
+func constraintParameter(owner, member *symbols.Symbol) bool {
+	return isConstraintKind(owner) && isParameterKind(member) && pinDirection(member) != PortUndirected
+}
+
+// isConstraintKind reports whether sym is a constraint def or usage.
+func isConstraintKind(sym *symbols.Symbol) bool {
+	return sym.Kind == symbols.SymbolConstraintDef || sym.Kind == symbols.SymbolConstraintUsage
+}
+
+// isParameterKind reports whether sym is a usage a constraint's parameter is declared as.
+func isParameterKind(sym *symbols.Symbol) bool {
+	return sym.Kind == symbols.SymbolAttributeUsage || sym.Kind == symbols.SymbolReferenceUsage
 }
 
 // pinDirection is the direction a parameter is declared with: `return` and
@@ -234,14 +291,35 @@ func (r *Renderer) typedPorts(sym *symbols.Symbol) []*symbols.Symbol {
 	return out
 }
 
+// typedParameters is the parameters a constraint has from its def and what that specializes
+// without declaring them, less any it redefines and the library's own features of every constraint.
+func (r *Renderer) typedParameters(sym *symbols.Symbol) []*symbols.Symbol {
+	if !isConstraintKind(sym) {
+		return nil
+	}
+	owned := map[*symbols.Symbol]bool{}
+	for _, member := range r.containedMembers(sym) {
+		owned[member] = true
+	}
+	var out []*symbols.Symbol
+	for _, member := range r.model.MembersOf(sym) {
+		if !isParameterKind(member) || pinDirection(member) == PortUndirected || owned[member] || member.Owner() == sym ||
+			!r.contentKind(member) || r.libraryDeclared(member) {
+			continue
+		}
+		out = append(out, member)
+	}
+	return out
+}
+
 // libraryDeclared reports whether the bundled standard library declares sym.
 func (r *Renderer) libraryDeclared(sym *symbols.Symbol) bool {
 	idx := r.resolver.Index()
 	return idx != nil && idx.Library(sym)
 }
 
-// nestedFeatures is the members featureNode draws as nested nodes of sym:
-// the features this walk draws, connectors being edges.
+// nestedFeatures is what featureNode draws under sym: its nested feature nodes and the
+// parameters pinned from its def, which a view exposing them beside it does not draw again.
 func (w *featureWalk) nestedFeatures(sym *symbols.Symbol) []*symbols.Symbol {
 	var out []*symbols.Symbol
 	for _, member := range w.r.containedMembers(sym) {
@@ -249,7 +327,7 @@ func (w *featureWalk) nestedFeatures(sym *symbols.Symbol) []*symbols.Symbol {
 			out = append(out, member)
 		}
 	}
-	return out
+	return append(out, w.r.typedParameters(sym)...)
 }
 
 // connectionEdges adds the edges one connector or flow contributes. A binary
@@ -439,7 +517,8 @@ func (w *featureWalk) endNode(connector *symbols.Symbol, attachment ast.Node) ed
 			return edgeEnd{node: node}
 		}
 	}
-	return edgeEnd{}
+	// A port of a definition drawn only as the pin of the one usage typed by it.
+	return w.pinSite(target)
 }
 
 // memberEnd is where a member of what base draws attaches: the node under base
@@ -522,13 +601,12 @@ func isFlowUsage(sym *symbols.Symbol) bool {
 	return ok && usage.Kind == ast.UsageFlow && usage.FlowEnds != nil
 }
 
-// featureLike reports whether an element is a feature an interconnection
-// rendering shows as a node: the structural elements a system is built from, and
-// the analysis cases bound to their values, which a parametric view draws beside
-// them. Behaviors, views and namespaces are not, and are reported rather than drawn.
+// featureLike reports whether an interconnection rendering shows sym as a node: structures and the
+// constraints and analysis cases bound to their values; behaviors, views and namespaces are reported.
 func featureLike(sym *symbols.Symbol) bool {
 	switch sym.Kind {
 	case symbols.SymbolPartDef, symbols.SymbolPartUsage,
+		symbols.SymbolConstraintDef, symbols.SymbolConstraintUsage,
 		symbols.SymbolItemDef, symbols.SymbolItemUsage,
 		symbols.SymbolPortDef, symbols.SymbolPortUsage,
 		symbols.SymbolOccurrenceDef, symbols.SymbolOccurrenceUsage,

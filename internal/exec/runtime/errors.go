@@ -540,6 +540,11 @@ var (
 	// it can be created.
 	errNoSubject = errors.New("no subject to satisfy the requirement")
 
+	// ErrNeedsObject is returned when a case a definition owns is run with no
+	// object of the definition to run on: the case is a feature of such an
+	// object, so with none instantiated its body has nothing to read.
+	ErrNeedsObject = errors.New("needs an object")
+
 	// errPerformerFeatureNotInScope is returned when a behavior body names a
 	// feature only the object performing it declares: the performing object is
 	// not a namespace the body's names resolve in, so the name has no referent.
@@ -651,16 +656,16 @@ func (e *ViolationError) Error() string {
 
 func (e *ViolationError) Unwrap() error { return ErrViolated }
 
-// featureValueError marks a feature value that could not be materialized. It reads as the error
+// FeatureValueError marks a feature value that could not be materialized. It reads as the error
 // that kept the feature value from materializing and unwraps to it as well as to
 // ErrFeatureValueMaterialization, so a caller tests either.
-type featureValueError struct {
+type FeatureValueError struct {
 	Err error
 }
 
-func (e *featureValueError) Error() string { return e.Err.Error() }
+func (e *FeatureValueError) Error() string { return e.Err.Error() }
 
-func (e *featureValueError) Unwrap() []error { return []error{ErrFeatureValueMaterialization, e.Err} }
+func (e *FeatureValueError) Unwrap() []error { return []error{ErrFeatureValueMaterialization, e.Err} }
 
 // OperandTypeError reports an operator applied to operand types it is not
 // defined for, naming the operator and both operands and carrying the span of
