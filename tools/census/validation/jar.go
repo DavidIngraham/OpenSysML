@@ -25,7 +25,6 @@ var validatorClasses = []struct {
 // one with a stray prefix (`invalidateMetadataFeatureBody`).
 var constraintIdentifierPattern = regexp.MustCompile(`^(?:in)?(validate[A-Za-z]+?)_?$`)
 
-
 // extractionMethod is the sentence the baseline records so a reader can repeat
 // the extraction without this program.
 const extractionMethod = "CONSTANT_String entries of each class's constant pool matching ^(in)?validate[A-Za-z]+_?$, normalized to the validate... name by dropping the in prefix and one trailing underscore; a name found in both classes has source \"both\""
