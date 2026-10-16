@@ -380,8 +380,8 @@ func (m *migration) acceptSignalRef(sig, scope *sysmlv1.Element, payload string)
 // global namespace.
 func (m *migration) pastPayload(path []segment, scope *sysmlv1.Element, payload string) string {
 	chain := scopeChain(scope)
-	if rel := m.relativeTo(path, chain); rel != nil && writeName(rel[0].name) != payload {
-		return m.qualifiedWhole(rel, nil, false)
+	if rel, inner := m.relativeTo(path, chain); rel != nil && writeName(rel[0].name) != payload {
+		return m.qualifiedWhole(rel, inner, false)
 	}
 	ref := m.qualifiedWhole(path, chain, false)
 	if writeName(path[0].name) == payload && !strings.HasPrefix(ref, "$::") {
@@ -543,19 +543,20 @@ func (m *migration) definitionBetween(scopes []*sysmlv1.Element) bool {
 
 // relativeTo shortens path to its tail below the root Model of chain, whose
 // members every scope in it sees, when no scope inside the Model shadows the
-// tail's first segment; nil when path is to be written whole.
-func (m *migration) relativeTo(path []segment, chain []*sysmlv1.Element) []segment {
+// tail's first segment; nil when path is to be written whole. inner is the
+// scopes of chain inside the Model, which the tail's first segment resolves past.
+func (m *migration) relativeTo(path []segment, chain []*sysmlv1.Element) (rel []segment, inner []*sysmlv1.Element) {
 	for i, s := range chain {
 		if !isRootModel(s) || len(path) < 2 || path[0].name != m.nameOf(s) || path[0].feature {
 			continue
 		}
 		rel := path[1:]
 		if m.hidden(rel[0].name) || m.shadows(chain[:i], rel[0].name) {
-			return nil
+			return nil, nil
 		}
-		return rel
+		return rel, chain[:i]
 	}
-	return nil
+	return nil, nil
 }
 
 // refer records that a reference written inside the scopes of chain resolves
@@ -592,8 +593,8 @@ func namespaces(segs []string) []segment {
 // chain: `Outer.inner`, since a usage's members are not accessible by qualified
 // name where a feature is referred to; an import names them by qualified name alone.
 func (m *migration) qualifiedFrom(path []segment, chain []*sysmlv1.Element, chained bool) string {
-	if rel := m.relativeTo(path, chain); rel != nil {
-		return m.qualifiedWhole(rel, nil, chained)
+	if rel, inner := m.relativeTo(path, chain); rel != nil {
+		return m.qualifiedWhole(rel, inner, chained)
 	}
 	return m.qualifiedWhole(path, chain, chained)
 }
