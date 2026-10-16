@@ -1333,6 +1333,9 @@ func (p *layoutPlan) placements(rec *mtip.Diagram) []string {
 			s.CompartmentsSuppressed += len(pl.HiddenCompartments)
 			s.SymbolsSuppressing++
 		}
+		for _, id := range pl.UnsupportedCompartments {
+			s.Unsupported[id]++
+		}
 		placements = append(placements, fmt.Sprintf("metadata %sLayout about %s { %s; }",
 			p.prefix, ref, strings.Join(attrs, "; ")))
 		p.grow(pl.X+pl.Width, pl.Y+pl.Height)

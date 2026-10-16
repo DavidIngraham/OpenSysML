@@ -580,6 +580,27 @@ as several members — a control flow written as a succession into a join the mi
 and from that join on — is pinned to the members whose both ends a diagram symbol stands at, so
 the route is drawn where Cameo drew it and not into a node no symbol stands for.
 
+The compartments a modeler collapsed on a symbol are kept with its box. A Cameo symbol's
+`SUPPRESS_*` compartment properties — `BooleanProperty` elements in its `properties`, a `value`
+of `true` meaning suppressed and no `value` the tool's default, shown — are read from the symbol
+itself and then from the chain of symbol styles the stream's `symbolStyles` hold (the property
+manager its `symbolStyleID` names and each `parentPropertyManager` above it), the symbol's own
+setting winning over an inherited one. Each suppressed compartment is written as a `show…`
+switch of the symbol's `Layout`, by the kind its members take in v2: parts (`SUPPRESS_PARTS_COMPARTMENT`,
+`SUPPRESS_IBD_PARTS_COMPARTMENT`) `showParts = false`; references (`…REFERENCES_COMPARTMENT`)
+`showReferences`; properties, values and class attributes (`…PROPERTIES_COMPARTMENT`,
+`…VALUES_COMPARTMENT`, `SUPPRESS_CLASS_ATTRIBUTES`, the IBD values, UML-property and initial-value
+compartments) `showAttributes`; constraints (`…CONSTRAINTS_COMPARTMENT`) `showConstraints`; flow
+properties (`…FLOWPROPERTIES_COMPARTMENT`) `showItems`; proxy, full and class ports
+(`SUPPRESS_PROXYPORTS_COMPARTMENT`, `SUPPRESS_FULLPORTS_COMPARTMENT`, `SUPPRESS_CLASS_PORTS`)
+`showPorts`; operations (`SUPPRESS_CLASS_OPERATIONS`, `SUPPRESS_IBD_OPERATIONS_COMPARTMENT`)
+`showActions`. The report's layout summary counts them (`# compartments suppressed: N on M
+symbols`; `compartmentsSuppressed` and `symbolsSuppressing` in the sidecar). A suppressed
+compartment no v2 compartment answers to (`SUPPRESS_STRUCTURE`, `SUPPRESS_BEHAVIORS`,
+`SUPPRESS_SIGNAL_RECEPTIONS`) is counted among the unsupported presentation properties and
+dropped. The renderer then lists only the compartments left on and counts only their rows against
+the box's stated size (see [DiagramLayout annotations](../project/diagram-layout-annotations.md)).
+
 A note the diagram shows is written as `metadata DiagramLayout::Note about <ref> { text; x; y;
 width; height; }` — a `Note` symbol whatever it names, a comment's symbol, or a free text box
 saying something of its own — with the comment's body when it stands for a comment and the

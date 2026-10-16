@@ -160,7 +160,7 @@ func (r *Renderer) treeNodeShallow(view, sym *symbols.Symbol, ids *nodeIDs, seen
 	}
 	node := &Node{ID: ids.take(), Kind: declKind(sym), Name: name, NameSynthesized: r.model.NameSynthesized(sym),
 		Type: declType(sym), Typings: r.declTypings(sym), Value: r.declValue(sym), Origin: symbolOrigin(sym), Geometry: r.geometryOf(view, sym, out),
-		Style: r.styleOf(view, sym, out)}
+		Style: r.styleOf(view, sym, out), Referential: structuralUsage(sym) && !compositeUsage(sym)}
 	out.noteTreeSite(node, view, sym)
 	if seen[sym] {
 		node.Detail = detailWith(node.Detail, "already shown")

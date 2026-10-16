@@ -70,9 +70,10 @@ func (m *migration) streamRecord(d *sysmlv1.Diagram) *mtip.Diagram {
 			rec.Connectors = append(rec.Connectors, c)
 		case s.Bounds != nil:
 			b := s.Bounds
+			hidden, unsupported := hiddenCompartments(s)
 			rec.Placements = append(rec.Placements, mtip.Placement{
 				ID: s.ElementID, Type: s.Class, X: b.X, Y: b.Y, Width: b.Width, Height: b.Height, OnPath: s.OnPath(),
-				HiddenCompartments: m.hiddenCompartments(s),
+				HiddenCompartments: hidden, UnsupportedCompartments: unsupported,
 			})
 		}
 	}

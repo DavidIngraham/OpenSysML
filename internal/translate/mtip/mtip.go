@@ -42,7 +42,8 @@ type Placement struct {
 	OnPath bool
 	// HiddenCompartments names the compartment kinds the symbol suppresses
 	// (DiagramLayout's show… switches, sorted); only a symbol stream states them.
-	HiddenCompartments []string
+	// UnsupportedCompartments are the suppressed compartments no kind answers to.
+	HiddenCompartments, UnsupportedCompartments []string
 }
 
 // Connector is one drawn edge's route, source to target, flattened as

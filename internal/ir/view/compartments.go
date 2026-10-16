@@ -139,6 +139,19 @@ func (l labeller) compartments(node *Node) []Compartment {
 	return node.Compartments
 }
 
+// hiddenRow reports whether node's Layout hides the compartment row would
+// list in: a hidden "references" hides every referential row, a hidden kind
+// the compartment of that name.
+func hiddenRow(node, row *Node) bool {
+	if node.Geometry == nil || !node.Geometry.Hidden.Any() {
+		return false
+	}
+	if row.Referential && !row.StandIn {
+		return node.Geometry.Hidden.Hides("references")
+	}
+	return node.Geometry.Hidden.Hides(compartmentName(row.Kind))
+}
+
 // rowCount is how many rows a node's compartments hold.
 func (l labeller) rowCount(node *Node) int {
 	n := 0

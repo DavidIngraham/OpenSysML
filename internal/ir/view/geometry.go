@@ -20,11 +20,19 @@ type Point struct {
 
 // Geometry is where a node is drawn, from the DiagramLayout::Layout positioning
 // it in the rendered view; HasSize says whether Width and Height were given.
+// Hidden are the compartments the Layout's show… switches turn off for this
+// symbol, which its box neither lists nor counts as clipped.
 type Geometry struct {
 	X, Y          float64
 	Width, Height float64
 	HasSize       bool
 	Collapsed     bool
+	Hidden        semantics.HiddenCompartments
+}
+
+// geometryFromLayout is the Geometry a resolved Layout gives.
+func geometryFromLayout(l *semantics.Layout) *Geometry {
+	return &Geometry{X: l.X, Y: l.Y, Width: l.Width, Height: l.Height, HasSize: l.HasSize, Collapsed: l.Collapsed, Hidden: l.Hidden}
 }
 
 // centre is the middle of the geometry, its corner when it has no size.
@@ -201,8 +209,7 @@ func (r *Renderer) geometryOf(view, elem *symbols.Symbol, out *Rendering) *Geome
 	if site.Layout == nil {
 		return nil
 	}
-	l := site.Layout
-	return &Geometry{X: l.X, Y: l.Y, Width: l.Width, Height: l.Height, HasSize: l.HasSize, Collapsed: l.Collapsed}
+	return geometryFromLayout(site.Layout)
 }
 
 // memberGeometryOf is the Geometry positioning, in view, the member owner has
@@ -223,8 +230,7 @@ func (r *Renderer) memberGeometryOf(view, owner *symbols.Symbol, name string, ou
 	if site.Layout == nil {
 		return nil
 	}
-	l := site.Layout
-	return &Geometry{X: l.X, Y: l.Y, Width: l.Width, Height: l.Height, HasSize: l.HasSize, Collapsed: l.Collapsed}
+	return geometryFromLayout(site.Layout)
 }
 
 // routeOf is the waypoints the edge declared as elem follows in view, nil when

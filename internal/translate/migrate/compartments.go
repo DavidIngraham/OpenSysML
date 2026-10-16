@@ -36,10 +36,10 @@ var compartmentKinds = map[string]string{
 }
 
 // hiddenCompartments names the v2 compartment kinds sym suppresses, sorted: a
-// kind is hidden when any Cameo compartment mapping to it is suppressed. A
-// suppressed compartment no kind maps to is counted as an unsupported
-// presentation property.
-func (m *migration) hiddenCompartments(sym *sysmlv1.Symbol) []string {
+// kind is hidden when any Cameo compartment mapping to it is suppressed. The
+// suppressed compartments no kind maps to are named apart, sorted, for the
+// report's unsupported presentation properties.
+func hiddenCompartments(sym *sysmlv1.Symbol) (kinds, unsupported []string) {
 	hidden := map[string]bool{}
 	for id, suppressed := range sym.Compartments {
 		if !suppressed {
@@ -48,13 +48,13 @@ func (m *migration) hiddenCompartments(sym *sysmlv1.Symbol) []string {
 		if kind, ok := compartmentKinds[id]; ok {
 			hidden[kind] = true
 		} else {
-			m.layoutSummary.Unsupported[id]++
+			unsupported = append(unsupported, id)
 		}
 	}
-	kinds := make([]string, 0, len(hidden))
 	for kind := range hidden {
 		kinds = append(kinds, kind)
 	}
 	sort.Strings(kinds)
-	return kinds
+	sort.Strings(unsupported)
+	return kinds, unsupported
 }
