@@ -4113,13 +4113,7 @@ func (e *StateExecutor) changeLabel(trans *lower.Transition) string {
 // chooseStepOrder draws what goes first under ChoiceStepOrder — the move of a due do
 // behavior, or the dispatch — and reports whether the dispatch does.
 func (e *StateExecutor) chooseStepOrder(due []*doAction, dispatch string) (bool, error) {
-	choice := ChoicePoint{
-		Kind:         ChoiceStepOrder,
-		Where:        stepWherePrefix + semantics.FormatReal(e.ctx.clock.now),
-		Alternatives: []string{doStepLabel(e.stateNames(statesOf(due))), dispatch},
-		File:         e.stateMachine.DocName,
-		Span:         e.stateMachine.DeclSpan,
-	}
+	choice := e.stepOrderChoice(due, dispatch)
 	scheduling := e.ctx.scheduling()
 	choice.Taken = scheduling.choose(choice, nil)
 	if err := scheduling.refusal(); err != nil {
@@ -4130,6 +4124,35 @@ func (e *StateExecutor) chooseStepOrder(due []*doAction, dispatch string) (bool,
 	}
 	e.noteChoice(choice)
 	return choice.Taken == 1, nil
+}
+
+// stepOrderChoice is the ChoiceStepOrder between a move of one of the due do
+// behaviors and the dispatch, before it is drawn.
+func (e *StateExecutor) stepOrderChoice(due []*doAction, dispatch string) ChoicePoint {
+	return ChoicePoint{
+		Kind:         ChoiceStepOrder,
+		Where:        stepWherePrefix + semantics.FormatReal(e.ctx.clock.now),
+		Alternatives: []string{doStepLabel(e.stateNames(statesOf(due))), dispatch},
+		File:         e.stateMachine.DocName,
+		Span:         e.stateMachine.DeclSpan,
+	}
+}
+
+// noteRoundStepOrder records the step order a fixed policy's round takes without
+// drawing it: a due do move goes before a dispatch that would act now, as the
+// round runs whole and dispatches after it. The order is the library's open one
+// all the same, so the run reports it as the unit-at-a-time policies do; a
+// preview that fails records nothing, the dispatch surfacing the failure after the round.
+func (e *StateExecutor) noteRoundStepOrder(due []*doAction) {
+	dispatch := e.dueDispatch()
+	if !dispatch.acts || dispatch.fails != nil {
+		return
+	}
+	choice := e.stepOrderChoice(due, dispatch.step)
+	if len(due) == 1 {
+		choice.Span = due[0].state.Span()
+	}
+	e.noteChoice(choice)
 }
 
 // doStepLabel names the move of one of the states' do behaviors as a step order's alternative.
@@ -4312,8 +4335,9 @@ func (e *StateExecutor) endDoRun(run *doRun) {
 // and returns how many ran. One round is how concurrently active states share
 // the machine: each performs one action before any performs its next, in an
 // order the policy draws (entry order by default), reported as a choice where
-// two or more are due. A behavior that waits on the clock or for a message
-// pauses there and is a state's action for the round its wait ends in.
+// two or more are due, and each before the dispatch due beside it, reported as
+// a step order where that dispatch would act. A behavior that waits on the clock
+// or for a message pauses there and is a state's action for the round its wait ends in.
 func (e *StateExecutor) runDoRound() (int, error) {
 	if len(e.doActions) == 0 {
 		return 0, nil
@@ -4331,6 +4355,7 @@ func (e *StateExecutor) runDoRound() (int, error) {
 		if len(due) == 0 {
 			break
 		}
+		e.noteRoundStepOrder(due)
 		next, err := e.chooseDoAction(due)
 		if err != nil {
 			return ran, err
