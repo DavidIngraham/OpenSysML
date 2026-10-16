@@ -1,5 +1,16 @@
 // Package migrate writes a SysML v1 model, read from XMI, as SysML v2 textual
 // notation, and reports what each v1 element became.
+//
+// A diagram's symbols become a view's DiagramLayout annotations. The
+// compartments a modeler collapsed on a symbol (its SUPPRESS_* properties, own
+// or inherited from its symbol style) become the Layout's show… switches by
+// the kind their members take in v2: parts → showParts, references →
+// showReferences, properties, values and class attributes → showAttributes,
+// constraints → showConstraints, flow properties → showItems, proxy, full and
+// class ports → showPorts, operations → showActions (compartmentKinds). A kind
+// is hidden when every Cameo compartment the symbol states for it is
+// suppressed; a suppressed compartment with no v2 kind is reported as an
+// unsupported presentation property.
 package migrate
 
 import (

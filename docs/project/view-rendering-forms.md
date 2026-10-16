@@ -901,7 +901,11 @@ digraph "PlantViews::placedView" {
   does, so no row is ever empty). No edge is written to a member drawn as a row, and the
   notice counts them (`4 node(s) without a position, drawn as compartment rows of the node
   above them`); a row shows the member alone, so the members nested under a row are left undrawn
-  and the notice counts them apart (`, and 1 node(s) under them left undrawn`). A member with a
+  and the notice counts them apart (`, and 1 node(s) under them left undrawn`). A member of a
+  compartment the owner's `Layout` hides with a `show…` switch (`showParts = false`; see
+  [DiagramLayout annotations](diagram-layout-annotations.md)) is not drawn as a row and the
+  notice says so (`9 node(s) without a position: 7 drawn as compartment rows of the node above
+  them, 2 in compartments its Layout hides left undrawn`); its edges are dropped as a row's are. A member with a
   `Layout` of its own stays a node (a compartment row by its box when inside the owner's, an edge
   when outside), as does an unplaced member with a positioned node under it, so that node keeps
   its owner. An unpositioned tree is unchanged: every member

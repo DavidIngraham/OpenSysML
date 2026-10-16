@@ -7,12 +7,25 @@ library package DiagramLayout {
 
     metadata def Layout {
         doc /* Where the annotated element is drawn: the top-left corner of its
-             * box, an optional fixed size, and whether its body is folded. */
+             * box, an optional fixed size, whether its body is folded, and
+             * which of its compartments are drawn. Each show… switch names
+             * one compartment kind of the box: attributes, parts (part
+             * usages), references (ref usages), ports, constraints, items
+             * (item and flow features) and actions. Unset means drawn;
+             * false means the modeler suppressed that compartment on this
+             * symbol, so a renderer omits it rather than clipping it. */
         attribute x : ScalarValues::Real;
         attribute y : ScalarValues::Real;
         attribute width : ScalarValues::Real[0..1];
         attribute height : ScalarValues::Real[0..1];
         attribute collapsed : ScalarValues::Boolean[0..1];
+        attribute showAttributes : ScalarValues::Boolean[0..1];
+        attribute showParts : ScalarValues::Boolean[0..1];
+        attribute showReferences : ScalarValues::Boolean[0..1];
+        attribute showPorts : ScalarValues::Boolean[0..1];
+        attribute showConstraints : ScalarValues::Boolean[0..1];
+        attribute showItems : ScalarValues::Boolean[0..1];
+        attribute showActions : ScalarValues::Boolean[0..1];
     }
 
     metadata def Route {

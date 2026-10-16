@@ -38,6 +38,56 @@ type Layout struct {
 	Width, Height float64
 	HasSize       bool
 	Collapsed     bool
+	// Hidden are the compartments the annotation's show… switches turn off
+	// for the element's symbol.
+	Hidden HiddenCompartments
+}
+
+// HiddenCompartments are the compartments of one symbol a Layout's show…
+// switches turn off, one per switch bound false: showAttributes, showParts,
+// showReferences, showPorts, showConstraints, showItems, showActions.
+type HiddenCompartments struct {
+	Attributes, Parts, References, Ports, Constraints, Items, Actions bool
+}
+
+// Any reports whether any compartment is hidden.
+func (h HiddenCompartments) Any() bool {
+	return h != HiddenCompartments{}
+}
+
+// Hides reports whether the compartment named as the graphical notation
+// heads it ("attributes", "parts", "ports", …) is hidden; "references" is the
+// `ref` rows, whichever compartment lists them.
+func (h HiddenCompartments) Hides(compartment string) bool {
+	switch compartment {
+	case "attributes":
+		return h.Attributes
+	case "parts":
+		return h.Parts
+	case "references":
+		return h.References
+	case "ports":
+		return h.Ports
+	case "constraints":
+		return h.Constraints
+	case "items":
+		return h.Items
+	case "actions":
+		return h.Actions
+	}
+	return false
+}
+
+// layoutSwitches are Layout's per-compartment show… attributes and the
+// compartment each hides when bound false.
+var layoutSwitches = map[string]func(*HiddenCompartments) *bool{
+	"showAttributes":  func(h *HiddenCompartments) *bool { return &h.Attributes },
+	"showParts":       func(h *HiddenCompartments) *bool { return &h.Parts },
+	"showReferences":  func(h *HiddenCompartments) *bool { return &h.References },
+	"showPorts":       func(h *HiddenCompartments) *bool { return &h.Ports },
+	"showConstraints": func(h *HiddenCompartments) *bool { return &h.Constraints },
+	"showItems":       func(h *HiddenCompartments) *bool { return &h.Items },
+	"showActions":     func(h *HiddenCompartments) *bool { return &h.Actions },
 }
 
 // Waypoint is one point of a Route, in the units of Layout.
@@ -540,7 +590,7 @@ func sameElement(a, b *symbols.Symbol) bool {
 }
 
 // readLayout reads a Layout body: x and y are required reals, width and
-// height an optional pair, collapsed an optional boolean.
+// height an optional pair, collapsed and the show… switches optional booleans.
 func (m *Model) readLayout(site *LayoutSite, bindings []MetadataBinding) {
 	layout := &Layout{}
 	var hasX, hasY, hasWidth, hasHeight bool
@@ -556,6 +606,13 @@ func (m *Model) readLayout(site *LayoutSite, bindings []MetadataBinding) {
 			hasHeight = m.readReal(site, b, &layout.Height)
 		case "collapsed":
 			m.readBool(site, b, &layout.Collapsed)
+		default:
+			if hidden, ok := layoutSwitches[b.Feature]; ok {
+				show := true
+				if m.readBool(site, b, &show) && !show {
+					*hidden(&layout.Hidden) = true
+				}
+			}
 		}
 	}
 	if !bindsFeature(bindings, "x") || !bindsFeature(bindings, "y") {
