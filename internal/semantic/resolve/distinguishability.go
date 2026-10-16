@@ -462,17 +462,35 @@ func (r *Resolver) hidesBelow(scope *symbols.Scope) bool {
 			return e.hides
 		}
 	}
+	// A walk made inside a filter condition or while an import target is
+	// still resolving could not be kept, and is answered true unwalked.
+	if r.inCondition != 0 || len(r.resolvingImports) != 0 {
+		return true
+	}
+	if r.collisionsSettled() {
+		r.belowCut = nil
+	} else if r.belowCut[scope] {
+		r.collisionCut = true
+		return true
+	}
 	cut := r.collisionCut
 	r.collisionCut = false
 	var hides bool
 	reads := r.capturing(func() { hides = r.hidesBelowSeen(scope, map[*symbols.Scope]bool{}) })
-	if !r.collisionCut && r.inCondition == 0 && len(r.resolvingImports) == 0 {
+	switch {
+	case !r.collisionCut:
 		journalNew(r, r.below, scope, imports[0])
 		r.below[scope] = hides
 		if r.shared != nil {
 			r.shared.putBelow(scope, hides, reads)
 		}
-	} else {
+	case !r.collisionsSettled():
+		if r.belowCut == nil {
+			r.belowCut = map[*symbols.Scope]bool{}
+		}
+		r.belowCut[scope] = true
+		hides = true
+	default:
 		hides = true
 	}
 	r.collisionCut = cut || r.collisionCut
