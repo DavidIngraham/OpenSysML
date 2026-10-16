@@ -158,6 +158,7 @@ func FromModelOptions(name string, model *sysmlv1.Model, opts Options) *Result {
 		taken:             map[*sysmlv1.Element]map[string]bool{},
 		regionStates:      map[*sysmlv1.Element]string{},
 		takenBy:           map[*sysmlv1.Element]map[string]*sysmlv1.Element{},
+		referenced:        map[*sysmlv1.Element]map[string]bool{},
 		parallel:          map[*sysmlv1.Element]string{},
 		exposed:           map[*sysmlv1.Element]string{},
 		methodOf:          map[*sysmlv1.Element]*sysmlv1.Element{},
@@ -392,6 +393,9 @@ type migration struct {
 	taken map[*sysmlv1.Element]map[string]bool
 	// takenBy is the element each taken name was reserved for; nil for none.
 	takenBy map[*sysmlv1.Element]map[string]*sysmlv1.Element
+	// referenced holds the names a reference written in a body resolves past
+	// it by, by scope: a declaration named so there would capture the reference.
+	referenced map[*sysmlv1.Element]map[string]bool
 	// privateAliases names private members through aliases in their owners' bodies.
 	privateAliases        map[*sysmlv1.Element]*privateLayoutAlias
 	privateAliasesByOwner map[*sysmlv1.Element][]*privateLayoutAlias
