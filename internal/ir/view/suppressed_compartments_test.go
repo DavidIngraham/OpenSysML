@@ -10,7 +10,7 @@ import (
 // neither listed nor counted as clipped, the rest keep the fit and clipping
 // rules, and a rendering that shows no compartments still shows none.
 func TestGoldenSuppressedCompartments(t *testing.T) {
-	for _, view := range []string{"selective", "collapsed", "cramped", "bare"} {
+	for _, view := range []string{"selective", "collapsed", "cramped", "roomy", "bare"} {
 		rendering := render(t, "suppressed-compartments.sysml", "CameraViews::"+view)
 		for _, form := range []Form{FormDot, FormMermaid, FormPlantUML, FormD2, FormText} {
 			out, err := rendering.Write(form)
@@ -56,6 +56,15 @@ func TestSuppressedCompartmentsAreNotListedNorClipped(t *testing.T) {
 	}
 	if strings.Contains(cramped, "lens") || strings.Contains(cramped, "sensor") {
 		t.Errorf("cramped lists a hidden part:\n%s", cramped)
+	}
+	roomy := dot("roomy")
+	for _, row := range []string{"resolution", "exposure", "mount", "data", "focus", "capture", "frame"} {
+		if !strings.Contains(roomy, row) {
+			t.Errorf("roomy lacks the row %s of a compartment left on", row)
+		}
+	}
+	if strings.Contains(roomy, "lens") || strings.Contains(roomy, "sensor") || strings.Contains(roomy, "compartment row(s) with no room") {
+		t.Errorf("roomy lists a hidden part or clips:\n%s", roomy)
 	}
 	bare := dot("bare")
 	for _, text := range []string{"resolution", "mount", "data", "lens", "compartment row(s)"} {

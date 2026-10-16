@@ -66,6 +66,14 @@ package CameraViews {
         render asTreeDiagram;
     }
 
+    // Parts collapsed in a box with room for every row: the parts are left
+    // out of a box that would have listed them, nothing is clipped.
+    view roomy {
+        expose Camera::Imaging;
+        metadata Layout about Camera::Imaging { x = 10; y = 10; width = 300; height = 420; showParts = false; }
+        render asTreeDiagram;
+    }
+
     // The tree rendering without compartments.
     rendering bareTree :> Views::asTreeDiagram {
         attribute showCompartments : ScalarValues::Boolean default = false;
