@@ -71,6 +71,18 @@ type Entry struct {
 // IsFamily reports whether the entry stands for a family of codes `Code-<kind>`.
 func (e Entry) IsFamily() bool { return len(e.Kinds) > 0 }
 
+// CatalogueURL is the published catalogue every code is a section of.
+const CatalogueURL = "https://runtime.opensysml.org/reference/diagnostics/"
+
+// URL is the catalogue section of a code, what an editor opens from a
+// diagnostic's code; a member of a family opens the family's section.
+func URL(code string) string {
+	if e, _, ok := Lookup(code); ok {
+		code = e.Code
+	}
+	return CatalogueURL + "#" + code
+}
+
 // Lookup finds the entry of a code. A member of a family (`document-plan-missing-title`)
 // finds the family's entry with kind set to the member's suffix; kind is empty
 // otherwise. The second result is false for a code the registry does not know.
