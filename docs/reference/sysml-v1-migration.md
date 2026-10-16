@@ -594,7 +594,10 @@ compartments) `showAttributes`; constraints (`…CONSTRAINTS_COMPARTMENT`) `show
 properties (`…FLOWPROPERTIES_COMPARTMENT`) `showItems`; proxy, full and class ports
 (`SUPPRESS_PROXYPORTS_COMPARTMENT`, `SUPPRESS_FULLPORTS_COMPARTMENT`, `SUPPRESS_CLASS_PORTS`)
 `showPorts`; operations (`SUPPRESS_CLASS_OPERATIONS`, `SUPPRESS_IBD_OPERATIONS_COMPARTMENT`)
-`showActions`. The report's layout summary counts them (`# compartments suppressed: N on M
+`showActions`; a v2 compartment lists what several Cameo compartments list between them, so its
+switch is written only when every one of them the symbol states is suppressed (a block's class
+attributes compartment is suppressed by Cameo's own style while its values compartment is shown:
+`showAttributes` stays unset). The report's layout summary counts them (`# compartments suppressed: N on M
 symbols`; `compartmentsSuppressed` and `symbolsSuppressing` in the sidecar). A suppressed
 compartment no v2 compartment answers to (`SUPPRESS_STRUCTURE`, `SUPPRESS_BEHAVIORS`,
 `SUPPRESS_SIGNAL_RECEPTIONS`) is counted among the unsupported presentation properties and

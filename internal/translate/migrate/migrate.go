@@ -7,9 +7,10 @@
 // the kind their members take in v2: parts → showParts, references →
 // showReferences, properties, values and class attributes → showAttributes,
 // constraints → showConstraints, flow properties → showItems, proxy, full and
-// class ports → showPorts, operations → showActions (compartmentKinds); a
-// suppressed compartment with no v2 kind is reported as an unsupported
-// presentation property.
+// class ports → showPorts, operations → showActions (compartmentKinds). A kind
+// is hidden when every Cameo compartment the symbol states for it is
+// suppressed; a suppressed compartment with no v2 kind is reported as an
+// unsupported presentation property.
 package migrate
 
 import (

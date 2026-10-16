@@ -18,8 +18,11 @@ func TestHiddenCompartments(t *testing.T) {
 		"SUPPRESS_STRUCTURE":                  true,
 		"SUPPRESS_BEHAVIORS":                  false,
 	}}
+	// Values and class attributes both suppressed hide the attributes; a
+	// proxy ports compartment suppressed beside a full ports one shown leaves
+	// the ports listed; parts shown stay.
 	hidden, unsupported := hiddenCompartments(sym)
-	if want := []string{"Attributes", "Items", "Ports"}; !reflect.DeepEqual(hidden, want) {
+	if want := []string{"Attributes", "Items"}; !reflect.DeepEqual(hidden, want) {
 		t.Errorf("hidden = %q, want %q", hidden, want)
 	}
 	if want := []string{"SUPPRESS_STRUCTURE"}; !reflect.DeepEqual(unsupported, want) {

@@ -35,24 +35,32 @@ var compartmentKinds = map[string]string{
 	"SUPPRESS_IBD_OPERATIONS_COMPARTMENT":     "Actions",
 }
 
-// hiddenCompartments names the v2 compartment kinds sym suppresses, sorted: a
-// kind is hidden when any Cameo compartment mapping to it is suppressed. The
-// suppressed compartments no kind maps to are named apart, sorted, for the
-// report's unsupported presentation properties.
+// hiddenCompartments names the v2 compartment kinds sym suppresses, sorted. A
+// v2 compartment lists what several Cameo compartments list between them (the
+// class attributes and the values compartments both become attributes), so a
+// kind is hidden when every Cameo compartment the symbol states for it is
+// suppressed. The suppressed compartments no kind maps to are named apart,
+// sorted, for the report's unsupported presentation properties.
 func hiddenCompartments(sym *sysmlv1.Symbol) (kinds, unsupported []string) {
-	hidden := map[string]bool{}
+	shown := map[string]bool{}
+	stated := map[string]bool{}
 	for id, suppressed := range sym.Compartments {
-		if !suppressed {
+		kind, ok := compartmentKinds[id]
+		if !ok {
+			if suppressed {
+				unsupported = append(unsupported, id)
+			}
 			continue
 		}
-		if kind, ok := compartmentKinds[id]; ok {
-			hidden[kind] = true
-		} else {
-			unsupported = append(unsupported, id)
+		stated[kind] = true
+		if !suppressed {
+			shown[kind] = true
 		}
 	}
-	for kind := range hidden {
-		kinds = append(kinds, kind)
+	for kind := range stated {
+		if !shown[kind] {
+			kinds = append(kinds, kind)
+		}
 	}
 	sort.Strings(kinds)
 	sort.Strings(unsupported)
