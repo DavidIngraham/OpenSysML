@@ -616,6 +616,18 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 	if record != nil {
 		record(owner, root)
 	}
+	// Every action has a start even when no succession leaves it; draw it when
+	// the view's Layout positions it, first among the body's nodes.
+	if r.placedStart(subject.view, owner, graph, out) {
+		start := &Node{ID: ids.take(), Kind: actionNodeKind(&ast.InitialNode{}, nil),
+			Name: nameText("start"), NameSynthesized: true}
+		start.Geometry = r.memberGeometryOf(subject.view, owner, "start", out)
+		r.memberDress(subject.view, owner, "start", start, out)
+		if member, ok := r.model.LookupMember(owner, "start"); ok {
+			start.Origin = nodeOrigin(member.DocName, member.Decl)
+		}
+		root.Children = append(root.Children, start)
+	}
 	for _, node := range graph.Nodes {
 		nodeDoc := docOf(graph, node, doc)
 		child := &Node{ID: ids.take(), Kind: actionNodeKind(node, graph), Name: nameText(behaviorNodeName(node)),
@@ -653,10 +665,35 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 	}
 	r.actionEdges(subject, graph, nodes, out)
 	r.bindingEdges(subject, graph, root, nodes, drawn, out)
-	if subject.frame == nil && len(root.Children) == 0 {
+	if subject.frame == nil && len(graph.Nodes) == 0 {
 		root.Detail = detailWith(root.Detail, "declares no nodes")
 	}
 	return root, true
+}
+
+// placedStart reports whether view positions the start graph never draws: one
+// no succession leaves lowers to no InitialNode, so a Layout about it has no
+// node to hang on and is drawn as one of its own.
+func (r *Renderer) placedStart(view, owner *symbols.Symbol, graph *lower.ActionGraph, out *Rendering) bool {
+	if owner == nil {
+		return false
+	}
+	for _, node := range graph.Nodes {
+		// A declared `action start` is an ordinary node named start: the
+		// member already has a node and the Layout belongs to it.
+		if _, ok := node.(*ast.InitialNode); ok || behaviorNodeName(node) == "start" {
+			return false
+		}
+	}
+	site, ok := r.model.MemberLayoutOf(view, owner, "start")
+	if !ok {
+		return false
+	}
+	if site.Layout == nil {
+		r.noteLayoutProblems(site, owner, out)
+		return false
+	}
+	return true
 }
 
 // actionEdges draws the action's successions and object flows between its own
