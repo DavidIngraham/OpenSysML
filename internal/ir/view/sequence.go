@@ -414,36 +414,67 @@ func declaredBefore(a, b *symbols.Symbol) bool {
 // orderMessages is the messages in the order the model states. A message is one
 // row, so its send and receive events share that row's time: the rows are sorted
 // by the orders stated between the events on them, through events no message
-// attaches to, and declaration order stands between rows nothing orders. Orders
-// that run a row both above and below another cannot be drawn as rows, so the
-// cycle is reported and declaration order stands for the whole rendering.
+// attaches to, and declaration order stands between rows nothing orders. An
+// order against a message's own direction, or orders that run a row both above
+// and below another, cannot be drawn as rows, so the cycle is reported and
+// declaration order stands for the whole rendering.
 func (r *Renderer) orderMessages(messages []message, orders []order, out *Rendering) []Edge {
-	row, rows := messageRows(messages, orders)
-	later := make([][]int, rows)
-	indegree := make([]int, rows)
+	occurrences := sequencedOccurrences(messages, orders)
+	at := make(map[*symbols.Symbol]int, len(occurrences))
+	for i, occurrence := range occurrences {
+		at[occurrence] = i
+	}
 	stated := make([]order, 0, len(orders))
 	for _, o := range orders {
-		i, iOK := row[o.from]
-		j, jOK := row[o.to]
-		if !iOK || !jOK || i == j {
-			continue
+		if _, ok := at[o.from]; ok && o.from != o.to {
+			if _, ok := at[o.to]; ok {
+				stated = append(stated, o)
+			}
 		}
-		later[i] = append(later[i], j)
-		indegree[j]++
-		stated = append(stated, o)
 	}
-	if sorted, ok := stableTopological(later, indegree); ok {
-		rank := make([]int, rows)
-		for place, i := range sorted {
-			rank[i] = place
+	// The events first: each message runs from its send to its receive, so an
+	// order against that cannot hold on one row however the rows are placed.
+	eventsLater := make([][]int, len(occurrences))
+	eventsIndegree := make([]int, len(occurrences))
+	for _, msg := range messages {
+		if i, j := at[msg.from], at[msg.to]; i != j {
+			eventsLater[i] = append(eventsLater[i], j)
+			eventsIndegree[j]++
 		}
-		sort.SliceStable(messages, func(i, j int) bool {
-			return rank[row[messages[i].from]] < rank[row[messages[j].from]]
-		})
+	}
+	for _, o := range stated {
+		eventsLater[at[o.from]] = append(eventsLater[at[o.from]], at[o.to])
+		eventsIndegree[at[o.to]]++
+	}
+	var cyclic []string
+	if placed, ok := stableTopological(eventsLater, eventsIndegree); !ok {
+		cyclic = r.cyclicOrders(stated, at, placed)
 	} else {
+		row, rows := messageRows(messages, occurrences, at)
+		later := make([][]int, rows)
+		indegree := make([]int, rows)
+		for _, o := range stated {
+			if i, j := row[o.from], row[o.to]; i != j {
+				later[i] = append(later[i], j)
+				indegree[j]++
+			}
+		}
+		if sorted, ok := stableTopological(later, indegree); ok {
+			rank := make([]int, rows)
+			for place, i := range sorted {
+				rank[i] = place
+			}
+			sort.SliceStable(messages, func(i, j int) bool {
+				return rank[row[messages[i].from]] < rank[row[messages[j].from]]
+			})
+		} else {
+			cyclic = r.cyclicOrders(stated, row, sorted)
+		}
+	}
+	if cyclic != nil {
 		out.Notices = append(out.Notices, fmt.Sprintf(
 			"successions form a cycle (%s); the messages are shown in declaration order",
-			strings.Join(r.cyclicOrders(stated, row, sorted), ", ")))
+			strings.Join(cyclic, ", ")))
 	}
 	edges := make([]Edge, 0, len(messages))
 	for _, msg := range messages {
@@ -458,12 +489,10 @@ func (r *Renderer) orderMessages(messages []message, orders []order, out *Render
 // numbered first, then the message rows in declaration order, so a sort taking
 // the lowest ready row passes an order through a bare event at once and takes
 // the earliest-declared message where nothing is stated.
-func messageRows(messages []message, orders []order) (map[*symbols.Symbol]int, int) {
-	occurrences := sequencedOccurrences(messages, orders)
-	at := make(map[*symbols.Symbol]int, len(occurrences))
+func messageRows(messages []message, occurrences []*symbols.Symbol, at map[*symbols.Symbol]int) (map[*symbols.Symbol]int, int) {
 	parent := make([]int, len(occurrences))
-	for i, occurrence := range occurrences {
-		at[occurrence], parent[i] = i, i
+	for i := range parent {
+		parent[i] = i
 	}
 	find := func(i int) int {
 		for parent[i] != i {

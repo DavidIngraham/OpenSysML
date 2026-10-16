@@ -156,6 +156,34 @@ func TestSequenceRenderingKeepsDeclarationOrderWhereNothingIsStated(t *testing.T
 	}
 }
 
+// Orders no row can satisfy are a cycle too: one running against a message's
+// own direction, and ones placing one row both above and below another even
+// though the events themselves could be ordered. Each is reported, naming the
+// succession, and declaration order stands.
+func TestSequenceRenderingReportsOrdersNoRowCanSatisfy(t *testing.T) {
+	for _, tc := range []struct {
+		view     string
+		messages []string
+		named    string
+	}{
+		{"LifelineViews::reversedView", []string{"back", "m"}, "received to sent"},
+		{"LifelineViews::crossedView", []string{"two", "one"}, "crossing"},
+	} {
+		rendering := render(t, "sequence-lifelines.sysml", tc.view)
+		if got := messageLabels(rendering); !slices.Equal(got, tc.messages) {
+			t.Errorf("%s: messages = %v, want declaration order %v", tc.view, got, tc.messages)
+		}
+		if len(rendering.Notices) != 1 {
+			t.Fatalf("%s: notices = %v, want one about the cycle", tc.view, rendering.Notices)
+		}
+		for _, want := range []string{"cycle", tc.named, "declaration order"} {
+			if !strings.Contains(rendering.Notices[0], want) {
+				t.Errorf("%s: notice %q does not mention %q", tc.view, rendering.Notices[0], want)
+			}
+		}
+	}
+}
+
 // Successions that contradict each other cannot be ordered: the cycle is
 // reported, naming the successions, and declaration order stands.
 func TestSequenceRenderingReportsASuccessionCycle(t *testing.T) {

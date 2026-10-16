@@ -87,6 +87,44 @@ package Lifelines {
 		message pong of B from left.pongSent to right.pongTaken;
 		message ping of A from left.pingSent to right.pingTaken;
 	}
+
+	// A succession ordering a message's receive before its send: no row can
+	// hold both, so the cycle is reported and declaration order stands.
+	occurrence def Reversed {
+		part p {
+			event occurrence sent;
+			event occurrence other;
+		}
+
+		part q {
+			event occurrence received;
+			event occurrence otherTaken;
+		}
+
+		message back of B from p.other to q.otherTaken;
+		message m of A from p.sent to q.received;
+		succession first q.received then p.sent;
+	}
+
+	// The events can be ordered but the rows cannot: `first` must be above
+	// `second` for its send to precede second's receive, and below it for
+	// second's send to precede its receive.
+	occurrence def Crossed {
+		part p {
+			event occurrence firstSent;
+			event occurrence secondTaken;
+		}
+
+		part q {
+			event occurrence firstTaken;
+			event occurrence secondSent;
+		}
+
+		message two of B from q.secondSent to p.secondTaken;
+		message one of A from p.firstSent to q.firstTaken;
+		succession first p.firstSent then p.secondTaken;
+		succession crossing first q.secondSent then q.firstTaken;
+	}
 }
 
 package LifelineViews {
@@ -106,5 +144,13 @@ package LifelineViews {
 
 	view unorderedView : SequenceView {
 		expose Lifelines::Unordered;
+	}
+
+	view reversedView : SequenceView {
+		expose Lifelines::Reversed;
+	}
+
+	view crossedView : SequenceView {
+		expose Lifelines::Crossed;
 	}
 }
