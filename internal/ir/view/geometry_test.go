@@ -640,3 +640,44 @@ func TestCloneCopiesStylesAndNotes(t *testing.T) {
 		t.Errorf("original note = %q after editing the clone", got)
 	}
 }
+
+// A Route about a flow inside an interconnection view routes the flow's edge
+// there, as a connection's does: a migrated connector written as its flow alone
+// keeps the line the source diagram drew.
+func TestFlowRouteComesFromTheView(t *testing.T) {
+	src := `package Feeds {
+    private import Views::*;
+    private import DiagramLayout::*;
+    item def Pwr;
+    port def iPower { out item pwr : Pwr; }
+    part def Supply { port 'pwr out' : iPower; }
+    part def Load { port 'pwr in' : ~iPower; }
+    part def Sys {
+        part supply : Supply;
+        part load : Load;
+        flow pwr of Pwr from supply.'pwr out'.pwr to load.'pwr in'.pwr;
+        view feedView {
+            expose supply;
+            expose load;
+            expose pwr;
+            metadata Layout about supply { x = 20; y = 120; width = 100; height = 60; }
+            metadata Layout about load { x = 260; y = 20; width = 100; height = 60; }
+            metadata Route about pwr { points = (120, 140, 190, 140, 190, 50, 260, 50); }
+            render asInterconnectionDiagram;
+        }
+    }
+}
+`
+	rendering, _, _ := renderModel(t, []string{"feeds.sysml"}, []string{src}, "Feeds::Sys::feedView", "Feeds::Sys")
+	if len(rendering.Notices) != 0 {
+		t.Errorf("notices = %v, want none", rendering.Notices)
+	}
+	supply, load := findNode(t, rendering.Roots, "Feeds::Sys::supply"), findNode(t, rendering.Roots, "Feeds::Sys::load")
+	routed := routedEdges(rendering)
+	if len(routed) != 1 || routed[0].Kind != EdgeFlow || routed[0].From != supply.ID || routed[0].To != load.ID {
+		t.Fatalf("routed edges = %+v, want the flow from supply to load", routed)
+	}
+	if want := []Point{{120, 140}, {190, 140}, {190, 50}, {260, 50}}; !reflect.DeepEqual(routed[0].Route, want) {
+		t.Errorf("route = %v, want %v", routed[0].Route, want)
+	}
+}
