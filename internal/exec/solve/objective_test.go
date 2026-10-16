@@ -449,6 +449,25 @@ func TestPositionalObjectivesInheritValues(t *testing.T) {
 	}
 }
 
+// TestNestedStageConditionsAreTranslated: the conditions a nested analysis states
+// are part of the script, after the enclosing case's and before the objectives.
+func TestNestedStageConditionsAreTranslated(t *testing.T) {
+	ctx, idx := fixtureFile(t, "objectives.sysml")
+	sym := symbolNamed(t, idx, "test::CostThenBoundedMargin")
+	q, err := Analysis(ctx, sym, sym.OwnerScope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	script := Script(q)
+	bound := strings.Index(script, "(<= |test::CostThenBoundedMargin::margin| 2)")
+	if bound < 0 {
+		t.Fatalf("the nested stage's condition is not translated:\n%s", script)
+	}
+	if first := strings.Index(script, "(minimize "); first < bound {
+		t.Errorf("the nested stage's condition follows an objective:\n%s", script)
+	}
+}
+
 // TestObjectiveRefusals: every objective outside the translatable subset refuses
 // with a typed error naming why and where, rather than being skipped.
 func TestObjectiveRefusals(t *testing.T) {

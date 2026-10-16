@@ -127,6 +127,27 @@ func TestLexicographicOptima(t *testing.T) {
 	}
 }
 
+// TestNestedStageConditionBoundsTheOptimum: a nested analysis's own conditions
+// bound its stage, so its objective is improved within them, not only within
+// the enclosing case's.
+func TestNestedStageConditionBoundsTheOptimum(t *testing.T) {
+	result := optimized(t, "CostThenBoundedMargin")
+	if result.Status != StatusSat {
+		t.Fatalf("CostThenBoundedMargin answered %s, want sat", result.Status)
+	}
+	if len(result.Optima) != 2 {
+		t.Fatalf("reported %d optima, want 2", len(result.Optima))
+	}
+	cost, margin := result.Optima[0], result.Optima[1]
+	if cost.Status != OptimumAttained || cost.Value != "3" {
+		t.Errorf("least cost is %s %q: %s", cost.Status, cost.Value, cost.Detail)
+	}
+	if margin.Status != OptimumAttained || margin.Value != "2" {
+		t.Errorf("greatest margin within the nested stage's bound is %s %q: %s",
+			margin.Status, margin.Value, margin.Detail)
+	}
+}
+
 // TestUnboundedOptimum: an objective the conditions do not bound has no optimum,
 // which is its own answer rather than a number.
 func TestUnboundedOptimum(t *testing.T) {

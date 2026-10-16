@@ -347,4 +347,24 @@ package test {
 			in calc :>> eval { weight }
 		}
 	}
+
+	// A nested analysis's own conditions bound its stage: the margin is held to 2
+	// where the enclosing case alone would allow 6 at the least cost.
+	analysis def CostThenBoundedMargin {
+		attribute cost : Integer;
+		attribute margin : Integer;
+		assert constraint { cost >= 3 and cost <= 9 }
+		assert constraint { margin >= 0 and margin <= cost * 2 }
+		objective cheapest : MinimizeObjective {
+			subject :>> selectedAlternative;
+			in calc :>> eval { cost }
+		}
+		analysis thenMargin {
+			assert constraint { margin <= 2 }
+			objective widestMargin : MaximizeObjective {
+				subject :>> selectedAlternative;
+				in calc :>> eval { margin }
+			}
+		}
+	}
 }

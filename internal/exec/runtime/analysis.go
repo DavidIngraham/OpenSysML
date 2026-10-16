@@ -156,24 +156,46 @@ func (ctx *Context) ObjectivesOf(sym *symbols.Symbol, scope *symbols.Scope) []Ob
 	return out
 }
 
-// OptimizationObjectivesOf returns the objectives an optimization improves, in
-// order: the case's own, then those of each analysis nested in it in declaration
-// order, each stage refining the optimum the stages before it settled.
-func (ctx *Context) OptimizationObjectivesOf(sym *symbols.Symbol, scope *symbols.Scope) []Objective {
-	return ctx.stagedObjectives(sym, scope, map[*symbols.Symbol]bool{})
+// OptimizationStage is one stage of a lexicographic optimization: a case, the
+// objectives it states and the conditions bounding it — the enclosing case
+// first, then each analysis nested in it, in declaration order.
+type OptimizationStage struct {
+	Case       *symbols.Symbol
+	Objectives []Objective
+	Conditions []Condition
 }
 
-func (ctx *Context) stagedObjectives(sym *symbols.Symbol, scope *symbols.Scope, seen map[*symbols.Symbol]bool) []Objective {
+// OptimizationStagesOf returns the stages of sym's optimization: the case's own
+// objectives and conditions, then each nested analysis's, each stage refining
+// the optimum the stages before it settled within its own conditions too.
+func (ctx *Context) OptimizationStagesOf(sym *symbols.Symbol, scope *symbols.Scope) []OptimizationStage {
+	return ctx.optimizationStages(sym, scope, nil, map[*symbols.Symbol]bool{})
+}
+
+// OptimizationObjectivesOf returns the objectives of every stage, in stage order.
+func (ctx *Context) OptimizationObjectivesOf(sym *symbols.Symbol, scope *symbols.Scope) []Objective {
+	var out []Objective
+	for _, stage := range ctx.OptimizationStagesOf(sym, scope) {
+		out = append(out, stage.Objectives...)
+	}
+	return out
+}
+
+func (ctx *Context) optimizationStages(sym *symbols.Symbol, scope *symbols.Scope, out []OptimizationStage, seen map[*symbols.Symbol]bool) []OptimizationStage {
 	if sym == nil || seen[sym] {
-		return nil
+		return out
 	}
 	seen[sym] = true
 	if scope == nil {
 		scope = sym.OwnerScope
 	}
-	out := ctx.ObjectivesOf(sym, scope)
+	out = append(out, OptimizationStage{
+		Case:       sym,
+		Objectives: ctx.ObjectivesOf(sym, scope),
+		Conditions: ctx.CaseConditionsOf(sym, scope),
+	})
 	for _, stage := range ctx.analysisStagesOf(sym, scope) {
-		out = append(out, ctx.stagedObjectives(stage, stage.OwnerScope, seen)...)
+		out = ctx.optimizationStages(stage, stage.OwnerScope, out, seen)
 	}
 	return out
 }
