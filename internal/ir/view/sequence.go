@@ -411,61 +411,95 @@ func declaredBefore(a, b *symbols.Symbol) bool {
 	return a.DeclSpan.Offset < b.DeclSpan.Offset
 }
 
-// orderMessages is the messages in the order the model states. The model states
-// no order over messages directly: it orders the occurrences they run between,
-// so the occurrences are sorted and each message takes the place of the one it
-// runs from. A cycle among the stated orders cannot be sorted, so it is reported
-// and declaration order stands for the whole rendering.
+// orderMessages is the messages in the order the model states. A message is one
+// row, so its send and receive events share that row's time: the rows are sorted
+// by the orders stated between the events on them, through events no message
+// attaches to, and declaration order stands between rows nothing orders. Orders
+// that run a row both above and below another cannot be drawn as rows, so the
+// cycle is reported and declaration order stands for the whole rendering.
 func (r *Renderer) orderMessages(messages []message, orders []order, out *Rendering) []Edge {
-	occurrences := sequencedOccurrences(messages, orders)
-	at := make(map[*symbols.Symbol]int, len(occurrences))
-	for i, occurrence := range occurrences {
-		at[occurrence] = i
-	}
-	later := make([][]int, len(occurrences))
-	indegree := make([]int, len(occurrences))
-	constrain := func(from, to *symbols.Symbol) bool {
-		i, iOK := at[from]
-		j, jOK := at[to]
+	row, rows := messageRows(messages, orders)
+	later := make([][]int, rows)
+	indegree := make([]int, rows)
+	stated := make([]order, 0, len(orders))
+	for _, o := range orders {
+		i, iOK := row[o.from]
+		j, jOK := row[o.to]
 		if !iOK || !jOK || i == j {
-			return false
+			continue
 		}
 		later[i] = append(later[i], j)
 		indegree[j]++
-		return true
-	}
-	for _, msg := range messages {
-		constrain(msg.from, msg.to)
-	}
-	stated := make([]order, 0, len(orders))
-	for _, o := range orders {
-		if constrain(o.from, o.to) {
-			stated = append(stated, o)
-		}
+		stated = append(stated, o)
 	}
 	if sorted, ok := stableTopological(later, indegree); ok {
-		rank := make(map[*symbols.Symbol]int, len(sorted))
+		rank := make([]int, rows)
 		for place, i := range sorted {
-			rank[occurrences[i]] = place
+			rank[i] = place
 		}
-		// A row states order at both ends, so the receiving occurrence ranks first;
-		// each message's own from → to edge carries the sending order into it.
 		sort.SliceStable(messages, func(i, j int) bool {
-			if rank[messages[i].to] != rank[messages[j].to] {
-				return rank[messages[i].to] < rank[messages[j].to]
-			}
-			return rank[messages[i].from] < rank[messages[j].from]
+			return rank[row[messages[i].from]] < rank[row[messages[j].from]]
 		})
 	} else {
 		out.Notices = append(out.Notices, fmt.Sprintf(
 			"successions form a cycle (%s); the messages are shown in declaration order",
-			strings.Join(r.cyclicOrders(stated, at, sorted), ", ")))
+			strings.Join(r.cyclicOrders(stated, row, sorted), ", ")))
 	}
 	edges := make([]Edge, 0, len(messages))
 	for _, msg := range messages {
 		edges = append(edges, msg.edge)
 	}
 	return edges
+}
+
+// messageRows numbers the rows the orders are sorted over: the ends of a message
+// are one row, as are the ends of messages sharing an event, and an event no
+// message attaches to that an order joins to one is a row of its own. Those are
+// numbered first, then the message rows in declaration order, so a sort taking
+// the lowest ready row passes an order through a bare event at once and takes
+// the earliest-declared message where nothing is stated.
+func messageRows(messages []message, orders []order) (map[*symbols.Symbol]int, int) {
+	occurrences := sequencedOccurrences(messages, orders)
+	at := make(map[*symbols.Symbol]int, len(occurrences))
+	parent := make([]int, len(occurrences))
+	for i, occurrence := range occurrences {
+		at[occurrence], parent[i] = i, i
+	}
+	find := func(i int) int {
+		for parent[i] != i {
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		}
+		return i
+	}
+	for _, msg := range messages {
+		parent[find(at[msg.from])] = find(at[msg.to])
+	}
+	messaged := make([]bool, len(occurrences))
+	for _, msg := range messages {
+		messaged[find(at[msg.from])] = true
+	}
+	rowOf := make([]int, len(occurrences))
+	rows := 0
+	number := func(i int) {
+		if root := find(i); rowOf[root] == 0 {
+			rows++
+			rowOf[root] = rows
+		}
+	}
+	for i := range occurrences {
+		if !messaged[find(i)] {
+			number(i)
+		}
+	}
+	for _, msg := range messages {
+		number(at[msg.from])
+	}
+	row := make(map[*symbols.Symbol]int, len(occurrences))
+	for i, occurrence := range occurrences {
+		row[occurrence] = rowOf[find(i)] - 1
+	}
+	return row, rows
 }
 
 // sequencedOccurrences are the occurrences the message order is sorted over: the

@@ -78,8 +78,8 @@ func TestSequenceRenderingReportsWhatItCannotShow(t *testing.T) {
 	if got := lifelineNames(rendering); !slices.Equal(got, []string{"caller", "callee"}) {
 		t.Errorf("lifelines = %v, want the parts only", got)
 	}
-	if got := messageLabels(rendering); !slices.Equal(got, []string{"echo", "of Ping"}) {
-		t.Errorf("messages = %v, want the self-message and the port-to-port flow", got)
+	if got := messageLabels(rendering); !slices.Equal(got, []string{"of Ping", "echo"}) {
+		t.Errorf("messages = %v, want the port-to-port flow and the self-message in declaration order", got)
 	}
 	ping, echo := edgeLabeled(t, rendering, "of Ping"), edgeLabeled(t, rendering, "echo")
 	if ping.From != rendering.Roots[0].ID || ping.To != rendering.Roots[1].ID {
