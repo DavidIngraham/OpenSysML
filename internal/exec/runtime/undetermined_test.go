@@ -1200,16 +1200,26 @@ func TestMultiValuedWithUnknownUpperBound(t *testing.T) {
 
 // An open scalar quantity is admitted where a determined one is: by a feature typed
 // Real, NumericalValue, a commensurable quantity type or Array (a scalar quantity is
-// one), and as a numeric operand; a feature typed Integer, by a quantity of another
-// dimension (or of none) or by a type of no dimension at all refuses it.
+// one), and as a numeric operand, and one whose own dimension is open where a quantity
+// is; a feature typed Integer, by a quantity of another dimension (or of none) or by a
+// type of no dimension at all refuses it.
 func TestOpenQuantityIsAdmittedWhereADeterminedOneIs(t *testing.T) {
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, `package test {
 		private import ScalarValues::*;
 		private import ISQ::*;
 		private import SI::*;
-		part def Src { attribute m : MassValue; }
+		private import Quantities::ScalarQuantityValue;
+		attribute def AnyQuantity :> ScalarQuantityValue;
+		part def Src {
+			attribute m : MassValue;
+			attribute q : AnyQuantity;
+			attribute any : ScalarQuantityValue;
+		}
 		part src : Src;
 		part def Holder {
+			attribute massFromAny : MassValue = src.any;
+			attribute massFromOpen : MassValue = src.q;
+			attribute partFromOpen : Parts::Part = src.q;
 			attribute asReal : Real = src.m;
 			attribute asNumber : NumericalValue = src.m;
 			attribute asMass : MassValue = src.m;
@@ -1226,11 +1236,11 @@ func TestOpenQuantityIsAdmittedWhereADeterminedOneIs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("instantiate h: %v", err)
 	}
-	for _, name := range []string{"asReal", "asNumber", "asMass", "plusOne", "asArray"} {
+	for _, name := range []string{"asReal", "asNumber", "asMass", "plusOne", "asArray", "massFromAny", "massFromOpen"} {
 		val, err := evalOn(t, ctx, inst, name)
 		wantUndetermined(t, "h."+name, val, err, "[1]")
 	}
-	for _, name := range []string{"asInteger", "asLength", "asOne", "asPart"} {
+	for _, name := range []string{"asInteger", "asLength", "asOne", "asPart", "partFromOpen"} {
 		_, err := inst.GetFeatureValue(ctx, name)
 		if !errors.Is(err, ErrTypeMismatch) || !strings.Contains(err.Error(), "cannot write") {
 			t.Errorf("h.%s: %v, want ErrTypeMismatch refusing the write", name, err)

@@ -87,14 +87,14 @@ func (ctx *Context) openScalarQuantity(declared *symbols.Symbol) bool {
 // openQuantityMayBe reports whether an open scalar quantity of the type declared may
 // be a value of typ, by the relation a determined quantity is admitted by: the scalar
 // lattice where typ is a scalar type (a quantity is a rational, so no Integer), else
-// commensurable dimensions, which a type of no dimension (Part, Array) does not have.
+// typ fixes a dimension and declared leaves it open or fixes a commensurable one.
 func (ctx *Context) openQuantityMayBe(declared, typ *symbols.Symbol) bool {
 	if prim := ctx.model.semantics.PrimTypeOf(typ); prim != semantics.PrimUnknown {
 		return semantics.PrimConforms(semantics.PrimRational, prim)
 	}
 	want, ok := ctx.model.semantics.DimensionOfType(typ)
 	got, known := ctx.model.semantics.DimensionOfType(declared)
-	return ok && known && want.Term.Commensurable(got.Term)
+	return ok && (!known || want.Term.Commensurable(got.Term))
 }
 
 // openMagnitudeMayBe reports whether an open magnitude of a quantity may hold what the
