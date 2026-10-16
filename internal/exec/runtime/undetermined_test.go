@@ -1199,8 +1199,9 @@ func TestMultiValuedWithUnknownUpperBound(t *testing.T) {
 }
 
 // An open scalar quantity is admitted where a determined one is: by a feature typed
-// Real, NumericalValue or a commensurable quantity type, and as a numeric operand; a
-// feature typed Integer or by a quantity of another dimension refuses it.
+// Real, NumericalValue, a commensurable quantity type or Array (a scalar quantity is
+// one), and as a numeric operand; a feature typed Integer, by a quantity of another
+// dimension (or of none) or by a type of no dimension at all refuses it.
 func TestOpenQuantityIsAdmittedWhereADeterminedOneIs(t *testing.T) {
 	idx, _, ctx := buildRuntimeWithLibraries(t, "<test>", parseAndBuild(t, `package test {
 		private import ScalarValues::*;
@@ -1213,8 +1214,11 @@ func TestOpenQuantityIsAdmittedWhereADeterminedOneIs(t *testing.T) {
 			attribute asNumber : NumericalValue = src.m;
 			attribute asMass : MassValue = src.m;
 			attribute plusOne : MassValue = src.m + 1 [kg];
+			attribute asArray : Collections::Array = src.m;
 			attribute asInteger : Integer = src.m;
 			attribute asLength : LengthValue = src.m;
+			attribute asOne : MeasurementReferences::DimensionOneValue = src.m;
+			attribute asPart : Parts::Part = src.m;
 		}
 		part h : Holder;
 	}`))
@@ -1222,11 +1226,11 @@ func TestOpenQuantityIsAdmittedWhereADeterminedOneIs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("instantiate h: %v", err)
 	}
-	for _, name := range []string{"asReal", "asNumber", "asMass", "plusOne"} {
+	for _, name := range []string{"asReal", "asNumber", "asMass", "plusOne", "asArray"} {
 		val, err := evalOn(t, ctx, inst, name)
 		wantUndetermined(t, "h."+name, val, err, "[1]")
 	}
-	for _, name := range []string{"asInteger", "asLength"} {
+	for _, name := range []string{"asInteger", "asLength", "asOne", "asPart"} {
 		_, err := inst.GetFeatureValue(ctx, name)
 		if !errors.Is(err, ErrTypeMismatch) || !strings.Contains(err.Error(), "cannot write") {
 			t.Errorf("h.%s: %v, want ErrTypeMismatch refusing the write", name, err)
