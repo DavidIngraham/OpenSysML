@@ -27,9 +27,13 @@ package DepthViews {
 		render asTreeDiagram;
 	}
 
-	// The typed depth of the OpenSysMLRenderings library, redefined by a view
+	// A typed depth a view definition declares, redefined by a specializing
 	// definition and inherited by the view.
-	view def TwoLevels :> OpenSysMLRenderings::DepthLimitedView {
+	view def DepthLimited {
+		attribute depth : ScalarValues::Natural[0..1];
+	}
+
+	view def TwoLevels :> DepthLimited {
 		:>> depth = 2;
 	}
 

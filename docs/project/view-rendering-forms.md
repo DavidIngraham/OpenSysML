@@ -1317,13 +1317,16 @@ Pilot visualizer does; the specification leaves what a rendering draws to the to
   filters keep. Ports and action, case and constraint parameters count at their owner's depth, so an
   element at the bound keeps them pinned on its border; it is drawn with its compartment rows, carries
   the detail `nested deeper than N levels; not shown`, and the elements directly below the bound are
-  counted once in the notices. `OpenSysMLRenderings::DepthLimitedView` declares the attribute in a
-  typed form a view definition can redefine; the bare form is the one SysIDE reads, so a model
-  renders alike in both tools:
+  counted once in the notices. The bare form is the one SysIDE reads, so a model renders alike in
+  both tools; a view definition may declare the attribute typed (`attribute depth :
+  ScalarValues::Natural[0..1];`) for its specializations to redefine. The `OpenSysMLRenderings`
+  library is vendored from the OpenSysML Extensions Library, so a shared `DepthLimitedView`
+  declaring it belongs there, not in this tree:
 
   ```sysml
   view overview { expose vehicle; attribute depth = 2; render asTreeDiagram; }
-  view def TwoLevels :> OpenSysMLRenderings::DepthLimitedView { :>> depth = 2; }
+  view def DepthLimited { attribute depth : ScalarValues::Natural[0..1]; }
+  view def TwoLevels :> DepthLimited { :>> depth = 2; }
   ```
 
   A `depth` bound to anything but a non-negative integer literal is the `view-depth-value` error,
