@@ -4629,6 +4629,12 @@
       "note": "A chain redefinition whose path crosses a reference usage has no object below it to apply on (KerML §7.3.4 redefinition over a feature chain); the pilot names no `validate*` constraint for it, and spec-compliance.md tracks it under redefinition semantics."
     },
     {
+      "file": "internal/check/passes/behavior/action_step_multiplicity.go",
+      "pass": "ActionStepMultiplicityPass",
+      "basis": "spec",
+      "note": "An action step whose declared multiplicity the executor cannot honour under the succession semantics of SysML §8.3.17.6 (an open or excluded count at an endpoint or control node); the pilot names no `validate*` constraint for it, and spec-compliance.md tracks it under action semantics."
+    },
+    {
       "file": "internal/check/passes/lint_port_type.go",
       "pass": "PortTypeMismatchPass",
       "basis": "extension",
@@ -4645,6 +4651,30 @@
       "pass": "OOSEMMethodPass",
       "basis": "extension",
       "note": "Audits the artefacts a model classifies with the OOSEM extension library against that method's traceability and allocation rules, beyond KerML and SysML."
+    },
+    {
+      "file": "internal/check/passes/diagram/layout.go",
+      "pass": "LayoutPass",
+      "basis": "extension",
+      "note": "Validates the `DiagramLayout` annotations (Layout, Route, Style, Note, Canvas, Picture) of the OpenSysML extension library of that name; diagram geometry in notation is an OpenSysML extension, not a specification rule."
+    },
+    {
+      "file": "internal/check/passes/document/plan.go",
+      "pass": "PlanPass",
+      "basis": "extension",
+      "note": "Validates native document definitions and emits the `document-plan-*` planning failures of the OpenSysML `DocumentQueries` extension library, beyond KerML and SysML."
+    },
+    {
+      "file": "internal/check/passes/document/query.go",
+      "pass": "QueryPass",
+      "basis": "extension",
+      "note": "Validates native document-query definitions and emits the `document-query-*` planning failures of the OpenSysML `DocumentQueries` extension library, beyond KerML and SysML."
+    },
+    {
+      "file": "internal/check/passes/identity/metadata.go",
+      "pass": "MetadataPass",
+      "basis": "extension",
+      "note": "Validates the `IdentityMetadata` annotations of the OpenSysML extension library of that name: id shape, the enclosing ProjectRef an ElementId resolves against, and effective-id uniqueness per project scope."
     }
   ],
   "errata": [

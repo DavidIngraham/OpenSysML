@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -94,15 +95,26 @@ func diffHint(a, b []byte) string {
 func constraintTierPasses(t *testing.T, root string) map[string][]string {
 	t.Helper()
 	dir := filepath.Join(root, "internal", "check", "passes")
-	entries, err := filepath.Glob(filepath.Join(dir, "*.go"))
+	var entries []string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") {
+			entries = append(entries, path)
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	files := map[string][]string{}
 	for _, path := range entries {
-		if strings.HasSuffix(path, "_test.go") {
-			continue
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			t.Fatal(err)
 		}
+		rel = filepath.ToSlash(rel)
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.SkipObjectResolution)
 		if err != nil {
 			t.Fatal(err)
@@ -120,7 +132,6 @@ func constraintTierPasses(t *testing.T, root string) map[string][]string {
 				return !constraint
 			})
 			if constraint {
-				rel := "internal/check/passes/" + filepath.Base(path)
 				files[rel] = append(files[rel], receiverType(fn))
 			}
 		}
