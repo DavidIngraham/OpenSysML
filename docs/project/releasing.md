@@ -216,6 +216,7 @@ branch that moves the integration state onto `main`:
    git checkout develop && git pull
    git merge main
    (cd client/node && npm install --package-lock-only --ignore-scripts)   # after a hotfix
+   git commit -am "chore(node): lock the platform packages at the release"  # if it changed
    git push origin develop
    ```
 
