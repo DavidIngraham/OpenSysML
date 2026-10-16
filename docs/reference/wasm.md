@@ -41,11 +41,14 @@ input and output as its WASI build does. They are opt-in as well: `make build` a
 `make install` leave them out of the native executables; the combined JavaScript
 WebAssembly module is published separately.
 
-`make build-wasm-prod` builds a smaller `sysml-prod.wasm` for each target with `-tags sysml_prod`
-(`make build-prod` is the native counterpart). It leaves out SysML v1 migration, repository sync,
-`-compile`, the HTML and PDF document forms, FMU import, profiling and the REPL's `%features …
-json`. A flag of a left-out group is hidden from `-help` and refused with status 2. Each group
-also has a tag of its own (`sysml_nov1`, `sysml_nosync`, `sysml_nocodegen`, `sysml_nodocpdf`,
+The `sysml` command comes in two builds, named after the two halves of the REDK: the **DK**
+(Development Kit) build is the default `sysml` with every feature group, and the **RE** (Runtime
+Environment) build leaves the optional and developer-only groups out. Both builds produce a binary named
+`sysml`; the RE's goes in a `re/` directory (`bin/re/sysml`, `bin/wasm/{js,wasip1}/re/sysml.wasm`),
+and it is the package that carries the RE or DK name. `make build-wasm-re` builds the smaller RE
+`re/sysml.wasm` for each target with `-tags sysml_re` (`make build-re` is the native counterpart). It leaves out SysML v1 migration, repository sync, `-compile`, the HTML and PDF
+document forms, FMU import, profiling and the REPL's `%features … json`. A flag of a left-out
+group is hidden from `-help` and refused with status 2. Each group also has a tag of its own (`sysml_nov1`, `sysml_nosync`, `sysml_nocodegen`, `sysml_nodocpdf`,
 `sysml_nofmi`, `sysml_noprofile`, `sysml_noreplext`).
 
 ## Running a WASI build
