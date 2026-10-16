@@ -1,0 +1,12 @@
+FilteredWalk::links - interconnection rendering (render asInterconnectionDiagram)
+
+part rover
+  attribute mass
+  part chassis
+    attribute length
+    part axle
+  part radio
+    port rx
+
+not represented:
+  - connect FilteredWalk::rover::'' attaches to 'telemetry.tx', which the view's filter conditions exclude; no edge is drawn
