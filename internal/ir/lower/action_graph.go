@@ -764,6 +764,9 @@ type Feature struct {
 	Binding   bool
 	Node      ast.Node // the declaration, for diagnostics
 	Scope     *symbols.Scope
+	// Shadowed marks an inherited feature a same-named nearer feature hides without
+	// redefining it; Name is then its ShadowedKey (see Attribute.Shadowed).
+	Shadowed bool
 }
 
 // valueIsBinding reports whether the declaration uses a live `=` value.
@@ -1734,7 +1737,7 @@ func lowerEffectiveActionNodeFeatures(graph *ActionGraph, node *ast.Usage, scope
 				if seen[name] {
 					// Hidden by a nearer same-named feature: held under its own key
 					// unless that feature redefines it (KerML 1.0 §8.2.3.5.3).
-					feature.Name = ShadowedKey(general.MemberDeclaring(m))
+					feature.Name, feature.Shadowed = ShadowedKey(general.MemberDeclaring(m)), true
 					if feature.Name == "" || seen[feature.Name] || redefinesFeature(graph.resolver, features, name, feature.Node) {
 						continue
 					}

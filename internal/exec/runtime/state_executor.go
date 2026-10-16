@@ -59,6 +59,8 @@ type StateExecutor struct {
 	// two usages of one state definition keep separate values.
 	stateAttrs     map[*ast.StateNode]map[string]Value
 	stateAttrCells map[*ast.StateNode]*bodyCells
+	// shadowed caches holdsShadowed, nil until first asked.
+	shadowed *bool
 	// attrIndex indexes the machine's attributes by feature, stateAttrIndex each state's.
 	attrIndex      map[*symbols.Symbol]string
 	stateAttrIndex map[*ast.StateNode]map[*symbols.Symbol]string
@@ -454,10 +456,39 @@ func (e *StateExecutor) dataFrame() frame {
 	}
 }
 
-// heldKey is the name the machine binds the feature a statement written in scope
-// names: the ShadowedKey of a hidden inherited attribute, else name.
-func (e *StateExecutor) heldKey(scope *symbols.Scope, name string) string {
-	return heldKey(e.ctx, e.heldAttributes(), e.graph.Scope, scope, name)
+// heldKey is the name the machine or the states enclosing state bind the feature a
+// statement written in scope names: the ShadowedKey of a hidden inherited
+// attribute, else name. Only a machine holding one resolves its targets.
+func (e *StateExecutor) heldKey(state *ast.StateNode, scope *symbols.Scope, name string) string {
+	if !e.holdsShadowed() || scope == nil {
+		return name
+	}
+	sym, ok := e.ctx.lookupName(scope, name)
+	if !ok || sym == nil {
+		return name
+	}
+	for _, ancestor := range e.getParentChain(state) {
+		if key, held := e.stateAttrIndex[ancestor][sym]; held {
+			return key
+		}
+	}
+	if key, held := e.heldAttributes()[sym]; held {
+		return key
+	}
+	return name
+}
+
+// holdsShadowed reports whether the machine or one of its states holds a hidden
+// inherited attribute, decided once from the graph.
+func (e *StateExecutor) holdsShadowed() bool {
+	if e.shadowed == nil {
+		shadowed := slices.ContainsFunc(e.graph.Attributes, func(attr lower.Attribute) bool { return attr.Shadowed })
+		for _, attrs := range e.graph.StateAttributes {
+			shadowed = shadowed || slices.ContainsFunc(attrs, func(attr lower.Attribute) bool { return attr.Shadowed })
+		}
+		e.shadowed = &shadowed
+	}
+	return *e.shadowed
 }
 
 // shadowedAttribute reports whether name keys a hidden inherited attribute, which
