@@ -239,12 +239,15 @@
 
   var modules = {};
 
-  // compile fetches a gzipped binary once per URL, reporting bytes as they arrive.
+  // compile fetches the binary once per URL, reporting bytes as they arrive. A
+  // .wasm.gz asset is inflated here; a plain .wasm (a CDN compresses it in
+  // transit) is compiled as the browser hands it over.
   function compile(url, onProgress) {
     if (!modules[url]) {
+      var gzipped = /\.gz(?:[?#]|$)/.test(String(url));
       modules[url] = fetch(url).then(function (r) {
         if (!r.ok) throw new Error("the REPL did not download (HTTP " + r.status + ")");
-        if (typeof DecompressionStream === "undefined") throw new Error("this browser cannot inflate the REPL");
+        if (gzipped && typeof DecompressionStream === "undefined") throw new Error("this browser cannot inflate the REPL");
         var total = +r.headers.get("Content-Length") || 0, got = 0;
         var counted = r.body.pipeThrough(new TransformStream({
           transform: function (chunk, ctl) {
@@ -253,6 +256,7 @@
             ctl.enqueue(chunk);
           }
         }));
+        if (!gzipped) return new Response(counted).arrayBuffer();
         return new Response(counted.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
       }).then(function (bytes) { return WebAssembly.compile(bytes); });
       modules[url].catch(function () { delete modules[url]; });
