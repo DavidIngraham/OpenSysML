@@ -146,6 +146,8 @@ func checkCompliance(root, content string, m *manifest.Manifest) error {
 			if isSpec {
 				if !library[name] {
 					problem(number, "`spec:%s` is not a constraint of %s", name, filepath.Base(validationLibraryPath))
+				} else if c, ok := index[name]; ok && c.Source != manifest.SourceSpec {
+					problem(number, "`spec:%s` names a pilot constraint; cite it bare so its census status is held", name)
 				}
 				return
 			}

@@ -130,3 +130,18 @@ func TestCheckComplianceLeavesSpecSourcedRowsUnbound(t *testing.T) {
 		t.Fatalf("a row citing a spec-sourced constraint must not be held to its ❔: %v", err)
 	}
 }
+
+// TestCheckComplianceRefusesTheSpecPrefixOnAPilotConstraint: `spec:` is for a
+// library constraint outside the census; on a pilot constraint the library also
+// states it would bypass the status gate, so it is refused.
+func TestCheckComplianceRefusesTheSpecPrefixOnAPilotConstraint(t *testing.T) {
+	root := complianceRoot(t)
+	writeTestRepo(t, root, map[string]string{
+		validationLibraryPath: "library package SysMLValidation {\n    constraint def validateLib {\n        in element : KerML::Feature;\n        true\n    }\n    constraint def validateD {\n        in element : KerML::Feature;\n        true\n    }\n}\n",
+	})
+	page := compliancePage + "| the library's `spec:validateD` | h | t | ✅ Faithful |\n"
+	err := checkCompliance(root, page, complianceManifest())
+	if err == nil || !strings.Contains(err.Error(), ":13: `spec:validateD` names a pilot constraint; cite it bare") {
+		t.Fatalf("spec: on a pilot constraint must be refused, got %v", err)
+	}
+}
