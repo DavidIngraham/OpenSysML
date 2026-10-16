@@ -3,8 +3,7 @@ package resolve
 import "testing"
 
 // A hidesBelow walk cut by a collision computation in progress is remembered,
-// undecided, only while that computation runs: afterwards the namespace is
-// walked again and the answer settles.
+// undecided, only while that computation runs; afterwards it settles.
 func TestHidesBelowCutIsKeptOnlyWhileTheCollisionComputationRuns(t *testing.T) {
 	const src = `package P1 { public import P2::*; public import P3::*; part def D1; }
 package P2 { public import P1::*; public import P3::*; part def D2; }
