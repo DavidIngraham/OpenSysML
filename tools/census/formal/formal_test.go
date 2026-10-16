@@ -311,6 +311,23 @@ func TestMainListUpdateAndCheck(t *testing.T) {
 	if code, _, stderr := run("-check"); code == 0 || !strings.Contains(stderr, "deriveElementName is stated by the documents but not recorded") {
 		t.Fatalf("-check before -update exited %d: %s", code, stderr)
 	}
+	before, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(manifest.Path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.Constraints[0].Spec.Clause = "8.3.2.1.2"
+	if err := manifest.Write(root, m); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, stderr := run("-update"); code == 0 || !strings.Contains(stderr, "validateBindingConnectorIsBinary cites kerml clause 8.3.2.1.2") || !strings.Contains(stderr, "nothing written") {
+		t.Fatalf("-update over a contradicted pilot row exited %d: %s", code, stderr)
+	}
+	if recorded, err := manifest.Load(root); err != nil || len(recorded.SpecRows()) != 0 {
+		t.Fatalf("-update wrote spec rows despite the disagreement (%v)", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(manifest.Path)), before, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	if code, out, stderr := run("-update"); code != 0 || !strings.Contains(out, "5 constraints: kerml 5 (2 check*, 1 derive*, 2 validate*); 3 spec-sourced rows recorded") {
 		t.Fatalf("-update exited %d: %s%s", code, out, stderr)
 	}

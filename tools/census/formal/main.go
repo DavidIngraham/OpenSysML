@@ -137,6 +137,9 @@ func totals(extracted []Constraint) string {
 
 func runUpdate(root string, m *manifest.Manifest, extracted []Constraint, out io.Writer) error {
 	next, changed, problems := Merge(m, extracted)
+	if err := disagreements(problems); err != nil {
+		return fmt.Errorf("%w\nnothing written; correct the pilot rows' citations first", err)
+	}
 	if err := next.Validate(); err != nil {
 		return err
 	}
@@ -146,7 +149,7 @@ func runUpdate(root string, m *manifest.Manifest, extracted []Constraint, out io
 		}
 	}
 	fmt.Fprintf(out, "formal-constraints: %s; %d spec-sourced rows recorded\n", totals(extracted), len(next.SpecRows()))
-	return disagreements(problems)
+	return nil
 }
 
 func runCheck(m *manifest.Manifest, extracted []Constraint, out io.Writer) error {

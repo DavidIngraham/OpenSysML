@@ -261,14 +261,17 @@ sorted by name.
 
 A spec-sourced ❔ row means *not yet assessed against the tree*: nothing is claimed either way, not
 even that the constraint can be violated in the textual notation. To promote one, point `implementation`
-at the function that enforces or computes it (`internal/<file>.go:<func>` or `<Type>.<method>`), add a
-probe under `tools/census/validation/testdata/probes/` whose expected diagnostic carries the row's
-`codes` (for a `validate*` or `check*` a pass reports) or a test that pins the computed value (for a
-`derive*`), set `status` with a `rationale` for every status but `faithful`, and run `make docs-counts`;
-the validation-census gate then holds the row to the same evidence as a pilot row — the cited
-location must be a declared function and the codes must be what the probes observe. A row whose
-name a later pilot release adopts becomes a pilot row on `validation-census -update`; cite the
-document's name in that row's `spec.name` and `formal-constraints -update` drops the duplicate.
+at the function that enforces or computes it (`internal/<file>.go:<func>` or `<Type>.<method>`), set
+`status` with a `rationale` for every status but `faithful`, and run `make docs-counts`. The evidence
+the validation-census gate then demands follows the family: a `validate*` row is held to the same
+evidence as a pilot row — a probe under `tools/census/validation/testdata/probes/` (opening with
+`// Census: <name>`) whose diagnostic carries the row's `codes`, which must be what the probes
+observe; a `check*` row (an implied specialization the tool must establish) or a `derive*` row (a
+derived property it must compute) reports no diagnostic, so its evidence is the cited location, which
+must be a declared function, with the unit test that pins the computed relationship or value beside
+it; a probe backs such a row only where a pass does report. A spec-sourced row whose name a later
+pilot release adopts becomes the pilot row under that name on `validation-census -update`, keeping
+its clause, text and evidence (its `ocl` is dropped, as pilot rows carry none).
 
 ## Census
 
