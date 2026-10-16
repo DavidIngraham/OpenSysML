@@ -38,6 +38,9 @@ func TestProbesReportTheirConstraint(t *testing.T) {
 			if !slicesContains(row.Codes, d.Code) {
 				t.Errorf("%s: the diagnostic carries code %q, the row records %q", p.Path, d.Code, row.Codes)
 			}
+			if !slicesContains(row.Passes, d.Source) {
+				t.Errorf("%s: the diagnostic comes from pass %q, the row records %q", p.Path, d.Source, row.Passes)
+			}
 		})
 	}
 }
@@ -63,23 +66,24 @@ func probeDiagnostic(t *testing.T, root string, p probe) (*diag.Diagnostic, []st
 	return nil, seen
 }
 
-// probeCodes runs every probe and collects the codes observed per constraint.
-func probeCodes(t *testing.T, root string) map[string]map[string]bool {
+// probeCodes runs every probe and collects the codes and passes observed per constraint.
+func probeCodes(t *testing.T, root string) (codes, passes map[string]map[string]bool) {
 	t.Helper()
 	probes, err := loadProbes(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	codes := map[string]map[string]bool{}
+	codes, passes = map[string]map[string]bool{}, map[string]map[string]bool{}
 	for _, p := range probes {
 		d, _ := probeDiagnostic(t, root, p)
 		if d == nil {
 			continue
 		}
 		if codes[p.Constraint] == nil {
-			codes[p.Constraint] = map[string]bool{}
+			codes[p.Constraint], passes[p.Constraint] = map[string]bool{}, map[string]bool{}
 		}
 		codes[p.Constraint][d.Code] = true
+		passes[p.Constraint][d.Source] = true
 	}
-	return codes
+	return codes, passes
 }

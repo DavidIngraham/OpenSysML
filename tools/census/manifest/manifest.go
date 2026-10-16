@@ -77,6 +77,7 @@ type Manifest struct {
 	Constraints    []Constraint             `json:"constraints"`
 	Extensions     []Extension              `json:"extensions"`
 	Errata         []Erratum                `json:"errata"`
+	SpecIssues     []SpecIssue              `json:"specIssues"`
 }
 
 // JarRecord is the pinned pilot artifact the names were read from.
@@ -119,8 +120,10 @@ type Constraint struct {
 	Implementation string `json:"implementation"`
 	Message        string `json:"message"`
 	NegativeCase   string `json:"negativeCase"`
-	// Codes are the diagnostic codes the probes observe for this constraint.
+	// Codes and Passes are the diagnostic codes and the pass identifiers the
+	// probes observe for this constraint.
 	Codes  []string `json:"codes"`
+	Passes []string `json:"passes"`
 	Status string   `json:"status"`
 	// Rationale is required for every status but faithful.
 	Rationale string `json:"rationale,omitempty"`
@@ -151,6 +154,16 @@ type Erratum struct {
 	Path     string `json:"path"`
 	Line     int    `json:"line"`
 	OMGIssue string `json:"omgIssue,omitempty"`
+}
+
+// SpecIssue is an OMG issue against the specification that the census bears
+// on, with the rows it affects and the page discussing it.
+type SpecIssue struct {
+	ID      string   `json:"id"`
+	URL     string   `json:"url"`
+	Summary string   `json:"summary"`
+	BearsOn []string `json:"bearsOn"`
+	Page    string   `json:"page"`
 }
 
 // Load reads the manifest under root.
@@ -271,6 +284,21 @@ func (m *Manifest) Validate() error {
 		ids[e.ID] = true
 		if e.OMGIssue != "" && !omgIssuePattern.MatchString(e.OMGIssue) {
 			return fmt.Errorf("%s: erratum %s cites OMG issue %q", Path, e.ID, e.OMGIssue)
+		}
+	}
+	issues := make(map[string]bool, len(m.SpecIssues))
+	for _, issue := range m.SpecIssues {
+		if !omgIssuePattern.MatchString(issue.ID) || issue.URL == "" || strings.TrimSpace(issue.Summary) == "" || issue.Page == "" {
+			return fmt.Errorf("%s: spec issue %q names no OMG issue, URL, summary or page", Path, issue.ID)
+		}
+		if issues[issue.ID] {
+			return fmt.Errorf("%s: spec issue %s is listed twice", Path, issue.ID)
+		}
+		issues[issue.ID] = true
+		for _, name := range issue.BearsOn {
+			if !seen[name] {
+				return fmt.Errorf("%s: spec issue %s bears on %s, which is not a row", Path, issue.ID, name)
+			}
 		}
 	}
 	return nil

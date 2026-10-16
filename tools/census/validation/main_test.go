@@ -222,12 +222,13 @@ func testRow(name, source, status string) manifest.Constraint {
 	short := strings.ToLower(name[len("validate"):])
 	c := manifest.Constraint{Name: name, Source: source, Kind: "validate", Metaclass: "Element",
 		Spec:   &manifest.SpecRef{Document: "kerml", Clause: "8.3.2.1.2"},
-		Checks: short, Implementation: "—", Message: "—", NegativeCase: "none", Codes: []string{}, Status: status}
+		Checks: short, Implementation: "—", Message: "—", NegativeCase: "none", Codes: []string{}, Passes: []string{}, Status: status}
 	if status != manifest.StatusFaithful {
 		c.Rationale = "no case and no identifiable pass yet"
 	}
 	if manifest.Implemented(status) {
 		c.Codes = []string{"code-" + short}
+		c.Passes = []string{"constraint"}
 	}
 	return c
 }
@@ -667,11 +668,11 @@ func TestCheckProbesCoverage(t *testing.T) {
 	write("validateA.sysml", "validateA")
 	base.Constraints[0].Codes = nil
 	err = checkProbes(root, base)
-	if err == nil || !strings.Contains(err.Error(), "validateA is recorded faithful but records no diagnostic code") {
+	if err == nil || !strings.Contains(err.Error(), "validateA is recorded faithful but records no diagnostic code or pass") {
 		t.Fatalf("an implemented row without a code must fail, got %v", err)
 	}
 	base.Constraints[0].Codes = []string{"a"}
-	base.Constraints[2].Codes = []string{"c"}
+	base.Constraints[2].Passes = []string{"constraint"}
 	err = checkProbes(root, base)
 	if err == nil || !strings.Contains(err.Error(), "validateC is recorded not-implemented but records diagnostic codes") {
 		t.Fatalf("an unreported row with a code must fail, got %v", err)

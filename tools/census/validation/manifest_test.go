@@ -1,9 +1,12 @@
 package validation
 
 import (
+	"bytes"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -31,24 +34,59 @@ func loadCommittedManifest(t *testing.T) (string, *manifest.Manifest) {
 	return root, m
 }
 
-// TestManifestCodesAreTheProbesDiagnostics: the diagnostic codes a row records
-// are exactly the codes its probes observe, so every code the manifest names is
-// one the tree emits and no emitted code goes unrecorded.
+// TestManifestCodesAreTheProbesDiagnostics: the diagnostic codes and passes a
+// row records are exactly what its probes observe, so every code the manifest
+// names is one the tree emits and no emitted code goes unrecorded.
 func TestManifestCodesAreTheProbesDiagnostics(t *testing.T) {
 	root, m := loadCommittedManifest(t)
-	observed := probeCodes(t, root)
+	codes, passes := probeCodes(t, root)
 	for _, c := range m.Constraints {
-		recorded := append([]string(nil), c.Codes...)
-		sort.Strings(recorded)
-		var seen []string
-		for code := range observed[c.Name] {
-			seen = append(seen, code)
+		if got, want := sorted(c.Codes), keys(codes[c.Name]); got != want {
+			t.Errorf("%s records diagnostic codes %s, its probes observe %s", c.Name, got, want)
 		}
-		sort.Strings(seen)
-		if strings.Join(recorded, ",") != strings.Join(seen, ",") {
-			t.Errorf("%s records diagnostic codes %q, its probes observe %q", c.Name, recorded, seen)
+		if got, want := sorted(c.Passes), keys(passes[c.Name]); got != want {
+			t.Errorf("%s records passes %s, its probes observe %s", c.Name, got, want)
 		}
 	}
+}
+
+func sorted(list []string) string {
+	copied := append([]string(nil), list...)
+	sort.Strings(copied)
+	return strings.Join(copied, ",")
+}
+
+func keys(set map[string]bool) string {
+	var list []string
+	for k := range set {
+		list = append(list, k)
+	}
+	return sorted(list)
+}
+
+// TestManifestRoundTripsByteIdentical: decoding and re-encoding the committed
+// manifest reproduces it byte for byte, so no field the tree records is one
+// this program would drop on -update.
+func TestManifestRoundTripsByteIdentical(t *testing.T) {
+	root, m := loadCommittedManifest(t)
+	committed, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(manifest.Path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if encoded := manifest.Encode(m); !bytes.Equal(encoded, committed) {
+		t.Fatalf("%s is not what this program encodes; a field it does not know, or a non-canonical encoding:\n%s", manifest.Path, diffHint(committed, encoded))
+	}
+}
+
+// diffHint names the first differing line of two encodings.
+func diffHint(a, b []byte) string {
+	al, bl := strings.Split(string(a), "\n"), strings.Split(string(b), "\n")
+	for i := 0; i < len(al) && i < len(bl); i++ {
+		if al[i] != bl[i] {
+			return fmt.Sprintf("line %d:\n  committed: %s\n  encoded:   %s", i+1, al[i], bl[i])
+		}
+	}
+	return fmt.Sprintf("committed has %d lines, encoded %d", len(al), len(bl))
 }
 
 // constraintTierPasses lists the production files under internal/check/passes

@@ -200,7 +200,7 @@ func runUpdate(root string, opts options, out io.Writer) error {
 		c, known := rows[e.Name]
 		if !known {
 			c = manifest.Constraint{Name: e.Name, Kind: "validate", Implementation: "—", Message: "—", NegativeCase: "none",
-				Codes: []string{}, Status: manifest.StatusUnknown, Rationale: "new to the pinned jar; not yet assessed"}
+				Codes: []string{}, Passes: []string{}, Status: manifest.StatusUnknown, Rationale: "new to the pinned jar; not yet assessed"}
 		}
 		c.Raw, c.Source = e.Raw, e.Source
 		next.Constraints = append(next.Constraints, c)

@@ -231,6 +231,7 @@ func probeLanguages(source string) []string {
 // checkProbes verifies that every implemented constraint has a probe (one per
 // notation when both validators declare it) and a recorded diagnostic code, and
 // that no probe claims a diagnostic for a constraint the manifest records as unreported.
+// The codes and passes themselves are held to the probes by the package's tests.
 func checkProbes(root string, m *manifest.Manifest) error {
 	probes, err := loadProbes(root)
 	if err != nil {
@@ -256,13 +257,13 @@ func checkProbes(root string, m *manifest.Manifest) error {
 	}
 	for _, c := range m.Constraints {
 		if !manifest.Implemented(c.Status) {
-			if len(c.Codes) != 0 {
-				problems = append(problems, fmt.Sprintf("%s is recorded %s but records diagnostic codes %q", c.Name, c.Status, c.Codes))
+			if len(c.Codes) != 0 || len(c.Passes) != 0 {
+				problems = append(problems, fmt.Sprintf("%s is recorded %s but records diagnostic codes %q from passes %q", c.Name, c.Status, c.Codes, c.Passes))
 			}
 			continue
 		}
-		if len(c.Codes) == 0 {
-			problems = append(problems, fmt.Sprintf("%s is recorded %s but records no diagnostic code", c.Name, c.Status))
+		if len(c.Codes) == 0 || len(c.Passes) == 0 {
+			problems = append(problems, fmt.Sprintf("%s is recorded %s but records no diagnostic code or pass", c.Name, c.Status))
 		}
 		for _, lang := range probeLanguages(c.Source) {
 			if backed[c.Name][lang] {
