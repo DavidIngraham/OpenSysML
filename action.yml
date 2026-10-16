@@ -98,7 +98,7 @@ runs:
         $ErrorActionPreference = 'Stop'
         $dir = Join-Path $env:RUNNER_TEMP 'opensysml'
         & "$env:GITHUB_ACTION_PATH\install.ps1" -Version $env:VERSION -Tools sysml -InstallDir $dir -NoPath
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        if ((Test-Path variable:LASTEXITCODE) -and $LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Add-Content -Path $env:GITHUB_PATH -Value $dir
 
     - name: Validate
@@ -115,7 +115,11 @@ runs:
       run: |
         set -euo pipefail
         sysml -version
-        args=(-validate -format "$INPUT_FORMAT")
+        # text is what -validate writes without -format, so a release before -format reports it too.
+        args=(-validate)
+        if [ "$INPUT_FORMAT" != text ]; then
+          args+=(-format "$INPUT_FORMAT")
+        fi
         if [ -n "$INPUT_BASELINE" ]; then
           args+=(-baseline "$INPUT_BASELINE")
         fi
