@@ -129,7 +129,11 @@ feature written (`ChoiceWriteOrder`); an executor due at the instant, its `execu
 (`ChoiceDueOrder`, in `advance.go` and the checker's `drawOwner`); a pool occurrence, the
 transitions out of the active states its trigger reacts to (`eventFootprint`,
 `ChoiceDispatchOrder`); a due do move against a dispatch, `doStepFootprint` against
-`dispatchFootprint` (`ChoiceStepOrder`, `ChoiceEntryStep`); a region's queue on a unit front, what
+`dispatchFootprint` (`ChoiceStepOrder`, `ChoiceEntryStep`); the states whose do behaviors are due in one round,
+`doStepFootprint` each; the sources of the segments pending into a join, each segment's own
+footprint (`lower.JoinSegmentFootprints`: its trigger, guard and effects with the exits from its
+source up to the join's owner — the owner's exit and the join's way out follow whichever fires
+first, so they are left out); a region's queue on a unit front, what
 its units may touch — the firing's transition, the region's entry (`regionEntryFootprint`: entering
 and starting any state under it, its entry transitions' effects, the pseudostates it crosses) or the
 exits of the states it leaves (`exitFootprint`) — carried on the `unitQueue` and drawn against on

@@ -3409,17 +3409,22 @@ func (e *StateExecutor) joinExits(plan *lower.JoinPlan, trans *lower.Transition,
 }
 
 // fireJoinIncoming fires each transition into join whole — its source exited,
-// then its effect — in an order the policy draws among their sources.
+// then its effect — in an order the policy draws among their sources, classified
+// by what each segment does on its own: the owner's exit and the join's way out
+// follow whichever fires first.
 func (e *StateExecutor) fireJoinIncoming(join *ast.PseudostateNode, plan *lower.JoinPlan, pending []*lower.Transition) error {
 	pending = slices.Clone(pending)
 	for len(pending) > 0 {
 		next := 0
 		if len(pending) > 1 {
 			sources := make([]*ast.StateNode, len(pending))
+			segments := e.graph.JoinSegmentFootprints(join, pending)
+			footprints := make(map[*ast.StateNode]lower.Footprint, len(pending))
 			for i, trans := range pending {
 				sources[i] = trans.Source.(*ast.StateNode)
+				footprints[sources[i]] = unionFootprints(footprints[sources[i]], segments[i])
 			}
-			choice := e.regionOrderChoice("join "+join.Name, sources, e.stateFootprint)
+			choice := e.regionOrderChoice("join "+join.Name, sources, func(source *ast.StateNode) lower.Footprint { return footprints[source] })
 			if err := e.ctx.scheduling().refusal(); err != nil {
 				return err
 			}
