@@ -119,14 +119,16 @@ func (m *migration) layoutRecord(v *view) (*mtip.Diagram, layoutSources) {
 		}
 	}
 	// Nor about the compartments a symbol suppresses: the stream's settings
-	// stay with the export's box when the element's symbols agree on them;
-	// symbols of one element that differ leave the export's box as it is.
+	// stay with the export's box when the element's symbols agree on which
+	// compartments they hide; symbols of one element that differ leave the
+	// export's box as it is. The unsupported properties are the first
+	// symbol's, as its placement is the one written.
 	compartments := map[string]mtip.Placement{}
 	disagree := map[string]bool{}
 	for _, p := range stream.Placements {
 		if first, ok := compartments[p.ID]; !ok {
 			compartments[p.ID] = p
-		} else if !slices.Equal(first.HiddenCompartments, p.HiddenCompartments) || !slices.Equal(first.UnsupportedCompartments, p.UnsupportedCompartments) {
+		} else if !slices.Equal(first.HiddenCompartments, p.HiddenCompartments) {
 			disagree[p.ID] = true
 		}
 	}
