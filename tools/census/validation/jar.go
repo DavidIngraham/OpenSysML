@@ -25,8 +25,6 @@ var validatorClasses = []struct {
 // one with a stray prefix (`invalidateMetadataFeatureBody`).
 var constraintIdentifierPattern = regexp.MustCompile(`^(?:in)?(validate[A-Za-z]+?)_?$`)
 
-// constraintNamePattern is the shape of a normalized name.
-var constraintNamePattern = regexp.MustCompile(`^validate[A-Za-z]+$`)
 
 // extractionMethod is the sentence the baseline records so a reader can repeat
 // the extraction without this program.
