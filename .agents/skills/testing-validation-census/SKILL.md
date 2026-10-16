@@ -74,9 +74,20 @@ diagnostic matches. A probe is evidence for the *mapping*, not a corpus case: it
 
 ## Adjudicating a status change
 
-Statuses are edited by hand in the baseline (the names are not). Moving a row to ✅/⚠️ needs a
-probe that passes the test above and, ideally, a run through the pinned pilot validators
-(`build/pilot-sysml-validator/validate-sysml-batch`, `build/pilot-kerml-validator/validate-kerml`)
-confirming the pilot reports the same constraint on that model. Then rerun
-`go run -C tools ./cmd/validation-census` so the summary line follows, and edit the row's status cell to
-match — `-check` fails until all three agree.
+Statuses live in the manifest row, never in the page (the names are not edited at all: `-update`
+re-extracts them from the jar). To move a row to ✅/⚠️:
+
+1. Add a probe under `tools/census/validation/testdata/probes/` (one per notation for a `both`
+   row) and, ideally, run the model through the pinned pilot validators
+   (`build/pilot-sysml-validator/validate-sysml-batch`, `build/pilot-kerml-validator/validate-kerml`)
+   to confirm the pilot reports the same constraint on it.
+2. Edit the row in `docs/project/constraint-manifest.json`: `status`, `implementation`
+   (`internal/<file>.go:<func>` or `<Type>.<method>`), `codes` and `passes` (the diagnostic code and
+   pass the probe observes), `message`, `negativeCase`, and a `rationale` unless the status is ✅.
+3. Regenerate: `go run -C tools ./cmd/validation-census` (census lines and table) and
+   `make docs-counts` (the same table and the summary in spec-compliance.md).
+4. Gate: `go run -C tools ./cmd/validation-census -check`, `go run -C tools ./cmd/doc-counts -check`
+   and `go test -C tools -count=1 ./census/validation` — the last compares the probe's diagnostic
+   with the row's `codes`/`passes` and fails until all three agree.
+
+Never edit the generated table by hand: `-check` reports it stale and regeneration overwrites it.
