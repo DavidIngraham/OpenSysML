@@ -27,6 +27,7 @@ type ServerInfo struct {
 var CapabilityTools = map[string]string{
 	sysmlgrpc.CapabilityParseSources:                   "parse",
 	sysmlgrpc.CapabilityParseSourcesAffected:           "parse",
+	sysmlgrpc.CapabilityRenderDocumentFileName:         "render_model_document",
 	sysmlgrpc.CapabilityInlineLanguage:                 "parse",
 	sysmlgrpc.CapabilityStrictConformance:              "parse",
 	sysmlgrpc.CapabilityDiagnosticCodes:                "parse",
@@ -50,6 +51,7 @@ var CapabilityTools = map[string]string{
 	sysmlgrpc.CapabilitySchedule:                       "execute_action",
 	sysmlgrpc.CapabilityScheduleExplore:                "execute_action",
 	sysmlgrpc.CapabilityFinalTime:                      "execute_action",
+	sysmlgrpc.CapabilityOrderDependence:                "execute_action",
 	sysmlgrpc.CapabilityPerformer:                      "execute_action",
 	sysmlgrpc.CapabilityStateTrace:                     "execute_state",
 	sysmlgrpc.CapabilityVerification:                   "verify_constraint",

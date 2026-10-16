@@ -11,11 +11,11 @@ dependency footprint, service ownership and release verification are in
 <dependency>
   <groupId>org.openmbee</groupId>
   <artifactId>opensysml</artifactId>
-  <version>0.10.0</version>
+  <version>0.10.1</version>
 </dependency>
 ```
 
-The Java artifact is not on Maven Central yet. Until then, a checkout installs it:
+The Java artifact is on Maven Central from 0.10.1. For unreleased changes, a checkout installs it:
 `make build` for the service binary the tests start, then
 `mvn -f client/java/pom.xml install`. The compiler
 release is **17**, the lowest baseline a realistic host — Eclipse 2023-03,
@@ -362,6 +362,8 @@ RenderedDocument page = model.renderDocument("Observatory::MassReport");
 page.markdown();             // the rendered notation
 RenderedDocument html = model.renderDocument("Observatory::MassReport", DocumentForm.HTML);
 html.html();                 // the same document as HTML
+html.fileName();             // "Observatory-MassReport.html": the file a rendered set writes it
+                             // to, which the other documents' links to it name
 ```
 
 `model.renderView("Demo::Overview")` returns a typed `RenderedView` with

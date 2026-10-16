@@ -93,6 +93,9 @@ type Context struct {
 	// bindingStack holds the namespace-level usages whose values are being evaluated, innermost
 	// last, so a value reaching back to its own usage is a cycle, and an extent finds no object of it yet.
 	bindingStack []*symbols.Symbol
+	// chainStack holds the chains being read through package-level usages no object
+	// stands for, innermost last, so a value reading its own chain again is a cycle.
+	chainStack []chainRead
 	// bindingReads holds, per bound usage, the declarations its value read to arrive at the binding,
 	// so a re-analysis carries the binding only while every one of them still reads the same.
 	bindingReads map[*symbols.Symbol]*bindingReads
@@ -159,9 +162,9 @@ type Context struct {
 	// behavior starts when an object is materialized (see DeclaredReader).
 	declarative bool
 
-	// coverageNotes holds the distinct reasons this run's coverage is narrower
-	// than its schedules, recorded once each (coverage_note.go).
-	coverageNotes map[string]bool
+	// coverageGaps holds the constructs this run performed in one order without
+	// a choice point, recorded once each (coverage_gap.go).
+	coverageGaps map[CoverageGap]bool
 
 	// heldBehaviors are the behaviors already holding work when the outermost
 	// start under way began: a driver put it in flight, and dispatches it.
@@ -757,6 +760,9 @@ type runState struct {
 	steps    int64
 	elements int64
 	notes    []RunNote
+	// performers are the objects the run's executors have performed on, kept
+	// after an executor leaves the clock so a value of theirs is still matched.
+	performers []*Instance
 	// scheduler is the resolutions the run's choices draw from (scheduler.go).
 	scheduler *scheduler
 	// calcUsageRuns holds, per activation under way, the evaluation of each calc
@@ -765,6 +771,13 @@ type runState struct {
 	// extentCandidates holds, per type an extent was taken of, the namespace usages
 	// that may hold one (extent.go).
 	extentCandidates map[*symbols.Symbol]*extentCandidates
+}
+
+// notePerformer records the object an executor joining the clock performs on.
+func (r *runState) notePerformer(w clockWaiter) {
+	if self := executorSelf(w); self != nil && !slices.Contains(r.performers, self) {
+		r.performers = append(r.performers, self)
+	}
 }
 
 // newRunState is the state a run starts with, under the schedule policy set now.

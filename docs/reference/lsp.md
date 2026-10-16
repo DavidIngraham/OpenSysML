@@ -12,6 +12,7 @@ result:
     "openSysmlCrossDocumentLayout": true, "openSysmlRenderPalette": true,
     "openSysmlRenderForms": ["text", "mermaid", "markdown", "dot", "plantuml", "d2", "csv", "tsv"],
     "openSysmlRenderStyles": ["pilot", "cameo"], "openSysmlRenderPorts": ["minimal", "full"],
+    "openSysmlRenderLines": ["splines", "ortho", "polyline"],
     "openSysmlRenderElements": ["parameter-symbols", "port-symbols", "compartments", "edge-labels",
       "keywords", "multiplicities", "typings", "qualifiers", "all"] } } }
 ```
@@ -27,7 +28,8 @@ behavior and report where it stands, and `openSysmlRenderPalette` that a
 the forms `opensysml/render` writes and `openSysmlRenderStyles` the drawing styles its `style`
 draws the DOT or Mermaid form in, the first the default (`openSysmlRenderPorts` lists likewise the port
 displays its `ports` draws an interconnection or mixed rendering's parts with, a server without
-it drawing every port; `openSysmlRenderOverlays` lists the overlays its `overlay` draws, a server
+it drawing every port; `openSysmlRenderLines` the edge routings its `lines` draws the DOT or
+PlantUML form with, a server without it routing every edge as splines; `openSysmlRenderOverlays` lists the overlays its `overlay` draws, a server
 without it drawing none); a server without the former draws the Pilot look
 alone.
 
@@ -79,6 +81,15 @@ mode's verdict. A client that cannot send settings can start the server with
 `-strict` instead. Both correspond to the CLI's `-strict` and the REPL's `%strict`;
 [the guide](../guide/03-command-line.md#strict-conformance) explains what the mode
 changes.
+
+## Diagnostic codes
+
+Every published diagnostic carries `code`, the stable kebab-case code of the rule that
+reported it (`unresolved`, `name-conflict`, `nonstandard-notation`, …), and a
+`codeDescription` whose `href` opens the [diagnostics reference](diagnostics.md#catalogue) at
+that code's section, so an editor that shows a diagnostic's code as a link lands on its
+meaning, remediation and spec clause. The codes are the ones `sysml -explain` explains and
+the `-json` output carries; `source` stays the reporting pass.
 
 ## Disabled lints (setting)
 
@@ -140,7 +151,7 @@ Renders one view of a document.
 | `palette` | Optional. A palette the `dot`, `mermaid`, `plantuml` and `d2` forms fill nodes with by keyword family: `okabe-ito`, `tol-bright`, `tol-muted`, `tol-light`, `brewer-set2`, `brewer-dark2`, `viridis` or `cividis` ([the palettes](../project/view-rendering-forms.md#palettes)). Omitted or empty draws black and white. Mermaid sequence diagrams note that they cannot fill individual participants; `text` and `markdown` ignore palettes. A server advertising `openSysmlRenderPalette` gives each node the palette colours as `fill` and `border`, so a client drawing the nodes itself can use the same colours. |
 | `style` | Optional. The drawing style the `dot` or `mermaid` form draws in: `pilot` (the default, the Pilot visualizer's B&W) or `cameo`, the look of Cameo Systems Modeler — 11 pt Arial, gradient fills in Cameo's colours, compartments and UML pseudo-state symbols ([the measurements](../project/view-rendering-forms.md#the-cameo-style)). Mermaid draws supported Cameo details but flattens gradients and omits the frame and header tab; unsupported details are noted. PlantUML and D2 note a style other than `pilot` as not represented; `text` and `markdown` ignore it. The result's `style` names the style drawn, the default when omitted. |
 | `ports` | Optional. How much of a part's ports an interconnection or mixed rendering draws: `minimal` (the default), the ports an interconnection edge ends at, each a small square on the part's border named beside it, or `full`, every port a part has, labelled `name : Type`. Other kinds ignore it. |
-| `show` | Optional. The notation elements the SysML v2 notation makes optional that the rendering draws besides the ones its view's rendering shows, each a name the `openSysmlRenderElements` capability lists: `parameter-symbols` (a case's actor, subject and stakeholder parameters and an action's parameter pins on the node's boundary; without them a connection ends at the node itself), `port-symbols`, `compartments`, `edge-labels`, `keywords`, `multiplicities`, `typings`, `qualifiers`, or `all`. Port symbols and compartments are drawn by default; the result's `shown` lists what was drawn. |
+| `show` | Optional. The notation elements the SysML v2 notation makes optional that the rendering draws besides the ones its view's rendering shows, each a name the `openSysmlRenderElements` capability lists: `parameter-symbols` (a case's actor, subject and stakeholder parameters and an action's parameter pins on the node's boundary; without them a connection ends at the node itself), `port-symbols`, `compartments`, `edge-labels`, `keywords`, `multiplicities`, `typings`, `qualifiers`, or `all`. Port symbols, compartments and keywords are drawn by default; the result's `shown` lists what was drawn. |
 | `overlay` | Optional. `verdicts` runs the verification cases verifying each requirement of a `requirement` rendering and labels and colours the requirement by their verdicts, each node carrying the worst as `verdict` (`pass`, `inconclusive`, `fail`, `error`). Omitted, nothing runs. Refused on another kind, and when unknown. |
 | `linkTemplate` | Optional. Template for source links on diagram elements, with `{file}`, `{line}`, `{col}`, `{qname}` and `{id}` placeholders. `{file}` is the path as loaded. Only on-disk workspace documents are linked; bundled libraries and non-file documents have no source link. |
 

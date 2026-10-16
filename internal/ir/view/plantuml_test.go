@@ -23,6 +23,8 @@ var plantumlGoldenCases = []struct {
 	{"tree-edges", "tree-edges.sysml", "FleetViews::structure", KindTree},
 	{"interconnection", "interconnection.sysml", "PlantViews::loopView", KindInterconnection},
 	{"interconnection-ports", "interconnection-ports.sysml", "ToasterViews::toasterView", KindInterconnection},
+	{"interconnection-constraints", "interconnection-constraints.sysml", "ParametricViews::amplifierView", KindInterconnection},
+	{"interconnection-constraints-placed", "interconnection-constraints.sysml", "ParametricViews::placedView", KindInterconnection},
 	{"layout", "layout.sysml", "PlantViews::placedView", KindInterconnection},
 	{"state", "state.sysml", "MachineViews::vehicleStates", KindState},
 	{"state-entry", "state-entry.sysml", "MachineViews::thermostat", KindState},
@@ -261,7 +263,7 @@ func TestPlantUMLSequenceDiagram(t *testing.T) {
 	}
 	for _, want := range []string{
 		"' not represented: message pending states no source and target; no message is drawn\n",
-		"participant \"<size:10>//«part»//</size>\\n**caller**\" as n0 <<part>> <<usage>>\nparticipant \"<size:10>//«part»//</size>\\n**callee**\" as n1 <<part>> <<usage>>\nn0 -> n0 : echo\nn0 -> n1 : of Ping\n@enduml\n",
+		"participant \"<size:10>//«part»//</size>\\n**caller**\" as n0 <<part>> <<usage>>\nparticipant \"<size:10>//«part»//</size>\\n**callee**\" as n1 <<part>> <<usage>>\nn0 -> n1 : of Ping\nn0 -> n0 : echo\n@enduml\n",
 	} {
 		if !strings.Contains(puml, want) {
 			t.Errorf("sequence PlantUML lacks %q:\n%s", want, puml)
@@ -598,8 +600,9 @@ func TestPlantUMLHeaderAndGeometryComments(t *testing.T) {
 
 var (
 	// plantumlArrowLine matches an arrow statement between two aliases, a
-	// port's being its node's dotted with its index.
-	plantumlArrowLine = regexp.MustCompile(`^\s*(\[\*\]|[\w.]+) (-\[[a-z=0-9]+\]->?|-->|->|--\|>|\.\.\|>|\.\.>|\*--|o--|\+--|--|\.\.) ([\w.]+)( : .*)?$`)
+	// port's being its node's dotted with its index, an end name quoted at
+	// its end.
+	plantumlArrowLine = regexp.MustCompile(`^\s*(\[\*\]|[\w.]+)( "[^"]*")? (-\[[a-z=0-9]+\]->?|-->|->|--\|>|\.\.\|>|\.\.>|\*--|o--|\+--|--|\.\.) ("[^"]*" )?([\w.]+)( : .*)?$`)
 	// plantumlDeclarationLine matches an element declaration with its alias.
 	plantumlDeclarationLine = regexp.MustCompile(`^\s*(class|rectangle|state|participant|port|usecase|actor|note|circle|package) ".*" as ([\w.]+)( <<[^>]+>>)*( #[0-9A-F]{6}(;line:[0-9A-F]{6})?)?( \{)?$`)
 	// dotFillLine and plantumlFillLine pick the fill a node is given in each form.
@@ -660,7 +663,7 @@ func checkPlantUMLSyntax(t *testing.T, puml string) {
 			continue
 		}
 		if m := plantumlArrowLine.FindStringSubmatch(line); m != nil {
-			arrows = append(arrows, arrow{m[1], m[3]})
+			arrows = append(arrows, arrow{m[1], m[5]})
 			continue
 		}
 		switch trimmed := strings.TrimSpace(line); {
