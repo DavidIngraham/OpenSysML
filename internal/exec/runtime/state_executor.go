@@ -375,7 +375,7 @@ func (e *StateExecutor) initializeAttributes() error {
 		if _, held := e.stateData[attr.Name]; held {
 			continue
 		}
-		if e.occurrence != nil {
+		if e.occurrence != nil && !attr.Shadowed {
 			fv, err := e.occurrence.GetFeatureValue(e.ctx, attr.Name)
 			if err != nil {
 				return fmt.Errorf("%w: read %s of object #%d: %w",
@@ -452,6 +452,23 @@ func (e *StateExecutor) dataFrame() frame {
 		vars: e.stateData, cells: e.stateCells, held: e.heldAttributes(), performed: e.stateMachine, machine: e,
 		ensureCells: e.ensureStateCells,
 	}
+}
+
+// heldKey is the name the machine binds the feature a statement written in scope
+// names: the ShadowedKey of a hidden inherited attribute, else name.
+func (e *StateExecutor) heldKey(scope *symbols.Scope, name string) string {
+	return heldKey(e.ctx, e.heldAttributes(), e.graph.Scope, scope, name)
+}
+
+// shadowedAttribute reports whether name keys a hidden inherited attribute, which
+// the machine's data alone holds: the occurrence's slots are keyed by name.
+func (e *StateExecutor) shadowedAttribute(name string) bool {
+	for _, attr := range e.graph.Attributes {
+		if attr.Name == name {
+			return attr.Shadowed
+		}
+	}
+	return false
 }
 
 // heldAttributes indexes the machine's attributes by the features they declare.
@@ -618,6 +635,9 @@ func (e *StateExecutor) materializeOccurrence() (*Instance, error) {
 	}
 	e.occurrence = inst
 	for _, attr := range e.graph.Attributes {
+		if attr.Shadowed {
+			continue
+		}
 		if value, held := e.stateData[attr.Name]; held {
 			if cell := e.stateCells.existingCell(attr.Name); cell != nil && cell.binding != nil && !cell.fv.Written {
 				if _, err := e.mirrorBindingOccurrence(attr.Name, value, cell); err != nil {
@@ -671,7 +691,7 @@ func (e *StateExecutor) mirrorBindingOccurrence(name string, value Value, cell *
 func (e *StateExecutor) assignAttribute(name string, value Value) error {
 	endWrite := e.ctx.beginFeatureWrite(nil)
 	defer endWrite()
-	if e.occurrence != nil {
+	if e.occurrence != nil && !e.shadowedAttribute(name) {
 		if err := e.occurrence.SetFeatureValue(e.ctx, name, value); err != nil {
 			return fmt.Errorf("%w: write %s of object #%d: %w",
 				ErrStatePerformanceOccurrence, name, e.occurrence.ID, err)

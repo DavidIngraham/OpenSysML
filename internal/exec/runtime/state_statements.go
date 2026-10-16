@@ -373,6 +373,7 @@ func (h *stateStmtHost) send(ec *EvalContext, s lower.Send) error {
 // assignOuter writes a name the machine does not declare to the object
 // exhibiting it, falling back to executor-local data.
 func (h *stateStmtHost) assignOuter(env *stmtEnv, name string, value Value, s lower.Assign) error {
+	name = h.exec.heldKey(s.Scope, name)
 	if written, err := h.assignStateAttribute(name, value); written || err != nil {
 		return err
 	}
@@ -386,6 +387,7 @@ func (h *stateStmtHost) assignOuter(env *stmtEnv, name string, value Value, s lo
 }
 
 func (h *stateStmtHost) assignData(env *stmtEnv, name string, value Value, s lower.Assign) error {
+	name = h.exec.heldKey(s.Scope, name)
 	if written, err := h.assignStateAttribute(name, value); written || err != nil {
 		return err
 	}

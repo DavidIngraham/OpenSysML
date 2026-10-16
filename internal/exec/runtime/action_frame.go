@@ -372,6 +372,25 @@ func (e *performances) addFeatureDirections(
 		e.ctx.aliasRedefinitions(aliases, member, name)
 		e.ctx.holdFeature(held, member, name)
 	}
+	e.ctx.shadowedInherited(action,
+		func(name string) bool { _, ok := features[name]; return ok },
+		func(sym *symbols.Symbol) bool { _, ok := (*held)[sym]; return ok },
+		func(member *symbols.Symbol, usage *ast.Usage, key string) {
+			if _, taken := features[key]; taken {
+				return
+			}
+			features[key] = usage.Direction
+			if optional != nil && e.ctx.admitsNoValue(member) {
+				optional[key] = true
+			}
+			e.ctx.holdFeature(held, member, key)
+		})
+}
+
+// heldKey is the name the performance binds the feature a statement written in
+// scope names: its ShadowedKey for a hidden inherited feature, else name.
+func (f *actionFrame) heldKey(ctx *Context, scope *symbols.Scope, name string) string {
+	return heldKey(ctx, f.declared, f.scope, scope, name)
 }
 
 // aliasRedefinitions maps every name sym redefines, by clause, to name: a body
