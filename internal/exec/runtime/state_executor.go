@@ -2053,16 +2053,6 @@ func (e *StateExecutor) transitionFootprints(transitions []*lower.Transition, en
 	return fps
 }
 
-// stateFootprint is what the transitions out of state may touch when it reacts.
-func (e *StateExecutor) stateFootprint(state *ast.StateNode) lower.Footprint {
-	var fp lower.Footprint
-	footprints := e.graph.TransitionFootprints()
-	for _, trans := range e.graph.Transitions[state] {
-		fp = unionFootprints(fp, footprints[trans])
-	}
-	return fp
-}
-
 // transitionWeights evaluates the weight each transition out of source states
 // for itself, read where its guard is, nil when none of the enabled is
 // weighted: an unweighted set draws as it always has. A weighted transition
