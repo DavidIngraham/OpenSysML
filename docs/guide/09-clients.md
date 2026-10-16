@@ -12,7 +12,7 @@ and distribution.
 | Go, `client/opensysml` | In process, or Connect to a service | With the core `v*` tags | [Go packages](../reference/api.md) |
 | Python, `opensysml` | gRPC, private child or named service | PyPI | [Python API](../reference/python-api.md) |
 | Node/TypeScript, `@openmbee/opensysml` | Connect, Node or browser | npm, with per-platform service packages | [Node API](../reference/node-api.md) |
-| Java, `org.openmbee:opensysml` | Connect over the JDK HTTP client | Checkout; not on Maven Central | [Java API](../reference/java-api.md) |
+| Java, `org.openmbee:opensysml` | Connect over the JDK HTTP client | Maven Central, at the core's version | [Java API](../reference/java-api.md) |
 | Rust, `opensysml` | Blocking Connect client | crates.io | [Rust API](../reference/rust-api.md) |
 | Julia, `OpenSysML` | Connect-JSON over `HTTP.jl` | Checkout; not in Julia General | [Julia API](../reference/julia-api.md) |
 | MATLAB, `+opensysml` | Connect-JSON over MATLAB HTTP or Octave `curl` | Source files added to the path | [MATLAB API](../reference/matlab-api.md) |
@@ -66,7 +66,7 @@ package Demo {
     mvn -f client/java/pom.xml install
     ```
 
-    The artifact is not on Maven Central.
+    The artifact is on Maven Central from 0.10.1; the checkout install is for unreleased changes.
 
 === "Rust"
 
