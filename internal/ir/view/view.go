@@ -592,6 +592,9 @@ func (r *Renderer) render(view *symbols.Symbol, drawn *Drawn) (*Rendering, error
 		// Unreachable: KindOf refuses an unsupported kind.
 		return nil, &UnsupportedKindError{Kind: kind, View: r.notationName(view), Stated: stated}
 	}
+	if out.Empty() && out.emptyReason == "" {
+		out.emptyReason = r.exposureReason(view, exposed, out)
+	}
 	switch kind {
 	case KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindRequirement, KindDefinition, KindPackage:
 		// The graph-shaped kinds are drawn on a canvas; a table or sequence is not.
@@ -634,6 +637,9 @@ func (r *Renderer) RenderExposed(exposed []*symbols.Symbol, kind Kind, stated st
 		r.renderGeneral(nil, exposed, out)
 	default:
 		return nil, &UnsupportedKindError{Kind: kind, Stated: stated, Remedy: remedyFor(kind)}
+	}
+	if out.Empty() && out.emptyReason == "" {
+		out.emptyReason = exposedReason(exposed, out)
 	}
 	return out, nil
 }

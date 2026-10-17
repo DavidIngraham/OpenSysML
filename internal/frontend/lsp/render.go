@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -470,7 +471,27 @@ func (s *Server) Render(params *renderParams) (*renderResult, error) {
 	for _, row := range data.Rows {
 		out.Rows = append(out.Rows, renderRow{Cells: row.Cells, Origin: origin(row.Origin)})
 	}
+	if len(out.Nodes) == 0 && len(out.Edges) == 0 && len(out.Rows) == 0 {
+		if notice := s.analysisNotice(name, doc); notice != "" {
+			out.Notices = append([]string{notice}, out.Notices...)
+		}
+	}
 	return out, nil
+}
+
+// analysisNotice is what a rendering with nothing to draw says when the document
+// it was made from has an error: the error itself, in the words the CLI uses,
+// since an element the parser could not read is an element no view exposes.
+func (s *Server) analysisNotice(name string, doc *model.Document) string {
+	for _, d := range s.ws.Diagnostics(name) {
+		if !d.Blocking() {
+			continue
+		}
+		at := spanToRange(doc.Content, d.Span).Start
+		return fmt.Sprintf("%s did not analyse cleanly; nothing was rendered: %d:%d: %s",
+			filepath.Base(name), at.Line+1, at.Character+1, d.Message)
+	}
+	return ""
 }
 
 // renderNodes converts the rendering's nodes into out, each coloured as fills

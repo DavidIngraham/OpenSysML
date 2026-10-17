@@ -54,6 +54,7 @@ import {
   WorkspaceEdit,
 } from "./protocol";
 import { ActiveEditor, AUTO_OPEN_SETTING, Dismissals, Lifecycle, renamedUri, shouldAutoOpen, TabKind } from "./autoopen";
+import { logsRender, renderSummary } from "./rendertrace";
 import { DiagramStyle, drawingStyleOf, paletteOf, SHOW_SETTING, shownOf, STYLE_SETTING, styleOf } from "./style";
 import { CommandContext, PANEL_TYPE, resolveTarget } from "./target";
 import {
@@ -787,6 +788,9 @@ class DiagramPanel {
         show: shown.length > 0 ? shown : undefined,
       };
       const result = normalizeRender(await client.sendRequest<RenderResult>(RENDER_METHOD, params));
+      if (logsRender(vscode.workspace.getConfiguration("opensysml", this.docURI).get<string>("trace.server"), result)) {
+        this.output.appendLine(renderSummary(basename(this.docURI), params, result));
+      }
       // A style chosen meanwhile has its own render queued; a drawing in the old one is dropped.
       if (diagramStyle(this.docURI) !== style) {
         return;
