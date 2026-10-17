@@ -10,7 +10,7 @@ library package OpenSysMLRenderings {
 	rendering asMixedDiagram : GraphicalRendering[1] :> renderings;
 
     rendering asFaultTree : GraphicalRendering[1] :> renderings;
-    view def FaultTreeView { render asFaultTree; }
+    view def FaultTreeView { doc /* Qualitative failure events and semantic AND/OR gates; a filtered interconnection view cannot specify these gate glyphs or gate-input consistency checks. */ render asFaultTree; }
 
 	view def CaseView {
 		render asCaseDiagram;
