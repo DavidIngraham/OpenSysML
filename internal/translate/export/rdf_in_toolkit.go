@@ -688,13 +688,8 @@ func (n *normalizer) rangeBounds(subject rdf.Term) ([]rdf.Term, int) {
 	return bounds, stated
 }
 
-// deriveSuccessionEnds states the ends of a succession written between
-// members through its unnamed reference features: the member an end targets
-// where the notation wrote it, `then` beside the next member where it names
-// nothing or the toolkit only derived it. A source the notation names by
-// position alone — the `entry;` action or another nameless member written
-// right before, or one only an implied ReferenceSubsetting reaches — is
-// stated as that position, since `then` wrote no `first` for it.
+// deriveSuccessionEnds states a succession's ends from its unnamed end features:
+// a source or target only position (or an implied subsetting) names is stated as that position.
 func (n *normalizer) deriveSuccessionEnds() {
 	graph := n.graph
 	for _, subject := range graph.Subjects() {
@@ -706,8 +701,11 @@ func (n *normalizer) deriveSuccessionEnds() {
 		if owner.Value == "" {
 			continue
 		}
-		source, target, targetWritten := n.successionEnds(subject)
+		source, sourceImplied, target, targetWritten := n.successionEnds(subject)
 		previous, next := n.sequencedNeighbours(owner, subject)
+		if sourceImplied && n.sequencesFrom(source, previous) {
+			source = rdf.Term{}
+		}
 		named := source.Value != "" && !n.positionalSource(source, previous)
 		if named {
 			graph.Add(subject, rdf.SysMLTerm(pSourceFeature), source)
@@ -740,21 +738,21 @@ func (n *normalizer) deriveSuccessionEnds() {
 // names: a nameless member — or the one a nameless `entry;` membership owns —
 // written right before the succession (SysML v2 1.0 § 7.17.4).
 func (n *normalizer) positionalSource(source, previous rdf.Term) bool {
-	if previous.Value == "" || n.graph.HasProperty(source, rdf.SysML+pDeclaredName) {
-		return false
-	}
-	return source == previous || n.memberOwner[source.Value] == previous
+	return !n.graph.HasProperty(source, rdf.SysML+pDeclaredName) && n.sequencesFrom(source, previous)
+}
+
+// sequencesFrom reports a source end that is the member before the succession
+// or the action that member owns: the source a `then` leaves to position.
+func (n *normalizer) sequencesFrom(source, previous rdf.Term) bool {
+	return previous.Value != "" && (source == previous || n.memberOwner[source.Value] == previous)
 }
 
 // successionEnds is what a succession's end features refer to, falling back
-// to the featureTarget of its first and last unnamed ends. An implied source
-// is the position a `then` leaves unwritten, so it is no source at all.
-func (n *normalizer) successionEnds(subject rdf.Term) (source, target rdf.Term, targetWritten bool) {
+// to the featureTarget of its first and last unnamed ends, and how each end states it.
+func (n *normalizer) successionEnds(subject rdf.Term) (source rdf.Term, sourceImplied bool, target rdf.Term, targetWritten bool) {
 	graph, meta, ownerMembers := n.graph, n.meta, n.ownerMembers
 	if referents := successionEndReferents(graph, meta, subject); len(referents) == 2 {
-		if !referents[0].implied {
-			source = referents[0].feature
-		}
+		source, sourceImplied = referents[0].feature, referents[0].implied
 		target, targetWritten = referents[1].feature, referents[1].written
 	}
 	if ends := ownerMembers[subject.Value]; len(ends) >= 2 {
@@ -766,7 +764,7 @@ func (n *normalizer) successionEnds(subject rdf.Term) (source, target rdf.Term, 
 			target = t
 		}
 	}
-	return source, target, targetWritten
+	return source, sourceImplied, target, targetWritten
 }
 
 // sequencedNeighbours is the members a `then` is written between: the

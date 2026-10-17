@@ -250,10 +250,8 @@ func TestSuccessionEndsFromNamelessEntryActionArePositional(t *testing.T) {
 	}
 }
 
-// A succession end the toolkit reaches only through an implied
-// ReferenceSubsetting was never written: `then done;` after a named action
-// keeps its positional source, and a `then` whose target is implied too is
-// attached to the declaration beside it, while a written target stays apart.
+// An end only an implied ReferenceSubsetting reaches was never written: the source
+// stays positional, an implied target attaches to its declaration, a written one stays apart.
 func TestSuccessionEndsFromImpliedReferenceSubsettingsArePositional(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
@@ -330,6 +328,70 @@ func TestSuccessionEndsFromImpliedReferenceSubsettingsArePositional(t *testing.T
 				t.Fatalf("target attached=%v apart=%v, want attached=%v", attached, apart, tc.wantAttached)
 			}
 		})
+	}
+}
+
+// An implied source that is not the member before the succession is kept and
+// stated as a `first` end rather than silently replaced by the position.
+func TestSuccessionEndsFromDisagreeingImpliedSourceAreNamed(t *testing.T) {
+	graph := rdf.NewGraph()
+	owner := elmt("owner")
+	source := elmt("owner__a")
+	between := elmt("owner__b")
+	succession := elmt("owner__succession")
+	target := elmt("owner__c")
+	sourceEnd := elmt("owner__succession__source")
+	sourceMembership := elmt("owner__succession__source-membership")
+	sourceSubsetting := elmt("owner__succession__source__subsetting")
+	targetEnd := elmt("owner__succession__target")
+	targetMembership := elmt("owner__succession__target-membership")
+	for subject, metaclass := range map[rdf.Term]string{
+		source:           "ActionUsage",
+		between:          "ActionUsage",
+		succession:       mSuccession,
+		target:           "ActionUsage",
+		sourceEnd:        mReferenceUsage,
+		sourceMembership: mEndFeatureMembership,
+		sourceSubsetting: mReferenceSubsetting,
+		targetEnd:        mReferenceUsage,
+		targetMembership: mEndFeatureMembership,
+	} {
+		graph.Add(subject, rdf.IRI(rdf.RDFType), rdf.SysMLTerm(metaclass))
+	}
+	for _, end := range []struct{ membership, element rdf.Term }{{sourceMembership, sourceEnd}, {targetMembership, targetEnd}} {
+		graph.Add(succession, rdf.SysMLTerm(pOwnedRelationship), end.membership)
+		graph.Add(end.membership, rdf.SysMLTerm(pMemberElement), end.element)
+	}
+	graph.Add(sourceEnd, rdf.SysMLTerm(pOwnedRelationship), sourceSubsetting)
+	graph.Add(sourceSubsetting, rdf.SysMLTerm(pReferencedFeature), source)
+	graph.Add(sourceSubsetting, rdf.SysMLTerm(pIsImplied), rdf.Bool(true))
+	graph.Add(sourceEnd, rdf.SysMLTerm(pReferences), source)
+	graph.Add(targetEnd, rdf.SysMLTerm(pReferences), target)
+	for name, subject := range map[string]rdf.Term{"a": source, "b": between, "c": target} {
+		graph.Add(subject, rdf.SysMLTerm(pDeclaredName), rdf.String(name))
+	}
+	n := &normalizer{
+		graph: graph,
+		meta: func(term rdf.Term) string {
+			return rdf.LocalName(graph.Type(term))
+		},
+		memberOwner: map[string]rdf.Term{succession.Value: owner},
+		ownerMembers: map[string][]rdf.Term{
+			owner.Value: {source, between, succession, target},
+		},
+	}
+	n.deriveSuccessionEnds()
+	if got, ok := graph.Object(succession, rdf.SysML+pSourceFeature); !ok || got != source {
+		t.Fatalf("succession source %v, want %s", got, source)
+	}
+	if got, ok := graph.Object(succession, rdf.OpenSysML+xEndVerb); !ok || got != rdf.String("first") {
+		t.Fatalf("succession end verb %v, want first", got)
+	}
+	if graph.HasProperty(succession, rdf.OpenSysML+xSourceMember) {
+		t.Fatal("a disagreeing implied source should not be restated as the position before it")
+	}
+	if got, ok := graph.Object(succession, rdf.SysML+pTargetFeature); !ok || got != target {
+		t.Fatalf("succession target %v, want %s", got, target)
 	}
 }
 
