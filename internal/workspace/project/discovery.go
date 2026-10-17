@@ -178,7 +178,8 @@ func installedProjects(roots []string) []*Interchange {
 }
 
 // walkInstalled calls found for each project directory under dir, stopping at a
-// project, a hidden directory, a directory already seen or the budget.
+// project, a hidden directory, a directory already seen or the budget; the
+// projects directly under dir are found before any subdirectory is entered.
 func walkInstalled(dir string, visited map[string]bool, budget *int, found func(dir string)) {
 	resolved, err := filepath.EvalSymlinks(dir)
 	if err != nil || visited[resolved] || *budget == 0 {
@@ -190,6 +191,7 @@ func walkInstalled(dir string, visited map[string]bool, budget *int, found func(
 	if err != nil {
 		return
 	}
+	var below []string
 	for _, e := range entries {
 		if strings.HasPrefix(e.Name(), ".") {
 			continue
@@ -203,6 +205,9 @@ func walkInstalled(dir string, visited map[string]bool, budget *int, found func(
 			found(path)
 			continue
 		}
+		below = append(below, path)
+	}
+	for _, path := range below {
 		walkInstalled(path, visited, budget, found)
 	}
 }

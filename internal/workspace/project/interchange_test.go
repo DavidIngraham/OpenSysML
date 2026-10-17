@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -351,6 +352,23 @@ func TestExpandOfAProjectIncludesTheNotebooksOfTheProjectsItUses(t *testing.T) {
 	// The import-driven search still reads model files only.
 	if deps := (Discovery{Roots: []string{store}}).Dependencies([]string{filepath.Join(proj, "model", "main.sysml")}, nil); len(deps) != 3 {
 		t.Errorf("Dependencies = %v, want the three model files", deps)
+	}
+}
+
+func TestInstalledProjectsFindTheProjectsUnderARootBeforeALinkedTreeSpendsTheBudget(t *testing.T) {
+	store := t.TempDir()
+	archive := t.TempDir()
+	for i := 0; i <= maxLibraryDirs; i++ {
+		if err := os.Mkdir(filepath.Join(archive, fmt.Sprintf("d%04d", i)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Symlink(archive, filepath.Join(store, "00-archive")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	parts := writeProject(t, filepath.Join(store, "zz-parts"), `{"name": "Parts", "publisher": "acme", "version": "1.0.0"}`)
+	if got := installedProjects([]string{store}); len(got) != 1 || got[0].Dir != parts {
+		t.Errorf("installedProjects = %v, want the project under the root though an earlier link leads to a tree larger than the budget", projectDirs(got))
 	}
 }
 
