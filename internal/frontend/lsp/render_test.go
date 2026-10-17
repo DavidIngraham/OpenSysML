@@ -1943,7 +1943,7 @@ package EmptyViews {
 	if len(out.Nodes) != 0 || len(out.Edges) != 0 || len(out.Rows) != 0 {
 		t.Fatalf("filteredOut drew %d nodes, %d edges, %d rows; want none", len(out.Nodes), len(out.Edges), len(out.Rows))
 	}
-	want := []string{"every element the view exposes is rejected by its filter `@ActionUsage`; the rendering is empty"}
+	want := []string{"every element the view exposes is rejected by its filter @ActionUsage; the rendering is empty"}
 	if strings.Join(out.Notices, "\n") != strings.Join(want, "\n") {
 		t.Errorf("filteredOut notices = %q, want %q", out.Notices, want)
 	}

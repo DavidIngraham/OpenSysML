@@ -175,7 +175,12 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
       if (draw(message.result)) {
         drawn = message.drawn;
         if (message.hint !== undefined) {
-          showHint(message.hint);
+          // A rendering with nothing to draw keeps its reason; the hint follows it.
+          if (emptyReason !== undefined) {
+            showStatus(`${emptyReason}\n${message.hint}`);
+          } else {
+            showHint(message.hint);
+          }
         }
       }
       return;
@@ -260,6 +265,9 @@ function showUndrawable(views: PickerEntry[]): void {
 // draw replaces the diagram with the rendering and reports whether it did. A failure
 // to draw leaves the last diagram up, dimmed, so a mid-keystroke parse error does not
 // blank the panel.
+/** The status line of a rendering with nothing to draw, while it is the one on screen. */
+let emptyReason: string | undefined;
+
 function draw(result: RenderResult): boolean {
   unrouted = false;
   cancelGesture();
@@ -284,7 +292,8 @@ function draw(result: RenderResult): boolean {
       diagram.replaceChildren(tableOf(result));
     }
     diagram.classList.remove("stale");
-    showStatus(empty || (result.form === "mermaid" && layout === undefined) ? emptyMessage(result) : "");
+    emptyReason = empty || (result.form === "mermaid" && layout === undefined) ? emptyMessage(result) : undefined;
+    showStatus(emptyReason ?? "");
     last = result;
     if (layout !== undefined) {
       // The grid answers at once; ELK's layered layout replaces it when it resolves.

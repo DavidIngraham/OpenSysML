@@ -31,4 +31,10 @@ package EmptyReasons {
 	view hollow {
 		expose Hollow::*;
 	}
+
+	// A filter with nothing to reject is not the reason.
+	view hollowFiltered {
+		expose Hollow::*;
+		filter @ActionUsage;
+	}
 }

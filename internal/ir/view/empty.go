@@ -41,21 +41,24 @@ func (r *Renderer) exposureReason(view *symbols.Symbol, exposed []*symbols.Symbo
 	if len(exposes) == 0 {
 		return "the view exposes nothing; the rendering is empty"
 	}
+	candidates := 0
 	if r.resolver != nil {
 		for _, site := range exposes {
 			if _, ok := r.resolver.ImportTarget(site.owner.Scope, site.imp); !ok {
-				return fmt.Sprintf("the view exposes %s, which does not resolve; the rendering is empty", exposeText(site.imp))
+				return fmt.Sprintf("the view exposes %s, which does not resolve; the rendering is empty", exposePhrase(site.imp))
 			}
+			candidates += len(r.resolver.ImportedElementsUnfiltered(site.owner.Scope, site.imp))
 		}
 	}
-	if filters := r.viewFilters(view); len(filters) > 0 {
+	// A filter is the reason only when it had elements to reject.
+	if filters := r.viewFilters(view); len(filters) > 0 && (candidates > 0 || r.resolver == nil) {
 		return fmt.Sprintf("every element the view exposes is rejected by its filter %s; the rendering is empty", r.filtersText(filters))
 	}
 	spelled := make([]string, len(exposes))
 	for i, site := range exposes {
-		spelled[i] = exposeText(site.imp)
+		spelled[i] = exposePhrase(site.imp)
 	}
-	return fmt.Sprintf("the view exposes %s, which holds no element; the rendering is empty", strings.Join(spelled, ", "))
+	return fmt.Sprintf("the view exposes %s, and there is nothing there; the rendering is empty", strings.Join(spelled, " and "))
 }
 
 // exposedReason says why a rendering of elements exposed without a view — a
@@ -71,16 +74,18 @@ func exposedReason(exposed []*symbols.Symbol, out *Rendering) string {
 		len(exposed), out.Kind.article(), out.Kind)
 }
 
-// exposeText spells an expose as the notation does: `P::X`, `P::*` or `P::**`.
-func exposeText(imp *ast.Import) string {
-	text := imp.Imported.Text()
-	if imp.Kind != ast.ImportMembership {
-		text += "::*"
+// exposePhrase says what an expose reaches, in words rather than in the
+// notation's `P::*`, so the reason reads as prose wherever the text form goes.
+func exposePhrase(imp *ast.Import) string {
+	name := imp.Imported.Text()
+	switch {
+	case imp.IsRecursive:
+		return "everything under " + name
+	case imp.Kind != ast.ImportMembership:
+		return "the members of " + name
+	default:
+		return name
 	}
-	if imp.IsRecursive {
-		text += "*"
-	}
-	return "`" + text + "`"
 }
 
 // filtersText spells element filters as they were written, each in backticks,
@@ -98,7 +103,7 @@ func (r *Renderer) filtersText(filters []symbols.ElementFilter) string {
 			}
 			return fmt.Sprintf("%d conditions", len(filters))
 		}
-		spelled = append(spelled, "`"+text+"`")
+		spelled = append(spelled, text)
 	}
 	return strings.Join(spelled, " and ")
 }

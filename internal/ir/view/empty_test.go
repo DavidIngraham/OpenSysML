@@ -13,10 +13,11 @@ func TestEmptyRenderingReasons(t *testing.T) {
 		view string
 		want string
 	}{
-		{"EmptyReasons::filteredOut", "every element the view exposes is rejected by its filter `@ActionUsage`; the rendering is empty"},
-		{"EmptyReasons::inheritedFilter", "every element the view exposes is rejected by its filter `@ActionUsage`; the rendering is empty"},
-		{"EmptyReasons::unresolved", "the view exposes `Nowhere::*`, which does not resolve; the rendering is empty"},
-		{"EmptyReasons::hollow", "the view exposes `Hollow::*`, which holds no element; the rendering is empty"},
+		{"EmptyReasons::filteredOut", "every element the view exposes is rejected by its filter @ActionUsage; the rendering is empty"},
+		{"EmptyReasons::inheritedFilter", "every element the view exposes is rejected by its filter @ActionUsage; the rendering is empty"},
+		{"EmptyReasons::unresolved", "the view exposes the members of Nowhere, which does not resolve; the rendering is empty"},
+		{"EmptyReasons::hollow", "the view exposes the members of Hollow, and there is nothing there; the rendering is empty"},
+		{"EmptyReasons::hollowFiltered", "the view exposes the members of Hollow, and there is nothing there; the rendering is empty"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.view, func(t *testing.T) {
