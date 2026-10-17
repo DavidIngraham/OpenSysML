@@ -52,7 +52,7 @@ func (r *Renderer) hasFailureType(sym *symbols.Symbol, name string) bool {
 
 func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symbol, out *Rendering) error {
 	w := &featureWalk{r: r, view: view, ids: &nodeIDs{}, nodes: map[*symbols.Symbol]*Node{},
-		pins: map[*Node]map[*symbols.Symbol]string{}, parent: map[*Node]*Node{}, pruned: map[*symbols.Symbol]bool{}, out: out}
+		pins: map[*Node]map[*symbols.Symbol]string{}, parent: map[*Node]*Node{}, out: out}
 	seen := map[*symbols.Symbol]bool{}
 	var collect func(*symbols.Symbol) error
 	collect = func(sym *symbols.Symbol) error {
@@ -99,13 +99,13 @@ func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symb
 			w.nodes[sym] = node
 			w.drawn = append(w.drawn, sym)
 			out.Roots = append(out.Roots, node)
-			for _, member := range w.walkMembers(sym) {
+			for _, member := range r.faultTreeMembers(view, sym) {
 				if err := collect(member); err != nil {
 					return err
 				}
 			}
 		default:
-			for _, member := range w.walkMembers(sym) {
+			for _, member := range r.faultTreeMembers(view, sym) {
 				if err := collect(member); err != nil {
 					return err
 				}
@@ -331,4 +331,27 @@ func (r *Renderer) faultEventTarget(sym *symbols.Symbol) (*symbols.Symbol, error
 		}
 		sym = target
 	}
+}
+
+// faultTreeMembers applies the view's semantic exposure filters to owned members.
+func (r *Renderer) faultTreeMembers(view, sym *symbols.Symbol) []*symbols.Symbol {
+	members := r.containedMembers(sym)
+	if view == nil {
+		return members
+	}
+	filters := r.model.ViewExposureConditions(view)
+	kept := members[:0:0]
+	for _, member := range members {
+		admitted := true
+		for _, filter := range filters {
+			if !r.model.SatisfiesElementFilter(filter, member) {
+				admitted = false
+				break
+			}
+		}
+		if admitted {
+			kept = append(kept, member)
+		}
+	}
+	return kept
 }
