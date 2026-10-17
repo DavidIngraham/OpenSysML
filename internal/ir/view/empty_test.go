@@ -18,6 +18,7 @@ func TestEmptyRenderingReasons(t *testing.T) {
 		{"EmptyReasons::unresolved", "the view exposes the members of Nowhere, which does not resolve; the rendering is empty"},
 		{"EmptyReasons::hollow", "the view exposes the members of Hollow, and there is nothing there; the rendering is empty"},
 		{"EmptyReasons::hollowFiltered", "the view exposes the members of Hollow, and there is nothing there; the rendering is empty"},
+		{"MatrixReasons::unnamedFiltered", "every element the view exposes is rejected by its filter @SysML::AllocationUsage; the rendering is empty"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.view, func(t *testing.T) {

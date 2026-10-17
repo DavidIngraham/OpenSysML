@@ -17,8 +17,9 @@ type exposeSite struct {
 
 // exposureReason says why a rendering of view shows nothing, in the terms of
 // the view's exposure: it exposes nothing, names something that does not
-// resolve, filters out everything it exposes, or exposes elements this kind of
-// rendering does not show. "" leaves the rendering's own account to stand.
+// resolve, filters out everything it exposes (a matrix exposes unnamed members
+// too), or exposes elements this kind of rendering does not show. "" leaves the
+// rendering's own account to stand.
 func (r *Renderer) exposureReason(view *symbols.Symbol, exposed []*symbols.Symbol, out *Rendering) string {
 	if len(exposed) > 0 {
 		if len(out.Notices) > 0 {
@@ -47,7 +48,7 @@ func (r *Renderer) exposureReason(view *symbols.Symbol, exposed []*symbols.Symbo
 			if _, ok := r.resolver.ImportTarget(site.owner.Scope, site.imp); !ok {
 				return fmt.Sprintf("the view exposes %s, which does not resolve; the rendering is empty", exposePhrase(site.imp))
 			}
-			candidates += len(r.resolver.ImportedElementsUnfiltered(site.owner.Scope, site.imp))
+			candidates += len(r.resolver.ImportedMembersUnfiltered(site.owner.Scope, site.imp, out.Kind == KindMatrix))
 		}
 	}
 	// A filter is the reason only when it had elements to reject.

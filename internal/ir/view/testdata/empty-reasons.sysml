@@ -6,8 +6,14 @@ package Cart {
 
 package Hollow;
 
+// Only an unnamed relationship: a matrix exposes it, a filter may reject it.
+package Links {
+	dependency from Cart::Wheel to Cart::Axle;
+}
+
 package EmptyReasons {
 	private import Views::*;
+	private import StandardViewDefinitions::*;
 	private import SysML::Systems::*;
 
 	// Every element exposed is a part; the view's own filter admits only actions.
@@ -36,5 +42,15 @@ package EmptyReasons {
 	view hollowFiltered {
 		expose Hollow::*;
 		filter @ActionUsage;
+	}
+}
+
+package MatrixReasons {
+	private import StandardViewDefinitions::*;
+
+	// The unnamed dependency is what the view exposes, and the selector rejects it.
+	view unnamedFiltered : GridView {
+		expose Links::*;
+		filter @SysML::AllocationUsage;
 	}
 }

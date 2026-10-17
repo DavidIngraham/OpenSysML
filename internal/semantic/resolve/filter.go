@@ -325,10 +325,11 @@ func (r *Resolver) importedMembersInto(into, scope *symbols.Scope, imp *ast.Impo
 	})
 }
 
-// ImportedElementsUnfiltered enumerates the named elements imp reaches before
-// any element filter is applied: what a filter had to choose from.
-func (r *Resolver) ImportedElementsUnfiltered(scope *symbols.Scope, imp *ast.Import) []*symbols.Symbol {
-	return r.importedMembersAdmitting(scope, imp, false, func() func(*symbols.Symbol) bool {
+// ImportedMembersUnfiltered enumerates the members imp reaches before any
+// element filter is applied — what a filter had to choose from — the unnamed
+// ones too when asked, as ImportedMembersInto lists them.
+func (r *Resolver) ImportedMembersUnfiltered(scope *symbols.Scope, imp *ast.Import, includeUnnamed bool) []*symbols.Symbol {
+	return r.importedMembersAdmitting(scope, imp, includeUnnamed, func() func(*symbols.Symbol) bool {
 		return func(*symbols.Symbol) bool { return true }
 	})
 }
