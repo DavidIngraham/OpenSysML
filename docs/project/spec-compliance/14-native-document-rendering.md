@@ -62,3 +62,15 @@ not a live preview that re-renders as the model is typed. Hover on the bundled `
 library types shows their signatures but no prose documentation, since the library declares none.
 
 ---
+
+## Qualitative failure-analysis extension
+
+This non-normative extension does not assert RAAML or normative SysML fault-tree
+notation conformance. See [supported scope](../../guide/failure-analysis.md).
+
+| Contract | Implementation | Test | Status |
+|---|---|---|---|
+| Semantic gate types and shared causal identity | `internal/ir/view/fault_tree.go:renderFaultTree` | `TestFaultTreeTypesSharedCausesAndRenderings` | ✅ faithful to declared subset |
+| Partial views and causal consistency | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity`, `TestFaultTreePartialAndCycle` | ✅ faithful to declared subset |
+| Instantiated inherited event members, computed input lists, nonbinary gates | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity` | ❌ unsupported; typed error |
+| RAAML complete profile and quantitative analysis | — | — | ❌ not implemented |
