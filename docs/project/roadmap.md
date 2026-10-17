@@ -2967,7 +2967,7 @@ Each landed as a pull request of its own, cut from `develop`:
    `semantics.Model.SelectCall`, and `ChainCallee` and `InvocationArgs` live in `semantics`. The
    checker's argument typing stays in `passes` — it is the whole expression checker — and the
    code that builds a model for execution installs it with `SetArgumentTyper`; a runtime that
-   reaches selection with no typer installed returns `runtime.errNoArgumentTyper` rather than
+   reaches selection with no typer installed returns `errNoArgumentTyper` rather than
    selecting with weaker typing than validation used, and a hygiene test checks every product
    construction site installs it.
 4. `runtime → parser`: the runtime parses notation text through an `ExpressionParser` the model's
