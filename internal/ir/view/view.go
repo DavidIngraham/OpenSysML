@@ -159,6 +159,10 @@ type Renderer struct {
 	text     SourceText
 	// treeDepthBound overrides the containment depth bound when set; tests only.
 	treeDepthBound int
+	// depth, when set, overrides the depth every view states (SetDepth).
+	depth int
+	// filters caches each view's filter conditions for its walks.
+	filters map[*symbols.Symbol][]symbols.ElementFilter
 	// verdicts overlays verification verdicts on a requirement rendering; nil
 	// draws it structurally.
 	verdicts Verdicts
@@ -484,6 +488,8 @@ type Rendering struct {
 	// connection to something the view does not expose, a behavior that does not
 	// lower.
 	Notices []string
+	// depthCut counts the elements a depth bound kept the walk from drawing.
+	depthCut int
 
 	emptyReason string
 	// drawn collects the elements drawn while rendering, nil when no one asked.
@@ -592,6 +598,7 @@ func (r *Renderer) render(view *symbols.Symbol, drawn *Drawn) (*Rendering, error
 		// Unreachable: KindOf refuses an unsupported kind.
 		return nil, &UnsupportedKindError{Kind: kind, View: r.notationName(view), Stated: stated}
 	}
+	r.noteDepthCuts(view, out)
 	if out.Empty() && out.emptyReason == "" {
 		out.emptyReason = r.exposureReason(view, exposed, out)
 	}
@@ -638,6 +645,7 @@ func (r *Renderer) RenderExposed(exposed []*symbols.Symbol, kind Kind, stated st
 	default:
 		return nil, &UnsupportedKindError{Kind: kind, Stated: stated, Remedy: remedyFor(kind)}
 	}
+	r.noteDepthCuts(nil, out)
 	if out.Empty() && out.emptyReason == "" {
 		out.emptyReason = exposedReason(exposed, out)
 	}
