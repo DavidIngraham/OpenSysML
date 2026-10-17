@@ -3562,3 +3562,15 @@ SysML v2 defines *evaluation* of a constraint, requirement or `assert satisfy` a
 **Decided fragment and undecided reasons.** The questions decide what the translatable subset decides: linear and nonlinear real/integer arithmetic within the solver's decision power (a nonlinear case the backend cannot close comes back `unknown` → undecided), quantities normalized to base units, booleans and enumerations. Outside it — exponentiation and computed divisors in a violation query, collections, quantifiers, invocations and the rest the subset refuses — the verdict is `undecided` with the refusal named, as is an absent solver or a rounded unsat without a proof. One divergence is recorded rather than fixed: an `evaluate` verdict reads `assume` conditions as trusted facts about the point evaluated, so a point violating an assumption may evaluate `violated` while `holds` — the library's assumption-means-entailment semantics — is proved. The two answer different questions and the verdict's `question` says which one it answered.
 
 **Clients and conformance:** the question is `question` on the three verify requests; `Verdict` carries `question`, `status` and `witness` (`WitnessAssignment` of feature, replayed value, unit, exact); the clients take it as their engines option's sibling — Python `question=`, Go `opensysml.Asking(...)`, Java `VerifyOptions.asking(...)`, Node's options object — each refusing a symbolic question against a service predating `verification_questions` before anything is sent.
+
+## Qualitative failure-analysis extension
+
+This non-normative extension does not assert RAAML or normative SysML fault-tree
+notation conformance. See [supported scope](../guide/failure-analysis.md).
+
+| Contract | Implementation | Test | Status |
+|---|---|---|---|
+| Semantic gate types and shared causal identity | `internal/ir/view/fault_tree.go:renderFaultTree` | `TestFaultTreeTypesSharedCausesAndRenderings` | ✅ faithful to declared subset |
+| Partial views and causal consistency | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity`, `TestFaultTreePartialAndCycle` | ✅ faithful to declared subset |
+| Instantiated inherited event members, computed input lists, nonbinary gates | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity` | ❌ unsupported; typed error |
+| RAAML complete profile and quantitative analysis | — | — | ❌ not implemented |

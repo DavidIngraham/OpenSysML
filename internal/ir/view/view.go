@@ -35,6 +35,8 @@ type Kind string
 const (
 	// KindTree renders the exposed elements as a containment tree.
 	KindTree Kind = "tree"
+	// KindFaultTree renders typed failure events and causal connections.
+	KindFaultTree Kind = "fault-tree"
 	// KindInterconnection renders exposed features as nodes and the connections
 	// between them as edges.
 	KindInterconnection Kind = "interconnection"
@@ -79,14 +81,14 @@ const (
 
 // Kinds returns every rendering kind this package recognizes, supported or not.
 func Kinds() []Kind {
-	return []Kind{KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindTextual, KindTable, KindMatrix, KindSequence, KindGeometry,
+	return []Kind{KindFaultTree, KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindTextual, KindTable, KindMatrix, KindSequence, KindGeometry,
 		KindRequirement, KindDefinition, KindPackage}
 }
 
 // Supported reports whether this package produces a rendering of the kind.
 func (k Kind) Supported() bool {
 	switch k {
-	case KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindTable, KindMatrix, KindSequence,
+	case KindFaultTree, KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindTable, KindMatrix, KindSequence,
 		KindRequirement, KindDefinition, KindPackage:
 		return true
 	}
@@ -576,6 +578,10 @@ func (r *Renderer) render(view *symbols.Symbol, drawn *Drawn) (*Rendering, error
 	switch kind {
 	case KindTree:
 		r.renderTree(view, exposed, out)
+	case KindFaultTree:
+		if err := r.renderFaultTree(view, exposed, out); err != nil {
+			return nil, err
+		}
 	case KindInterconnection:
 		r.renderInterconnection(view, exposed, out)
 	case KindState:
@@ -624,6 +630,10 @@ func (r *Renderer) RenderExposed(exposed []*symbols.Symbol, kind Kind, stated st
 	switch kind {
 	case KindTree:
 		r.renderTree(nil, exposed, out)
+	case KindFaultTree:
+		if err := r.renderFaultTree(nil, exposed, out); err != nil {
+			return nil, err
+		}
 	case KindInterconnection:
 		r.renderInterconnection(nil, exposed, out)
 	case KindState:
@@ -725,13 +735,15 @@ const (
 )
 
 var toolRenderings = map[string]Kind{
+	"asFaultTree":    KindFaultTree,
 	"asCaseDiagram":  KindCase,
 	"asMixedDiagram": KindMixed,
 }
 
 var toolViewDefinitions = map[string]Kind{
-	"CaseView":  KindCase,
-	"MixedView": KindMixed,
+	"FaultTreeView": KindFaultTree,
+	"CaseView":      KindCase,
+	"MixedView":     KindMixed,
 }
 
 // standardRenderings maps the renderings Views declares, and the rendering

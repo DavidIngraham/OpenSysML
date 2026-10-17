@@ -1,0 +1,39 @@
+{
+  "libraries": true,
+  "type": "analysis",
+  "evaluate": "test::check",
+  "outputs": {
+    "or0": {
+      "type": "Boolean",
+      "value": false
+    },
+    "and0": {
+      "type": "Boolean",
+      "value": false
+    },
+    "or1": {
+      "type": "Boolean",
+      "value": true
+    },
+    "and1": {
+      "type": "Boolean",
+      "value": false
+    },
+    "or2": {
+      "type": "Boolean",
+      "value": true
+    },
+    "and2": {
+      "type": "Boolean",
+      "value": false
+    },
+    "or3": {
+      "type": "Boolean",
+      "value": true
+    },
+    "and3": {
+      "type": "Boolean",
+      "value": true
+    }
+  }
+}

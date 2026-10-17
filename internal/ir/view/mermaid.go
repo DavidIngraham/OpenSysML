@@ -94,6 +94,8 @@ func (r *Rendering) MermaidWith(options Options) string {
 	case KindState:
 		r.writeStateDiagram(&b, direction, labels, options, fills)
 		return b.String()
+	case KindFaultTree:
+		r.writeFaultTreeMermaid(&b, direction, labels)
 	case KindSequence:
 		r.writeSequenceDiagram(&b, labels, options)
 	default:
