@@ -1,0 +1,30 @@
+{
+  "libraries": true,
+  "type": "analysis",
+  "evaluate": "test::check",
+  "outputs": {
+    "modeCount": {
+      "type": "Integer",
+      "value": 1
+    },
+    "safetyCriticalCount": {
+      "type": "Integer",
+      "value": 1
+    },
+    "unresolvedCriticalCount": {
+      "type": "Integer",
+      "value": 1
+    },
+    "openActionCount": {
+      "type": "Integer",
+      "value": 0
+    },
+    "reviewReady": {
+      "type": "Boolean",
+      "value": false
+    }
+  },
+  "verdicts": {
+    "inventory": "satisfied"
+  }
+}

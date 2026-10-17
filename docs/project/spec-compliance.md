@@ -3553,3 +3553,15 @@ SysML v2 defines *evaluation* of a constraint, requirement or `assert satisfy` a
 ### Python scalar snapshots
 
 The Python generator supports `--format dataclass` for resolved scalar records, including optional and collection multiplicity and flattened model-defined inheritance. Nested objects, quantities and enums fail explicitly in this mode; live typed views remain available. This is a client interoperability feature, not additional SysML execution semantics. Verified by `client/python/tests/test_generate_records.py`.
+
+## Qualitative failure-analysis extension
+
+This non-normative extension does not assert RAAML or normative SysML fault-tree
+notation conformance. See [supported scope](../guide/failure-analysis.md).
+
+| Contract | Implementation | Test | Status |
+|---|---|---|---|
+| Semantic gate types and shared causal identity | `internal/ir/view/fault_tree.go:renderFaultTree` | `TestFaultTreeTypesSharedCausesAndRenderings` | ✅ faithful to declared subset |
+| Partial views and causal consistency | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity`, `TestFaultTreePartialAndCycle` | ✅ faithful to declared subset |
+| Instantiated inherited event members, computed input lists, nonbinary gates | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity` | ❌ unsupported; typed error |
+| RAAML complete profile and quantitative analysis | — | — | ❌ not implemented |

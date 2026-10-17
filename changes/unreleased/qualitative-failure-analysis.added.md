@@ -1,0 +1,1 @@
+- Add a reusable RAAML-aligned qualitative failure-analysis library, typed DFMEA query and native fault-tree rendering with AND/OR symbols, shared causes and explicit partial-view notices.
