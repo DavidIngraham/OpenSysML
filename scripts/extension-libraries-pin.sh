@@ -6,6 +6,6 @@
 # Kept in one file so what CI checks and what a maintainer syncs cannot drift.
 # The ref names where the pin was taken; the commit is what every fetch
 # verifies, because a ref is mutable. Change them together.
-EXTENSIONS_REPO="${EXTENSIONS_REPO:-https://github.com/Open-MBEE/OpenSysML-Extensions-Library.git}"
-EXTENSIONS_REF="${EXTENSIONS_REF:-main}"
-EXTENSIONS_COMMIT="${EXTENSIONS_COMMIT:-5134a14d313246beaf5f8cd526cfb3a127001b0b}"
+EXTENSIONS_REPO="${EXTENSIONS_REPO:-https://github.com/DavidIngraham/OpenSysML-Extensions-Library.git}"
+EXTENSIONS_REF="${EXTENSIONS_REF:-feature/qualitative-failure-analysis}"
+EXTENSIONS_COMMIT="${EXTENSIONS_COMMIT:-78d944a285c4614c8dfaea8cbea617d321283a74}"

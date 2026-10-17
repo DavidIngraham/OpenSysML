@@ -525,6 +525,62 @@
       ]
     },
     {
+      "name": "FailureAnalysis::AndGate",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::BasicEvent",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::Event",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::Gate",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::Gate::inputs",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::HouseEvent",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::OrGate",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
+      "name": "FailureAnalysis::UndevelopedEvent",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/fault_tree.go"
+      ]
+    },
+    {
       "name": "IdentityMetadata::ElementId",
       "kind": "metadata",
       "attributes": [
@@ -885,6 +941,13 @@
       ]
     },
     {
+      "name": "OpenSysMLRenderings::FaultTreeView",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/view.go"
+      ]
+    },
+    {
       "name": "OpenSysMLRenderings::MixedView",
       "kind": "element",
       "consumers": [
@@ -893,6 +956,13 @@
     },
     {
       "name": "OpenSysMLRenderings::asCaseDiagram",
+      "kind": "element",
+      "consumers": [
+        "internal/ir/view/view.go"
+      ]
+    },
+    {
+      "name": "OpenSysMLRenderings::asFaultTree",
       "kind": "element",
       "consumers": [
         "internal/ir/view/view.go"
