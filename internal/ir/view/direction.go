@@ -60,7 +60,7 @@ func (e *UnknownDirectionError) Unwrap() error { return ErrUnknownDirection }
 // table has no direction, and a sequence diagram always reads top-down.
 func (k Kind) SupportsDirection() bool {
 	switch k {
-	case KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindRequirement, KindDefinition, KindPackage:
+	case KindFaultTree, KindTree, KindInterconnection, KindState, KindAction, KindCase, KindMixed, KindRequirement, KindDefinition, KindPackage:
 		return true
 	}
 	return false
