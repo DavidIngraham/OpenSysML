@@ -118,6 +118,26 @@ read the same way and corresponding to the CLI's `-enable-lint`:
 
 A lint named by both settings is off.
 
+## Library roots (setting)
+
+The directories installed projects are looked for under, besides the well-known library
+directories of a workspace folder's project (`.sysand/lib`), are named by a list setting,
+`libraryRoots`, read from the same payloads and in the same three shapes as
+`strictConformance`:
+
+```json
+{ "libraryRoots": ["/path/to/store"] }
+{ "sysml": { "libraryRoots": ["vendor/sysml"] } }
+{ "sysml.libraryRoots": [] }
+```
+
+A relative directory is taken from each workspace folder. The list replaces the previous
+one; changing it walks the folders again, indexing the projects the new roots hold and
+dropping the sources only the old ones contributed, and republishes the diagnostics of every
+open document. A value that is not a list of strings is ignored. It corresponds to the
+server's `-library-root` flag and `OPENSYSML_LIBRARY_ROOTS`, which set the roots the server
+starts with; see [Working inside a package-manager project](../guide/03-command-line.md#working-inside-a-package-manager-project).
+
 ## Interface records
 
 A document the server holds but no editor has open — one it read from the disk

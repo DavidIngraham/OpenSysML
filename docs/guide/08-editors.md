@@ -60,6 +60,25 @@ extension, start the server in strict mode instead:
 }
 ```
 
+### Working inside a package-manager project
+
+A workspace folder that is a project — a directory holding a `.project.json`, as a SysML v2
+package manager writes it — has the installed projects its usages name indexed along with
+its own files, so an `import` of a package an installed project declares resolves in the
+editor without opening its file ([From the command line](03-command-line.md#working-inside-a-package-manager-project)
+describes what is found). The projects are looked for under the well-known library
+directories of the project (`.sysand/lib` for a `sysand` project) and under any directory
+named by `OPENSYSML_LIBRARY_ROOTS`, by `sysml-lsp -library-root` or by the `libraryRoots`
+list setting ([LSP extensions](../reference/lsp.md#library-roots-setting)); a relative
+directory in the setting is taken from the workspace folder. With this extension, name
+another provider's directory as a server argument:
+
+```json
+{
+  "opensysml.server.args": ["-library-root", "/path/to/store"]
+}
+```
+
 ### The diagram panel
 
 <kbd>Alt</kbd>+<kbd>D</kbd> (<kbd>Option</kbd>+<kbd>D</kbd> on macOS) in a `.sysml` or `.kerml` file —
