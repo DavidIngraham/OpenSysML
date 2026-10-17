@@ -96,8 +96,7 @@ type goldenGraph struct {
 }
 
 // goldenGraphs converts every model under testdata/convert to its golden Turtle
-// graph, failing when none is found so that a moved fixture directory cannot
-// make the gate vacuous.
+// graph, failing when none is found so a moved fixture directory cannot make the gate vacuous.
 func goldenGraphs(t *testing.T) []goldenGraph {
 	t.Helper()
 	paths := modelFiles(t)

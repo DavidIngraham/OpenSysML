@@ -12,9 +12,8 @@ import (
 	"testing"
 )
 
-// A golden over goldenDigestBytes is committed as its digest and first
-// goldenHeadLines lines (path + ".sha256") instead of whole, which keeps it under
-// the fixture cap tests/hygiene enforces while the comparison stays byte-exact.
+// A golden over goldenDigestBytes is committed as its sha256 and first goldenHeadLines
+// lines (path + ".sha256"), under the fixture cap tests/hygiene enforces.
 const (
 	goldenDigestBytes = 200 * 1024
 	goldenHeadLines   = 40
@@ -71,9 +70,8 @@ func goldenDigest(got []byte) []byte {
 	return []byte(header + strings.Join(head, ""))
 }
 
-// checkGoldenDigest fails when got does not hash to the digest; the whole output
-// then goes beside the golden as path + ".actual" (gitignored) for inspection, and
-// the failure says where the first recorded line that differs is.
+// checkGoldenDigest fails when got does not hash to the digest, writing the whole
+// output as path + ".actual" (gitignored) and naming the first recorded line that differs.
 func checkGoldenDigest(t *testing.T, path string, digest, got []byte) {
 	t.Helper()
 	header, head, _ := strings.Cut(string(digest), "\n")
@@ -84,6 +82,9 @@ func checkGoldenDigest(t *testing.T, path string, digest, got []byte) {
 	}
 	sum := sha256.Sum256(got)
 	if hex.EncodeToString(sum[:]) == wantSum {
+		if !bytes.Equal(digest, goldenDigest(got)) {
+			t.Errorf("%s.sha256: counts or head are stale for the output they digest (run with -update)", path)
+		}
 		return
 	}
 	actual := path + ".actual"
