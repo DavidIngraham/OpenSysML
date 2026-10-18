@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/Open-MBEE/OpenSysML/api/proto"
+	"github.com/Open-MBEE/OpenSysML/internal/frontend/renderidentity"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/symbolfacts"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
@@ -46,7 +47,19 @@ func (s *Service) RenderView(ctx context.Context, req *pb.RenderViewRequest) (*p
 		}
 		return nil, statusError(connect.CodeInvalidArgument, err.Error())
 	}
-	return renderViewData(cached, rendering.DataWith(view.Options{Ports: ports, Show: shown})), nil
+	data := rendering.DataWith(view.Options{Ports: ports, Show: shown})
+	if req.IncludeSemanticIdentity {
+		var documents []renderidentity.Document
+		for _, doc := range cached.Documents {
+			if doc != nil && doc.Source != nil && doc.Root != nil {
+				documents = append(documents, renderidentity.Document{File: doc.Source, Root: doc.Root})
+			}
+		}
+		if err := renderidentity.Bind(&data, documents, cached.Index); err != nil {
+			return nil, statusError(connect.CodeInvalidArgument, err.Error())
+		}
+	}
+	return renderViewData(cached, data), nil
 }
 
 type renderViewOrigins struct {
@@ -104,6 +117,7 @@ func renderViewData(model *CachedModel, data view.Data) *pb.RenderViewResponse {
 		item := &pb.RenderNode{
 			Id: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized,
 			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn,
+			IdentityStatus: node.IdentityStatus, SemanticId: node.SemanticID, QualifiedName: node.QualifiedName, Verdict: node.Verdict,
 			Parent: node.Parent, Origin: origins.span(node.Origin),
 		}
 		for _, port := range node.Ports {
@@ -125,6 +139,7 @@ func renderViewData(model *CachedModel, data view.Data) *pb.RenderViewResponse {
 	for _, edge := range data.Edges {
 		item := &pb.RenderEdge{
 			From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
+			IdentityStatus: edge.IdentityStatus, SemanticId: edge.SemanticID, QualifiedName: edge.QualifiedName, FromLabel: edge.FromLabel, ToLabel: edge.ToLabel,
 			Label: edge.Text(), Name: edge.Name, Kind: edge.Kind.String(), Origin: origins.span(edge.Origin),
 		}
 		for _, point := range edge.Route {
@@ -136,7 +151,7 @@ func renderViewData(model *CachedModel, data view.Data) *pb.RenderViewResponse {
 		response.Edges = append(response.Edges, item)
 	}
 	for _, row := range data.Rows {
-		response.Rows = append(response.Rows, &pb.RenderRow{Cells: row.Cells, Origin: origins.span(row.Origin)})
+		response.Rows = append(response.Rows, &pb.RenderRow{Cells: row.Cells, Origin: origins.span(row.Origin), SemanticId: row.SemanticID, QualifiedName: row.QualifiedName, IdentityStatus: row.IdentityStatus})
 	}
 	for _, note := range data.Notes {
 		response.Notes = append(response.Notes, &pb.RenderNote{

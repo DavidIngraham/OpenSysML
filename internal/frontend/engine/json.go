@@ -327,10 +327,11 @@ type JParseSourcesResponse struct {
 }
 
 type JRenderViewRequest struct {
-	ModelHash string   `json:"modelHash,omitempty"`
-	View      string   `json:"view,omitempty"`
-	Ports     string   `json:"ports,omitempty"`
-	Show      []string `json:"show,omitempty"`
+	IncludeSemanticIdentity bool     `json:"includeSemanticIdentity,omitempty"`
+	ModelHash               string   `json:"modelHash,omitempty"`
+	View                    string   `json:"view,omitempty"`
+	Ports                   string   `json:"ports,omitempty"`
+	Show                    []string `json:"show,omitempty"`
 }
 
 type JRenderViewResponse struct {
@@ -353,6 +354,12 @@ type JRenderCanvas struct {
 }
 
 type JRenderNode struct {
+	IdentityStatus  string        `json:"identityStatus,omitempty"`
+	SemanticID      string        `json:"semanticId,omitempty"`
+	QualifiedName   string        `json:"qualifiedName,omitempty"`
+	Text            string        `json:"text,omitempty"`
+	StandIn         bool          `json:"standIn,omitempty"`
+	Verdict         string        `json:"verdict,omitempty"`
 	ID              string        `json:"id"`
 	Kind            string        `json:"kind"`
 	Name            string        `json:"name"`
@@ -389,14 +396,20 @@ type JRenderStyle struct {
 }
 
 type JRenderEdge struct {
-	From     string         `json:"from"`
-	To       string         `json:"to"`
-	FromPort string         `json:"fromPort,omitempty"`
-	ToPort   string         `json:"toPort,omitempty"`
-	Label    string         `json:"label"`
-	Kind     string         `json:"kind"`
-	Style    *JRenderStyle  `json:"style,omitempty"`
-	Route    []JRenderPoint `json:"route,omitempty"`
+	IdentityStatus string         `json:"identityStatus,omitempty"`
+	SemanticID     string         `json:"semanticId,omitempty"`
+	QualifiedName  string         `json:"qualifiedName,omitempty"`
+	FromLabel      string         `json:"fromLabel,omitempty"`
+	ToLabel        string         `json:"toLabel,omitempty"`
+	Name           string         `json:"name,omitempty"`
+	From           string         `json:"from"`
+	To             string         `json:"to"`
+	FromPort       string         `json:"fromPort,omitempty"`
+	ToPort         string         `json:"toPort,omitempty"`
+	Label          string         `json:"label"`
+	Kind           string         `json:"kind"`
+	Style          *JRenderStyle  `json:"style,omitempty"`
+	Route          []JRenderPoint `json:"route,omitempty"`
 }
 
 type JRenderPoint struct {
@@ -405,7 +418,10 @@ type JRenderPoint struct {
 }
 
 type JRenderRow struct {
-	Cells []string `json:"cells"`
+	SemanticID     string   `json:"semanticId,omitempty"`
+	QualifiedName  string   `json:"qualifiedName,omitempty"`
+	IdentityStatus string   `json:"identityStatus,omitempty"`
+	Cells          []string `json:"cells"`
 }
 
 type JEvaluateRequest struct {

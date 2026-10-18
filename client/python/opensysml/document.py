@@ -257,6 +257,10 @@ class RenderNode:
     origin: Optional[RenderSpan]
     geometry: Optional[RenderGeometry]
     style: Optional[RenderStyle]
+    identity_status: str = ""
+    semantic_id: str = ""
+    qualified_name: str = ""
+    verdict: str = ""
 
 
 @dataclass(frozen=True)
@@ -271,6 +275,11 @@ class RenderEdge:
     origin: Optional[RenderSpan]
     route: tuple
     style: Optional[RenderStyle]
+    identity_status: str = ""
+    semantic_id: str = ""
+    qualified_name: str = ""
+    from_label: str = ""
+    to_label: str = ""
 
 
 @dataclass(frozen=True)
@@ -285,6 +294,9 @@ class RenderCanvas:
 class RenderRow:
     cells: tuple
     origin: Optional[RenderSpan]
+    semantic_id: str = ""
+    qualified_name: str = ""
+    identity_status: str = ""
 
 
 @dataclass(frozen=True)
@@ -369,6 +381,7 @@ def render_view_result(response):
                 node.geometry.has_size, node.geometry.collapsed,
             ),
             _render_style(node.style if node.HasField("style") else None),
+            node.identity_status, node.semantic_id, node.qualified_name, node.verdict,
         )
         for node in response.nodes
     )
@@ -378,6 +391,7 @@ def render_view_result(response):
             _render_span(edge.origin if edge.HasField("origin") else None),
             tuple(RenderPoint(point.x, point.y) for point in edge.route),
             _render_style(edge.style if edge.HasField("style") else None),
+            edge.identity_status, edge.semantic_id, edge.qualified_name, edge.from_label, edge.to_label,
         )
         for edge in response.edges
     )
@@ -387,7 +401,7 @@ def render_view_result(response):
             response.canvas.unit, response.canvas.width, response.canvas.height, response.canvas.has_size
         )
     rows = tuple(
-        RenderRow(tuple(row.cells), _render_span(row.origin if row.HasField("origin") else None))
+        RenderRow(tuple(row.cells), _render_span(row.origin if row.HasField("origin") else None), row.semantic_id, row.qualified_name, row.identity_status)
         for row in response.rows
     )
     notes = tuple(

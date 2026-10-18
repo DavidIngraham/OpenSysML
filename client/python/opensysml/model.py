@@ -382,12 +382,13 @@ class Model:
         """
         return self.connection.render_document(self._hash, document_id, form=form)
 
-    def render_view(self, view_name, ports="minimal", show=None) -> RenderedView:
+    def render_view(self, view_name, ports="minimal", show=None, include_semantic_identity=False) -> RenderedView:
         """Render one named view as typed diagram data.
 
         Args:
             view_name (str): Qualified view name or targeted pseudo-view
             ports (str): ``"minimal"`` (the default) or ``"full"``
+            include_semantic_identity (bool): Include native conversion identities; refuses unconvertible models
             show (Iterable[str] | None): Optional notation elements to draw
                 besides those the view's rendering shows — ``"parameter-symbols"``,
                 ``"port-symbols"``, ``"compartments"``, ``"edge-labels"``,
@@ -406,7 +407,7 @@ class Model:
                 also a SymbolNotFoundError and KeyError
             ModelNotFoundError: If the service no longer holds this model
         """
-        return self.connection.render_view(self._hash, view_name, ports=ports, show=show)
+        return self.connection.render_view(self._hash, view_name, ports=ports, show=show, include_semantic_identity=include_semantic_identity)
 
 
     def export_graphs(self, subject) -> Graphs:

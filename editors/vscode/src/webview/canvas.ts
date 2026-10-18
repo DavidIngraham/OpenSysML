@@ -263,6 +263,28 @@ function outlineOf(entry: PlacedNode): SVGElement {
   const { x, y, width, height } = entry.box;
   const cx = x + width / 2;
   const cy = y + height / 2;
+  if (entry.shape.startsWith("fault-")) {
+    // Keep the native event identity and every shared-cause edge on one node.
+    // Gate paths match the native qualitative fault-tree writer's convention.
+    const group = element("g", { class: `fault-symbol ${entry.shape}` });
+    const labelHeight = Math.max(0, height - 64);
+    group.append(element("rect", { x: String(x), y: String(y), width: String(width), height: String(labelHeight), class: "shape" }));
+    const symbol = element("g", { transform: `translate(${cx - 32} ${y + labelHeight})` });
+    const paths: Record<string, string> = {
+      "fault-and": "M 10 54 L 10 28 A 22 22 0 0 1 54 28 L 54 54 Z",
+      "fault-or": "M 10 54 Q 14 20 32 6 Q 50 20 54 54 Q 32 43 10 54 Z",
+      "fault-house": "M 10 54 L 10 28 L 32 8 L 54 28 L 54 54 Z",
+      "fault-undeveloped": "M 32 8 L 56 32 L 32 56 L 8 32 Z",
+    };
+    symbol.append(entry.shape === "fault-basic"
+      ? element("circle", { cx: "32", cy: "32", r: "24", class: "shape" })
+      : element("path", { d: paths[entry.shape], class: "shape" }));
+    const top = entry.shape === "fault-and" || entry.shape === "fault-or" ? 6 : 8;
+    const bottom = entry.shape === "fault-or" ? 48.5 : entry.shape === "fault-and" || entry.shape === "fault-house" ? 54 : 56;
+    symbol.append(element("path", { d: `M 32 0 L 32 ${top} M 32 ${bottom} L 32 64`, class: "line" }));
+    group.append(symbol);
+    return group;
+  }
   switch (entry.shape) {
     case "point":
       return element("circle", { cx: String(cx), cy: String(cy), r: String(width / 2), class: "shape filled" });
@@ -305,6 +327,7 @@ function outlineOf(entry: PlacedNode): SVGElement {
       return element("rect", attrs);
     }
   }
+  throw new Error(`Unsupported canvas shape: ${entry.shape}`);
 }
 
 // boxClass is what a box is drawn as, the way the PlantUML form stereotypes it; the

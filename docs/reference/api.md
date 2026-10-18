@@ -1458,3 +1458,19 @@ Test fixtures in `testdata/*.sysml`.
 - **[the guide](../guide/)** — Getting started guide
 - **[Wire contract](wire-contract.md)** — Connect + JSON field by field, for a client with no generated library
 - **[OMG SysML v2.1 Beta 1 Spec](https://www.omg.org/spec/SysML/2.0)** — Language specification (2026-08 release)
+
+
+### Rendered model identities
+
+`RenderViewRequest.include_semantic_identity` optionally binds each rendered node and edge
+back to the native conversion identity. Its `semantic_id` is the `elementId` written by
+`Convert` in the default qualified ID form; `qualified_name` is separate, and `id` remains
+the local drawing identifier. The Python method accepts `include_semantic_identity=True`.
+The conversion may refuse notation its experimental mapping cannot represent; the default
+rendering path does not run that conversion.
+
+When requested, `identity_status` is `mapped`, `synthetic` or `unmapped`. Generated initial
+and completion vertices are synthetic. A declaration with no conversion identity remains
+unmapped, with no guessed identity. Clients must preserve these coverage distinctions when
+joining diagrams to model indexes; absence of an identity is not proof that an artifact is
+synthetic. Node verification verdicts and separate edge-end labels are retained in responses.

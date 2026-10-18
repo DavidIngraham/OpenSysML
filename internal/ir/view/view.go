@@ -270,6 +270,8 @@ func (k EdgeKind) String() string {
 // transitions leave. Children are the nodes nested in it, which is how a
 // rendering carries containment.
 type Node struct {
+	// Synthetic marks a generated notation vertex rather than a model declaration.
+	Synthetic bool
 	// ID identifies the node within its rendering, and is what an edge names.
 	ID string
 	// Kind is what the notation calls the element — "part def", "state",

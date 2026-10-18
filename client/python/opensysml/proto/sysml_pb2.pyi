@@ -1889,16 +1889,18 @@ class RenderDocumentResponse(_message.Message):
     def __init__(self, markdown: _Optional[str] = ..., html: _Optional[str] = ...) -> None: ...
 
 class RenderViewRequest(_message.Message):
-    __slots__ = ("model_hash", "view", "ports", "show")
+    __slots__ = ("model_hash", "view", "ports", "show", "include_semantic_identity")
     MODEL_HASH_FIELD_NUMBER: _ClassVar[int]
     VIEW_FIELD_NUMBER: _ClassVar[int]
     PORTS_FIELD_NUMBER: _ClassVar[int]
     SHOW_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_SEMANTIC_IDENTITY_FIELD_NUMBER: _ClassVar[int]
     model_hash: str
     view: str
     ports: str
     show: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, model_hash: _Optional[str] = ..., view: _Optional[str] = ..., ports: _Optional[str] = ..., show: _Optional[_Iterable[str]] = ...) -> None: ...
+    include_semantic_identity: bool
+    def __init__(self, model_hash: _Optional[str] = ..., view: _Optional[str] = ..., ports: _Optional[str] = ..., show: _Optional[_Iterable[str]] = ..., include_semantic_identity: _Optional[bool] = ...) -> None: ...
 
 class RenderViewResponse(_message.Message):
     __slots__ = ("view", "kind", "stated", "nodes", "edges", "columns", "rows", "canvas", "notes", "notices", "shown")
@@ -1927,7 +1929,7 @@ class RenderViewResponse(_message.Message):
     def __init__(self, view: _Optional[str] = ..., kind: _Optional[str] = ..., stated: _Optional[str] = ..., nodes: _Optional[_Iterable[_Union[RenderNode, _Mapping]]] = ..., edges: _Optional[_Iterable[_Union[RenderEdge, _Mapping]]] = ..., columns: _Optional[_Iterable[str]] = ..., rows: _Optional[_Iterable[_Union[RenderRow, _Mapping]]] = ..., canvas: _Optional[_Union[RenderCanvas, _Mapping]] = ..., notes: _Optional[_Iterable[_Union[RenderNote, _Mapping]]] = ..., notices: _Optional[_Iterable[str]] = ..., shown: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class RenderNode(_message.Message):
-    __slots__ = ("id", "kind", "name", "name_synthesized", "type", "detail", "text", "stand_in", "parent", "ports", "origin", "geometry", "style")
+    __slots__ = ("id", "kind", "name", "name_synthesized", "type", "detail", "text", "stand_in", "parent", "ports", "origin", "geometry", "style", "semantic_id", "qualified_name", "verdict", "identity_status")
     ID_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -1941,6 +1943,10 @@ class RenderNode(_message.Message):
     ORIGIN_FIELD_NUMBER: _ClassVar[int]
     GEOMETRY_FIELD_NUMBER: _ClassVar[int]
     STYLE_FIELD_NUMBER: _ClassVar[int]
+    SEMANTIC_ID_FIELD_NUMBER: _ClassVar[int]
+    QUALIFIED_NAME_FIELD_NUMBER: _ClassVar[int]
+    VERDICT_FIELD_NUMBER: _ClassVar[int]
+    IDENTITY_STATUS_FIELD_NUMBER: _ClassVar[int]
     id: str
     kind: str
     name: str
@@ -1954,7 +1960,11 @@ class RenderNode(_message.Message):
     origin: Span
     geometry: RenderGeometry
     style: RenderStyle
-    def __init__(self, id: _Optional[str] = ..., kind: _Optional[str] = ..., name: _Optional[str] = ..., name_synthesized: _Optional[bool] = ..., type: _Optional[str] = ..., detail: _Optional[str] = ..., text: _Optional[str] = ..., stand_in: _Optional[bool] = ..., parent: _Optional[str] = ..., ports: _Optional[_Iterable[_Union[RenderPort, _Mapping]]] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., geometry: _Optional[_Union[RenderGeometry, _Mapping]] = ..., style: _Optional[_Union[RenderStyle, _Mapping]] = ...) -> None: ...
+    semantic_id: str
+    qualified_name: str
+    verdict: str
+    identity_status: str
+    def __init__(self, id: _Optional[str] = ..., kind: _Optional[str] = ..., name: _Optional[str] = ..., name_synthesized: _Optional[bool] = ..., type: _Optional[str] = ..., detail: _Optional[str] = ..., text: _Optional[str] = ..., stand_in: _Optional[bool] = ..., parent: _Optional[str] = ..., ports: _Optional[_Iterable[_Union[RenderPort, _Mapping]]] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., geometry: _Optional[_Union[RenderGeometry, _Mapping]] = ..., style: _Optional[_Union[RenderStyle, _Mapping]] = ..., semantic_id: _Optional[str] = ..., qualified_name: _Optional[str] = ..., verdict: _Optional[str] = ..., identity_status: _Optional[str] = ...) -> None: ...
 
 class RenderPort(_message.Message):
     __slots__ = ("id", "name", "type", "direction")
@@ -1969,7 +1979,7 @@ class RenderPort(_message.Message):
     def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., direction: _Optional[str] = ...) -> None: ...
 
 class RenderEdge(_message.Message):
-    __slots__ = ("to", "from_port", "to_port", "label", "name", "kind", "origin", "route", "style")
+    __slots__ = ("to", "from_port", "to_port", "label", "name", "kind", "origin", "route", "style", "semantic_id", "qualified_name", "from_label", "to_label", "identity_status")
     FROM_FIELD_NUMBER: _ClassVar[int]
     TO_FIELD_NUMBER: _ClassVar[int]
     FROM_PORT_FIELD_NUMBER: _ClassVar[int]
@@ -1980,6 +1990,11 @@ class RenderEdge(_message.Message):
     ORIGIN_FIELD_NUMBER: _ClassVar[int]
     ROUTE_FIELD_NUMBER: _ClassVar[int]
     STYLE_FIELD_NUMBER: _ClassVar[int]
+    SEMANTIC_ID_FIELD_NUMBER: _ClassVar[int]
+    QUALIFIED_NAME_FIELD_NUMBER: _ClassVar[int]
+    FROM_LABEL_FIELD_NUMBER: _ClassVar[int]
+    TO_LABEL_FIELD_NUMBER: _ClassVar[int]
+    IDENTITY_STATUS_FIELD_NUMBER: _ClassVar[int]
     to: str
     from_port: str
     to_port: str
@@ -1989,7 +2004,12 @@ class RenderEdge(_message.Message):
     origin: Span
     route: _containers.RepeatedCompositeFieldContainer[RenderPoint]
     style: RenderStyle
-    def __init__(self, to: _Optional[str] = ..., from_port: _Optional[str] = ..., to_port: _Optional[str] = ..., label: _Optional[str] = ..., name: _Optional[str] = ..., kind: _Optional[str] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., route: _Optional[_Iterable[_Union[RenderPoint, _Mapping]]] = ..., style: _Optional[_Union[RenderStyle, _Mapping]] = ..., **kwargs) -> None: ...
+    semantic_id: str
+    qualified_name: str
+    from_label: str
+    to_label: str
+    identity_status: str
+    def __init__(self, to: _Optional[str] = ..., from_port: _Optional[str] = ..., to_port: _Optional[str] = ..., label: _Optional[str] = ..., name: _Optional[str] = ..., kind: _Optional[str] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., route: _Optional[_Iterable[_Union[RenderPoint, _Mapping]]] = ..., style: _Optional[_Union[RenderStyle, _Mapping]] = ..., semantic_id: _Optional[str] = ..., qualified_name: _Optional[str] = ..., from_label: _Optional[str] = ..., to_label: _Optional[str] = ..., identity_status: _Optional[str] = ..., **kwargs) -> None: ...
 
 class RenderGeometry(_message.Message):
     __slots__ = ("x", "y", "width", "height", "has_size", "collapsed")
@@ -2046,12 +2066,18 @@ class RenderPoint(_message.Message):
     def __init__(self, x: _Optional[float] = ..., y: _Optional[float] = ...) -> None: ...
 
 class RenderRow(_message.Message):
-    __slots__ = ("cells", "origin")
+    __slots__ = ("cells", "origin", "semantic_id", "qualified_name", "identity_status")
     CELLS_FIELD_NUMBER: _ClassVar[int]
     ORIGIN_FIELD_NUMBER: _ClassVar[int]
+    SEMANTIC_ID_FIELD_NUMBER: _ClassVar[int]
+    QUALIFIED_NAME_FIELD_NUMBER: _ClassVar[int]
+    IDENTITY_STATUS_FIELD_NUMBER: _ClassVar[int]
     cells: _containers.RepeatedScalarFieldContainer[str]
     origin: Span
-    def __init__(self, cells: _Optional[_Iterable[str]] = ..., origin: _Optional[_Union[Span, _Mapping]] = ...) -> None: ...
+    semantic_id: str
+    qualified_name: str
+    identity_status: str
+    def __init__(self, cells: _Optional[_Iterable[str]] = ..., origin: _Optional[_Union[Span, _Mapping]] = ..., semantic_id: _Optional[str] = ..., qualified_name: _Optional[str] = ..., identity_status: _Optional[str] = ...) -> None: ...
 
 class RenderNote(_message.Message):
     __slots__ = ("text", "anchor", "edge_from", "edge_to", "x", "y", "width", "height", "has_size", "origin")

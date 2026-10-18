@@ -157,7 +157,7 @@ func (r *Renderer) entryEdges(view, machine *symbols.Symbol, graph *lower.StateG
 	if len(entries) == 0 {
 		return
 	}
-	start := &Node{ID: ids.take(), Kind: startKind,
+	start := &Node{ID: ids.take(), Kind: startKind, Synthetic: true,
 		Geometry: r.memberGeometryOf(view, r.bodySymbol(machine, graph, body.owner), ast.StartFeature, out)}
 	body.node.Children = append([]*Node{start}, body.node.Children...)
 	for _, entry := range entries {
@@ -266,6 +266,7 @@ func (r *Renderer) stateNode(state *ast.StateNode, graph *lower.StateGraph, mach
 	node := &Node{ID: ids.take(), Kind: "state", Name: nameText(state.Name), Type: nodeType(graph.DeclOf(state)),
 		Origin: nodeOrigin(docOf(graph, state, machine.DocName), state)}
 	if graph.Completes(state) {
+		node.Synthetic = true
 		node.Kind, node.Name, node.Type, node.NameSynthesized = "final", ast.DoneFeature, "", true
 		return node
 	}
@@ -579,7 +580,7 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 	for _, node := range graph.Nodes {
 		nodeDoc := docOf(graph, node, doc)
 		child := &Node{ID: ids.take(), Kind: actionNodeKind(node, graph), Name: nameText(behaviorNodeName(node)),
-			NameSynthesized: languageNamed(node) || r.declaredNameSynthesized(subject.elem, node), StandIn: r.declaredStandIn(subject.elem, node),
+			Synthetic: languageNamed(node), NameSynthesized: languageNamed(node) || r.declaredNameSynthesized(subject.elem, node), StandIn: r.declaredStandIn(subject.elem, node),
 			Type: nodeType(node), Origin: nodeOrigin(nodeDoc, node)}
 		if languageNamed(node) {
 			child.Geometry = r.memberGeometryOf(subject.view, owner, behaviorNodeName(node), out)

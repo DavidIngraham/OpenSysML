@@ -40,6 +40,11 @@ private static final long serialVersionUID = 0L;
     name_ = "";
     kind_ = "";
     route_ = java.util.Collections.emptyList();
+    semanticId_ = "";
+    qualifiedName_ = "";
+    fromLabel_ = "";
+    toLabel_ = "";
+    identityStatus_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -422,6 +427,201 @@ private static final long serialVersionUID = 0L;
     return style_ == null ? org.openmbee.opensysml.proto.RenderStyle.getDefaultInstance() : style_;
   }
 
+  public static final int SEMANTIC_ID_FIELD_NUMBER = 11;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object semanticId_ = "";
+  /**
+   * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+   * @return The semanticId.
+   */
+  @java.lang.Override
+  public java.lang.String getSemanticId() {
+    java.lang.Object ref = semanticId_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      semanticId_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+   * @return The bytes for semanticId.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getSemanticIdBytes() {
+    java.lang.Object ref = semanticId_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      semanticId_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int QUALIFIED_NAME_FIELD_NUMBER = 12;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object qualifiedName_ = "";
+  /**
+   * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+   * @return The qualifiedName.
+   */
+  @java.lang.Override
+  public java.lang.String getQualifiedName() {
+    java.lang.Object ref = qualifiedName_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      qualifiedName_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+   * @return The bytes for qualifiedName.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getQualifiedNameBytes() {
+    java.lang.Object ref = qualifiedName_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      qualifiedName_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int FROM_LABEL_FIELD_NUMBER = 13;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object fromLabel_ = "";
+  /**
+   * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+   * @return The fromLabel.
+   */
+  @java.lang.Override
+  public java.lang.String getFromLabel() {
+    java.lang.Object ref = fromLabel_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      fromLabel_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+   * @return The bytes for fromLabel.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getFromLabelBytes() {
+    java.lang.Object ref = fromLabel_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      fromLabel_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int TO_LABEL_FIELD_NUMBER = 14;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object toLabel_ = "";
+  /**
+   * <code>string to_label = 14 [json_name = "toLabel"];</code>
+   * @return The toLabel.
+   */
+  @java.lang.Override
+  public java.lang.String getToLabel() {
+    java.lang.Object ref = toLabel_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      toLabel_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string to_label = 14 [json_name = "toLabel"];</code>
+   * @return The bytes for toLabel.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getToLabelBytes() {
+    java.lang.Object ref = toLabel_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      toLabel_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int IDENTITY_STATUS_FIELD_NUMBER = 15;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object identityStatus_ = "";
+  /**
+   * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+   * @return The identityStatus.
+   */
+  @java.lang.Override
+  public java.lang.String getIdentityStatus() {
+    java.lang.Object ref = identityStatus_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      identityStatus_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+   * @return The bytes for identityStatus.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getIdentityStatusBytes() {
+    java.lang.Object ref = identityStatus_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      identityStatus_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -466,6 +666,21 @@ private static final long serialVersionUID = 0L;
     if (((bitField0_ & 0x00000002) != 0)) {
       output.writeMessage(10, getStyle());
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(semanticId_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 11, semanticId_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(qualifiedName_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 12, qualifiedName_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(fromLabel_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 13, fromLabel_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(toLabel_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 14, toLabel_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(identityStatus_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 15, identityStatus_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -508,6 +723,21 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(10, getStyle());
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(semanticId_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(11, semanticId_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(qualifiedName_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(12, qualifiedName_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(fromLabel_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(13, fromLabel_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(toLabel_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(14, toLabel_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(identityStatus_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(15, identityStatus_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -549,6 +779,16 @@ private static final long serialVersionUID = 0L;
       if (!getStyle()
           .equals(other.getStyle())) return false;
     }
+    if (!getSemanticId()
+        .equals(other.getSemanticId())) return false;
+    if (!getQualifiedName()
+        .equals(other.getQualifiedName())) return false;
+    if (!getFromLabel()
+        .equals(other.getFromLabel())) return false;
+    if (!getToLabel()
+        .equals(other.getToLabel())) return false;
+    if (!getIdentityStatus()
+        .equals(other.getIdentityStatus())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -586,6 +826,16 @@ private static final long serialVersionUID = 0L;
       hash = (37 * hash) + STYLE_FIELD_NUMBER;
       hash = (53 * hash) + getStyle().hashCode();
     }
+    hash = (37 * hash) + SEMANTIC_ID_FIELD_NUMBER;
+    hash = (53 * hash) + getSemanticId().hashCode();
+    hash = (37 * hash) + QUALIFIED_NAME_FIELD_NUMBER;
+    hash = (53 * hash) + getQualifiedName().hashCode();
+    hash = (37 * hash) + FROM_LABEL_FIELD_NUMBER;
+    hash = (53 * hash) + getFromLabel().hashCode();
+    hash = (37 * hash) + TO_LABEL_FIELD_NUMBER;
+    hash = (53 * hash) + getToLabel().hashCode();
+    hash = (37 * hash) + IDENTITY_STATUS_FIELD_NUMBER;
+    hash = (53 * hash) + getIdentityStatus().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -753,6 +1003,11 @@ private static final long serialVersionUID = 0L;
         styleBuilder_.dispose();
         styleBuilder_ = null;
       }
+      semanticId_ = "";
+      qualifiedName_ = "";
+      fromLabel_ = "";
+      toLabel_ = "";
+      identityStatus_ = "";
       return this;
     }
 
@@ -832,6 +1087,21 @@ private static final long serialVersionUID = 0L;
             ? style_
             : styleBuilder_.build();
         to_bitField0_ |= 0x00000002;
+      }
+      if (((from_bitField0_ & 0x00000400) != 0)) {
+        result.semanticId_ = semanticId_;
+      }
+      if (((from_bitField0_ & 0x00000800) != 0)) {
+        result.qualifiedName_ = qualifiedName_;
+      }
+      if (((from_bitField0_ & 0x00001000) != 0)) {
+        result.fromLabel_ = fromLabel_;
+      }
+      if (((from_bitField0_ & 0x00002000) != 0)) {
+        result.toLabel_ = toLabel_;
+      }
+      if (((from_bitField0_ & 0x00004000) != 0)) {
+        result.identityStatus_ = identityStatus_;
       }
       result.bitField0_ |= to_bitField0_;
     }
@@ -914,6 +1184,31 @@ private static final long serialVersionUID = 0L;
       }
       if (other.hasStyle()) {
         mergeStyle(other.getStyle());
+      }
+      if (!other.getSemanticId().isEmpty()) {
+        semanticId_ = other.semanticId_;
+        bitField0_ |= 0x00000400;
+        onChanged();
+      }
+      if (!other.getQualifiedName().isEmpty()) {
+        qualifiedName_ = other.qualifiedName_;
+        bitField0_ |= 0x00000800;
+        onChanged();
+      }
+      if (!other.getFromLabel().isEmpty()) {
+        fromLabel_ = other.fromLabel_;
+        bitField0_ |= 0x00001000;
+        onChanged();
+      }
+      if (!other.getToLabel().isEmpty()) {
+        toLabel_ = other.toLabel_;
+        bitField0_ |= 0x00002000;
+        onChanged();
+      }
+      if (!other.getIdentityStatus().isEmpty()) {
+        identityStatus_ = other.identityStatus_;
+        bitField0_ |= 0x00004000;
+        onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1003,6 +1298,31 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000200;
               break;
             } // case 82
+            case 90: {
+              semanticId_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000400;
+              break;
+            } // case 90
+            case 98: {
+              qualifiedName_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000800;
+              break;
+            } // case 98
+            case 106: {
+              fromLabel_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00001000;
+              break;
+            } // case 106
+            case 114: {
+              toLabel_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00002000;
+              break;
+            } // case 114
+            case 122: {
+              identityStatus_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00004000;
+              break;
+            } // case 122
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2004,6 +2324,366 @@ private static final long serialVersionUID = 0L;
         style_ = null;
       }
       return styleBuilder_;
+    }
+
+    private java.lang.Object semanticId_ = "";
+    /**
+     * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+     * @return The semanticId.
+     */
+    public java.lang.String getSemanticId() {
+      java.lang.Object ref = semanticId_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        semanticId_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+     * @return The bytes for semanticId.
+     */
+    public com.google.protobuf.ByteString
+        getSemanticIdBytes() {
+      java.lang.Object ref = semanticId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        semanticId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+     * @param value The semanticId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSemanticId(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      semanticId_ = value;
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearSemanticId() {
+      semanticId_ = getDefaultInstance().getSemanticId();
+      bitField0_ = (bitField0_ & ~0x00000400);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+     * @param value The bytes for semanticId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSemanticIdBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      semanticId_ = value;
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object qualifiedName_ = "";
+    /**
+     * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+     * @return The qualifiedName.
+     */
+    public java.lang.String getQualifiedName() {
+      java.lang.Object ref = qualifiedName_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        qualifiedName_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+     * @return The bytes for qualifiedName.
+     */
+    public com.google.protobuf.ByteString
+        getQualifiedNameBytes() {
+      java.lang.Object ref = qualifiedName_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        qualifiedName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+     * @param value The qualifiedName to set.
+     * @return This builder for chaining.
+     */
+    public Builder setQualifiedName(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      qualifiedName_ = value;
+      bitField0_ |= 0x00000800;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearQualifiedName() {
+      qualifiedName_ = getDefaultInstance().getQualifiedName();
+      bitField0_ = (bitField0_ & ~0x00000800);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+     * @param value The bytes for qualifiedName to set.
+     * @return This builder for chaining.
+     */
+    public Builder setQualifiedNameBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      qualifiedName_ = value;
+      bitField0_ |= 0x00000800;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object fromLabel_ = "";
+    /**
+     * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+     * @return The fromLabel.
+     */
+    public java.lang.String getFromLabel() {
+      java.lang.Object ref = fromLabel_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        fromLabel_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+     * @return The bytes for fromLabel.
+     */
+    public com.google.protobuf.ByteString
+        getFromLabelBytes() {
+      java.lang.Object ref = fromLabel_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        fromLabel_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+     * @param value The fromLabel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFromLabel(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      fromLabel_ = value;
+      bitField0_ |= 0x00001000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFromLabel() {
+      fromLabel_ = getDefaultInstance().getFromLabel();
+      bitField0_ = (bitField0_ & ~0x00001000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+     * @param value The bytes for fromLabel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFromLabelBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      fromLabel_ = value;
+      bitField0_ |= 0x00001000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object toLabel_ = "";
+    /**
+     * <code>string to_label = 14 [json_name = "toLabel"];</code>
+     * @return The toLabel.
+     */
+    public java.lang.String getToLabel() {
+      java.lang.Object ref = toLabel_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        toLabel_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string to_label = 14 [json_name = "toLabel"];</code>
+     * @return The bytes for toLabel.
+     */
+    public com.google.protobuf.ByteString
+        getToLabelBytes() {
+      java.lang.Object ref = toLabel_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        toLabel_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string to_label = 14 [json_name = "toLabel"];</code>
+     * @param value The toLabel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setToLabel(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      toLabel_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string to_label = 14 [json_name = "toLabel"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearToLabel() {
+      toLabel_ = getDefaultInstance().getToLabel();
+      bitField0_ = (bitField0_ & ~0x00002000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string to_label = 14 [json_name = "toLabel"];</code>
+     * @param value The bytes for toLabel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setToLabelBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      toLabel_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object identityStatus_ = "";
+    /**
+     * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+     * @return The identityStatus.
+     */
+    public java.lang.String getIdentityStatus() {
+      java.lang.Object ref = identityStatus_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        identityStatus_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+     * @return The bytes for identityStatus.
+     */
+    public com.google.protobuf.ByteString
+        getIdentityStatusBytes() {
+      java.lang.Object ref = identityStatus_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        identityStatus_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+     * @param value The identityStatus to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIdentityStatus(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      identityStatus_ = value;
+      bitField0_ |= 0x00004000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearIdentityStatus() {
+      identityStatus_ = getDefaultInstance().getIdentityStatus();
+      bitField0_ = (bitField0_ & ~0x00004000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+     * @param value The bytes for identityStatus to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIdentityStatusBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      identityStatus_ = value;
+      bitField0_ |= 0x00004000;
+      onChanged();
+      return this;
     }
 
     // @@protoc_insertion_point(builder_scope:sysml.RenderEdge)

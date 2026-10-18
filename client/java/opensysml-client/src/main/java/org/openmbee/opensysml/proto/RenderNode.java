@@ -40,6 +40,10 @@ private static final long serialVersionUID = 0L;
     text_ = "";
     parent_ = "";
     ports_ = java.util.Collections.emptyList();
+    semanticId_ = "";
+    qualifiedName_ = "";
+    verdict_ = "";
+    identityStatus_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -482,6 +486,170 @@ private static final long serialVersionUID = 0L;
     return style_ == null ? org.openmbee.opensysml.proto.RenderStyle.getDefaultInstance() : style_;
   }
 
+  public static final int SEMANTIC_ID_FIELD_NUMBER = 14;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object semanticId_ = "";
+  /**
+   * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+   * @return The semanticId.
+   */
+  @java.lang.Override
+  public java.lang.String getSemanticId() {
+    java.lang.Object ref = semanticId_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      semanticId_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+   * @return The bytes for semanticId.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getSemanticIdBytes() {
+    java.lang.Object ref = semanticId_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      semanticId_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int QUALIFIED_NAME_FIELD_NUMBER = 15;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object qualifiedName_ = "";
+  /**
+   * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+   * @return The qualifiedName.
+   */
+  @java.lang.Override
+  public java.lang.String getQualifiedName() {
+    java.lang.Object ref = qualifiedName_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      qualifiedName_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+   * @return The bytes for qualifiedName.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getQualifiedNameBytes() {
+    java.lang.Object ref = qualifiedName_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      qualifiedName_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int VERDICT_FIELD_NUMBER = 16;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object verdict_ = "";
+  /**
+   * <code>string verdict = 16 [json_name = "verdict"];</code>
+   * @return The verdict.
+   */
+  @java.lang.Override
+  public java.lang.String getVerdict() {
+    java.lang.Object ref = verdict_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      verdict_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string verdict = 16 [json_name = "verdict"];</code>
+   * @return The bytes for verdict.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getVerdictBytes() {
+    java.lang.Object ref = verdict_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      verdict_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int IDENTITY_STATUS_FIELD_NUMBER = 17;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object identityStatus_ = "";
+  /**
+   * <pre>
+   * mapped, synthetic or unmapped when semantic identities were requested.
+   * </pre>
+   *
+   * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+   * @return The identityStatus.
+   */
+  @java.lang.Override
+  public java.lang.String getIdentityStatus() {
+    java.lang.Object ref = identityStatus_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      identityStatus_ = s;
+      return s;
+    }
+  }
+  /**
+   * <pre>
+   * mapped, synthetic or unmapped when semantic identities were requested.
+   * </pre>
+   *
+   * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+   * @return The bytes for identityStatus.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getIdentityStatusBytes() {
+    java.lang.Object ref = identityStatus_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      identityStatus_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -534,6 +702,18 @@ private static final long serialVersionUID = 0L;
     }
     if (((bitField0_ & 0x00000004) != 0)) {
       output.writeMessage(13, getStyle());
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(semanticId_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 14, semanticId_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(qualifiedName_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 15, qualifiedName_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(verdict_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 16, verdict_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(identityStatus_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 17, identityStatus_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -589,6 +769,18 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(13, getStyle());
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(semanticId_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(14, semanticId_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(qualifiedName_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(15, qualifiedName_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(verdict_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(16, verdict_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(identityStatus_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(17, identityStatus_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -639,6 +831,14 @@ private static final long serialVersionUID = 0L;
       if (!getStyle()
           .equals(other.getStyle())) return false;
     }
+    if (!getSemanticId()
+        .equals(other.getSemanticId())) return false;
+    if (!getQualifiedName()
+        .equals(other.getQualifiedName())) return false;
+    if (!getVerdict()
+        .equals(other.getVerdict())) return false;
+    if (!getIdentityStatus()
+        .equals(other.getIdentityStatus())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -686,6 +886,14 @@ private static final long serialVersionUID = 0L;
       hash = (37 * hash) + STYLE_FIELD_NUMBER;
       hash = (53 * hash) + getStyle().hashCode();
     }
+    hash = (37 * hash) + SEMANTIC_ID_FIELD_NUMBER;
+    hash = (53 * hash) + getSemanticId().hashCode();
+    hash = (37 * hash) + QUALIFIED_NAME_FIELD_NUMBER;
+    hash = (53 * hash) + getQualifiedName().hashCode();
+    hash = (37 * hash) + VERDICT_FIELD_NUMBER;
+    hash = (53 * hash) + getVerdict().hashCode();
+    hash = (37 * hash) + IDENTITY_STATUS_FIELD_NUMBER;
+    hash = (53 * hash) + getIdentityStatus().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -861,6 +1069,10 @@ private static final long serialVersionUID = 0L;
         styleBuilder_.dispose();
         styleBuilder_ = null;
       }
+      semanticId_ = "";
+      qualifiedName_ = "";
+      verdict_ = "";
+      identityStatus_ = "";
       return this;
     }
 
@@ -953,6 +1165,18 @@ private static final long serialVersionUID = 0L;
             : styleBuilder_.build();
         to_bitField0_ |= 0x00000004;
       }
+      if (((from_bitField0_ & 0x00002000) != 0)) {
+        result.semanticId_ = semanticId_;
+      }
+      if (((from_bitField0_ & 0x00004000) != 0)) {
+        result.qualifiedName_ = qualifiedName_;
+      }
+      if (((from_bitField0_ & 0x00008000) != 0)) {
+        result.verdict_ = verdict_;
+      }
+      if (((from_bitField0_ & 0x00010000) != 0)) {
+        result.identityStatus_ = identityStatus_;
+      }
       result.bitField0_ |= to_bitField0_;
     }
 
@@ -1043,6 +1267,26 @@ private static final long serialVersionUID = 0L;
       }
       if (other.hasStyle()) {
         mergeStyle(other.getStyle());
+      }
+      if (!other.getSemanticId().isEmpty()) {
+        semanticId_ = other.semanticId_;
+        bitField0_ |= 0x00002000;
+        onChanged();
+      }
+      if (!other.getQualifiedName().isEmpty()) {
+        qualifiedName_ = other.qualifiedName_;
+        bitField0_ |= 0x00004000;
+        onChanged();
+      }
+      if (!other.getVerdict().isEmpty()) {
+        verdict_ = other.verdict_;
+        bitField0_ |= 0x00008000;
+        onChanged();
+      }
+      if (!other.getIdentityStatus().isEmpty()) {
+        identityStatus_ = other.identityStatus_;
+        bitField0_ |= 0x00010000;
+        onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1149,6 +1393,26 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00001000;
               break;
             } // case 106
+            case 114: {
+              semanticId_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00002000;
+              break;
+            } // case 114
+            case 122: {
+              qualifiedName_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00004000;
+              break;
+            } // case 122
+            case 130: {
+              verdict_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00008000;
+              break;
+            } // case 130
+            case 138: {
+              identityStatus_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00010000;
+              break;
+            } // case 138
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2371,6 +2635,314 @@ private static final long serialVersionUID = 0L;
         style_ = null;
       }
       return styleBuilder_;
+    }
+
+    private java.lang.Object semanticId_ = "";
+    /**
+     * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+     * @return The semanticId.
+     */
+    public java.lang.String getSemanticId() {
+      java.lang.Object ref = semanticId_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        semanticId_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+     * @return The bytes for semanticId.
+     */
+    public com.google.protobuf.ByteString
+        getSemanticIdBytes() {
+      java.lang.Object ref = semanticId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        semanticId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+     * @param value The semanticId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSemanticId(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      semanticId_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearSemanticId() {
+      semanticId_ = getDefaultInstance().getSemanticId();
+      bitField0_ = (bitField0_ & ~0x00002000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+     * @param value The bytes for semanticId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSemanticIdBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      semanticId_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object qualifiedName_ = "";
+    /**
+     * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+     * @return The qualifiedName.
+     */
+    public java.lang.String getQualifiedName() {
+      java.lang.Object ref = qualifiedName_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        qualifiedName_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+     * @return The bytes for qualifiedName.
+     */
+    public com.google.protobuf.ByteString
+        getQualifiedNameBytes() {
+      java.lang.Object ref = qualifiedName_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        qualifiedName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+     * @param value The qualifiedName to set.
+     * @return This builder for chaining.
+     */
+    public Builder setQualifiedName(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      qualifiedName_ = value;
+      bitField0_ |= 0x00004000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearQualifiedName() {
+      qualifiedName_ = getDefaultInstance().getQualifiedName();
+      bitField0_ = (bitField0_ & ~0x00004000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+     * @param value The bytes for qualifiedName to set.
+     * @return This builder for chaining.
+     */
+    public Builder setQualifiedNameBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      qualifiedName_ = value;
+      bitField0_ |= 0x00004000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object verdict_ = "";
+    /**
+     * <code>string verdict = 16 [json_name = "verdict"];</code>
+     * @return The verdict.
+     */
+    public java.lang.String getVerdict() {
+      java.lang.Object ref = verdict_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        verdict_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string verdict = 16 [json_name = "verdict"];</code>
+     * @return The bytes for verdict.
+     */
+    public com.google.protobuf.ByteString
+        getVerdictBytes() {
+      java.lang.Object ref = verdict_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        verdict_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string verdict = 16 [json_name = "verdict"];</code>
+     * @param value The verdict to set.
+     * @return This builder for chaining.
+     */
+    public Builder setVerdict(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      verdict_ = value;
+      bitField0_ |= 0x00008000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string verdict = 16 [json_name = "verdict"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearVerdict() {
+      verdict_ = getDefaultInstance().getVerdict();
+      bitField0_ = (bitField0_ & ~0x00008000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string verdict = 16 [json_name = "verdict"];</code>
+     * @param value The bytes for verdict to set.
+     * @return This builder for chaining.
+     */
+    public Builder setVerdictBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      verdict_ = value;
+      bitField0_ |= 0x00008000;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object identityStatus_ = "";
+    /**
+     * <pre>
+     * mapped, synthetic or unmapped when semantic identities were requested.
+     * </pre>
+     *
+     * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+     * @return The identityStatus.
+     */
+    public java.lang.String getIdentityStatus() {
+      java.lang.Object ref = identityStatus_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        identityStatus_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <pre>
+     * mapped, synthetic or unmapped when semantic identities were requested.
+     * </pre>
+     *
+     * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+     * @return The bytes for identityStatus.
+     */
+    public com.google.protobuf.ByteString
+        getIdentityStatusBytes() {
+      java.lang.Object ref = identityStatus_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        identityStatus_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <pre>
+     * mapped, synthetic or unmapped when semantic identities were requested.
+     * </pre>
+     *
+     * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+     * @param value The identityStatus to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIdentityStatus(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      identityStatus_ = value;
+      bitField0_ |= 0x00010000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * mapped, synthetic or unmapped when semantic identities were requested.
+     * </pre>
+     *
+     * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearIdentityStatus() {
+      identityStatus_ = getDefaultInstance().getIdentityStatus();
+      bitField0_ = (bitField0_ & ~0x00010000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * mapped, synthetic or unmapped when semantic identities were requested.
+     * </pre>
+     *
+     * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+     * @param value The bytes for identityStatus to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIdentityStatusBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      identityStatus_ = value;
+      bitField0_ |= 0x00010000;
+      onChanged();
+      return this;
     }
 
     // @@protoc_insertion_point(builder_scope:sysml.RenderNode)

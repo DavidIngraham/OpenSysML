@@ -439,3 +439,81 @@ func TestRenderViewRequiresCapability(t *testing.T) {
 		t.Fatalf("RenderView error = %v, want UNIMPLEMENTED naming %s", err, CapabilityRenderView)
 	}
 }
+
+func TestRenderViewSemanticIdentityMatchesConversion(t *testing.T) {
+	srv := mustNewService(t, 10)
+	t.Cleanup(srv.Close)
+	parsed, _ := parseContent(t, srv, `package IdentityDemo {
+  part def Thing { part nested; }
+  view firstView { expose Thing; }
+  view secondView { expose Thing::nested; }
+ }`)
+	for _, name := range []string{"IdentityDemo::firstView", "IdentityDemo::secondView"} {
+		rendered, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{ModelHash: parsed.ModelHash, View: name, IncludeSemanticIdentity: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		query, err := srv.Query(context.Background(), &pb.QueryRequest{ModelHash: parsed.ModelHash, Query: &pb.Query{Select: []string{"elementId", "qualifiedName"}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		identities := map[string]string{}
+		for _, element := range query.Elements {
+			identities[element.Properties["qualifiedName"]] = element.Properties["elementId"]
+		}
+		found := false
+		for _, node := range rendered.Nodes {
+			if node.QualifiedName == "IdentityDemo::Thing::nested" {
+				found = true
+				if node.SemanticId == "" || node.SemanticId != identities[node.QualifiedName] {
+					t.Errorf("node identity %+v differs from native conversion %v", node, identities)
+				}
+				if node.Id == node.SemanticId {
+					t.Error("render-local and semantic IDs conflated")
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("%s omitted nested declaration identity: %+v", name, rendered.Nodes)
+		}
+	}
+	plain, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{ModelHash: parsed.ModelHash, View: "IdentityDemo::firstView"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, node := range plain.Nodes {
+		if node.SemanticId != "" {
+			t.Error("identity conversion ran without request")
+		}
+	}
+}
+
+func TestMatrixRowIdentityIsOptInAndOriginBound(t *testing.T) {
+	srv := mustNewService(t, 10)
+	t.Cleanup(srv.Close)
+	content, err := os.ReadFile(filepath.Join("..", "..", "..", "tests", "wasm", "testdata", "render-view.sysml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, _ := parseContent(t, srv, string(content))
+	for _, enabled := range []bool{false, true} {
+		rendered, err := srv.RenderView(context.Background(), &pb.RenderViewRequest{ModelHash: parsed.ModelHash, View: "RenderViews::relationshipMatrix", IncludeSemanticIdentity: enabled})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rendered.Rows) == 0 {
+			t.Fatal("missing matrix rows")
+		}
+		for _, row := range rendered.Rows {
+			if !enabled {
+				if row.SemanticId != "" || row.IdentityStatus != "" {
+					t.Fatal("identity populated without opt-in")
+				}
+				continue
+			}
+			if row.Origin == nil || row.IdentityStatus != "mapped" || row.SemanticId == "" || row.QualifiedName == "" {
+				t.Fatalf("unbound source row: %+v", row)
+			}
+		}
+	}
+}

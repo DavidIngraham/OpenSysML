@@ -123,6 +123,7 @@ var packageLayer = map[string]string{
 	"api/proto":                          "frontend",
 	"api/proto/protoconnect":             "frontend",
 	"client/opensysml":                   "frontend",
+	"internal/frontend/renderidentity":   "frontend",
 	"internal/frontend/protoconv":        "frontend",
 	"internal/frontend/repl":             "frontend",
 	"internal/frontend/jupyter":          "frontend",

@@ -114,4 +114,14 @@ public interface RenderViewRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getShowBytes(int index);
+
+  /**
+   * <pre>
+   * Include native conversion identities; refuses a model conversion cannot represent.
+   * </pre>
+   *
+   * <code>bool include_semantic_identity = 5 [json_name = "includeSemanticIdentity"];</code>
+   * @return The includeSemanticIdentity.
+   */
+  boolean getIncludeSemanticIdentity();
 }

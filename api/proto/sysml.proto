@@ -2342,6 +2342,8 @@ message RenderViewRequest {
   // "compartments", "edge-labels", "keywords", "multiplicities", "typings",
   // "qualifiers", or "all".
   repeated string show = 4;
+  // Include native conversion identities; refuses a model conversion cannot represent.
+  bool include_semantic_identity = 5;
 }
 
 // RenderViewResponse carries all machine-readable fields of the rendering.
@@ -2378,6 +2380,11 @@ message RenderNode {
   // Unset when no layout positions the node.
   RenderGeometry geometry = 12;
   RenderStyle style = 13;
+  string semantic_id = 14;
+  string qualified_name = 15;
+  string verdict = 16;
+  // mapped, synthetic or unmapped when semantic identities were requested.
+  string identity_status = 17;
 }
 
 // RenderPort is a feature drawn on a node's border.
@@ -2400,6 +2407,11 @@ message RenderEdge {
   Span origin = 8;
   repeated RenderPoint route = 9;
   RenderStyle style = 10;
+  string semantic_id = 11;
+  string qualified_name = 12;
+  string from_label = 13;
+  string to_label = 14;
+  string identity_status = 15;
 }
 
 // RenderGeometry locates a node on the rendering's canvas.
@@ -2441,6 +2453,9 @@ message RenderPoint {
 message RenderRow {
   repeated string cells = 1;
   Span origin = 2;
+  string semantic_id = 3;
+  string qualified_name = 4;
+  string identity_status = 5;
 }
 
 // RenderNote is a note box drawn on the rendering's canvas.

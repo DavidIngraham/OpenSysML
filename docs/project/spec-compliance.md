@@ -3565,3 +3565,18 @@ notation conformance. See [supported scope](../guide/failure-analysis.md).
 | Partial views and causal consistency | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity`, `TestFaultTreePartialAndCycle` | ✅ faithful to declared subset |
 | Instantiated inherited event members, computed input lists, nonbinary gates | `renderFaultTree`, `faultGateInputs` | `TestFaultTreeIntegrity` | ❌ unsupported; typed error |
 | RAAML complete profile and quantitative analysis | — | — | ❌ not implemented |
+
+
+## Native rendering identities
+
+Render-local IDs remain distinct from model identities. Optional `RenderView.include_semantic_identity`
+uses the same conversion identity assignment as `Convert`, preserving the qualified name separately.
+Synthetic or unrepresented artifacts remain unidentified; no label matching is used.
+
+- Implementation: `internal/frontend/renderidentity/identity.go:Bind`,
+  `internal/translate/export/element_ids.go:OfOrigin`, gRPC and engine render adapters.
+- Tests: `TestRenderViewSemanticIdentityMatchesConversion`, `TestRenderIdentityAndNotationFields`,
+  Python `test_render_identity_and_notation_fields`.
+- Status: additive tool API, not a SysML notation extension. Identity conversion remains subject
+  to the documented experimental RDF/API mapping coverage. Run timeline payloads are not added
+  to RenderView by this change.

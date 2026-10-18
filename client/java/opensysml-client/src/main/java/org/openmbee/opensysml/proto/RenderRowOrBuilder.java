@@ -49,4 +49,40 @@ public interface RenderRowOrBuilder extends
    * <code>.sysml.Span origin = 2 [json_name = "origin"];</code>
    */
   org.openmbee.opensysml.proto.SpanOrBuilder getOriginOrBuilder();
+
+  /**
+   * <code>string semantic_id = 3 [json_name = "semanticId"];</code>
+   * @return The semanticId.
+   */
+  java.lang.String getSemanticId();
+  /**
+   * <code>string semantic_id = 3 [json_name = "semanticId"];</code>
+   * @return The bytes for semanticId.
+   */
+  com.google.protobuf.ByteString
+      getSemanticIdBytes();
+
+  /**
+   * <code>string qualified_name = 4 [json_name = "qualifiedName"];</code>
+   * @return The qualifiedName.
+   */
+  java.lang.String getQualifiedName();
+  /**
+   * <code>string qualified_name = 4 [json_name = "qualifiedName"];</code>
+   * @return The bytes for qualifiedName.
+   */
+  com.google.protobuf.ByteString
+      getQualifiedNameBytes();
+
+  /**
+   * <code>string identity_status = 5 [json_name = "identityStatus"];</code>
+   * @return The identityStatus.
+   */
+  java.lang.String getIdentityStatus();
+  /**
+   * <code>string identity_status = 5 [json_name = "identityStatus"];</code>
+   * @return The bytes for identityStatus.
+   */
+  com.google.protobuf.ByteString
+      getIdentityStatusBytes();
 }

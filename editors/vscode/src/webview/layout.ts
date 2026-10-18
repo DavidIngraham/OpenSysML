@@ -45,7 +45,7 @@ export type { Box, PortPosition, Side } from "./geometry";
 
 /** How a node is drawn: the label box of an element, or the symbol of a control node. */
 export type Shape =
-  "box" | "point" | "circle" | "ring" | "diamond" | "bar" | "history";
+  "box" | "point" | "circle" | "ring" | "diamond" | "bar" | "history" | "fault-and" | "fault-or" | "fault-basic" | "fault-house" | "fault-undeveloped";
 
 export interface PlacedNode {
   node: RenderNode;
@@ -94,6 +94,8 @@ export interface PortLabelPlacement {
 }
 
 export interface CanvasLayout {
+  /** Native view context retained when gestures reroute edges. */
+  faultTree?: boolean;
   roots: PlacedNode[];
   nodes: Map<string, PlacedNode>;
   edges: PlacedEdge[];
@@ -109,6 +111,7 @@ export interface CanvasLayout {
 /** The rendering kinds whose renderers position nodes and route edges from DiagramLayout. */
 export const PLACEABLE_KINDS = new Set([
   "tree",
+  "fault-tree",
   "interconnection",
   "state",
   "action",
@@ -239,9 +242,18 @@ export function layoutCanvas(
     reach(nodeBounds.x + nodeBounds.width, nodeBounds.y + nodeBounds.height);
   }
   const edges = (result.edges ?? []).map((edge, index) =>
-    routeEdge(edge, index, placed, overrides.routes, auto),
+    routeEdge(edge, index, placed, overrides.routes, auto, result.kind === "fault-tree"),
   );
   rerouteAroundBoxes(edges, placed, roots, overrides, auto);
+  if (result.kind === "fault-tree") {
+    for (const edge of edges) {
+      const source = placed.get(edge.edge.from)?.box;
+      const target = placed.get(edge.edge.to)?.box;
+      if (source) edge.points[0] = {x: source.x + source.width / 2, y: source.y};
+      if (target) edge.points[edge.points.length - 1] = {x: target.x + target.width / 2, y: target.y + target.height};
+      edge.label = midpoint(edge.points);
+    }
+  }
   for (const edge of edges) {
     if (edge.hidden) {
       continue;
@@ -256,6 +268,7 @@ export function layoutCanvas(
   };
   return {
     roots,
+    faultTree: result.kind === "fault-tree",
     nodes: placed,
     edges,
     origin,
@@ -314,6 +327,7 @@ function layoutSequence(
   });
   return {
     roots,
+    faultTree: result.kind === "fault-tree",
     nodes: placed,
     edges: routed,
     origin: { x: 0, y: 0 },
@@ -415,7 +429,7 @@ function placeAcross(
     entry.box.width = stated.width;
     return entry.box.width;
   }
-  let width = (symbolSize(entry.shape) ?? labelSize(entry.lines)).width;
+  let width = nodeSize(entry.shape, entry.lines).width;
   for (const child of shown) {
     width = Math.max(
       width,
@@ -437,7 +451,7 @@ function placeDown(
   entry.box.y = stated?.y ?? slot;
   const shown = shownChildren(entry, stated);
   const columns = Math.max(1, Math.ceil(Math.sqrt(shown.length)));
-  const header = symbolSize(entry.shape) ?? labelSize(entry.lines);
+  const header = nodeSize(entry.shape, entry.lines);
   spread(
     lanes(shown, columns, false),
     entry.box.y + header.height,
@@ -1291,6 +1305,11 @@ export function labelSize(lines: string[]): { width: number; height: number } {
 /** shapeOf is the symbol a control node's kind is drawn as, or a label box. */
 export function shapeOf(kind: string): Shape {
   switch (kind) {
+    case "AND": return "fault-and";
+    case "OR": return "fault-or";
+    case "basic event": return "fault-basic";
+    case "house event": return "fault-house";
+    case "undeveloped event": return "fault-undeveloped";
     case "start":
       return "point";
     case "initial":
@@ -1327,9 +1346,22 @@ export function symbolSize(
       return { width: SYMBOL_SIZE, height: SYMBOL_SIZE };
     case "bar":
       return { width: BAR_WIDTH, height: BAR_HEIGHT };
+    case "fault-and":
+    case "fault-or":
+    case "fault-basic":
+    case "fault-house":
+    case "fault-undeveloped":
     case "box":
       return undefined;
   }
+}
+
+/** Fault symbols sit below their readable event description inside one semantic node. */
+export function nodeSize(shape: Shape, lines: string[]): { width: number; height: number } {
+  const size = symbolSize(shape) ?? labelSize(lines);
+  return shape.startsWith("fault-")
+    ? { width: Math.max(64, size.width), height: size.height + 64 }
+    : size;
 }
 
 // routeEdge is an edge's polyline: from the border of its source, through the
@@ -1342,20 +1374,26 @@ function routeEdge(
   placed: Map<string, PlacedNode>,
   routes: Map<number, RenderPoint[] | undefined> | undefined,
   auto?: AutoLayout,
+  faultTree = false,
 ): PlacedEdge {
   const stated = routes?.has(index) ? routes.get(index) : edge.route;
   const source = placed.get(edge.from);
   const target = placed.get(edge.to);
   const routed = autoRoute(edge, index, routes, auto, source, target);
+  // Qualitative fault causes enter the gate's center input stem, not the
+  // enclosing label/symbol rectangle. Their output leaves the event box top.
+  const faultCause = faultTree || source?.shape.startsWith("fault-") || target?.shape.startsWith("fault-");
+  const faultStart = faultCause && source ? { x: source.box.x + source.box.width / 2, y: source.box.y } : undefined;
+  const faultEnd = faultCause && target ? { x: target.box.x + target.box.width / 2, y: target.box.y + target.box.height } : undefined;
   if (routed !== undefined) {
     // ELK's anchors already lie on the boxes' borders, so its polyline is drawn
     // verbatim and a drag edits only the inner waypoints.
     return {
       edge,
       index,
-      points: routed,
+      points: [faultStart ?? routed[0], ...routed.slice(1, -1), faultEnd ?? routed[routed.length - 1]],
       route: routed.slice(1, -1),
-      label: midpoint(routed),
+      label: midpoint([faultStart ?? routed[0], ...routed.slice(1, -1), faultEnd ?? routed[routed.length - 1]]),
       hidden: source?.hidden === true || target?.hidden === true,
       rerouted: false,
     };
@@ -1377,8 +1415,8 @@ function routeEdge(
   const end = anchor(to, inner.at(-1) ?? center(from));
   const fromPort = source?.ports.find((port) => port.port.id === edge.fromPort);
   const toPort = target?.ports.find((port) => port.port.id === edge.toPort);
-  const startPoint = fromPort ? portFace(from, fromPort) : start;
-  const endPoint = toPort ? portFace(to, toPort) : end;
+  const startPoint = faultStart ?? (fromPort ? portFace(from, fromPort) : start);
+  const endPoint = faultEnd ?? (toPort ? portFace(to, toPort) : end);
   const points = [startPoint, ...inner, endPoint];
   return {
     edge,
@@ -1773,7 +1811,7 @@ export function liftedEdges(
           ? []
           : edge.route;
     out.push(
-      routeEdge(edge.edge, edge.index, placed, new Map([[edge.index, route]])),
+      routeEdge(edge.edge, edge.index, placed, new Map([[edge.index, route]]), undefined, layout.faultTree),
     );
   }
   return out;

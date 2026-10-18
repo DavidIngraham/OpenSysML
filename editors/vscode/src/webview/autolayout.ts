@@ -15,13 +15,12 @@ import {
   GAP,
   glyphSize,
   labelLines,
-  labelSize,
+  nodeSize,
   MARGIN,
   PLACEABLE_KINDS,
   PORT_SIZE,
   shapeOf,
   snap,
-  symbolSize,
   type Side,
   simpleNames,
 } from "./layout";
@@ -149,8 +148,7 @@ async function layOut(result: RenderResult): Promise<AutoLayout> {
   const names = simpleNames(result.nodes ?? []);
   const elkNode = (node: RenderNode, packing = false): ElkNode => {
     const size =
-      symbolSize(shapeOf(node.kind)) ??
-      labelSize(labelLines(node, result.shown, names));
+      nodeSize(shapeOf(node.kind), labelLines(node, result.shown, names));
     const kids = node.collapsed ? [] : (children.get(node.id) ?? []);
     const alone = packed.get(node.id);
     const order = (children.get(node.parent) ?? []).indexOf(node);
@@ -407,8 +405,7 @@ function reconcile(
     }
     const geometry = placed.get(node.id)!;
     const header =
-      symbolSize(shapeOf(node.kind)) ??
-      labelSize(labelLines(node, result.shown, names));
+      nodeSize(shapeOf(node.kind), labelLines(node, result.shown, names));
     let left = geometry.x;
     let top = geometry.y;
     let right = geometry.x + (geometry.width ?? 0);
@@ -447,7 +444,7 @@ function reconcile(
 function spacingOptions(kind: string): Record<string, string> {
   return {
     "elk.edgeRouting": "ORTHOGONAL",
-    "elk.direction": kind === "tree" || kind === "action" ? "DOWN" : "RIGHT",
+    "elk.direction": kind === "fault-tree" ? "UP" : kind === "tree" || kind === "action" ? "DOWN" : "RIGHT",
     // Siblings in a layer keep the model's declaration order (seeded through the input positions)
     // rather than whatever crossing minimization settles on, so a diagram reads as the model is written.
     "elk.layered.crossingMinimization.strategy": "INTERACTIVE",

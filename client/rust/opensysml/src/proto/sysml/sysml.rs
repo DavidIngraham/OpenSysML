@@ -2919,6 +2919,9 @@ pub struct RenderViewRequest {
     /// "qualifiers", or "all".
     #[prost(string, repeated, tag="4")]
     pub show: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Include native conversion identities; refuses a model conversion cannot represent.
+    #[prost(bool, tag="5")]
+    pub include_semantic_identity: bool,
 }
 /// RenderViewResponse carries all machine-readable fields of the rendering.
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2979,6 +2982,15 @@ pub struct RenderNode {
     pub geometry: ::core::option::Option<RenderGeometry>,
     #[prost(message, optional, tag="13")]
     pub style: ::core::option::Option<RenderStyle>,
+    #[prost(string, tag="14")]
+    pub semantic_id: ::prost::alloc::string::String,
+    #[prost(string, tag="15")]
+    pub qualified_name: ::prost::alloc::string::String,
+    #[prost(string, tag="16")]
+    pub verdict: ::prost::alloc::string::String,
+    /// mapped, synthetic or unmapped when semantic identities were requested.
+    #[prost(string, tag="17")]
+    pub identity_status: ::prost::alloc::string::String,
 }
 /// RenderPort is a feature drawn on a node's border.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -3015,6 +3027,16 @@ pub struct RenderEdge {
     pub route: ::prost::alloc::vec::Vec<RenderPoint>,
     #[prost(message, optional, tag="10")]
     pub style: ::core::option::Option<RenderStyle>,
+    #[prost(string, tag="11")]
+    pub semantic_id: ::prost::alloc::string::String,
+    #[prost(string, tag="12")]
+    pub qualified_name: ::prost::alloc::string::String,
+    #[prost(string, tag="13")]
+    pub from_label: ::prost::alloc::string::String,
+    #[prost(string, tag="14")]
+    pub to_label: ::prost::alloc::string::String,
+    #[prost(string, tag="15")]
+    pub identity_status: ::prost::alloc::string::String,
 }
 /// RenderGeometry locates a node on the rendering's canvas.
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -3077,6 +3099,12 @@ pub struct RenderRow {
     pub cells: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(message, optional, tag="2")]
     pub origin: ::core::option::Option<Span>,
+    #[prost(string, tag="3")]
+    pub semantic_id: ::prost::alloc::string::String,
+    #[prost(string, tag="4")]
+    pub qualified_name: ::prost::alloc::string::String,
+    #[prost(string, tag="5")]
+    pub identity_status: ::prost::alloc::string::String,
 }
 /// RenderNote is a note box drawn on the rendering's canvas.
 #[derive(Clone, PartialEq, ::prost::Message)]

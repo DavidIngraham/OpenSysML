@@ -250,6 +250,21 @@ private static final long serialVersionUID = 0L;
     return show_.getByteString(index);
   }
 
+  public static final int INCLUDE_SEMANTIC_IDENTITY_FIELD_NUMBER = 5;
+  private boolean includeSemanticIdentity_ = false;
+  /**
+   * <pre>
+   * Include native conversion identities; refuses a model conversion cannot represent.
+   * </pre>
+   *
+   * <code>bool include_semantic_identity = 5 [json_name = "includeSemanticIdentity"];</code>
+   * @return The includeSemanticIdentity.
+   */
+  @java.lang.Override
+  public boolean getIncludeSemanticIdentity() {
+    return includeSemanticIdentity_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -275,6 +290,9 @@ private static final long serialVersionUID = 0L;
     }
     for (int i = 0; i < show_.size(); i++) {
       com.google.protobuf.GeneratedMessage.writeString(output, 4, show_.getRaw(i));
+    }
+    if (includeSemanticIdentity_ != false) {
+      output.writeBool(5, includeSemanticIdentity_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -302,6 +320,10 @@ private static final long serialVersionUID = 0L;
       size += dataSize;
       size += 1 * getShowList().size();
     }
+    if (includeSemanticIdentity_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(5, includeSemanticIdentity_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -325,6 +347,8 @@ private static final long serialVersionUID = 0L;
         .equals(other.getPorts())) return false;
     if (!getShowList()
         .equals(other.getShowList())) return false;
+    if (getIncludeSemanticIdentity()
+        != other.getIncludeSemanticIdentity()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -346,6 +370,9 @@ private static final long serialVersionUID = 0L;
       hash = (37 * hash) + SHOW_FIELD_NUMBER;
       hash = (53 * hash) + getShowList().hashCode();
     }
+    hash = (37 * hash) + INCLUDE_SEMANTIC_IDENTITY_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getIncludeSemanticIdentity());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -486,6 +513,7 @@ private static final long serialVersionUID = 0L;
       ports_ = "";
       show_ =
           com.google.protobuf.LazyStringArrayList.emptyList();
+      includeSemanticIdentity_ = false;
       return this;
     }
 
@@ -532,6 +560,9 @@ private static final long serialVersionUID = 0L;
         show_.makeImmutable();
         result.show_ = show_;
       }
+      if (((from_bitField0_ & 0x00000010) != 0)) {
+        result.includeSemanticIdentity_ = includeSemanticIdentity_;
+      }
     }
 
     @java.lang.Override
@@ -570,6 +601,9 @@ private static final long serialVersionUID = 0L;
           show_.addAll(other.show_);
         }
         onChanged();
+      }
+      if (other.getIncludeSemanticIdentity() != false) {
+        setIncludeSemanticIdentity(other.getIncludeSemanticIdentity());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -618,6 +652,11 @@ private static final long serialVersionUID = 0L;
               show_.add(s);
               break;
             } // case 34
+            case 40: {
+              includeSemanticIdentity_ = input.readBool();
+              bitField0_ |= 0x00000010;
+              break;
+            } // case 40
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1061,6 +1100,50 @@ private static final long serialVersionUID = 0L;
       ensureShowIsMutable();
       show_.add(value);
       bitField0_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+
+    private boolean includeSemanticIdentity_ ;
+    /**
+     * <pre>
+     * Include native conversion identities; refuses a model conversion cannot represent.
+     * </pre>
+     *
+     * <code>bool include_semantic_identity = 5 [json_name = "includeSemanticIdentity"];</code>
+     * @return The includeSemanticIdentity.
+     */
+    @java.lang.Override
+    public boolean getIncludeSemanticIdentity() {
+      return includeSemanticIdentity_;
+    }
+    /**
+     * <pre>
+     * Include native conversion identities; refuses a model conversion cannot represent.
+     * </pre>
+     *
+     * <code>bool include_semantic_identity = 5 [json_name = "includeSemanticIdentity"];</code>
+     * @param value The includeSemanticIdentity to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIncludeSemanticIdentity(boolean value) {
+
+      includeSemanticIdentity_ = value;
+      bitField0_ |= 0x00000010;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Include native conversion identities; refuses a model conversion cannot represent.
+     * </pre>
+     *
+     * <code>bool include_semantic_identity = 5 [json_name = "includeSemanticIdentity"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearIncludeSemanticIdentity() {
+      bitField0_ = (bitField0_ & ~0x00000010);
+      includeSemanticIdentity_ = false;
       onChanged();
       return this;
     }

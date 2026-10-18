@@ -77,6 +77,13 @@ export interface RenderOrigin {
 }
 
 export interface RenderNode {
+  /** Native conversion identity, separate from the local drawing id. */
+  identityStatus?: "mapped" | "synthetic" | "unmapped";
+  semanticId?: string;
+  qualifiedName?: string;
+  text?: string;
+  standIn?: boolean;
+  verdict?: string;
   id: string;
   kind: string;
   name: string;
@@ -149,6 +156,11 @@ export interface RenderOwner {
 }
 
 export interface RenderEdge {
+  identityStatus?: "mapped" | "synthetic" | "unmapped";
+  semanticId?: string;
+  qualifiedName?: string;
+  fromLabel?: string;
+  toLabel?: string;
   from: string;
   to: string;
   label: string;

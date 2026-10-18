@@ -1,0 +1,1 @@
+- Add optional native conversion identities to rendered nodes and edges for cross-view navigation, preserving node verdicts and edge-end labels in transport and Python results. The browser engine also retains literal text, stand-in markers and edge names.

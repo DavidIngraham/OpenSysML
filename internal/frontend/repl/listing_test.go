@@ -80,7 +80,7 @@ func TestViewsCommand(t *testing.T) {
 	if got := run(t, s, "%views diagrams table"); got != "(no views)" {
 		t.Errorf("%%views diagrams table =\n%s", got)
 	}
-	wants(t, run(t, s, "%views bogus"), `unknown view kind "bogus"`, "diagrams or tree, interconnection", viewsUsage)
+	wants(t, run(t, s, "%views bogus"), `unknown view kind "bogus"`, "diagrams or fault-tree, tree, interconnection, state, action, case, mixed, textual, table, matrix, sequence, geometry, requirement, definition, package", viewsUsage)
 	if !strings.Contains(run(t, s, `%render 'My Pkg'::'x::y'`), "table rendering") {
 		t.Error("a listed view name does not resolve through %render")
 	}

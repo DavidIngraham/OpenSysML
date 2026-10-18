@@ -11,6 +11,17 @@ manifest; like every nightly asset, they have no SLSA provenance. The npm
 package `@openmbee/opensysml-wasm` carries both assets. Other WebAssembly builds
 remain available from source for hosts that run modules rather than executables.
 
+## Optional rendering identities
+
+`RenderView` remains available on both WebAssembly targets. The optional
+`includeSemanticIdentity` request is supported by native builds only: it uses the
+native conversion identity backend, which is excluded from the lightweight
+JS/WASI engine dependency graph. A WebAssembly request that enables this option
+returns an explicit error: `semantic rendering identity is unavailable on JS/WASI;
+use the native engine or gRPC service`. Leaving the option false preserves ordinary
+rendering. Static viewers can obtain identity-enriched drawings from the native
+gRPC service before publication without loading the conversion backend in browsers.
+
 ## Building
 
 ```bash

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/resolve"
+	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/parser"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
@@ -20,6 +21,7 @@ type ElementIDs struct {
 	// byNode keys each id by the declaration the conversion wrote it for: two
 	// identity scopes may declare one qualified name, and only the node tells
 	// their elements apart.
+	byOrigin map[symbols.Origin]ElementIdentity
 	byNode   map[ast.Node]string
 	byName   map[string]string
 	res      *resolve.Resolver
@@ -59,7 +61,7 @@ func NewElementIDsOfDocument(name string, data []byte) (*ElementIDs, error) {
 // by the declaration each encoder wrote it for and by its qualified (or
 // positional) name.
 func elementIDsOf(graph *rdf.Graph, res *resolve.Resolver, encoders []*encoder) *ElementIDs {
-	ids := &ElementIDs{byNode: map[ast.Node]string{}, byName: map[string]string{}, res: res, encoders: encoders}
+	ids := &ElementIDs{byOrigin: map[symbols.Origin]ElementIdentity{}, byNode: map[ast.Node]string{}, byName: map[string]string{}, res: res, encoders: encoders}
 	for _, subject := range graph.Subjects() {
 		name, named := graph.Lexical(subject, rdf.SysML+pQualifiedName)
 		id, identified := graph.Lexical(subject, rdf.SysML+pElementID)
@@ -71,6 +73,10 @@ func elementIDsOf(graph *rdf.Graph, res *resolve.Resolver, encoders []*encoder) 
 		for node, fqn := range e.fqn {
 			if id, ok := graph.Lexical(e.ids.subjectForNode(node, fqn), rdf.SysML+pElementID); ok {
 				ids.byNode[node] = id
+				origin := symbols.NodeOrigin(e.file.Name(), node)
+				if origin.Located() {
+					ids.byOrigin[origin] = ElementIdentity{ID: id, QualifiedName: fqn}
+				}
 			}
 		}
 	}
@@ -116,4 +122,21 @@ func (ids *ElementIDs) Of(fqn string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// ElementIdentity identifies a declaration exactly as native conversion writes it.
+type ElementIdentity struct {
+	ID            string
+	QualifiedName string
+}
+
+// OfOrigin resolves a rendered declaration by its exact native source origin.
+// Synthetic artifacts have no identity; labels and enclosing spans are never used.
+func (ids *ElementIDs) OfOrigin(origin symbols.Origin) (ElementIdentity, bool) {
+	if ids == nil || !origin.Located() {
+		return ElementIdentity{}, false
+	}
+	origin.Name = source.Span{}
+	identity, ok := ids.byOrigin[origin]
+	return identity, ok
 }

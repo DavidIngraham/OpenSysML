@@ -18,6 +18,7 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/exec/objref"
 	"github.com/Open-MBEE/OpenSysML/internal/exec/runtime"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/jsonrpc"
+	"github.com/Open-MBEE/OpenSysML/internal/frontend/renderidentity"
 	fsyntax "github.com/Open-MBEE/OpenSysML/internal/frontend/syntax"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/resolve"
@@ -336,7 +337,19 @@ func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
 		}
 		return nil, statusError(codeInvalidArgument, err.Error())
 	}
-	return marshalRenderView(rendering.DataWith(view.Options{Ports: ports, Show: shown}))
+	data := rendering.DataWith(view.Options{Ports: ports, Show: shown})
+	if req.IncludeSemanticIdentity {
+		var documents []renderidentity.Document
+		for _, doc := range cached.Documents {
+			if doc != nil && doc.Source != nil && doc.Root != nil {
+				documents = append(documents, renderidentity.Document{File: doc.Source, Root: doc.Root})
+			}
+		}
+		if err := renderidentity.Bind(&data, documents, cached.Index); err != nil {
+			return nil, statusError(codeInvalidArgument, err.Error())
+		}
+	}
+	return marshalRenderView(data)
 }
 
 func marshalRenderView(data view.Data) ([]byte, error) {
@@ -364,7 +377,8 @@ func marshalRenderView(data view.Data) ([]byte, error) {
 	}
 	for _, node := range data.Nodes {
 		item := JRenderNode{
-			ID:              node.ID,
+			ID:             node.ID,
+			IdentityStatus: node.IdentityStatus, SemanticID: node.SemanticID, QualifiedName: node.QualifiedName, Text: node.Text, StandIn: node.StandIn, Verdict: node.Verdict,
 			Kind:            node.Kind,
 			Name:            node.Name,
 			NameSynthesized: node.NameSynthesized,
@@ -395,6 +409,7 @@ func marshalRenderView(data view.Data) ([]byte, error) {
 	for _, edge := range data.Edges {
 		item := JRenderEdge{
 			From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
+			IdentityStatus: edge.IdentityStatus, SemanticID: edge.SemanticID, QualifiedName: edge.QualifiedName, FromLabel: edge.FromLabel, ToLabel: edge.ToLabel, Name: edge.Name,
 			Label: edge.Text(), Kind: edge.Kind.String(), Style: jRenderStyle(edge.Style),
 		}
 		for _, point := range edge.Route {
@@ -403,7 +418,7 @@ func marshalRenderView(data view.Data) ([]byte, error) {
 		out.Edges = append(out.Edges, item)
 	}
 	for _, row := range data.Rows {
-		out.Rows = append(out.Rows, JRenderRow{Cells: row.Cells})
+		out.Rows = append(out.Rows, JRenderRow{Cells: row.Cells, SemanticID: row.SemanticID, QualifiedName: row.QualifiedName, IdentityStatus: row.IdentityStatus})
 	}
 	return marshal(out)
 }

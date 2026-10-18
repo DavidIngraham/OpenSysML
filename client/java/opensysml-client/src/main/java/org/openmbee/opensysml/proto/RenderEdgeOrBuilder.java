@@ -147,4 +147,64 @@ public interface RenderEdgeOrBuilder extends
    * <code>.sysml.RenderStyle style = 10 [json_name = "style"];</code>
    */
   org.openmbee.opensysml.proto.RenderStyleOrBuilder getStyleOrBuilder();
+
+  /**
+   * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+   * @return The semanticId.
+   */
+  java.lang.String getSemanticId();
+  /**
+   * <code>string semantic_id = 11 [json_name = "semanticId"];</code>
+   * @return The bytes for semanticId.
+   */
+  com.google.protobuf.ByteString
+      getSemanticIdBytes();
+
+  /**
+   * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+   * @return The qualifiedName.
+   */
+  java.lang.String getQualifiedName();
+  /**
+   * <code>string qualified_name = 12 [json_name = "qualifiedName"];</code>
+   * @return The bytes for qualifiedName.
+   */
+  com.google.protobuf.ByteString
+      getQualifiedNameBytes();
+
+  /**
+   * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+   * @return The fromLabel.
+   */
+  java.lang.String getFromLabel();
+  /**
+   * <code>string from_label = 13 [json_name = "fromLabel"];</code>
+   * @return The bytes for fromLabel.
+   */
+  com.google.protobuf.ByteString
+      getFromLabelBytes();
+
+  /**
+   * <code>string to_label = 14 [json_name = "toLabel"];</code>
+   * @return The toLabel.
+   */
+  java.lang.String getToLabel();
+  /**
+   * <code>string to_label = 14 [json_name = "toLabel"];</code>
+   * @return The bytes for toLabel.
+   */
+  com.google.protobuf.ByteString
+      getToLabelBytes();
+
+  /**
+   * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+   * @return The identityStatus.
+   */
+  java.lang.String getIdentityStatus();
+  /**
+   * <code>string identity_status = 15 [json_name = "identityStatus"];</code>
+   * @return The bytes for identityStatus.
+   */
+  com.google.protobuf.ByteString
+      getIdentityStatusBytes();
 }

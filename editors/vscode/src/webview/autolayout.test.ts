@@ -275,3 +275,54 @@ test("autoLayout keeps an unconnected port on the south after laying out connect
   assert.equal(out1.side, laid.ports.get("out1")!.side);
   assert.equal(in1.side, laid.ports.get("in1")!.side);
 });
+test("fault-tree auto layout runs without router WASM and places shared causes below effects", async () => {
+  const tree = rendering([
+    node("and", "AND effect", { kind: "AND" }),
+    node("or", "OR effect", { kind: "OR" }),
+    node("cause", "shared", { kind: "basic event" }),
+  ], [edge("cause", "and", { kind: "connection" }), edge("cause", "or", { kind: "connection" })], { kind: "fault-tree" });
+  const laid = await autoLayout(tree);
+  assert.ok(laid);
+  assert.equal(laid.nodes.size, 3);
+  const cause = boxOf(laid, "cause");
+  for (const id of ["and", "or"]) {
+    const effect = boxOf(laid, id);
+    assert.ok(cause.y > effect.y + effect.height);
+  }
+  const layout = layoutCanvas(tree, {}, laid);
+  assert.equal(layout.edges.length, 2);
+  assert.equal(layout.nodes.size, 3);
+  assert.ok(layout.edges.every(edge => edge.points.length >= 2 && edge.points.every(p => Number.isFinite(p.x) && Number.isFinite(p.y))));
+  for (const geometry of [layout, layoutCanvas(tree)]) {
+    for (const connection of geometry.edges) {
+      const source = geometry.nodes.get(connection.edge.from)!.box;
+      const target = geometry.nodes.get(connection.edge.to)!.box;
+      assert.deepEqual(connection.points[0], {x: source.x + source.width / 2, y: source.y});
+      assert.deepEqual(connection.points.at(-1), {x: target.x + target.width / 2, y: target.y + target.height});
+    }
+    assert.equal(geometry.nodes.size, 3, "shared cause must remain one semantic node");
+  }
+});
+
+test("exported fault-tree connection topology joins event outputs to gate input stems", async () => {
+  // Native Blue Dog system-failure export: retain kinds, IDs and shared causes;
+  // labels are deliberately irrelevant to the attachment contract.
+  const tree = rendering(
+    ["event", "OR", "OR", "AND", "event", "event"].map((kind, i) => node(`n${i}`, `event ${i}`, {kind})),
+    [[0,3],[1,3],[2,3],[4,1],[5,1],[4,2],[5,2]].map(([from,to]) => edge(`n${from}`, `n${to}`, {kind:"connection"})),
+    {kind:"fault-tree"},
+  );
+  const original = JSON.stringify(tree);
+  for (const layout of [layoutCanvas(tree), layoutCanvas(tree, {}, await autoLayout(tree))]) {
+    assert.equal(layout.nodes.size, 6);
+    assert.equal(layout.edges.length, 7);
+    for (const connection of layout.edges) {
+      const from = layout.nodes.get(connection.edge.from)!.box;
+      const to = layout.nodes.get(connection.edge.to)!.box;
+      assert.equal(connection.edge.kind, "connection");
+      assert.deepEqual(connection.points[0], {x:from.x+from.width/2,y:from.y});
+      assert.deepEqual(connection.points.at(-1), {x:to.x+to.width/2,y:to.y+to.height});
+    }
+  }
+  assert.equal(JSON.stringify(tree), original);
+});

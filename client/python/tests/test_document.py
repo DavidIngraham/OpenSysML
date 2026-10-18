@@ -381,7 +381,7 @@ def test_render_view_decodes_all_fields_and_optional_messages():
     edge.route.add(x=1, y=2)
     edge.style.line = "#222"
     edge.origin.file = "views.sysml"
-    response.rows.add(cells=["x"], origin=sysml_pb2.Span(file="views.sysml"))
+    response.rows.add(cells=["x"], origin=sysml_pb2.Span(file="views.sysml"), semantic_id="native-row", qualified_name="Demo::source", identity_status="mapped")
     response.notes.add(
         text="note", anchor="n0", edge_from="n0", edge_to="n1",
         x=1, y=2, width=3, height=4, has_size=True,
@@ -400,6 +400,7 @@ def test_render_view_decodes_all_fields_and_optional_messages():
     assert (rendered.edges[0].from_id, rendered.edges[0].to_id) == ("n1", "n0")
     assert rendered.edges[0].route[0].x == 1
     assert rendered.rows[0].cells == ("x",)
+    assert (rendered.rows[0].semantic_id, rendered.rows[0].qualified_name, rendered.rows[0].identity_status) == ("native-row", "Demo::source", "mapped")
     assert rendered.canvas.has_size
     assert rendered.notes[0].text == "note"
     assert rendered.notes[0].origin.file == "views.sysml"
@@ -417,6 +418,8 @@ def test_render_view_decodes_all_fields_and_optional_messages():
     )
     assert (sparse.edges[0].origin, sparse.edges[0].style) == (None, None)
     assert sparse.rows[0].origin is None
+    assert sparse.rows[0].semantic_id == ""
+    assert sparse.rows[0].identity_status == ""
     assert sparse.notes[0].origin is None
 
     empty = render_view_result(sysml_pb2.RenderViewResponse())
@@ -1101,3 +1104,21 @@ class TestDocumentsAgainstRealService:
                 conn.run_document_query("deadbeef", "Observatory::SubsystemTable")
             with pytest.raises(ModelNotFoundError):
                 conn.render_document("deadbeef", "Observatory::MassReport")
+
+
+def test_render_identity_and_notation_fields():
+    from opensysml.document import render_view_result
+    from opensysml.proto import sysml_pb2
+    response = sysml_pb2.RenderViewResponse(
+        nodes=[sysml_pb2.RenderNode(id="n0", identity_status="mapped", semantic_id="Demo__Thing", qualified_name="Demo::Thing", verdict="inconclusive")],
+        edges=[sysml_pb2.RenderEdge(semantic_id="Demo__link", qualified_name="Demo::link", from_label="source", to_label="target")],
+    )
+    result = render_view_result(response)
+    assert result.nodes[0].id == "n0"
+    assert result.nodes[0].identity_status == "mapped"
+    assert result.nodes[0].semantic_id == "Demo__Thing"
+    assert result.nodes[0].qualified_name == "Demo::Thing"
+    assert result.nodes[0].verdict == "inconclusive"
+    assert result.edges[0].semantic_id == "Demo__link"
+    assert result.edges[0].from_label == "source"
+    assert result.edges[0].to_label == "target"

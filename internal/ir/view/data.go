@@ -37,9 +37,14 @@ type Data struct {
 
 // NodeData is one node of a rendering, with the node it is nested in.
 type NodeData struct {
-	ID   string
-	Kind string
-	Name string
+	Synthetic bool
+	// SemanticID and QualifiedName are populated by a native export adapter.
+	IdentityStatus string
+	SemanticID     string
+	QualifiedName  string
+	ID             string
+	Kind           string
+	Name           string
 	// NameSynthesized marks a Name the model did not give: a name to key by, not one a picture shows.
 	NameSynthesized bool
 	Type            string
@@ -66,8 +71,11 @@ type NodeData struct {
 
 // EdgeData is one edge of a rendering, joining two node IDs.
 type EdgeData struct {
-	From string
-	To   string
+	IdentityStatus string
+	SemanticID     string
+	QualifiedName  string
+	From           string
+	To             string
 	// FromPort and ToPort are the ports the edge ends at, "" for the node itself.
 	FromPort string
 	ToPort   string
@@ -89,8 +97,11 @@ type EdgeData struct {
 // RowData is one row of a tabular rendering: its cells, one per column, and
 // where the element it reports was declared.
 type RowData struct {
-	Cells  []string
-	Origin Origin
+	SemanticID     string
+	QualifiedName  string
+	IdentityStatus string
+	Cells          []string
+	Origin         Origin
 }
 
 // Data is the rendering in machine-consumable form.
@@ -152,7 +163,7 @@ func appendNodeData(out []NodeData, node *Node, parent string, ports *portView) 
 		nodePorts = ports.of(node)
 	}
 	out = append(out, NodeData{
-		ID: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized, Type: node.Type, Detail: node.Detail,
+		Synthetic: node.Synthetic, ID: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized, Type: node.Type, Detail: node.Detail,
 		Text: node.Text, StandIn: node.StandIn, Ports: nodePorts, Parent: parent, Origin: node.Origin, Geometry: node.Geometry, Style: node.Style,
 		Verdict: node.Verdict,
 	})

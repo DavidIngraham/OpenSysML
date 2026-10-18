@@ -11539,9 +11539,11 @@ type RenderViewRequest struct {
 	// shows, as view.ShownOf reads them: "parameter-symbols", "port-symbols",
 	// "compartments", "edge-labels", "keywords", "multiplicities", "typings",
 	// "qualifiers", or "all".
-	Show          []string `protobuf:"bytes,4,rep,name=show,proto3" json:"show,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Show []string `protobuf:"bytes,4,rep,name=show,proto3" json:"show,omitempty"`
+	// Include native conversion identities; refuses a model conversion cannot represent.
+	IncludeSemanticIdentity bool `protobuf:"varint,5,opt,name=include_semantic_identity,json=includeSemanticIdentity,proto3" json:"include_semantic_identity,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RenderViewRequest) Reset() {
@@ -11600,6 +11602,13 @@ func (x *RenderViewRequest) GetShow() []string {
 		return x.Show
 	}
 	return nil
+}
+
+func (x *RenderViewRequest) GetIncludeSemanticIdentity() bool {
+	if x != nil {
+		return x.IncludeSemanticIdentity
+	}
+	return false
 }
 
 // RenderViewResponse carries all machine-readable fields of the rendering.
@@ -11747,8 +11756,13 @@ type RenderNode struct {
 	// Unset when no layout positions the node.
 	Geometry      *RenderGeometry `protobuf:"bytes,12,opt,name=geometry,proto3" json:"geometry,omitempty"`
 	Style         *RenderStyle    `protobuf:"bytes,13,opt,name=style,proto3" json:"style,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	SemanticId    string          `protobuf:"bytes,14,opt,name=semantic_id,json=semanticId,proto3" json:"semantic_id,omitempty"`
+	QualifiedName string          `protobuf:"bytes,15,opt,name=qualified_name,json=qualifiedName,proto3" json:"qualified_name,omitempty"`
+	Verdict       string          `protobuf:"bytes,16,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	// mapped, synthetic or unmapped when semantic identities were requested.
+	IdentityStatus string `protobuf:"bytes,17,opt,name=identity_status,json=identityStatus,proto3" json:"identity_status,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RenderNode) Reset() {
@@ -11872,6 +11886,34 @@ func (x *RenderNode) GetStyle() *RenderStyle {
 	return nil
 }
 
+func (x *RenderNode) GetSemanticId() string {
+	if x != nil {
+		return x.SemanticId
+	}
+	return ""
+}
+
+func (x *RenderNode) GetQualifiedName() string {
+	if x != nil {
+		return x.QualifiedName
+	}
+	return ""
+}
+
+func (x *RenderNode) GetVerdict() string {
+	if x != nil {
+		return x.Verdict
+	}
+	return ""
+}
+
+func (x *RenderNode) GetIdentityStatus() string {
+	if x != nil {
+		return x.IdentityStatus
+	}
+	return ""
+}
+
 // RenderPort is a feature drawn on a node's border.
 type RenderPort struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -11943,19 +11985,24 @@ func (x *RenderPort) GetDirection() string {
 
 // RenderEdge joins two rendered nodes and may connect their ports.
 type RenderEdge struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	To            string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
-	FromPort      string                 `protobuf:"bytes,3,opt,name=from_port,json=fromPort,proto3" json:"from_port,omitempty"`
-	ToPort        string                 `protobuf:"bytes,4,opt,name=to_port,json=toPort,proto3" json:"to_port,omitempty"`
-	Label         string                 `protobuf:"bytes,5,opt,name=label,proto3" json:"label,omitempty"`
-	Name          string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
-	Kind          string                 `protobuf:"bytes,7,opt,name=kind,proto3" json:"kind,omitempty"`
-	Origin        *Span                  `protobuf:"bytes,8,opt,name=origin,proto3" json:"origin,omitempty"`
-	Route         []*RenderPoint         `protobuf:"bytes,9,rep,name=route,proto3" json:"route,omitempty"`
-	Style         *RenderStyle           `protobuf:"bytes,10,opt,name=style,proto3" json:"style,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	From           string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To             string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	FromPort       string                 `protobuf:"bytes,3,opt,name=from_port,json=fromPort,proto3" json:"from_port,omitempty"`
+	ToPort         string                 `protobuf:"bytes,4,opt,name=to_port,json=toPort,proto3" json:"to_port,omitempty"`
+	Label          string                 `protobuf:"bytes,5,opt,name=label,proto3" json:"label,omitempty"`
+	Name           string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	Kind           string                 `protobuf:"bytes,7,opt,name=kind,proto3" json:"kind,omitempty"`
+	Origin         *Span                  `protobuf:"bytes,8,opt,name=origin,proto3" json:"origin,omitempty"`
+	Route          []*RenderPoint         `protobuf:"bytes,9,rep,name=route,proto3" json:"route,omitempty"`
+	Style          *RenderStyle           `protobuf:"bytes,10,opt,name=style,proto3" json:"style,omitempty"`
+	SemanticId     string                 `protobuf:"bytes,11,opt,name=semantic_id,json=semanticId,proto3" json:"semantic_id,omitempty"`
+	QualifiedName  string                 `protobuf:"bytes,12,opt,name=qualified_name,json=qualifiedName,proto3" json:"qualified_name,omitempty"`
+	FromLabel      string                 `protobuf:"bytes,13,opt,name=from_label,json=fromLabel,proto3" json:"from_label,omitempty"`
+	ToLabel        string                 `protobuf:"bytes,14,opt,name=to_label,json=toLabel,proto3" json:"to_label,omitempty"`
+	IdentityStatus string                 `protobuf:"bytes,15,opt,name=identity_status,json=identityStatus,proto3" json:"identity_status,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RenderEdge) Reset() {
@@ -12056,6 +12103,41 @@ func (x *RenderEdge) GetStyle() *RenderStyle {
 		return x.Style
 	}
 	return nil
+}
+
+func (x *RenderEdge) GetSemanticId() string {
+	if x != nil {
+		return x.SemanticId
+	}
+	return ""
+}
+
+func (x *RenderEdge) GetQualifiedName() string {
+	if x != nil {
+		return x.QualifiedName
+	}
+	return ""
+}
+
+func (x *RenderEdge) GetFromLabel() string {
+	if x != nil {
+		return x.FromLabel
+	}
+	return ""
+}
+
+func (x *RenderEdge) GetToLabel() string {
+	if x != nil {
+		return x.ToLabel
+	}
+	return ""
+}
+
+func (x *RenderEdge) GetIdentityStatus() string {
+	if x != nil {
+		return x.IdentityStatus
+	}
+	return ""
 }
 
 // RenderGeometry locates a node on the rendering's canvas.
@@ -12360,11 +12442,14 @@ func (x *RenderPoint) GetY() float64 {
 
 // RenderRow is one row of a tabular rendering.
 type RenderRow struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cells         []string               `protobuf:"bytes,1,rep,name=cells,proto3" json:"cells,omitempty"`
-	Origin        *Span                  `protobuf:"bytes,2,opt,name=origin,proto3" json:"origin,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Cells          []string               `protobuf:"bytes,1,rep,name=cells,proto3" json:"cells,omitempty"`
+	Origin         *Span                  `protobuf:"bytes,2,opt,name=origin,proto3" json:"origin,omitempty"`
+	SemanticId     string                 `protobuf:"bytes,3,opt,name=semantic_id,json=semanticId,proto3" json:"semantic_id,omitempty"`
+	QualifiedName  string                 `protobuf:"bytes,4,opt,name=qualified_name,json=qualifiedName,proto3" json:"qualified_name,omitempty"`
+	IdentityStatus string                 `protobuf:"bytes,5,opt,name=identity_status,json=identityStatus,proto3" json:"identity_status,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RenderRow) Reset() {
@@ -12409,6 +12494,27 @@ func (x *RenderRow) GetOrigin() *Span {
 		return x.Origin
 	}
 	return nil
+}
+
+func (x *RenderRow) GetSemanticId() string {
+	if x != nil {
+		return x.SemanticId
+	}
+	return ""
+}
+
+func (x *RenderRow) GetQualifiedName() string {
+	if x != nil {
+		return x.QualifiedName
+	}
+	return ""
+}
+
+func (x *RenderRow) GetIdentityStatus() string {
+	if x != nil {
+		return x.IdentityStatus
+	}
+	return ""
 }
 
 // RenderNote is a note box drawn on the rendering's canvas.
@@ -13547,13 +13653,14 @@ const file_sysml_proto_rawDesc = "" +
 	"\x04form\x18\x03 \x01(\tR\x04form\"H\n" +
 	"\x16RenderDocumentResponse\x12\x1a\n" +
 	"\bmarkdown\x18\x01 \x01(\tR\bmarkdown\x12\x12\n" +
-	"\x04html\x18\x02 \x01(\tR\x04html\"p\n" +
+	"\x04html\x18\x02 \x01(\tR\x04html\"\xac\x01\n" +
 	"\x11RenderViewRequest\x12\x1d\n" +
 	"\n" +
 	"model_hash\x18\x01 \x01(\tR\tmodelHash\x12\x12\n" +
 	"\x04view\x18\x02 \x01(\tR\x04view\x12\x14\n" +
 	"\x05ports\x18\x03 \x01(\tR\x05ports\x12\x12\n" +
-	"\x04show\x18\x04 \x03(\tR\x04show\"\xec\x02\n" +
+	"\x04show\x18\x04 \x03(\tR\x04show\x12:\n" +
+	"\x19include_semantic_identity\x18\x05 \x01(\bR\x17includeSemanticIdentity\"\xec\x02\n" +
 	"\x12RenderViewResponse\x12\x12\n" +
 	"\x04view\x18\x01 \x01(\tR\x04view\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x16\n" +
@@ -13566,7 +13673,7 @@ const file_sysml_proto_rawDesc = "" +
 	"\x05notes\x18\t \x03(\v2\x11.sysml.RenderNoteR\x05notes\x12\x18\n" +
 	"\anotices\x18\n" +
 	" \x03(\tR\anotices\x12\x14\n" +
-	"\x05shown\x18\v \x03(\tR\x05shown\"\x8d\x03\n" +
+	"\x05shown\x18\v \x03(\tR\x05shown\"\x98\x04\n" +
 	"\n" +
 	"RenderNode\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -13582,13 +13689,18 @@ const file_sysml_proto_rawDesc = "" +
 	" \x03(\v2\x11.sysml.RenderPortR\x05ports\x12#\n" +
 	"\x06origin\x18\v \x01(\v2\v.sysml.SpanR\x06origin\x121\n" +
 	"\bgeometry\x18\f \x01(\v2\x15.sysml.RenderGeometryR\bgeometry\x12(\n" +
-	"\x05style\x18\r \x01(\v2\x12.sysml.RenderStyleR\x05style\"b\n" +
+	"\x05style\x18\r \x01(\v2\x12.sysml.RenderStyleR\x05style\x12\x1f\n" +
+	"\vsemantic_id\x18\x0e \x01(\tR\n" +
+	"semanticId\x12%\n" +
+	"\x0equalified_name\x18\x0f \x01(\tR\rqualifiedName\x12\x18\n" +
+	"\averdict\x18\x10 \x01(\tR\averdict\x12'\n" +
+	"\x0fidentity_status\x18\x11 \x01(\tR\x0eidentityStatus\"b\n" +
 	"\n" +
 	"RenderPort\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1c\n" +
-	"\tdirection\x18\x04 \x01(\tR\tdirection\"\x9d\x02\n" +
+	"\tdirection\x18\x04 \x01(\tR\tdirection\"\xc8\x03\n" +
 	"\n" +
 	"RenderEdge\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
@@ -13601,7 +13713,14 @@ const file_sysml_proto_rawDesc = "" +
 	"\x06origin\x18\b \x01(\v2\v.sysml.SpanR\x06origin\x12(\n" +
 	"\x05route\x18\t \x03(\v2\x12.sysml.RenderPointR\x05route\x12(\n" +
 	"\x05style\x18\n" +
-	" \x01(\v2\x12.sysml.RenderStyleR\x05style\"\x93\x01\n" +
+	" \x01(\v2\x12.sysml.RenderStyleR\x05style\x12\x1f\n" +
+	"\vsemantic_id\x18\v \x01(\tR\n" +
+	"semanticId\x12%\n" +
+	"\x0equalified_name\x18\f \x01(\tR\rqualifiedName\x12\x1d\n" +
+	"\n" +
+	"from_label\x18\r \x01(\tR\tfromLabel\x12\x19\n" +
+	"\bto_label\x18\x0e \x01(\tR\atoLabel\x12'\n" +
+	"\x0fidentity_status\x18\x0f \x01(\tR\x0eidentityStatus\"\x93\x01\n" +
 	"\x0eRenderGeometry\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x01R\x01y\x12\x14\n" +
@@ -13624,10 +13743,14 @@ const file_sysml_proto_rawDesc = "" +
 	"\x06italic\x18\a \x01(\bR\x06italic\")\n" +
 	"\vRenderPoint\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x01R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x01R\x01y\"F\n" +
+	"\x01y\x18\x02 \x01(\x01R\x01y\"\xb7\x01\n" +
 	"\tRenderRow\x12\x14\n" +
 	"\x05cells\x18\x01 \x03(\tR\x05cells\x12#\n" +
-	"\x06origin\x18\x02 \x01(\v2\v.sysml.SpanR\x06origin\"\xf8\x01\n" +
+	"\x06origin\x18\x02 \x01(\v2\v.sysml.SpanR\x06origin\x12\x1f\n" +
+	"\vsemantic_id\x18\x03 \x01(\tR\n" +
+	"semanticId\x12%\n" +
+	"\x0equalified_name\x18\x04 \x01(\tR\rqualifiedName\x12'\n" +
+	"\x0fidentity_status\x18\x05 \x01(\tR\x0eidentityStatus\"\xf8\x01\n" +
 	"\n" +
 	"RenderNote\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x16\n" +

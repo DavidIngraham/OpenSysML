@@ -186,4 +186,60 @@ public interface RenderNodeOrBuilder extends
    * <code>.sysml.RenderStyle style = 13 [json_name = "style"];</code>
    */
   org.openmbee.opensysml.proto.RenderStyleOrBuilder getStyleOrBuilder();
+
+  /**
+   * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+   * @return The semanticId.
+   */
+  java.lang.String getSemanticId();
+  /**
+   * <code>string semantic_id = 14 [json_name = "semanticId"];</code>
+   * @return The bytes for semanticId.
+   */
+  com.google.protobuf.ByteString
+      getSemanticIdBytes();
+
+  /**
+   * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+   * @return The qualifiedName.
+   */
+  java.lang.String getQualifiedName();
+  /**
+   * <code>string qualified_name = 15 [json_name = "qualifiedName"];</code>
+   * @return The bytes for qualifiedName.
+   */
+  com.google.protobuf.ByteString
+      getQualifiedNameBytes();
+
+  /**
+   * <code>string verdict = 16 [json_name = "verdict"];</code>
+   * @return The verdict.
+   */
+  java.lang.String getVerdict();
+  /**
+   * <code>string verdict = 16 [json_name = "verdict"];</code>
+   * @return The bytes for verdict.
+   */
+  com.google.protobuf.ByteString
+      getVerdictBytes();
+
+  /**
+   * <pre>
+   * mapped, synthetic or unmapped when semantic identities were requested.
+   * </pre>
+   *
+   * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+   * @return The identityStatus.
+   */
+  java.lang.String getIdentityStatus();
+  /**
+   * <pre>
+   * mapped, synthetic or unmapped when semantic identities were requested.
+   * </pre>
+   *
+   * <code>string identity_status = 17 [json_name = "identityStatus"];</code>
+   * @return The bytes for identityStatus.
+   */
+  com.google.protobuf.ByteString
+      getIdentityStatusBytes();
 }

@@ -321,3 +321,25 @@ test("drawCanvas preserves the portless SVG output", () => {
     "83e9891b39565506610ab53d65fc7a583f5ab415504eae3b857f59235745b3a2",
   );
 });
+test("fault-tree symbols use semantic kinds, preserve labels and shared causes without router WASM", () => {
+  const kinds = ["AND", "OR", "basic event", "house event", "undeveloped event", "event"];
+  const tree: RenderResult = { ...result, kind: "fault-tree", nodes: kinds.map((kind, i) => node(String(i), "OR", { kind, detail: i === 0 ? "partial view" : "" })), edges: [
+    { from: "2", to: "0", kind: "causation", label: "" },
+    { from: "2", to: "1", kind: "causation", label: "" },
+  ] };
+  const layout = layoutCanvas(tree);
+  const svg = drawCanvas(layout);
+  assert.equal(layout.placeable, true);
+  assert.equal(svg.querySelectorAll('g[data-opensysml-id="2"]').length, 1);
+  assert.equal(svg.querySelectorAll(".opensysml-edge").length, 2);
+  for (const [i, shape] of ["fault-and", "fault-or", "fault-basic", "fault-house", "fault-undeveloped"].entries()) {
+    assert.equal(layout.nodes.get(String(i))?.shape, shape);
+    assert.ok(svg.querySelector(`g[data-opensysml-id="${i}"] .${shape}`));
+    assert.ok(svg.querySelector(`g[data-opensysml-id="${i}"] text`)?.textContent?.includes("OR"));
+  }
+  // A label named OR remains an ordinary event: labels never classify gates.
+  assert.equal(layout.nodes.get("5")?.shape, "box");
+  assert.ok(svg.querySelector('g[data-opensysml-id="0"] text')?.textContent?.includes("partial view"));
+  assert.notEqual(svg.querySelector('.fault-and path')?.getAttribute('d'), svg.querySelector('.fault-or path')?.getAttribute('d'));
+  assert.ok(svg.querySelector('.fault-basic circle'));
+});

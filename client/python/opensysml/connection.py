@@ -1848,7 +1848,7 @@ class Connection:
             response = self._stub.RenderDocument(request)
         return response.html if form == "html" else response.markdown
 
-    def render_view(self, model_hash, view_name, ports="minimal", show=None):
+    def render_view(self, model_hash, view_name, ports="minimal", show=None, include_semantic_identity=False):
         """Render a named view with minimal or full ports and the optional notation elements named."""
         if ports not in ("minimal", "full"):
             raise ValueError("ports must be 'minimal' or 'full'")
@@ -1858,6 +1858,7 @@ class Connection:
             view=view_name,
             ports="" if ports == "minimal" else ports,
             show=list(show or ()),
+            include_semantic_identity=include_semantic_identity,
         )
         with translate_rpc_errors(
             not_found=lambda message, code: ViewNotFoundError(
