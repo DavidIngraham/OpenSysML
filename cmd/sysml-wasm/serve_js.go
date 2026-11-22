@@ -13,7 +13,7 @@ import (
 
 func serve(server *combined.Server, useStdio bool) int {
 	// Keep garbage collection ahead of the browser's fixed 4 GiB linear-memory ceiling.
-	debug.SetMemoryLimit(2 << 30)
+	debug.SetMemoryLimit(2560 << 20)
 	debug.SetGCPercent(50)
 	if useStdio {
 		return serveStdio(server)
