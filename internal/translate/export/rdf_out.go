@@ -616,7 +616,9 @@ func (e *encoder) encodeDocumentObserved(root *ast.RootNamespace, observe func(A
 	if e.idErr != nil {
 		return e.idErr
 	}
+	collectLargeExportPhase(e.graph)
 	e.mintedComposites()
+	collectLargeExportPhase(e.graph)
 	e.libraryNames()
 	e.sourceText()
 	e.notes()

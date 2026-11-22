@@ -395,3 +395,49 @@ func TestReorderObjectsLeavesASharedBaseAlone(t *testing.T) {
 		t.Error("the overlay still shares the reordered subject's index with its base")
 	}
 }
+
+func TestSubjectIndexReleasesRedundantSetAndKeepsMembership(t *testing.T) {
+	subject := IRI(Element + "P")
+	first := Triple{Subject: subject, Predicate: SysMLTerm("ownedMember"), Object: IRI(Element + "A")}
+	second := Triple{Subject: subject, Predicate: SysMLTerm("ownedMember"), Object: IRI(Element + "B")}
+	graph := NewGraph()
+	graph.AddTriple(first)
+	if len(graph.seen) != 1 {
+		t.Fatal("fixture must start with a duplicate set")
+	}
+	if got := graph.Objects(subject, first.Predicate.Value); !slices.Equal(got, []Term{first.Object}) {
+		t.Fatalf("objects: %v", got)
+	}
+	if graph.seen != nil {
+		t.Fatal("the subject index must replace the redundant whole-triple set")
+	}
+	graph.AddTriple(first)
+	graph.AddTriple(second)
+	graph.AddTriple(second)
+	if !slices.Equal(graph.Triples(), []Triple{first, second}) || !graph.Has(second) {
+		t.Fatal("index membership changed deduplication or insertion order")
+	}
+}
+
+func TestCollectionAnnotationKeepsExistingValuesWithoutSubjectIndex(t *testing.T) {
+	subject := IRI(Element + "P")
+	predicate := SysMLTerm("ownedMember")
+	old := String("existing annotation")
+	graph := NewGraphOf([]Triple{
+		{Subject: subject, Predicate: predicate, Object: IRI(Element + "A")},
+		{Subject: subject, Predicate: predicate, Object: IRI(Element + "B")},
+		{Subject: subject, Predicate: AnnotationJSONTerm("ownedMember"), Object: old},
+	}, nil)
+	if err := AnnotateCollections(graph); err != nil {
+		t.Fatal(err)
+	}
+	if graph.index != nil {
+		t.Fatal("annotation must not materialize a second whole-graph lookup index")
+	}
+	if graph.Len() != 3 {
+		t.Fatalf("existing collection annotation was replaced or repeated: %v", graph.Triples())
+	}
+	if got, ok := graph.Object(subject, AnnotationJSON+"ownedMember"); !ok || got != old {
+		t.Fatalf("existing annotation changed: %v", got)
+	}
+}
