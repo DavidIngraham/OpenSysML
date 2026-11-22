@@ -108,16 +108,22 @@ func ModelToAPIJSONDeclarationsWithOptions(documents []ModelDocument, options AP
 	if res == nil {
 		res, model = analyzeModel(documents)
 	}
-	_, encoders, err := modelEncodersOver(documents, IDQualifiedName, res, model)
-	if err != nil {
-		return nil, APIJSONProjectionCounts{}, err
-	}
-	graph, err := encodeModelDocumentsObserved(context.Background(), documents, encoders, addLinkedLibraryStubs, options.Observe)
+	graph, err := declarationElementGraph(documents, res, model, options.Observe)
 	if err != nil {
 		return nil, APIJSONProjectionCounts{}, err
 	}
 	observeAPIJSONExport(options.Observe, "", "merged", graph)
+	collectLargeExportPhase(graph)
 	content, counts, err := WriteAPIJSONDeclarations(graph)
 	observeAPIJSONExport(options.Observe, "", "json", nil)
 	return content, counts, err
+}
+
+// declarationElementGraph returns without retaining per-document encoders beside the merged graph.
+func declarationElementGraph(documents []ModelDocument, res *resolve.Resolver, model *semantics.Model, observe func(APIJSONExportStage)) (*rdf.Graph, error) {
+	_, encoders, err := modelEncodersOver(documents, IDQualifiedName, res, model)
+	if err != nil {
+		return nil, err
+	}
+	return encodeModelDocumentsObserved(context.Background(), documents, encoders, addLinkedLibraryStubs, observe)
 }
