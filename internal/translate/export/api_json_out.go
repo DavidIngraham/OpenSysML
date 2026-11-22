@@ -122,6 +122,8 @@ func apiJSONEachElement(graph *rdf.Graph, options APIJSONOptions, visit func(api
 	return apiJSONEachSelectedElement(graph, options, nil, visit)
 }
 
+const apiJSONDeclarationMemoWindow = 64
+
 func apiJSONEachSelectedElement(graph *rdf.Graph, options APIJSONOptions, selectSubject func(*rdf.Graph, rdf.Term) bool, visit func(apiJSONObject) error) error {
 	wrapped, err := withRootNamespace(graph)
 	if err != nil {
@@ -160,6 +162,7 @@ func apiJSONEachSelectedElement(graph *rdf.Graph, options APIJSONOptions, select
 			return err
 		}
 	}
+	written := 0
 	for _, subject := range subjects {
 		// The element form holds the model's own elements only; a library element
 		// stays a bare reference, as an ownerless element there is a root (the OMG API JSON shape).
@@ -173,6 +176,12 @@ func apiJSONEachSelectedElement(graph *rdf.Graph, options APIJSONOptions, select
 		if selectSubject != nil && !selectSubject(settled, subject) {
 			continue
 		}
+		// A declaration projection needs the full graph but only a bounded window of derived-value caches.
+		if selectSubject != nil && written > 0 && written%apiJSONDeclarationMemoWindow == 0 {
+			writer.evaluation.resetMemo()
+			writer.comparisonCache = &apiJSONTermCache{}
+		}
+		written++
 		element, err := writer.element(subject)
 		if err != nil {
 			return err

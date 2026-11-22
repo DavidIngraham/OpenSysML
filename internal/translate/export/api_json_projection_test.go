@@ -6,6 +6,7 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/parser"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -306,5 +307,44 @@ func TestDeclarationsProjectionPreservesReferencedDocumentIdentities(t *testing.
 	}
 	if !reflect.DeepEqual(a, b) || counts != wantCounts {
 		t.Fatalf("referenced identities or coverage changed: counts %+v want %+v; got %s want %s", counts, wantCounts, got, want)
+	}
+}
+
+func TestDeclarationProjectionCacheWindowsPreserveEveryObject(t *testing.T) {
+	var text strings.Builder
+	text.WriteString("package Large { part def Unit { attribute mass : ScalarValues::Real = 2+3; } requirement safety; ")
+	for i := 0; i < 140; i++ {
+		fmt.Fprintf(&text, "part p%d : Unit { satisfy safety; } ", i)
+	}
+	text.WriteString("}")
+	file := source.New("large.sysml", []byte(text.String()))
+	root := parser.New(file).ParseFile()
+	graph, err := ModelElementGraphWith([]ModelDocument{{File: file, Root: root}}, IDQualifiedName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	full, err := WriteAPIJSON(graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+	projected, counts, err := WriteAPIJSONDeclarations(graph)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var all, got []map[string]any
+	if err = json.Unmarshal(full, &all); err != nil {
+		t.Fatal(err)
+	}
+	if err = json.Unmarshal(projected, &got); err != nil {
+		t.Fatal(err)
+	}
+	var want []map[string]any
+	for _, element := range all {
+		if _, ok := element["sysx:sourceLine"]; ok {
+			want = append(want, element)
+		}
+	}
+	if len(got) < 140 || counts.ElementCount != len(want) || !reflect.DeepEqual(got, want) {
+		t.Fatalf("cache windows changed declaration objects: got %d want %d", len(got), len(want))
 	}
 }
