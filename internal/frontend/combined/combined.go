@@ -79,7 +79,7 @@ type Server struct {
 // New builds both frontends over one frozen standard-library snapshot.
 func New(version string) (*Server, error) {
 	index, src := libs.FrozenLibrary()
-	execution, err := engine.NewWithLibrary(index, src, 0)
+	execution, err := engine.NewWithLibraryAndExtensions(index, src, 0, modelExtensions())
 	if err != nil {
 		return nil, err
 	}

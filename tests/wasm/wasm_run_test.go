@@ -196,6 +196,7 @@ func arm(cmd *exec.Cmd, timeout time.Duration) *watch {
 // hangError is a run the deadline ended: a hang is a broken build, not a slow one.
 // Its message is the whole report.
 type hangError struct {
+	pid    int
 	report string
 }
 
@@ -209,7 +210,7 @@ func (w *watch) hang(output string) error {
 	if w.ended.IsZero() {
 		return nil
 	}
-	return &hangError{report: fmt.Sprintf("no answer within %s — a build that hangs here is a failure\n"+
+	return &hangError{pid: w.cmd.Process.Pid, report: fmt.Sprintf("no answer within %s — a build that hangs here is a failure\n"+
 		"elapsed: %s\ncommand: %s\nprocess at the deadline:\n%soutput so far:\n%s",
 		w.timeout, w.ended.Sub(w.started).Round(time.Millisecond), strings.Join(w.cmd.Args, " "), w.state, output)}
 }

@@ -301,3 +301,27 @@ $ go run -C tools ./cmd/conformance -transport grpc -protocols grpc
 
 The JSON-specific edge cases above (`int64` as a string, the error shape) are exactly what that
 parameterization covers, in the encoding a browser client will use.
+
+
+## Combined native model export profile
+
+The composed browser frontend supplies native API export and canonical rendering
+identity through the execution engine's model-extension interface. The standalone
+execution engine keeps its converter-free boundary. Both use the same immutable
+parsed documents, resolver and semantic side tables; export does not reinterpret
+model source. The composed frontend retains its declaration/full/index projections
+and exact model-release and memory-stat contracts.
+
+Default `RenderView` responses retain the protobuf JSON shape. Browser metadata
+(state behaviors, parameter roles, sequence orders, matrix identities and native
+notation) is selected by `includeSemanticIdentity` or the independent
+`includeRenderingMetadata` flag. Identity can remain off while notation metadata is
+requested. The native and WASM combined frontends have the same profile.
+
+Under Go 1.27.4 the unextended upstream engine at `318c3e02b` measured 10,804,956
+bytes gzip -9; the repaired fork engine measured 10,858,814, below its unchanged
+11,300,000-byte cap. The upstream combined module measured 11,445,322; the full
+native-export profile measured about 12,454,000. Its 12,600,000-byte cap records the
+required API/export layer with about 1.2% headroom. Namespace text in a fault-tree
+gate's embedded SVG icon is model notation; the run-writer exclusion checks the
+actual SVG writer symbol against the full CLI as a positive control.

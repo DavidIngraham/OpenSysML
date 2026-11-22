@@ -19,7 +19,6 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/exec/objref"
 	"github.com/Open-MBEE/OpenSysML/internal/exec/runtime"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/jsonrpc"
-	"github.com/Open-MBEE/OpenSysML/internal/frontend/renderidentity"
 	fsyntax "github.com/Open-MBEE/OpenSysML/internal/frontend/syntax"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/lower"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
@@ -104,7 +103,7 @@ type cachedModel struct {
 	// identities names a metaobject's element by qualified identity, as the
 	// service does for a named element.
 	identities engineIdentities
-	renderIDs  *renderidentity.Inventory
+	renderIDs  RenderingIdentities
 }
 
 // elementIdentities is the id vocabulary a metaobject's element crosses in: its
@@ -209,9 +208,10 @@ type Engine struct {
 	libSrc   libs.Source
 	budgets  runtime.Budgets
 	// models stores parsed models keyed by content hash, oldest at the back.
-	models    *list.List
-	byHash    map[string]*list.Element
-	maxModels int
+	models     *list.List
+	byHash     map[string]*list.Element
+	maxModels  int
+	extensions ModelExtensions
 }
 
 // New builds an engine over the frozen standard library snapshot, under the
@@ -224,17 +224,23 @@ func New() (*Engine, error) {
 // NewWithLibrary builds an engine over a shared standard library snapshot.
 // A nonpositive maxModels disables automatic eviction.
 func NewWithLibrary(index *symbols.Index, src libs.Source, maxModels int) (*Engine, error) {
+	return NewWithLibraryAndExtensions(index, src, maxModels, ModelExtensions{})
+}
+
+// NewWithLibraryAndExtensions composes conversion contracts over the thin execution engine.
+func NewWithLibraryAndExtensions(index *symbols.Index, src libs.Source, maxModels int, extensions ModelExtensions) (*Engine, error) {
 	budgets, err := runtime.BudgetsFromEnv()
 	if err != nil {
 		return nil, err
 	}
 	return &Engine{
-		libIndex:  index,
-		libSrc:    src,
-		budgets:   budgets,
-		models:    list.New(),
-		byHash:    make(map[string]*list.Element),
-		maxModels: maxModels,
+		libIndex:   index,
+		libSrc:     src,
+		budgets:    budgets,
+		models:     list.New(),
+		byHash:     make(map[string]*list.Element),
+		maxModels:  maxModels,
+		extensions: extensions,
 	}, nil
 }
 
@@ -384,21 +390,21 @@ func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
 	}
 	data := rendering.DataWith(options)
 	if req.IncludeSemanticIdentity {
+		if e.extensions.RenderingIdentity == nil {
+			return nil, statusError(codeUnimplemented, "semantic rendering identities require the combined frontend")
+		}
 		if cached.renderIDs == nil {
-			var documents []renderidentity.Document
-			for _, doc := range cached.Documents {
-				documents = append(documents, renderidentity.Document{File: doc.Source, Root: doc.Root})
-			}
-			inventory, err := renderidentity.NewInventory(documents, cached.resolver, cached.typedModel())
+			inventory, err := e.extensions.RenderingIdentity(cached.extensionContext())
 			if err != nil {
 				return nil, statusError(codeInvalidArgument, err.Error())
 			}
 			cached.renderIDs = inventory
 		}
-		if err := renderidentity.BindInventory(&data, cached.renderIDs, cached.Index); err != nil {
+		if err := cached.renderIDs.Bind(&data, cached.Index); err != nil {
 			return nil, statusError(codeInvalidArgument, err.Error())
 		}
 	}
+
 	text := ""
 	if form != "" {
 		if options.NeedsSites(form) {
@@ -415,7 +421,7 @@ func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
 		}
 		text = view.Artifact(written)
 	}
-	return marshalRenderView(cached, data, text)
+	return marshalRenderViewExtended(cached, data, text, e.extensions.RenderingMetadata && (req.IncludeSemanticIdentity || req.IncludeRenderingMetadata))
 }
 
 // renderOrigins resolves the declaration spans a rendering refers to, in the
@@ -448,6 +454,10 @@ func (o *renderOrigins) span(origin view.Origin) *JSpan {
 // marshalRenderView writes a rendering as protojson writes the service's
 // RenderViewResponse for the same view.Data.
 func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte, error) {
+	return marshalRenderViewExtended(model, data, text, false)
+}
+
+func marshalRenderViewExtended(model *cachedModel, data view.Data, text string, extended bool) ([]byte, error) {
 	origins := &renderOrigins{model: model, sources: make(map[string]*source.SourceFile)}
 	out := &JRenderViewResponse{
 		Text:             text,
@@ -475,11 +485,14 @@ func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte,
 			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn,
 			Parent: node.Parent, Compartment: node.Compartment, Origin: origins.span(node.Origin), Style: jRenderStyle(node.Style),
 			Inherited: node.Inherited, Arrow: node.Arrow,
-			IdentityStatus: node.IdentityStatus, SemanticID: node.SemanticID, QualifiedName: node.QualifiedName, Verdict: node.Verdict, State: jRenderState(node.State),
+			IdentityStatus: node.IdentityStatus, SemanticID: node.SemanticID, QualifiedName: node.QualifiedName, Verdict: node.Verdict,
+		}
+		if extended {
+			item.State = jRenderState(node.State)
 		}
 		for _, port := range node.Ports {
 			item.Ports = append(item.Ports, JRenderPort{
-				ID: port.ID, Name: port.Name, Type: port.Type, Direction: port.Direction.String(), Inherited: port.Inherited, Parameter: port.Parameter, IdentityStatus: port.IdentityStatus, SemanticID: port.SemanticID, QualifiedName: port.QualifiedName,
+				ID: port.ID, Name: port.Name, Type: port.Type, Direction: port.Direction.String(), Inherited: port.Inherited, Parameter: extended && port.Parameter, IdentityStatus: port.IdentityStatus, SemanticID: port.SemanticID, QualifiedName: port.QualifiedName,
 			})
 		}
 		if node.Geometry != nil {
@@ -531,6 +544,49 @@ func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte,
 			})
 		}
 		out.RelationshipCells = append(out.RelationshipCells, item)
+	}
+	if !extended {
+		out.SequenceOrders = nil
+		out.SequenceOrdering = ""
+		out.ColumnElements = nil
+		out.RelationshipCells = nil
+		for i := range out.Nodes {
+			n := &out.Nodes[i]
+			n.State = nil
+			n.IdentityStatus = ""
+			n.SemanticID = ""
+			n.QualifiedName = ""
+			n.Verdict = ""
+			n.Fill = ""
+			n.Border = ""
+			n.X = nil
+			n.Y = nil
+			n.Width = nil
+			n.Height = nil
+			n.Collapsed = false
+			for j := range n.Ports {
+				p := &n.Ports[j]
+				p.Parameter = false
+				p.SemanticID = ""
+				p.QualifiedName = ""
+				p.IdentityStatus = ""
+			}
+		}
+		for i := range out.Edges {
+			e := &out.Edges[i]
+			e.Notation = nil
+			e.IdentityStatus = ""
+			e.SemanticID = ""
+			e.QualifiedName = ""
+			e.FromLabel = ""
+			e.ToLabel = ""
+		}
+		for i := range out.Rows {
+			r := &out.Rows[i]
+			r.SemanticID = ""
+			r.QualifiedName = ""
+			r.IdentityStatus = ""
+		}
 	}
 	return marshal(out)
 }
