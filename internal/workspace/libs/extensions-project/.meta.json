@@ -16,6 +16,14 @@
       "algorithm": "SHA256",
       "value": "a48490f0dfd88c40285ae79fcc38500ba398dcbcf49dc4a208fcfde8a0069662"
     },
+    "libraries/FailureAnalysis.sysml": {
+      "algorithm": "SHA256",
+      "value": "6ee4411d532e972531cc2ae2c98dbac736b5673ab47a7cb8d50d685b9ca91f1f"
+    },
+    "libraries/FailureAnalysisViews.sysml": {
+      "algorithm": "SHA256",
+      "value": "72f979db892dae9a72a638d901c7bf8ce23df8b356eb61e75316707cb090bd78"
+    },
     "libraries/IdentityMetadata.sysml": {
       "algorithm": "SHA256",
       "value": "3463931816369ca9bc1f0bf8bc96eb2bece9e6ced8f8b3ff48a4fc964a9a2aab"
@@ -42,7 +50,7 @@
     },
     "libraries/OpenSysMLRenderings.sysml": {
       "algorithm": "SHA256",
-      "value": "1dc65b8af7d997047557b3297b8ac1b7e095ef992084e108f35e220a67518825"
+      "value": "72a85978361704f49ce621da356d1bfb909d0c09ec01c934e08d164e33dc1d19"
     },
     "libraries/QVTS.sysml": {
       "algorithm": "SHA256",
@@ -77,11 +85,13 @@
       "value": "9e00f049209584092dc8bcb398b736c08e6a39b1db667a8a744de3df72a543bf"
     }
   },
-  "created": "2026-11-19T03:46:49Z",
+  "created": "2026-11-22T16:15:55Z",
   "index": {
     "AnalysisRecords": "libraries/AnalysisRecords.sysml",
     "DiagramLayout": "libraries/DiagramLayout.sysml",
     "DocumentQueries": "libraries/DocumentQueries.sysml",
+    "FailureAnalysis": "libraries/FailureAnalysis.sysml",
+    "FailureAnalysisViews": "libraries/FailureAnalysisViews.sysml",
     "IdentityMetadata": "libraries/IdentityMetadata.sysml",
     "MOSA": "libraries/MOSA.sysml",
     "MigrationMetadata": "libraries/MigrationMetadata.sysml",

@@ -51,8 +51,9 @@ func (r *Renderer) hasFailureType(sym *symbols.Symbol, name string) bool {
 }
 
 func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symbol, out *Rendering) error {
-	w := &featureWalk{r: r, view: view, ids: &nodeIDs{}, nodes: map[*symbols.Symbol]*Node{},
-		pins: map[*Node]map[*symbols.Symbol]string{}, parent: map[*Node]*Node{}, out: out}
+	ids := &nodeIDs{}
+	nodes := map[*symbols.Symbol]*Node{}
+	var connectors []*symbols.Symbol
 	seen := map[*symbols.Symbol]bool{}
 	var collect func(*symbols.Symbol) error
 	collect = func(sym *symbols.Symbol) error {
@@ -87,17 +88,16 @@ func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symb
 		_, usage := sym.Decl.(*ast.Usage)
 		switch {
 		case usage && r.hasFailureType(sym, "CausationConnections::Causation"):
-			w.connectors = append(w.connectors, sym)
+			connectors = append(connectors, sym)
 		case usage && r.hasFailureType(sym, "CausationConnections::Multicausation"):
 			return fmt.Errorf("%w: %s requires binary Causation connections", ErrInvalidFaultTree, r.notationName(sym))
 		case kind != "" && usage:
 			if kind == "unsupported gate" {
 				return fmt.Errorf("%w: %s has no supported AND/OR gate type", ErrInvalidFaultTree, r.notationName(sym))
 			}
-			node := &Node{ID: w.ids.take(), Kind: kind, Name: r.notationName(sym), Type: declType(sym),
+			node := &Node{ID: ids.take(), Kind: kind, Name: r.notationName(sym), Type: declType(sym),
 				Typings: r.declTypings(sym), Text: sym.ShortName, Origin: symbolOrigin(sym)}
-			w.nodes[sym] = node
-			w.drawn = append(w.drawn, sym)
+			nodes[sym] = node
 			out.Roots = append(out.Roots, node)
 			for _, member := range r.faultTreeMembers(view, sym) {
 				if err := collect(member); err != nil {
@@ -119,7 +119,7 @@ func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symb
 		}
 	}
 	gateInputs := map[string]map[string]bool{}
-	for sym, node := range w.nodes {
+	for sym, node := range nodes {
 		if node.Kind != "AND" && node.Kind != "OR" {
 			continue
 		}
@@ -129,7 +129,7 @@ func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symb
 		}
 		gateInputs[node.ID] = map[string]bool{}
 		for _, input := range inputs {
-			if inputNode := w.nodes[input]; inputNode != nil {
+			if inputNode := nodes[input]; inputNode != nil {
 				gateInputs[node.ID][inputNode.ID] = true
 			} else {
 				node.Detail = "partial: one or more gate inputs are outside this view"
@@ -137,7 +137,7 @@ func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symb
 		}
 	}
 	connected := map[string]map[string]bool{}
-	for _, connector := range w.connectors {
+	for _, connector := range connectors {
 		ends := r.model.ConnectorEndAttachments(connector)
 		if len(ends) != 2 {
 			return fmt.Errorf("%w: %s must connect one cause and one effect", ErrInvalidFaultTree, r.notationName(connector))
@@ -156,7 +156,7 @@ func (r *Renderer) renderFaultTree(view *symbols.Symbol, exposed []*symbols.Symb
 				}
 			}
 			// Exact identities only: an unexposed child must never become its parent.
-			node := w.nodes[target]
+			node := nodes[target]
 			role := end.Name
 			if end.EndFeature != nil {
 			roles:
