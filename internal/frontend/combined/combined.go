@@ -59,6 +59,7 @@ var capabilities = []string{
 	"export_model",
 	"semantic_rendering_identity",
 	"declaration_projection",
+	"declaration_index",
 	"release_model",
 	"memory_stats",
 }

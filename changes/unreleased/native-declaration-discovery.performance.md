@@ -1,0 +1,1 @@
+- The combined browser service advertises a native declaration discovery index so clients can prepare views without deriving the full API JSON twice. The complete semantic export and native identities remain authoritative.

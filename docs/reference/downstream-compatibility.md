@@ -93,3 +93,17 @@ compiler's numeric constructors and copies results through its numeric conversio
 helpers. It keeps tagged-number and arbitrary-precision Integer layouts inside C,
 rather than guessing those layouts in ctypes. Single calls and batches share that
 bridge and retain explicit error and output-width checks.
+
+## Native discovery index
+
+The combined service advertises `declaration_index` and accepts
+`ExportModel` with `projection: "declaration-index"`. Its `declarationIndex`
+contains canonical native declaration IDs, qualified names and a Boolean for
+explicitly named requirement usages or definitions. It is discovery metadata,
+not an API JSON element array. The converter's native identity inventory checks
+scope and duplicate claims, and its declaration classifier supplies the kinds.
+
+SysPresent uses this index to prepare its runtime coverage view, then requests
+the complete `declarations` projection for the resolved project. This removes
+one full export from project loading without reusing stale semantic objects.
+Older engines retain the existing declaration-export discovery path.

@@ -401,7 +401,7 @@ func TestCombinedWireParity(t *testing.T) {
 		t.Errorf("GetServerInfo version = %q", info.Version)
 	}
 	// Standalone view/export and lifecycle operations extend the shared execution contract.
-	standaloneCapabilities := append(append([]string{}, expectedCapabilities...), "render_view", "semantic_rendering_identity", "export_model", "release_model", "memory_stats")
+	standaloneCapabilities := append(append([]string{}, expectedCapabilities...), "export_model", "semantic_rendering_identity", "declaration_projection", "declaration_index", "release_model", "memory_stats")
 	if !reflect.DeepEqual(info.Capabilities, standaloneCapabilities) {
 		t.Errorf("GetServerInfo capabilities = %v, want %v", info.Capabilities, standaloneCapabilities)
 	}
