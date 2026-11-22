@@ -9,8 +9,11 @@ library package OpenSysMLRenderings {
 	rendering asCaseDiagram : GraphicalRendering[1] :> renderings;
 	rendering asMixedDiagram : GraphicalRendering[1] :> renderings;
 
-    rendering asFaultTree : GraphicalRendering[1] :> renderings;
-    view def FaultTreeView { render asFaultTree; }
+	rendering asFaultTree : GraphicalRendering[1] :> renderings;
+	view def FaultTreeView {
+		doc /* Qualitative failure events and native AND/OR gates. */
+		render asFaultTree;
+	}
 
 	view def CaseView {
 		render asCaseDiagram;
