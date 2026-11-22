@@ -1236,3 +1236,27 @@ package Uses {
 		}
 	}
 }
+
+func TestFailureReviewKeepsScalarReadiness(t *testing.T) {
+	h := attach(t, newService(t))
+	var response pb.RunAnalysisResponse
+	_, text := h.ok("run_analysis", map[string]any{
+		"sources": []map[string]string{{"path": "review.sysml", "text": `package ReviewExample {
+   part review : FailureAnalysis::Review {
+    part redefines modes : FailureAnalysis::ReviewRow { attribute :>> safetyCritical = true; }
+    attribute :>> scopeReviewed = false;
+   }
+  }`}},
+		"symbolId": "FailureAnalysis::DesignFailureReview", "subjectSymbolId": "ReviewExample::review",
+	}, &response)
+	for _, output := range response.Outputs {
+		if output.Name == "reviewReady" {
+			value, scalar := output.Value.Kind.(*pb.Value_BoolValue)
+			if !scalar || value.BoolValue {
+				t.Fatalf("readiness lost scalar false contract: %v\n%s", output, text)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing readiness: %v\n%s", response.Outputs, text)
+}
