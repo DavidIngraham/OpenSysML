@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -180,6 +181,8 @@ func apiJSONEachSelectedElement(graph *rdf.Graph, options APIJSONOptions, select
 		if selectSubject != nil && written > 0 && written%apiJSONDeclarationMemoWindow == 0 {
 			writer.evaluation.resetMemo()
 			writer.comparisonCache = &apiJSONTermCache{}
+			// Let cooperative WASM GC reclaim the discarded cache before the next batch.
+			runtime.Gosched()
 		}
 		written++
 		element, err := writer.element(subject)
