@@ -877,7 +877,7 @@ func (r *Renderer) actionNode(subject actionSubject, ids *nodeIDs, out *Renderin
 	// Every action has a start even when no succession leaves it; draw it when
 	// the view's Layout positions it, first among the body's nodes.
 	if r.placedStart(subject.view, owner, graph, out) {
-		start := &Node{ID: ids.take(), Kind: initialKind,
+		start := &Node{ID: ids.take(), Kind: initialKind, Synthetic: true,
 			Name: nameText("start"), NameSynthesized: true, Member: "start"}
 		start.Geometry = r.memberGeometryOf(subject.view, owner, "start", out)
 		r.memberDress(subject.view, owner, "start", start, out)
@@ -928,7 +928,7 @@ func (r *Renderer) flowNodes(subject actionSubject, graph *lower.ActionGraph, fr
 		node := graph.Provenance.Node(id)
 		nodeDoc := docOf(graph, node, doc)
 		child := &Node{ID: ids.take(), Kind: actionNodeKind(graph, id), Name: nameText(behaviorNodeName(node)),
-			NameSynthesized: languageNamed(node) || r.declaredNameSynthesized(subject.elem, node), StandIn: r.declaredStandIn(subject.elem, node),
+			Synthetic: languageNamed(node), NameSynthesized: languageNamed(node) || r.declaredNameSynthesized(subject.elem, node), StandIn: r.declaredStandIn(subject.elem, node),
 			Type: nodeType(node), Origin: nodeOrigin(nodeDoc, node)}
 		child.Inherited = inheritedMember(r.declaredSymbol(subject.elem, node), owner)
 		if languageNamed(node) {

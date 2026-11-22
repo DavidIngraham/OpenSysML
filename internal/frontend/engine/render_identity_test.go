@@ -52,3 +52,43 @@ func TestRenderIdentityAndNotationFields(t *testing.T) {
 		t.Fatalf("notation fields lost: %s", response)
 	}
 }
+
+func TestLanguageControlNodesRemainSynthetic(t *testing.T) {
+	eng, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	params, _ := json.Marshal(map[string]any{"documents": []map[string]string{{"name": "flow.sysml", "content": `package P { action flow { action a; first start then a; then done; } }`}}})
+	body, err := eng.Call(context.Background(), "ParseSources", params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var parsed JParseSourcesResponse
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		t.Fatal(err)
+	}
+	params, _ = json.Marshal(JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#action:P::flow", IncludeSemanticIdentity: true})
+	body, err = eng.Call(context.Background(), "RenderView", params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var drawing JRenderViewResponse
+	if err := json.Unmarshal(body, &drawing); err != nil {
+		t.Fatal(err)
+	}
+	done, action := false, false
+	for _, node := range drawing.Nodes {
+		if node.Name == "done" {
+			done = true
+			if node.IdentityStatus != "synthetic" || node.SemanticID != "" {
+				t.Fatalf("completion acquired identity: %+v", node)
+			}
+		}
+		if node.Name == "a" {
+			action = node.IdentityStatus == "mapped" && node.SemanticID == "P__flow__a"
+		}
+	}
+	if !done || !action {
+		t.Fatalf("control or declared action missing: %s", body)
+	}
+}
