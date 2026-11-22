@@ -5,6 +5,8 @@ package view
 // rendering and what the rendering could not represent. It carries no protocol
 // or wire concern — a caller speaking one converts it.
 type Data struct {
+	SequenceOrders   []SequenceOrder
+	SequenceOrdering string
 	// View is the rendered view by qualified name, "" for a rendering of exposed
 	// elements alone (RenderExposed).
 	View string
@@ -37,14 +39,22 @@ type Data struct {
 	Shown []string
 	// Notices are what the rendering could not represent and, when it has no
 	// node, edge, row or lane, why it has none.
-	Notices []string
+	Notices           []string
+	ColumnElements    []ColumnElement
+	RelationshipCells []RelationshipCell
 }
 
 // NodeData is one node of a rendering, with the node it is nested in.
 type NodeData struct {
-	ID   string
-	Kind string
-	Name string
+	State     *StateNotation
+	Synthetic bool
+	// SemanticID and QualifiedName are populated by a native export adapter.
+	IdentityStatus string
+	SemanticID     string
+	QualifiedName  string
+	ID             string
+	Kind           string
+	Name           string
 	// NameSynthesized marks a Name the model did not give: a name to key by, not one a picture shows.
 	NameSynthesized bool
 	Type            string
@@ -82,8 +92,12 @@ type NodeData struct {
 
 // EdgeData is one edge of a rendering, joining two node IDs.
 type EdgeData struct {
-	From string
-	To   string
+	Notation       *Notation
+	IdentityStatus string
+	SemanticID     string
+	QualifiedName  string
+	From           string
+	To             string
 	// FromPort and ToPort are the ports the edge ends at, "" for the node itself.
 	FromPort string
 	ToPort   string
@@ -105,8 +119,11 @@ type EdgeData struct {
 // RowData is one row of a tabular rendering: its cells, one per column, and
 // where the element it reports was declared.
 type RowData struct {
-	Cells  []string
-	Origin Origin
+	SemanticID     string
+	QualifiedName  string
+	IdentityStatus string
+	Cells          []string
+	Origin         Origin
 }
 
 // Data is the rendering in machine-consumable form.
@@ -126,6 +143,8 @@ func (r *Rendering) DataWith(options Options) Data {
 
 func (r *Rendering) data(ports *portView) Data {
 	out := Data{
+		SequenceOrders: cloneSequenceOrders(r.SequenceOrders), SequenceOrdering: r.SequenceOrdering,
+		ColumnElements: append([]ColumnElement(nil), r.ColumnElements...), RelationshipCells: cloneRelationshipCells(r.RelationshipCells),
 		View:     r.View,
 		Kind:     r.Kind,
 		Stated:   r.Stated,
@@ -151,7 +170,7 @@ func (r *Rendering) data(ports *portView) Data {
 		out.Nodes = appendNodeData(out.Nodes, root, "", ports)
 	}
 	for _, edge := range r.Edges {
-		out.Edges = append(out.Edges, EdgeData{From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
+		out.Edges = append(out.Edges, EdgeData{Notation: cloneNotation(edge.Notation), From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
 			Label: edge.Label, FromLabel: edge.FromLabel, ToLabel: edge.ToLabel, Name: edge.Name, Kind: edge.Kind, Origin: edge.Origin,
 			Route: edge.Route, Style: edge.Style})
 	}
@@ -175,9 +194,9 @@ func appendNodeData(out []NodeData, node *Node, parent string, ports *portView) 
 		nodePorts = ports.of(node)
 	}
 	out = append(out, NodeData{
-		ID: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized, Type: node.Type, Detail: node.Detail,
+		Synthetic: node.Synthetic, ID: node.ID, Kind: node.Kind, Name: node.Name, NameSynthesized: node.NameSynthesized, Type: node.Type, Detail: node.Detail,
 		Text: node.Text, StandIn: node.StandIn, Inherited: node.Inherited, Parallel: node.Parallel, Ports: nodePorts, Parent: parent, Origin: node.Origin,
-		Geometry: node.Geometry, Style: node.Style, Verdict: node.Verdict, Arrow: node.Arrow,
+		Geometry: node.Geometry, Style: node.Style, Verdict: node.Verdict, Arrow: node.Arrow, State: cloneState(node.State),
 	})
 	for _, compartment := range node.Compartments {
 		for _, row := range compartment.Rows {

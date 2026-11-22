@@ -8,4 +8,4 @@
 # verifies, because a ref is mutable. Change them together.
 EXTENSIONS_REPO="${EXTENSIONS_REPO:-https://github.com/DavidIngraham/OpenSysML-Extensions-Library.git}"
 EXTENSIONS_REF="${EXTENSIONS_REF:-review/failure-analysis-20261122}"
-EXTENSIONS_COMMIT="${EXTENSIONS_COMMIT:-e98e71c0c38f267690c9f93bf6f29dd27144bea0}"
+EXTENSIONS_COMMIT="${EXTENSIONS_COMMIT:-a278ad29dd9f3493a037421bd756a646c718a08c}"

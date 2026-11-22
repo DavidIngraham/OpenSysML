@@ -594,7 +594,7 @@ func (w *featureWalk) connectionEdges(connector *symbols.Symbol, within *Node) {
 		for j := i + 1; j < len(resolved); j++ {
 			out.Edges = append(out.Edges, Edge{
 				From: resolved[i].node.ID, To: resolved[j].node.ID, FromPort: resolved[i].port, ToPort: resolved[j].port,
-				Label: label, Kind: kind, Origin: symbolOrigin(connector), Route: slices.Clone(route), Style: style,
+				Label: label, Kind: kind, Origin: symbolOrigin(connector), Notation: connectorNotation(connector, kind), Route: slices.Clone(route), Style: style,
 			})
 		}
 	}

@@ -300,3 +300,43 @@ func TestSettledGraphIsCheckedAgainOnceChanged(t *testing.T) {
 		t.Error("the grown collection reconciled without a conflict against its annotation")
 	}
 }
+
+func TestAnnotationOrderAndExistingCollectionArePreserved(t *testing.T) {
+	a, b := ScopedElementIRIForID("one", "A"), ScopedElementIRIForID("two", "B")
+	g := NewGraph()
+	g.Add(a, SysMLTerm("ownedMember"), ScopedElementIRIForID("one", "C"))
+	g.Add(b, SysMLTerm("aliasIds"), String("<&>"))
+	g.Add(a, SysMLTerm("aliasIds"), String("line\\nquote\\\""))
+	g.Add(b, SysMLTerm("aliasIds"), String("other"))
+	g.Add(a, SysMLTerm("ownedMember"), ScopedElementIRIForID("two", "C"))
+	g.Add(a, SysMLTerm("aliasIds"), String("last"))
+	g.Add(b, SysMLTerm("ownedMember"), ScopedElementIRIForID("two", "D"))
+	g.Add(b, SysMLTerm("ownedMember"), ScopedElementIRIForID("two", "C"))
+	existing := String(`[{"@id":"C"},{"@id":"D"}]`)
+	g.Add(b, AnnotationJSONTerm("ownedMember"), existing)
+	start := g.Len()
+	if err := AnnotateCollections(g); err != nil {
+		t.Fatal(err)
+	}
+	got := g.Triples()[start:]
+	wantKeys := []string{"ownedMember", "aliasIds", "aliasIds"}
+	wantSubjects := []Term{a, b, a}
+	if len(got) != len(wantKeys) {
+		t.Fatalf("new annotations: %v", got)
+	}
+	for i, triple := range got {
+		if triple.Subject != wantSubjects[i] || triple.Predicate != AnnotationJSONTerm(wantKeys[i]) {
+			t.Fatalf("annotation order changed at %d: %v", i, triple)
+		}
+	}
+	if values := g.Objects(b, AnnotationJSON+"ownedMember"); len(values) != 1 || values[0] != existing {
+		t.Fatalf("existing annotation changed: %v", values)
+	}
+	want, err := CollectionJSON(a, []Term{ScopedElementIRIForID("one", "C"), ScopedElementIRIForID("two", "C")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[0].Object.Value != want {
+		t.Fatalf("scoped refs changed: got %s want %s", got[0].Object.Value, want)
+	}
+}

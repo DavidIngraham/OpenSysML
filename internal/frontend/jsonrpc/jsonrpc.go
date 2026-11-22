@@ -95,7 +95,13 @@ func Envelope(body []byte, err error) string {
 		return fmt.Sprintf(`{"jsonrpc":"2.0","id":null,"error":{"code":%d,"message":%s}}`,
 			code, quoted)
 	}
-	return fmt.Sprintf(`{"jsonrpc":"2.0","id":null,"result":%s}`, body)
+	const prefix = `{"jsonrpc":"2.0","id":null,"result":`
+	var out strings.Builder
+	out.Grow(ResponseCapacity(len(prefix) + len(body) + 1))
+	out.WriteString(prefix)
+	out.Write(body)
+	out.WriteByte('}')
+	return out.String()
 }
 
 // request is one call: the method names a served method, and params carries

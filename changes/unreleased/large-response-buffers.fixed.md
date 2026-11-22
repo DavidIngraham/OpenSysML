@@ -1,0 +1,1 @@
+- Keep nearby large native export responses in bounded buffer allocation classes and remove redundant formatter copies from JavaScript JSON-RPC envelopes, preserving the standard JSON encoding and exact wire bytes.

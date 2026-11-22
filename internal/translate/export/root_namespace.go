@@ -42,7 +42,13 @@ func withRootNamespace(graph *rdf.Graph) (*rdf.Graph, error) {
 	// and one the source stated earlier is not inserted again. Every inserted
 	// triple is about a namespace, a membership or a root, so only the source
 	// triples about those are remembered.
-	triples := make([]rdf.Triple, 0, graph.Len()+8*len(roots)+8*len(wrappers))
+	capacity := graph.Len() + 21*len(roots) + 2*len(wrappers)
+	for _, wrapper := range wrappers {
+		if len(wrapper.roots) > 1 {
+			capacity += 3
+		}
+	}
+	triples := make([]rdf.Triple, 0, graphTripleCapacity(capacity))
 	var additions []rdf.Triple
 	placed := map[rdf.Triple]bool{}
 	wrapperSubjects := map[rdf.Term]bool{}

@@ -1,0 +1,1 @@
+- Add explicit source-declaration API-JSON projection with per-document temporary graph reclamation, reuse native identity inventories without RDF generation, and support bounded requirement context through `OpenSysMLRenderings::RequirementContext`, including directed dependencies.

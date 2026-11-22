@@ -1,0 +1,1 @@
+- Preserve native derivation/refinement roles, directed flow/message productions, state behavior compartments, parameter identities and explicit sequence occurrence orders in standalone rendering JSON, without replacing existing edge kinds or inferring semantics from labels.

@@ -56,15 +56,23 @@ var capabilities = []string{
 	"symbol_lookup_kind",
 	"symbol_member_direction",
 	"coordinate_frame_values",
+	"export_model",
+	"semantic_rendering_identity",
+	"declaration_projection",
+	"release_model",
+	"memory_stats",
 }
 
 // Server combines the parsing/validation and execution JSON surfaces.
+// Calls are sequential; a release therefore cannot interrupt an active native call.
 type Server struct {
-	engine  *engine.Engine
-	core    *core.Core
-	version string
-	models  *list.List
-	byHash  map[string]*list.Element
+	engine              *engine.Engine
+	core                *core.Core
+	version             string
+	models              *list.List
+	byHash              map[string]*list.Element
+	phaseCollections    uint64
+	lastPhaseCollection *phaseCollection
 }
 
 // New builds both frontends over one frozen standard-library snapshot.
@@ -89,6 +97,9 @@ func New(version string) (*Server, error) {
 
 // Call runs one combined method with protojson-shaped request parameters.
 func (s *Server) Call(ctx context.Context, method string, params []byte) ([]byte, error) {
+	if finish := s.beginMemoryPhase(method); finish != nil {
+		defer finish()
+	}
 	switch method {
 	case "ParseSources":
 		body, err := s.core.Call(ctx, method, params)
@@ -129,12 +140,16 @@ func (s *Server) Call(ctx context.Context, method string, params []byte) ([]byte
 			s.touchRequest(params)
 		}
 		return body, err
-	case "Evaluate", "Instantiate", "ExecuteAction", "ExecuteState", "RenderView", "RenderDocument":
+	case "Evaluate", "Instantiate", "ExecuteAction", "ExecuteState", "RenderView", "RenderDocument", "ExportModel":
 		body, err := s.engine.Call(ctx, method, params)
 		if err == nil {
 			s.touchRequest(params)
 		}
 		return body, err
+	case "ReleaseModel":
+		return s.releaseModel(params)
+	case "GetMemoryStats":
+		return s.memoryStats(params)
 	case "GetServerInfo":
 		return json.Marshal(struct {
 			Version      string   `json:"version,omitempty"`

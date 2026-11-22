@@ -111,6 +111,7 @@ func (r *Renderer) stateMachineNode(view, machine *symbols.Symbol, graph *lower.
 	root := &Node{ID: ids.take(), Kind: declKind(machine), Name: r.notationName(machine), NameSynthesized: r.model.NameSynthesized(machine),
 		Type: r.headType(machine), Origin: symbolOrigin(machine), InheritedFrom: inheritedOrigins(graph.Inherited()), Geometry: r.geometryOf(view, machine, out),
 		Parallel: graph.MachineParallel}
+	root.State = r.stateNotation(graph.BehaviorsOf(graph.MachineID()), graph.MachineParallel, machine.DocName)
 	r.dress(view, machine, root, out)
 	root.Compartments = append(root.Compartments, r.stateActionCompartments(machine.DocName, graph.BehaviorsOf(graph.MachineID()), ids)...)
 	root.Children = append(root.Children, r.stateActionNodes(machine, machine.DocName, graph, graph.BehaviorsOf(graph.MachineID()), ids)...)
@@ -260,7 +261,7 @@ func (r *Renderer) entryEdges(view, machine *symbols.Symbol, graph *lower.StateG
 			}
 		}
 		out.Edges = append(out.Edges, Edge{
-			From: start.ID, To: target.ID, Label: label, Kind: EdgeTransition,
+			From: start.ID, To: target.ID, Label: label, Kind: EdgeTransition, Notation: &Notation{Production: "state-transition", SourceRole: "source", TargetRole: "target"},
 			Origin: nodeOrigin(doc, decl), Route: r.declaredRouteOf(view, machine, decl, out),
 			Style: r.declaredEdgeDress(view, machine, decl, start.ID, target.ID, out),
 		})
@@ -281,7 +282,7 @@ func (r *Renderer) transitionEdges(view, machine *symbols.Symbol, graph *lower.S
 		doc, decl := docOr(graph.TransitionDoc(transition), machine.DocName), transition.Declared()
 		out.Edges = append(out.Edges, Edge{
 			From: nodes[src].ID, To: target.ID, Label: r.transitionLabel(doc, transition, r.declaredNameSynthesized(machine, decl)),
-			Kind: EdgeTransition, Origin: nodeOrigin(doc, decl), Route: r.declaredRouteOf(view, machine, decl, out),
+			Kind: EdgeTransition, Notation: &Notation{Production: "state-transition", SourceRole: "source", TargetRole: "target"}, Origin: nodeOrigin(doc, decl), Route: r.declaredRouteOf(view, machine, decl, out),
 			Style: r.declaredEdgeDress(view, machine, decl, nodes[src].ID, target.ID, out),
 		})
 	}
@@ -365,6 +366,7 @@ func (r *Renderer) stateNode(id program.StateID, graph *lower.StateGraph, machin
 		node.Kind, node.Name, node.Type, node.NameSynthesized = "final", ast.DoneFeature, "", true
 		return node
 	}
+	node.State = r.stateNotation(graph.BehaviorsOf(id), graph.ParallelState(id), node.Origin.Doc)
 	node.Parallel = graph.ParallelState(id)
 	if graph.StartsBody(id) {
 		node.Detail = "initial"
@@ -1051,7 +1053,7 @@ func (r *Renderer) actionEdges(subject actionSubject, graph *lower.ActionGraph, 
 			edgeDoc := docOf(graph, decl, doc)
 			label := r.successionLabel(edge, edgeDoc, doc, r.declaredNameSynthesized(subject.elem, decl))
 			out.Edges = append(out.Edges, Edge{From: nodes[src].ID, To: to.ID, Label: label,
-				Kind: EdgeSuccession, Origin: nodeOrigin(edgeDoc, decl), Route: r.declaredRouteOf(subject.view, subject.elem, decl, out),
+				Kind: EdgeSuccession, Notation: &Notation{Production: "action-succession", SourceRole: "source", TargetRole: "target"}, Origin: nodeOrigin(edgeDoc, decl), Route: r.declaredRouteOf(subject.view, subject.elem, decl, out),
 				Style: r.declaredEdgeDress(subject.view, subject.elem, decl, nodes[src].ID, to.ID, out)})
 		}
 		for _, flow := range graph.FlowsOf(src) {
@@ -1069,7 +1071,7 @@ func (r *Renderer) actionEdges(subject actionSubject, graph *lower.ActionGraph, 
 			}
 			out.Edges = append(out.Edges, Edge{From: nodes[src].ID, To: to.ID, Label: label, Name: edgeName(flow.Name, synthesized),
 				FromPort: portNamed(nodes[src], flow.SourcePin, PortOut), ToPort: portNamed(to, flow.TargetPin, PortIn),
-				Kind: kind, Origin: nodeOrigin(docOf(graph, decl, doc), decl), Route: r.declaredRouteOf(subject.view, subject.elem, decl, out),
+				Kind: kind, Notation: flowNotation(decl), Origin: nodeOrigin(docOf(graph, decl, doc), decl), Route: r.declaredRouteOf(subject.view, subject.elem, decl, out),
 				Style: r.declaredEdgeDress(subject.view, subject.elem, decl, nodes[src].ID, to.ID, out)})
 		}
 	}
@@ -1565,4 +1567,19 @@ func declScope(sym *symbols.Symbol) *symbols.Scope {
 // (inherited through specialization or typing); a node lowered from no declaration is owner's own.
 func inheritedMember(sym, owner *symbols.Symbol) bool {
 	return sym != nil && owner != nil && sym.Owner() != nil && sym.Owner() != owner
+}
+
+// stateNotation preserves the lowered behavior declarations alongside their display text.
+func (r *Renderer) stateNotation(behaviors *lower.StateBehaviors, parallel bool, doc string) *StateNotation {
+	notation := &StateNotation{Parallel: parallel}
+	for _, part := range stateActionParts(behaviors) {
+		for _, behavior := range part.list {
+			behaviorDoc := docOr(symbols.DocNameOf(behavior.Scope), doc)
+			notation.Behaviors = append(notation.Behaviors, StateBehaviorNotation{
+				Role: part.name, Text: r.behaviorText(doc, behavior),
+				SemanticRef: SemanticRef{Origin: nodeOrigin(behaviorDoc, behavior.Node), Kind: ast.Notation(behavior.Node)},
+			})
+		}
+	}
+	return notation
 }

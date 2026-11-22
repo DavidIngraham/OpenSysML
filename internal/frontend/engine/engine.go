@@ -19,6 +19,7 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/exec/objref"
 	"github.com/Open-MBEE/OpenSysML/internal/exec/runtime"
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/jsonrpc"
+	"github.com/Open-MBEE/OpenSysML/internal/frontend/renderidentity"
 	fsyntax "github.com/Open-MBEE/OpenSysML/internal/frontend/syntax"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/lower"
 	"github.com/Open-MBEE/OpenSysML/internal/ir/view"
@@ -103,6 +104,7 @@ type cachedModel struct {
 	// identities names a metaobject's element by qualified identity, as the
 	// service does for a named element.
 	identities engineIdentities
+	renderIDs  *renderidentity.Inventory
 }
 
 // elementIdentities is the id vocabulary a metaobject's element crosses in: its
@@ -322,6 +324,12 @@ func (e *Engine) Call(ctx context.Context, method string, params []byte) (result
 			return nil, err
 		}
 		return e.executeState(ctx, &req)
+	case "ExportModel":
+		var req JExportModelRequest
+		if err := decode(params, &req); err != nil {
+			return nil, err
+		}
+		return e.exportModel(&req)
 	case "RenderView":
 		// RenderView is served by both sysml-engine and sysml-grpc.
 		var req JRenderViewRequest
@@ -375,6 +383,22 @@ func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
 		return nil, statusError(codeInvalidArgument, err.Error())
 	}
 	data := rendering.DataWith(options)
+	if req.IncludeSemanticIdentity {
+		if cached.renderIDs == nil {
+			var documents []renderidentity.Document
+			for _, doc := range cached.Documents {
+				documents = append(documents, renderidentity.Document{File: doc.Source, Root: doc.Root})
+			}
+			inventory, err := renderidentity.NewInventory(documents, cached.resolver, cached.typedModel())
+			if err != nil {
+				return nil, statusError(codeInvalidArgument, err.Error())
+			}
+			cached.renderIDs = inventory
+		}
+		if err := renderidentity.BindInventory(&data, cached.renderIDs, cached.Index); err != nil {
+			return nil, statusError(codeInvalidArgument, err.Error())
+		}
+	}
 	text := ""
 	if form != "" {
 		if options.NeedsSites(form) {
@@ -426,15 +450,16 @@ func (o *renderOrigins) span(origin view.Origin) *JSpan {
 func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte, error) {
 	origins := &renderOrigins{model: model, sources: make(map[string]*source.SourceFile)}
 	out := &JRenderViewResponse{
-		Text:    text,
-		View:    data.View,
-		Kind:    string(data.Kind),
-		Stated:  data.Stated,
-		Columns: data.Columns,
-		Notices: data.Notices,
-		Shown:   data.Shown,
-		Nodes:   make([]JRenderNode, 0, len(data.Nodes)),
-		Edges:   make([]JRenderEdge, 0, len(data.Edges)),
+		Text:             text,
+		SequenceOrdering: data.SequenceOrdering,
+		View:             data.View,
+		Kind:             string(data.Kind),
+		Stated:           data.Stated,
+		Columns:          data.Columns,
+		Notices:          data.Notices,
+		Shown:            data.Shown,
+		Nodes:            make([]JRenderNode, 0, len(data.Nodes)),
+		Edges:            make([]JRenderEdge, 0, len(data.Edges)),
 	}
 	if f := data.Frame; f != nil {
 		out.Frame = &JRenderFrame{Name: f.Name, Type: f.Type, Exposes: f.Exposes, Filters: f.Filters, Annotations: f.Annotations}
@@ -450,10 +475,11 @@ func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte,
 			Type: node.Type, Detail: node.Detail, Text: node.Text, StandIn: node.StandIn,
 			Parent: node.Parent, Compartment: node.Compartment, Origin: origins.span(node.Origin), Style: jRenderStyle(node.Style),
 			Inherited: node.Inherited, Arrow: node.Arrow,
+			IdentityStatus: node.IdentityStatus, SemanticID: node.SemanticID, QualifiedName: node.QualifiedName, Verdict: node.Verdict, State: jRenderState(node.State),
 		}
 		for _, port := range node.Ports {
 			item.Ports = append(item.Ports, JRenderPort{
-				ID: port.ID, Name: port.Name, Type: port.Type, Direction: port.Direction.String(), Inherited: port.Inherited,
+				ID: port.ID, Name: port.Name, Type: port.Type, Direction: port.Direction.String(), Inherited: port.Inherited, Parameter: port.Parameter, IdentityStatus: port.IdentityStatus, SemanticID: port.SemanticID, QualifiedName: port.QualifiedName,
 			})
 		}
 		if node.Geometry != nil {
@@ -469,14 +495,18 @@ func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte,
 			From: edge.From, To: edge.To, FromPort: edge.FromPort, ToPort: edge.ToPort,
 			Label: edge.Text(), Name: edge.Name, Kind: edge.Kind.String(),
 			Origin: origins.span(edge.Origin), Style: jRenderStyle(edge.Style),
+			IdentityStatus: edge.IdentityStatus, SemanticID: edge.SemanticID, QualifiedName: edge.QualifiedName, FromLabel: edge.FromLabel, ToLabel: edge.ToLabel, Notation: jRenderNotation(edge.Notation),
 		}
 		for _, point := range edge.Route {
 			item.Route = append(item.Route, JRenderPoint{X: point.X, Y: point.Y})
 		}
 		out.Edges = append(out.Edges, item)
 	}
+	for _, order := range data.SequenceOrders {
+		out.SequenceOrders = append(out.SequenceOrders, JRenderSequenceOrder{JRenderSemanticRef: *jRenderRef(&order.SemanticRef), SourceEvent: jRenderRef(order.SourceEvent), TargetEvent: jRenderRef(order.TargetEvent)})
+	}
 	for _, row := range data.Rows {
-		out.Rows = append(out.Rows, JRenderRow{Cells: row.Cells, Origin: origins.span(row.Origin)})
+		out.Rows = append(out.Rows, JRenderRow{Cells: row.Cells, Origin: origins.span(row.Origin), SemanticID: row.SemanticID, QualifiedName: row.QualifiedName, IdentityStatus: row.IdentityStatus})
 	}
 	for _, note := range data.Notes {
 		out.Notes = append(out.Notes, JRenderNote{
@@ -484,6 +514,23 @@ func marshalRenderView(model *cachedModel, data view.Data, text string) ([]byte,
 			X: note.X, Y: note.Y, Width: note.Width, Height: note.Height, HasSize: note.HasSize,
 			Origin: origins.span(note.Origin),
 		})
+	}
+	for _, column := range data.ColumnElements {
+		out.ColumnElements = append(out.ColumnElements, JRenderColumnElement{
+			Index: column.Index, Name: column.Name, SemanticID: column.SemanticID,
+			QualifiedName: column.QualifiedName, IdentityStatus: column.IdentityStatus,
+		})
+	}
+	for _, cell := range data.RelationshipCells {
+		item := JRenderRelationshipCell{Row: cell.Row, Column: cell.Column, Relationships: make([]JRenderGridRelationship, 0, len(cell.Relationships))}
+		for _, relation := range cell.Relationships {
+			item.Relationships = append(item.Relationships, JRenderGridRelationship{
+				SemanticID: relation.SemanticID, QualifiedName: relation.QualifiedName, IdentityStatus: relation.IdentityStatus,
+				SourceSemanticID: relation.SourceSemanticID, TargetSemanticID: relation.TargetSemanticID,
+				Kind: relation.Kind, Label: relation.Label,
+			})
+		}
+		out.RelationshipCells = append(out.RelationshipCells, item)
 	}
 	return marshal(out)
 }
@@ -1332,4 +1379,29 @@ func resolveEvent(lookup func(string) []*symbols.Symbol, action *symbols.Symbol,
 		}
 	}
 	return nil
+}
+
+func jRenderRef(ref *view.SemanticRef) *JRenderSemanticRef {
+	if ref == nil {
+		return nil
+	}
+	return &JRenderSemanticRef{Kind: ref.Kind, Name: ref.Name, LifelineID: ref.LifelineID, Direction: ref.Direction, SemanticID: ref.SemanticID, QualifiedName: ref.QualifiedName, IdentityStatus: ref.IdentityStatus}
+}
+
+func jRenderNotation(n *view.Notation) *JRenderNotation {
+	if n == nil {
+		return nil
+	}
+	return &JRenderNotation{Production: n.Production, DeclarationKind: n.DeclarationKind, Classification: n.Classification, SourceRole: n.SourceRole, TargetRole: n.TargetRole, SourceEndName: n.SourceEndName, TargetEndName: n.TargetEndName, SourceEvent: jRenderRef(n.SourceEvent), TargetEvent: jRenderRef(n.TargetEvent)}
+}
+
+func jRenderState(n *view.StateNotation) *JRenderState {
+	if n == nil {
+		return nil
+	}
+	out := &JRenderState{Parallel: n.Parallel, Behaviors: []JRenderStateBehavior{}}
+	for _, b := range n.Behaviors {
+		out.Behaviors = append(out.Behaviors, JRenderStateBehavior{JRenderSemanticRef: *jRenderRef(&b.SemanticRef), Role: b.Role, Text: b.Text})
+	}
+	return out
 }

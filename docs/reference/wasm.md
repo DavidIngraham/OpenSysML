@@ -403,3 +403,27 @@ The `wasip1` cases are driven with files and end each server at end of input, fo
 under [Running a WASI build](#running-a-wasi-build); the `js` cases hold a pipe open across a
 request and its answer, and run a full service session and a full language server
 `initialize`/`shutdown`. Both halves say so where they differ.
+
+
+## Bounded requirement context
+
+A requirement `GeneralView` may opt into native breadth-first relationship gathering:
+
+```sysml
+view selected : StandardViewDefinitions::GeneralView {
+    @OpenSysMLRenderings::RequirementContext { relationshipDepth = 0; }
+    filter @SysML::RequirementUsage;
+    expose Example::original;
+    expose Example::derived;
+}
+```
+
+Depth zero draws native relationships whose endpoints are both exposed requirement
+seeds. Depth one gathers only their direct native neighbors; additional depths extend
+that frontier deterministically. The accepted constant Integer range is zero through
+64. The metadata defaults to one and may be inherited from a view definition; a
+nearer view's policy takes precedence. Invalid or conflicting policies are refused.
+
+Bounded views include directed native `Dependency` client-to-supplier edges as well
+as satisfaction, verification, derivation, refinement and allocation relationships.
+Unannotated views retain the legacy gathering and relationship selection.

@@ -208,6 +208,8 @@ type JAttributeInfo struct {
 
 // JValue holds the constant attribute value arms the core can derive.
 type JValue struct {
+	// BigIntValue is the exact decimal integer outside signed 64-bit bounds.
+	BigIntValue *string `json:"bigIntValue,omitempty"`
 	IntValue    *I64    `json:"intValue,omitempty"`
 	RealValue   *F64    `json:"realValue,omitempty"`
 	BoolValue   *bool   `json:"boolValue,omitempty"`

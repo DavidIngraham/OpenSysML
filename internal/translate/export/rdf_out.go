@@ -392,6 +392,10 @@ func modelToRDF(documents []ModelDocument, form IDForm) (*rdf.Graph, *resolve.Re
 // encodeModelDocuments merges the documents' graphs; nameLibrary states the library stubs of the merged one.
 // It returns the graph alone, so a caller done with the encoders holds no document's graph beside it.
 func encodeModelDocuments(ctx context.Context, documents []ModelDocument, encoders []*encoder, nameLibrary libraryNamer) (*rdf.Graph, error) {
+	return encodeModelDocumentsObserved(ctx, documents, encoders, nameLibrary, nil)
+}
+
+func encodeModelDocumentsObserved(ctx context.Context, documents []ModelDocument, encoders []*encoder, nameLibrary libraryNamer, observe func(APIJSONExportStage)) (*rdf.Graph, error) {
 	// declaredIn is the document and declaration each subject was minted for:
 	// two documents declaring one subject would merge two elements into one.
 	declaredIn := map[string]mintedSubject{}
@@ -403,7 +407,7 @@ func encodeModelDocuments(ctx context.Context, documents []ModelDocument, encode
 		if documents[i].Referenced {
 			minted = e.declaredSubjects()
 		} else {
-			if err := e.encodeDocument(documents[i].Root); err != nil {
+			if err := e.encodeDocumentObserved(documents[i].Root, observe); err != nil {
 				return nil, fmt.Errorf("%s: %w", documents[i].File.Name(), err)
 			}
 			// The document is written: its graph waits for the merge as its triples
@@ -500,9 +504,14 @@ func mergeDocumentGraphs(encoders []*encoder, documents []ModelDocument) *rdf.Gr
 			stated[subject]++
 		}
 		total += e.graph.Len()
+		for _, triple := range e.graph.Triples() {
+			if triple.Predicate.Value == rdf.OpenSysML+xSourceLanguage {
+				total++
+			}
+		}
 	}
 	prefixes := map[string]string{}
-	triples := make([]rdf.Triple, 0, total+len(encoders))
+	triples := make([]rdf.Triple, 0, graphTripleCapacity(total))
 	seen := map[rdf.Triple]bool{} // the triples of subjects more than one document states
 	add := func(t rdf.Triple) {
 		if stated[t.Subject] > 1 {
@@ -592,11 +601,18 @@ func (e *encoder) mintedComposites() {
 
 // encodeDocument writes the graph of the document the encoder was made for.
 func (e *encoder) encodeDocument(root *ast.RootNamespace) error {
+	return e.encodeDocumentObserved(root, nil)
+}
+
+func (e *encoder) encodeDocumentObserved(root *ast.RootNamespace, observe func(APIJSONExportStage)) error {
 	if err := e.encode(root.Members, "", rdf.Term{}); err != nil {
 		return err
 	}
+	observeAPIJSONExport(observe, e.file.Name(), "authored", e.graph)
 	e.importedMemberships()
+	observeAPIJSONExport(observe, e.file.Name(), "imports", e.graph)
 	e.materializeNormative()
+	observeAPIJSONExport(observe, e.file.Name(), "normative", e.graph)
 	if e.idErr != nil {
 		return e.idErr
 	}
@@ -607,6 +623,7 @@ func (e *encoder) encodeDocument(root *ast.RootNamespace) error {
 	if err := rdf.AnnotateCollections(e.graph); err != nil {
 		return err
 	}
+	observeAPIJSONExport(observe, e.file.Name(), "annotated", e.graph)
 	return nil
 }
 

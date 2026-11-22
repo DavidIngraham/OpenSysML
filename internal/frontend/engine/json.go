@@ -353,32 +353,37 @@ type JRenderViewRequest struct {
 	Compartments string `json:"compartments,omitempty"`
 	// Form is the form to write into the reply's text beside its data, one of
 	// view.ViewForms; the rest are the options that form is written with.
-	Form      string `json:"form,omitempty"`
-	Palette   string `json:"palette,omitempty"`
-	Style     string `json:"style,omitempty"`
-	Lines     string `json:"lines,omitempty"`
-	Direction string `json:"direction,omitempty"`
-	Link      string `json:"link,omitempty"`
-	Unplaced  string `json:"unplaced,omitempty"`
+	Form                    string `json:"form,omitempty"`
+	Palette                 string `json:"palette,omitempty"`
+	Style                   string `json:"style,omitempty"`
+	Lines                   string `json:"lines,omitempty"`
+	Direction               string `json:"direction,omitempty"`
+	Link                    string `json:"link,omitempty"`
+	Unplaced                string `json:"unplaced,omitempty"`
+	IncludeSemanticIdentity bool   `json:"includeSemanticIdentity,omitempty"`
 }
 
 // The RenderView reply, shaped as protojson writes the service's RenderViewResponse
 // so one client decodes either transport's answer.
 
 type JRenderViewResponse struct {
-	View    string         `json:"view,omitempty"`
-	Kind    string         `json:"kind,omitempty"`
-	Stated  string         `json:"stated,omitempty"`
-	Nodes   []JRenderNode  `json:"nodes,omitempty"`
-	Edges   []JRenderEdge  `json:"edges,omitempty"`
-	Columns []string       `json:"columns,omitempty"`
-	Rows    []JRenderRow   `json:"rows,omitempty"`
-	Canvas  *JRenderCanvas `json:"canvas,omitempty"`
-	Frame   *JRenderFrame  `json:"frame,omitempty"`
-	Notes   []JRenderNote  `json:"notes,omitempty"`
-	Notices []string       `json:"notices,omitempty"`
-	Shown   []string       `json:"shown,omitempty"`
-	Text    string         `json:"text,omitempty"`
+	View              string                    `json:"view,omitempty"`
+	Kind              string                    `json:"kind,omitempty"`
+	Stated            string                    `json:"stated,omitempty"`
+	Nodes             []JRenderNode             `json:"nodes,omitempty"`
+	Edges             []JRenderEdge             `json:"edges,omitempty"`
+	Columns           []string                  `json:"columns,omitempty"`
+	Rows              []JRenderRow              `json:"rows,omitempty"`
+	Canvas            *JRenderCanvas            `json:"canvas,omitempty"`
+	Frame             *JRenderFrame             `json:"frame,omitempty"`
+	Notes             []JRenderNote             `json:"notes,omitempty"`
+	Notices           []string                  `json:"notices,omitempty"`
+	Shown             []string                  `json:"shown,omitempty"`
+	Text              string                    `json:"text,omitempty"`
+	SequenceOrders    []JRenderSequenceOrder    `json:"sequenceOrders,omitempty"`
+	SequenceOrdering  string                    `json:"sequenceOrdering,omitempty"`
+	ColumnElements    []JRenderColumnElement    `json:"columnElements,omitempty"`
+	RelationshipCells []JRenderRelationshipCell `json:"relationshipCells,omitempty"`
 }
 
 // The RenderDocument request and reply, shaped as protojson writes the service's
@@ -433,14 +438,30 @@ type JRenderNode struct {
 	Style           *JRenderStyle    `json:"style,omitempty"`
 	Inherited       bool             `json:"inherited,omitempty"`
 	Arrow           string           `json:"arrow,omitempty"`
+	State           *JRenderState    `json:"state,omitempty"`
+	IdentityStatus  string           `json:"identityStatus,omitempty"`
+	SemanticID      string           `json:"semanticId,omitempty"`
+	QualifiedName   string           `json:"qualifiedName,omitempty"`
+	Verdict         string           `json:"verdict,omitempty"`
+	Fill            string           `json:"fill,omitempty"`
+	Border          string           `json:"border,omitempty"`
+	X               *float64         `json:"x,omitempty"`
+	Y               *float64         `json:"y,omitempty"`
+	Width           *float64         `json:"width,omitempty"`
+	Height          *float64         `json:"height,omitempty"`
+	Collapsed       bool             `json:"collapsed,omitempty"`
 }
 
 type JRenderPort struct {
-	ID        string `json:"id,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Type      string `json:"type,omitempty"`
-	Direction string `json:"direction,omitempty"`
-	Inherited bool   `json:"inherited,omitempty"`
+	ID             string `json:"id,omitempty"`
+	Name           string `json:"name,omitempty"`
+	Type           string `json:"type,omitempty"`
+	Direction      string `json:"direction,omitempty"`
+	Inherited      bool   `json:"inherited,omitempty"`
+	Parameter      bool   `json:"parameter"`
+	SemanticID     string `json:"semanticId,omitempty"`
+	QualifiedName  string `json:"qualifiedName,omitempty"`
+	IdentityStatus string `json:"identityStatus,omitempty"`
 }
 
 type JRenderGeometry struct {
@@ -465,16 +486,22 @@ type JRenderStyle struct {
 }
 
 type JRenderEdge struct {
-	From     string         `json:"from,omitempty"`
-	To       string         `json:"to,omitempty"`
-	FromPort string         `json:"fromPort,omitempty"`
-	ToPort   string         `json:"toPort,omitempty"`
-	Label    string         `json:"label,omitempty"`
-	Name     string         `json:"name,omitempty"`
-	Kind     string         `json:"kind,omitempty"`
-	Origin   *JSpan         `json:"origin,omitempty"`
-	Route    []JRenderPoint `json:"route,omitempty"`
-	Style    *JRenderStyle  `json:"style,omitempty"`
+	From           string           `json:"from,omitempty"`
+	To             string           `json:"to,omitempty"`
+	FromPort       string           `json:"fromPort,omitempty"`
+	ToPort         string           `json:"toPort,omitempty"`
+	Label          string           `json:"label,omitempty"`
+	Name           string           `json:"name,omitempty"`
+	Kind           string           `json:"kind,omitempty"`
+	Origin         *JSpan           `json:"origin,omitempty"`
+	Route          []JRenderPoint   `json:"route,omitempty"`
+	Style          *JRenderStyle    `json:"style,omitempty"`
+	Notation       *JRenderNotation `json:"notation,omitempty"`
+	IdentityStatus string           `json:"identityStatus,omitempty"`
+	SemanticID     string           `json:"semanticId,omitempty"`
+	QualifiedName  string           `json:"qualifiedName,omitempty"`
+	FromLabel      string           `json:"fromLabel,omitempty"`
+	ToLabel        string           `json:"toLabel,omitempty"`
 }
 
 type JRenderPoint struct {
@@ -483,8 +510,11 @@ type JRenderPoint struct {
 }
 
 type JRenderRow struct {
-	Cells  []string `json:"cells,omitempty"`
-	Origin *JSpan   `json:"origin,omitempty"`
+	Cells          []string `json:"cells,omitempty"`
+	Origin         *JSpan   `json:"origin,omitempty"`
+	SemanticID     string   `json:"semanticId,omitempty"`
+	QualifiedName  string   `json:"qualifiedName,omitempty"`
+	IdentityStatus string   `json:"identityStatus,omitempty"`
 }
 
 type JRenderNote struct {
@@ -498,6 +528,33 @@ type JRenderNote struct {
 	Height   float64 `json:"height,omitempty"`
 	HasSize  bool    `json:"hasSize,omitempty"`
 	Origin   *JSpan  `json:"origin,omitempty"`
+}
+
+// JRenderColumnElement identifies a matrix target by its zero-based Columns index.
+type JRenderColumnElement struct {
+	Index          int    `json:"index"`
+	Name           string `json:"name"`
+	SemanticID     string `json:"semanticId,omitempty"`
+	QualifiedName  string `json:"qualifiedName,omitempty"`
+	IdentityStatus string `json:"identityStatus,omitempty"`
+}
+
+// JRenderRelationshipCell indexes existing Rows and Columns, including the label column.
+type JRenderRelationshipCell struct {
+	Row           int                       `json:"row"`
+	Column        int                       `json:"column"`
+	Relationships []JRenderGridRelationship `json:"relationships"`
+}
+
+// JRenderGridRelationship preserves a declaration and its directed endpoints.
+type JRenderGridRelationship struct {
+	SemanticID       string `json:"semanticId,omitempty"`
+	QualifiedName    string `json:"qualifiedName,omitempty"`
+	IdentityStatus   string `json:"identityStatus,omitempty"`
+	SourceSemanticID string `json:"sourceSemanticId,omitempty"`
+	TargetSemanticID string `json:"targetSemanticId,omitempty"`
+	Kind             string `json:"kind"`
+	Label            string `json:"label"`
 }
 
 type JEvaluateRequest struct {
@@ -611,4 +668,40 @@ type JDocumentValue struct {
 	BigIntValue   *string          `json:"bigIntValue,omitempty"`
 	RationalValue *JRational       `json:"rationalValue,omitempty"`
 	ElementType   string           `json:"elementType,omitempty"`
+}
+
+// Native notation facts are additive and never inferred from labels.
+type JRenderSemanticRef struct {
+	Direction      string `json:"direction,omitempty"`
+	Kind           string `json:"kind"`
+	Name           string `json:"name,omitempty"`
+	LifelineID     string `json:"lifelineId,omitempty"`
+	SemanticID     string `json:"semanticId,omitempty"`
+	QualifiedName  string `json:"qualifiedName,omitempty"`
+	IdentityStatus string `json:"identityStatus,omitempty"`
+}
+type JRenderNotation struct {
+	Production      string              `json:"production"`
+	DeclarationKind string              `json:"declarationKind,omitempty"`
+	Classification  string              `json:"classification,omitempty"`
+	SourceRole      string              `json:"sourceRole,omitempty"`
+	TargetRole      string              `json:"targetRole,omitempty"`
+	SourceEndName   string              `json:"sourceEndName,omitempty"`
+	TargetEndName   string              `json:"targetEndName,omitempty"`
+	SourceEvent     *JRenderSemanticRef `json:"sourceEvent,omitempty"`
+	TargetEvent     *JRenderSemanticRef `json:"targetEvent,omitempty"`
+}
+type JRenderState struct {
+	Parallel  bool                   `json:"parallel"`
+	Behaviors []JRenderStateBehavior `json:"behaviors"`
+}
+type JRenderStateBehavior struct {
+	JRenderSemanticRef
+	Role string `json:"role"`
+	Text string `json:"text"`
+}
+type JRenderSequenceOrder struct {
+	JRenderSemanticRef
+	SourceEvent *JRenderSemanticRef `json:"sourceEvent,omitempty"`
+	TargetEvent *JRenderSemanticRef `json:"targetEvent,omitempty"`
 }

@@ -1,0 +1,1 @@
+- Correct the standalone wire capability contract to include explicit model release and memory diagnostics.

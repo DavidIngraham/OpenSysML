@@ -400,8 +400,10 @@ func TestCombinedWireParity(t *testing.T) {
 	if info.Version != "combined-wire-test" {
 		t.Errorf("GetServerInfo version = %q", info.Version)
 	}
-	if !reflect.DeepEqual(info.Capabilities, expectedCapabilities) {
-		t.Errorf("GetServerInfo capabilities = %v, want %v", info.Capabilities, expectedCapabilities)
+	// Standalone view/export and lifecycle operations extend the shared execution contract.
+	standaloneCapabilities := append(append([]string{}, expectedCapabilities...), "render_view", "semantic_rendering_identity", "export_model", "release_model", "memory_stats")
+	if !reflect.DeepEqual(info.Capabilities, standaloneCapabilities) {
+		t.Errorf("GetServerInfo capabilities = %v, want %v", info.Capabilities, standaloneCapabilities)
 	}
 	reported := make(map[string]bool)
 	for _, capability := range sysmlgrpc.Capabilities() {

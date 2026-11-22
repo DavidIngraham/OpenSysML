@@ -46,14 +46,14 @@ func TestFaultTreePartialAndCycle(t *testing.T) {
 	if len(partial.Roots) != 1 || len(partial.Edges) != 0 || len(partial.Notices) != 1 {
 		t.Fatalf("partial: %+v", partial)
 	}
-	renderer, index := loadFixture(t, "fault-tree.sysml")
+	renderer, index := loadFixture(t, "invalid/fault-tree.sysml")
 	if _, err := renderer.Render(lookup(t, index, "InvalidTree::tree")); !errors.Is(err, ErrInvalidFaultTree) {
 		t.Fatalf("cycle: %v", err)
 	}
 }
 
 func TestFaultTreeIntegrity(t *testing.T) {
-	renderer, index := loadFixture(t, "fault-tree.sysml")
+	renderer, index := loadFixture(t, "invalid/fault-tree.sysml")
 	for _, name := range []string{"ExtraCause::tree", "Inherited::tree", "Ambiguous::tree"} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := renderer.Render(lookup(t, index, name)); !errors.Is(err, ErrInvalidFaultTree) {

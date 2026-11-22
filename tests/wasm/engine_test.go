@@ -34,6 +34,8 @@ func TestEngineDependencies(t *testing.T) {
 		module + "/internal/exec/runtime",
 		module + "/internal/check/passes",
 		module + "/internal/workspace/libs",
+		module + "/internal/translate/export",
+		module + "/internal/translate/rdf/ontology",
 	}
 	checkWasmDependencies(t, "./cmd/sysml-engine", required, func(dependency string) bool {
 		return forbiddenEngineDependency(module, dependency)
