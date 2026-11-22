@@ -363,6 +363,7 @@ func (r *Renderer) stateNode(id program.StateID, graph *lower.StateGraph, machin
 	node := &Node{ID: ids.take(), Kind: "state", Name: nameText(state.Name), Type: nodeType(graph.StateDecl(id)),
 		Origin: nodeOrigin(docOr(graph.VertexDoc(program.StateVertex(id)), machine.DocName), state)}
 	if graph.Completing(id) {
+		node.Synthetic = true
 		node.Kind, node.Name, node.Type, node.NameSynthesized = "final", ast.DoneFeature, "", true
 		return node
 	}

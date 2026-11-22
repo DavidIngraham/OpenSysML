@@ -112,7 +112,7 @@ func ModelToAPIJSONDeclarationsWithOptions(documents []ModelDocument, options AP
 	if err != nil {
 		return nil, APIJSONProjectionCounts{}, err
 	}
-	graph, err := encodeModelDocumentsObserved(context.Background(), documents, encoders, nameInheritedLibraryMembers, options.Observe)
+	graph, err := encodeModelDocumentsObserved(context.Background(), documents, encoders, addLinkedLibraryStubs, options.Observe)
 	if err != nil {
 		return nil, APIJSONProjectionCounts{}, err
 	}
