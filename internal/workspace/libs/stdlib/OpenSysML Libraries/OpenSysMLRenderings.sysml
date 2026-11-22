@@ -6,6 +6,12 @@ library package OpenSysMLRenderings {
 
 	private import Views::*;
 
+    metadata def RequirementContext {
+        doc /* Bounds native relationship gathering around exposed requirement seeds. */
+        attribute relationshipDepth : ScalarValues::Integer = 1;
+    }
+
+
 	rendering asCaseDiagram : GraphicalRendering[1] :> renderings;
 	rendering asMixedDiagram : GraphicalRendering[1] :> renderings;
 

@@ -21,6 +21,7 @@ import (
 // them from (ToRDF's for one document, ModelToRDFWith's for several), so a
 // library file's copy, a declared id and scope qualification come out as written.
 type ElementIDs struct {
+	byOrigin map[symbols.Origin]ElementIdentity
 	// byNode keys each id by the declaration the conversion wrote it for: two
 	// identity scopes may declare one qualified name, and only the node tells
 	// their elements apart.
@@ -150,7 +151,7 @@ func identityIDsOf(res *resolve.Resolver, encoders []*encoder, referenced []bool
 }
 
 func newElementIDTables(res *resolve.Resolver, encoders []*encoder) *ElementIDs {
-	return &ElementIDs{byNode: map[ast.Node]string{}, bySpan: map[spanKey]string{}, byName: map[string]string{}, addressByID: map[string]string{},
+	return &ElementIDs{byOrigin: map[symbols.Origin]ElementIdentity{}, byNode: map[ast.Node]string{}, bySpan: map[spanKey]string{}, byName: map[string]string{}, addressByID: map[string]string{},
 		membershipByNode: map[ast.Node]string{}, membershipBySpan: map[spanKey]string{}, membershipByName: map[string]string{},
 		relationshipByNode: map[ast.Node]string{}, relationshipBySpan: map[spanKey]string{},
 		conjugateByNode: map[ast.Node]conjugateIDs{}, conjugateBySpan: map[spanKey]conjugateIDs{},
@@ -163,6 +164,11 @@ func (ids *ElementIDs) recordDeclaration(e *encoder, node ast.Node, parents map[
 	subject := e.ids.subjectForNode(node, fqn)
 	id := rdf.LocalName(subject.Value)
 	ids.byNode[node] = id
+	origin := symbols.NodeOrigin(e.file.Name(), node)
+	origin.Name = source.Span{}
+	if origin.Located() {
+		ids.byOrigin[origin] = ElementIdentity{ID: id, QualifiedName: fqn}
+	}
 	ids.bySpan[spanKey{e.file.Name(), node.Span()}] = id
 	if fqn != "" {
 		ids.byName[fqn] = id
@@ -1557,4 +1563,42 @@ func aboutClauses(about []*ast.QualifiedName) []*ast.Relationship {
 		clauses = append(clauses, &ast.Relationship{Kind: ast.RelAnnotates, Target: name})
 	}
 	return clauses
+}
+
+// NewDeclarationElementIDs inventories canonical declaration identities without emitting RDF.
+// It uses the converter's shared identity scopes, collection and duplicate checks.
+func NewDeclarationElementIDs(documents []ModelDocument) (*ElementIDs, error) {
+	return NewDeclarationElementIDsInModel(documents, nil, nil)
+}
+
+// NewDeclarationElementIDsInModel reuses the loaded model's native identity resolution.
+func NewDeclarationElementIDsInModel(documents []ModelDocument, res *resolve.Resolver, model *semantics.Model) (*ElementIDs, error) {
+	if res == nil {
+		return NewElementIDs(documents)
+	}
+	res, encoders, err := modelEncodersOver(documents, IDQualifiedName, res, model)
+	if err != nil {
+		return nil, err
+	}
+	referenced := make([]bool, len(documents))
+	for i := range documents {
+		referenced[i] = documents[i].Referenced
+	}
+	return identityIDsOf(res, encoders, referenced)
+}
+
+// ElementIdentity identifies a declaration exactly as native conversion writes it.
+type ElementIdentity struct {
+	ID            string
+	QualifiedName string
+}
+
+// OfOrigin resolves the exact declaration span; synthetic artifacts have no identity.
+func (ids *ElementIDs) OfOrigin(origin symbols.Origin) (ElementIdentity, bool) {
+	if ids == nil || !origin.Located() {
+		return ElementIdentity{}, false
+	}
+	origin.Name = source.Span{}
+	identity, ok := ids.byOrigin[origin]
+	return identity, ok
 }

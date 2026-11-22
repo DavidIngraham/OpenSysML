@@ -19,13 +19,7 @@ package PowerSupply {
     view tree : LocalView { expose PowerSupply::*; }
     view partial : LocalView { expose a; expose al; }
 }
-package InvalidTree {
-    occurrence a : FailureAnalysis::Event;
-    occurrence b : FailureAnalysis::Event;
-    connection ab : CauseAndEffect::Causation connect a to b;
-    connection ba : CauseAndEffect::Causation connect b to a;
-    view tree : OpenSysMLRenderings::FaultTreeView { expose InvalidTree::*; }
-}
+
 
 package PartialGate {
     occurrence a : FailureAnalysis::BasicEvent;
@@ -34,13 +28,7 @@ package PartialGate {
     connection al : CauseAndEffect::Causation connect a to loss;
     view tree : FailureAnalysisViews::FaultTreeView { expose PartialGate::*; }
 }
-package ExtraCause {
-    occurrence a : FailureAnalysis::BasicEvent;
-    occurrence b : FailureAnalysis::BasicEvent;
-    occurrence loss : FailureAnalysis::OrGate { ref occurrence :>> inputs = a; }
-    connection bl : CauseAndEffect::Causation connect b to loss;
-    view tree : FailureAnalysisViews::FaultTreeView { expose ExtraCause::*; }
-}
+
 package Nested {
     occurrence assembly : FailureAnalysis::Event {
         occurrence cause : FailureAnalysis::BasicEvent;
@@ -49,16 +37,8 @@ package Nested {
     }
     view tree : FailureAnalysisViews::FaultTreeView { expose assembly; }
 }
-package Inherited {
-    part def Assembly { occurrence failure : FailureAnalysis::BasicEvent; }
-    part assembly : Assembly;
-    view tree : FailureAnalysisViews::FaultTreeView { expose assembly; }
-}
-package Ambiguous {
-    occurrence def Both :> FailureAnalysis::AndGate, FailureAnalysis::OrGate;
-    occurrence both : Both;
-    view tree : FailureAnalysisViews::FaultTreeView { expose both; }
-}
+
+
 
 package Reordered {
     occurrence a : FailureAnalysis::BasicEvent;

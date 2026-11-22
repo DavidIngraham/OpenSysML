@@ -9,6 +9,7 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
 	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/source"
 )
 
 // A GeneralView is "a graph of nodes and edges" that its element filters
@@ -173,18 +174,22 @@ type generalGraph struct {
 	// exposed is what the view exposes when the graph overlays a rendering of
 	// another kind, whose ends it draws only when exposed; nil for a general graph.
 	exposed map[symbols.ElementKey]bool
+
+	bounded              bool
+	induced              bool
+	relationshipFrontier map[symbols.ElementKey]bool
 }
 
 type generalEdgeKey struct {
 	from, to, label string
 	kind            EdgeKind
-	// origin tells apart the import edges distinct declarations draw.
+	// origin retains distinct relationship declarations with identical endpoints.
 	origin Origin
 }
 
 // renderGeneral draws the exposed elements the graph's kind admits as nodes,
 // in exposure order, and the relationships between them as edges.
-func (r *Renderer) renderGeneral(view *symbols.Symbol, exposed []*symbols.Symbol, out *Rendering) {
+func (r *Renderer) renderGeneral(view *symbols.Symbol, exposed []*symbols.Symbol, out *Rendering) error {
 	g := &generalGraph{r: r, view: view, kind: out.Kind, out: out, ids: &nodeIDs{},
 		nodes: map[symbols.ElementKey]*Node{}, edges: map[generalEdgeKey]bool{}}
 	library, other := 0, 0
@@ -202,7 +207,28 @@ func (r *Renderer) renderGeneral(view *symbols.Symbol, exposed []*symbols.Symbol
 	exposedNodes := slices.Clone(g.order)
 	var related []Edge
 	if g.kind == KindRequirement {
-		related = g.requirementRelationships()
+		depth, bounded, err := r.requirementContextDepth(view)
+		if err != nil {
+			return err
+		}
+		if bounded {
+			g.bounded = true
+			passes := depth
+			if passes == 0 {
+				passes = 1
+				g.induced = true
+			}
+			for range passes {
+				g.relationshipFrontier = map[symbols.ElementKey]bool{}
+				for key := range g.nodes {
+					g.relationshipFrontier[key] = true
+				}
+				related = append(related, g.requirementRelationships()...)
+			}
+			g.relationshipFrontier = nil
+		} else {
+			related = g.requirementRelationships()
+		}
 	}
 	for _, sym := range exposedNodes {
 		if g.kind == KindPackage {
@@ -226,6 +252,7 @@ func (r *Renderer) renderGeneral(view *symbols.Symbol, exposed []*symbols.Symbol
 	if r.verdicts != nil && g.kind != KindRequirement {
 		out.Notices = append(out.Notices, fmt.Sprintf("verdicts are drawn on a requirement rendering, not on a %s rendering", g.kind))
 	}
+	return nil
 }
 
 // generalDraws says what a graph of the kind draws as nodes.
@@ -347,13 +374,12 @@ func (g *generalGraph) drawn(sym *symbols.Symbol) *Node {
 	return g.nodes[symbols.KeyOf(sym)]
 }
 
-// add records an edge once: an import edge once per import declaration.
+// add records an edge once per source declaration and endpoint pair.
 func (g *generalGraph) add(edge Edge) {
 	key := generalEdgeKey{from: edge.From, to: edge.To, label: edge.text(), kind: edge.Kind}
-	// Distinct declarations draw distinct import edges, and distinct exposed
-	// relationships distinct edges, each with its own route.
-	if edge.Kind == EdgeImport || g.exposed != nil {
+	if edge.Origin.Located() {
 		key.origin = edge.Origin
+		key.origin.Name = source.Span{}
 	}
 	if g.edges[key] {
 		return
@@ -718,6 +744,8 @@ func (g *generalGraph) requirementRelationships() []Edge {
 			out = append(out, g.deriveEdges(sym)...)
 		case sym.Kind == symbols.SymbolDependency && g.r.annotatedBy(sym, refinementMetadata):
 			out = append(out, g.refineEdges(sym)...)
+		case sym.Kind == symbols.SymbolDependency && g.bounded:
+			out = append(out, g.dependencyEdges(sym, EdgeDependency, "dependency")...)
 		}
 	}
 	return out
@@ -779,7 +807,12 @@ func (r *Renderer) modelElements() []*symbols.Symbol {
 // one of them, drawing the other beside it; a library element is not drawn.
 // Overlaying another rendering, it draws an undrawn end only when exposed.
 func (g *generalGraph) relate(from, to *symbols.Symbol, kind EdgeKind, origin *symbols.Symbol) (Edge, bool) {
-	if g.exposed == nil && g.drawn(from) == nil && g.drawn(to) == nil {
+	if g.relationshipFrontier != nil {
+		a, b := g.relationshipFrontier[symbols.KeyOf(from)], g.relationshipFrontier[symbols.KeyOf(to)]
+		if (!a && !b) || (g.induced && (!a || !b)) {
+			return Edge{}, false
+		}
+	} else if g.exposed == nil && g.drawn(from) == nil && g.drawn(to) == nil {
 		return Edge{}, false
 	}
 	for _, end := range []*symbols.Symbol{from, to} {
@@ -790,7 +823,11 @@ func (g *generalGraph) relate(from, to *symbols.Symbol, kind EdgeKind, origin *s
 			return Edge{}, false
 		}
 	}
-	return Edge{From: g.node(from).ID, To: g.node(to).ID, Kind: kind, Label: "«" + kind.String() + "»", Origin: symbolOrigin(origin)}, true
+	edge := Edge{From: g.node(from).ID, To: g.node(to).ID, Kind: kind, Label: "«" + kind.String() + "»", Origin: symbolOrigin(origin)}
+	if kind == EdgeRefine {
+		edge.Notation = &Notation{Production: "refinement", DeclarationKind: declKind(origin), Classification: refinementMetadata, SourceRole: "client", TargetRole: "supplier"}
+	}
+	return edge, true
 }
 
 // resolvedEnds resolves both ends of a relationship, reporting an end that
@@ -957,7 +994,8 @@ func (g *generalGraph) deriveEdges(sym *symbols.Symbol) []Edge {
 	if sym.Scope == nil {
 		return nil
 	}
-	var originals, derived []*symbols.Symbol
+	type endTarget struct{ target, end *symbols.Symbol }
+	var originals, derived []endTarget
 	for _, end := range append(slices.Clone(sym.Scope.Members()), sym.Scope.AnonymousMembers()...) {
 		usage, ok := end.Decl.(*ast.Usage)
 		if !ok || !usage.IsEnd {
@@ -972,15 +1010,16 @@ func (g *generalGraph) deriveEdges(sym *symbols.Symbol) []Edge {
 			continue
 		}
 		if isOriginal {
-			originals = append(originals, target)
+			originals = append(originals, endTarget{target, end})
 		} else {
-			derived = append(derived, target)
+			derived = append(derived, endTarget{target, end})
 		}
 	}
 	var out []Edge
 	for _, d := range derived {
 		for _, o := range originals {
-			if edge, ok := g.relate(d, o, EdgeDerive, sym); ok {
+			if edge, ok := g.relate(d.target, o.target, EdgeDerive, sym); ok {
+				edge.Notation = &Notation{Production: "derivation", DeclarationKind: declKind(sym), Classification: derivationMetadata, SourceRole: "derived", TargetRole: "original", SourceEndName: edgeName(d.end.Name, g.r.model.NameSynthesized(d.end) || d.end.EffectiveName()), TargetEndName: edgeName(o.end.Name, g.r.model.NameSynthesized(o.end) || o.end.EffectiveName())}
 				out = append(out, edge)
 			}
 		}

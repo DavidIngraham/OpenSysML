@@ -1,0 +1,1 @@
+- Preserve exact decimal integer attribute values outside signed 64-bit bounds in core and combined GetSymbol JSON instead of truncating them.

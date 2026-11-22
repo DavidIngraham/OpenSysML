@@ -73,6 +73,13 @@ func (r *Renderer) renderSequence(view *symbols.Symbol, exposed []*symbols.Symbo
 			"%s states no direction; a sequence rendering shows directed messages only",
 			r.noticeSubject(connector)))
 	}
+	for _, order := range stated.orders {
+		out.SequenceOrders = append(out.SequenceOrders, SequenceOrder{
+			SemanticRef: SemanticRef{Name: order.name, Kind: "succession", Origin: order.origin},
+			SourceEvent: sequenceRef(order.from, ends.lifelines), TargetEvent: sequenceRef(order.to, ends.lifelines),
+		})
+	}
+	out.SequenceOrdering = "partial-order-linearization"
 	messages := r.messages(view, stated.flows, ends, out)
 	out.Edges = r.orderMessages(messages, r.successions(view, stated.orders, ends, out), stated.orders, out)
 	ends.sortProxies()
@@ -386,10 +393,13 @@ func (r *Renderer) messages(view *symbols.Symbol, flows []*symbols.Symbol, ends 
 		if messageKind(flow) == "message" {
 			kind = EdgeMessage
 		}
+		notation := flowNotation(flow.Decl)
+		notation.SourceEvent = sequenceRef(occurrences[0], ends.lifelines)
+		notation.TargetEvent = sequenceRef(occurrences[1], ends.lifelines)
 		messages = append(messages, message{
 			flow: flow, from: occurrences[0], to: occurrences[1], fromTimed: ends.timed(occurrences[0]), toTimed: ends.timed(occurrences[1]),
 			edge: Edge{From: nodes[0], To: nodes[1], FromPort: ports[0], ToPort: ports[1], Label: r.messageLabel(flow), Kind: kind,
-				Origin: symbolOrigin(flow), Route: r.routeOf(view, flow, out),
+				Origin: symbolOrigin(flow), Notation: notation, Route: r.routeOf(view, flow, out),
 				Style: r.edgeDress(view, flow, nodes[0], nodes[1], out)},
 		})
 	}
@@ -578,6 +588,7 @@ func (r *Renderer) orderMessages(messages []message, successions []succession, o
 		ordered = reaches(eventsLater, at)
 	}
 	if cyclic != nil {
+		out.SequenceOrdering = "declaration-order-cycle-fallback"
 		out.Notices = append(out.Notices, fmt.Sprintf(
 			"successions form a cycle (%s); the messages are shown in declaration order",
 			strings.Join(cyclic, ", ")))
@@ -885,4 +896,29 @@ func lifelineLike(sym *symbols.Symbol) bool {
 		return true
 	}
 	return sym.Kind.IsActionUsage()
+}
+
+func sequenceRef(sym *symbols.Symbol, lifelines map[*symbols.Symbol]*Node) *SemanticRef {
+	if sym == nil {
+		return nil
+	}
+	ref := &SemanticRef{Kind: declKind(sym), Name: localName(sym), Origin: symbolOrigin(sym)}
+	if sym.Recorded() && sym.Facts.Modifiers.Has(symbols.ModEvent) {
+		ref.Kind = "event occurrence"
+	}
+	if usage, ok := sym.Decl.(*ast.Usage); ok {
+		if usage.IsEvent {
+			ref.Kind = "event occurrence"
+		}
+		if usage.Direction != ast.DirNone {
+			ref.Direction = usage.Direction.String()
+		}
+	}
+	for owner := sym; owner != nil; owner = owner.Owner() {
+		if node := lifelines[owner]; node != nil {
+			ref.LifelineID = node.ID
+			break
+		}
+	}
+	return ref
 }

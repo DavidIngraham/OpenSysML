@@ -1,0 +1,1 @@
+- Enable conversion-backed semantic rendering identities in WebAssembly and expose `RenderView` and experimental `ExportModel` through the combined standalone engine.

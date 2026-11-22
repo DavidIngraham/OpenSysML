@@ -1070,6 +1070,16 @@
       ]
     },
     {
+      "name": "OpenSysMLRenderings::RequirementContext",
+      "kind": "metadata",
+      "attributes": [
+        "relationshipDepth"
+      ],
+      "consumers": [
+        "internal/ir/view/requirement_context.go"
+      ]
+    },
+    {
       "name": "OpenSysMLRenderings::asCaseDiagram",
       "kind": "element",
       "consumers": [

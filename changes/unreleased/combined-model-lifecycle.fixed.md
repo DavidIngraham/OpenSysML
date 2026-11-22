@@ -1,0 +1,1 @@
+- Expose explicit synchronized disposal of parsed models and exact Go heap/GC diagnostics in the combined native/WASM service. Bound transient garbage at substantial browser parse, render, export and model-release boundaries without changing semantic caches or native desktop GC behavior.

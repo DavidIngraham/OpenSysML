@@ -353,6 +353,9 @@ func (k EdgeKind) String() string {
 // transitions leave. Children are the nodes nested in it, which is how a
 // rendering carries containment.
 type Node struct {
+	State *StateNotation
+	// Synthetic marks a generated notation vertex rather than a model declaration.
+	Synthetic bool
 	// ID identifies the node within its rendering, and is what an edge names.
 	ID string
 	// Kind is what the notation calls the element — "part def", "state",
@@ -440,6 +443,7 @@ type Node struct {
 // action, which an object flow ends at, or a port a part has from its
 // definition, which a connector ends at.
 type Port struct {
+	SemanticID, QualifiedName, IdentityStatus string
 	// ID identifies the port within its rendering, and is what an edge names.
 	ID string
 	// Name is the pin's name, as the notation writes it.
@@ -517,6 +521,7 @@ func (p Port) label() string {
 
 // Edge joins two nodes of a rendering.
 type Edge struct {
+	Notation *Notation
 	// From and To are node IDs.
 	From string
 	To   string
@@ -556,6 +561,8 @@ type Edge struct {
 // Rendering is what a view or run renders to. It is a value, not a live view of
 // the model: nothing in it points back into the AST.
 type Rendering struct {
+	SequenceOrders   []SequenceOrder
+	SequenceOrdering string
 	// View is the rendered view, by qualified name as the notation writes it.
 	View string
 	// Kind is the rendering produced.
@@ -586,6 +593,9 @@ type Rendering struct {
 	Header []HeaderField
 	// RowOrigins is where each row's element was declared, one entry per row.
 	RowOrigins []Origin
+	// ColumnElements and RelationshipCells retain semantic matrix axes and occurrences.
+	ColumnElements    []ColumnElement
+	RelationshipCells []RelationshipCell
 	// Shown is the optional notation elements the view's rendering shows, read
 	// from the rendering the view states; nil is DefaultShown.
 	Shown Shown
@@ -736,7 +746,9 @@ func (r *Renderer) render(view *symbols.Symbol, drawn *Drawn, query bool) (*Rend
 	case KindSequence:
 		r.renderSequence(view, exposed, out)
 	case KindRequirement, KindDefinition, KindPackage:
-		r.renderGeneral(view, exposed, out)
+		if err := r.renderGeneral(view, exposed, out); err != nil {
+			return nil, err
+		}
 	default:
 		// Unreachable: KindOf refuses an unsupported kind.
 		return nil, &UnsupportedKindError{Kind: kind, View: r.notationName(view), Stated: stated}
@@ -792,7 +804,9 @@ func (r *Renderer) RenderExposed(exposed []*symbols.Symbol, kind Kind, stated st
 	case KindSequence:
 		r.renderSequence(nil, exposed, out)
 	case KindRequirement, KindDefinition, KindPackage:
-		r.renderGeneral(nil, exposed, out)
+		if err := r.renderGeneral(nil, exposed, out); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, &UnsupportedKindError{Kind: kind, Stated: stated, Remedy: remedyFor(kind)}
 	}

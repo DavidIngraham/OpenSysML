@@ -8,10 +8,12 @@ func (r *Rendering) Clone() *Rendering {
 	}
 	out := *r
 	out.drawn = nil
+	out.SequenceOrders = cloneSequenceOrders(r.SequenceOrders)
 	out.Roots = cloneNodes(r.Roots)
 	out.Edges = append([]Edge(nil), r.Edges...)
 	for i := range out.Edges {
 		out.Edges[i].Route = append([]Point(nil), r.Edges[i].Route...)
+		out.Edges[i].Notation = cloneNotation(r.Edges[i].Notation)
 		out.Edges[i].Style = cloneStyle(r.Edges[i].Style)
 	}
 	out.Notes = append([]Note(nil), r.Notes...)
@@ -27,6 +29,8 @@ func (r *Rendering) Clone() *Rendering {
 	}
 	out.Header = append([]HeaderField(nil), r.Header...)
 	out.RowOrigins = append([]Origin(nil), r.RowOrigins...)
+	out.ColumnElements = append([]ColumnElement(nil), r.ColumnElements...)
+	out.RelationshipCells = cloneRelationshipCells(r.RelationshipCells)
 	out.Notices = append([]string(nil), r.Notices...)
 	out.Frame = cloneFrame(r.Frame)
 	return &out
@@ -50,6 +54,7 @@ func cloneNodes(nodes []*Node) []*Node {
 	out := make([]*Node, len(nodes))
 	for i, node := range nodes {
 		copied := *node
+		copied.State = cloneState(node.State)
 		copied.Children = cloneNodes(node.Children)
 		copied.Compartments = cloneCompartments(node.Compartments)
 		copied.Ports = append([]Port(nil), node.Ports...)

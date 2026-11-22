@@ -1,0 +1,1 @@
+- Preserve distinct source relationship declarations with identical endpoints in general views, including parallel satisfaction assertions, while deduplicating repeated discovery of the same declaration.

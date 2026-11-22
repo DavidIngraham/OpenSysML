@@ -119,6 +119,10 @@ func apiJSONElementsWithOptions(graph *rdf.Graph, options APIJSONOptions) ([]api
 // apiJSONEachElement hands visit the element object of every subject in order;
 // the object is visit's to keep, and nothing here holds it afterwards.
 func apiJSONEachElement(graph *rdf.Graph, options APIJSONOptions, visit func(apiJSONObject) error) error {
+	return apiJSONEachSelectedElement(graph, options, nil, visit)
+}
+
+func apiJSONEachSelectedElement(graph *rdf.Graph, options APIJSONOptions, selectSubject func(*rdf.Graph, rdf.Term) bool, visit func(apiJSONObject) error) error {
 	wrapped, err := withRootNamespace(graph)
 	if err != nil {
 		return err
@@ -164,6 +168,9 @@ func apiJSONEachElement(graph *rdf.Graph, options APIJSONOptions, visit func(api
 			continue
 		}
 		if id, _ := rdf.SubjectID(subject); library && reached != nil && !reached[id] {
+			continue
+		}
+		if selectSubject != nil && !selectSubject(settled, subject) {
 			continue
 		}
 		element, err := writer.element(subject)

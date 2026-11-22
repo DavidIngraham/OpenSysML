@@ -155,7 +155,7 @@ func (r *Renderer) renderMatrix(exposed []*symbols.Symbol, shown []string, pseud
 			if edge.Source == nil || edge.Target == nil {
 				continue
 			}
-			edges = append(edges, matrixEdge{keyword: keyword, source: edge.Source, target: edge.Target})
+			edges = append(edges, matrixEdge{keyword: keyword, source: edge.Source, target: edge.Target, declaration: elem})
 			for owner := range owners[symbols.KeyOf(elem)] {
 				contributed[owner] = true
 			}
@@ -174,6 +174,7 @@ func (r *Renderer) renderMatrix(exposed []*symbols.Symbol, shown []string, pseud
 	rowIndexes := map[symbols.ElementKey]int{}
 	columnIndexes := map[symbols.ElementKey]int{}
 	cells := map[matrixPair]map[string]bool{}
+	relationships := map[matrixPair][]GridRelationship{}
 	for _, edge := range edges {
 		sourceKey, targetKey := symbols.KeyOf(edge.source), symbols.KeyOf(edge.target)
 		if _, ok := rowIndexes[sourceKey]; !ok {
@@ -189,12 +190,19 @@ func (r *Renderer) renderMatrix(exposed []*symbols.Symbol, shown []string, pseud
 			cells[pair] = map[string]bool{}
 		}
 		cells[pair][edge.keyword] = true
+		relationships[pair] = append(relationships[pair], GridRelationship{
+			Kind: edge.keyword, Label: r.matrixLabel(edge.declaration),
+			Origin: symbolOrigin(edge.declaration), SourceOrigin: symbolOrigin(edge.source), TargetOrigin: symbolOrigin(edge.target),
+		})
 	}
 
 	out.Columns = make([]string, 1, len(columnTargets)+1)
 	out.Columns[0] = "Source / Target"
 	for _, target := range columnTargets {
 		out.Columns = append(out.Columns, r.matrixLabel(target))
+		out.ColumnElements = append(out.ColumnElements, ColumnElement{
+			Index: len(out.Columns) - 1, Name: r.matrixLabel(target), Origin: symbolOrigin(target),
+		})
 	}
 	for _, source := range rowSources {
 		row := make([]string, len(out.Columns))
@@ -207,6 +215,11 @@ func (r *Renderer) renderMatrix(exposed []*symbols.Symbol, shown []string, pseud
 				}
 			}
 			row[columnIndexes[symbols.KeyOf(target)]+1] = strings.Join(keywords, ", ")
+			if occurrences := relationships[matrixPair{source: symbols.KeyOf(source), target: symbols.KeyOf(target)}]; len(occurrences) > 0 {
+				out.RelationshipCells = append(out.RelationshipCells, RelationshipCell{
+					Row: len(out.Rows), Column: columnIndexes[symbols.KeyOf(target)] + 1, Relationships: occurrences,
+				})
+			}
 		}
 		out.appendRow(row, symbolOrigin(source))
 	}
@@ -224,9 +237,10 @@ func (r *Renderer) renderMatrix(exposed []*symbols.Symbol, shown []string, pseud
 }
 
 type matrixEdge struct {
-	keyword string
-	source  *symbols.Symbol
-	target  *symbols.Symbol
+	keyword     string
+	source      *symbols.Symbol
+	target      *symbols.Symbol
+	declaration *symbols.Symbol
 }
 
 func (r *Renderer) matrixContainedMembers(sym *symbols.Symbol) []*symbols.Symbol {
