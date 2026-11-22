@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"runtime/debug"
 	"syscall/js"
 
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/combined"
@@ -11,6 +12,9 @@ import (
 )
 
 func serve(server *combined.Server, useStdio bool) int {
+	// Keep garbage collection ahead of the browser's fixed 4 GiB linear-memory ceiling.
+	debug.SetMemoryLimit(1400 << 20)
+	debug.SetGCPercent(50)
 	if useStdio {
 		return serveStdio(server)
 	}

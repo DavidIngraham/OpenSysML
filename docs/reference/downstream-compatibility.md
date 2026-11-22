@@ -56,6 +56,12 @@ would change native objects, so the projection selects subjects at the native
 API writer instead. Collection order and references to omitted objects remain
 native.
 
+Projection writers periodically release derived-value memo tables, retaining the
+same immutable graph, ownership indexes and semantic model. Every output object
+is checked against the unrestricted native writer across cache-window boundaries.
+The browser target sets a 1400 MiB Go soft memory limit and GOGC=50 to leave room
+inside the 4 GiB WASM address space; these settings do not change model values.
+
 Sequence event proxies and succession arrows are actual upstream records.
 SysPresent places their native event identities on their native parent lifelines,
 retains explicit orders separately, and does not turn proxies into participants

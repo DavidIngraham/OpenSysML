@@ -149,6 +149,7 @@ func (s *apiJSONGraphStructure) LibrarySymbol(element metamodel.Element) (*symbo
 }
 
 type apiJSONEvaluation struct {
+	resolver  *resolve.Resolver
 	structure *apiJSONGraphStructure
 	evaluator *metamodel.Evaluator
 	model     *semantics.Model
@@ -163,10 +164,16 @@ func newAPIJSONEvaluationWithIndex(index *apiJSONGraphIndex) *apiJSONEvaluation 
 	resolver := resolve.New(libs.SharedBase())
 	model := semantics.NewModel(resolver)
 	return &apiJSONEvaluation{
+		resolver:  resolver,
 		structure: structure,
 		evaluator: metamodel.New(resolver, model, metamodel.Options{Structure: structure}),
 		model:     model,
 	}
+}
+
+// resetMemo releases derived-value caches while retaining the same immutable graph and model.
+func (e *apiJSONEvaluation) resetMemo() {
+	e.evaluator = metamodel.New(e.resolver, e.model, metamodel.Options{Structure: e.structure})
 }
 
 func apiJSONEvaluationGraph(graph *rdf.Graph) *rdf.Graph {
