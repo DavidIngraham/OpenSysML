@@ -17,6 +17,7 @@ stable	disposal-robot-demo/robot.sysml
 stable	disposal-team-demo/team.sysml
 stable	expressions-demo.sysml
 stable	external-tool-demo/thermal.sysml
+stable	fault-tree.sysml
 stable	general-views-demo/use-cases.sysml
 stable	general-views-demo/vehicle.sysml
 stable	gridview-relationship-matrix.sysml

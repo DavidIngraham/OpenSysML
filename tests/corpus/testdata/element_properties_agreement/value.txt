@@ -219,7 +219,7 @@ Membership::memberElement	40	export-56
 Membership::ownedRelatedElement	4	export-06
 Membership::owningNamespace	53	symbol-69
 Membership::target	3	export-14
-MembershipExpose::owningNamespace	86	symbol-69
+MembershipExpose::owningNamespace	88	symbol-69
 MembershipImport::importedMembership	6	export-56
 MembershipImport::ownedRelatedElement	1	export-60
 MembershipImport::owningNamespace	172	symbol-69
@@ -241,10 +241,10 @@ Namespace::ownedElement	3	symbol-02
 Namespace::ownedMember	1	symbol-82
 Namespace::ownedMembership	1	symbol-82
 Namespace::ownedRelationship	1	symbol-82
-NamespaceExpose::owningNamespace	24	symbol-69
+NamespaceExpose::owningNamespace	25	symbol-69
 NamespaceImport::ownedRelatedElement	1	export-06
 NamespaceImport::owningMembership	2	export-02
-NamespaceImport::owningNamespace	297	symbol-69
+NamespaceImport::owningNamespace	300	symbol-69
 NamespaceImport::owningRelatedElement	2	export-56
 NamespaceImport::owningRelationship	2	export-04
 NamespaceImport::visibility	2	export-05

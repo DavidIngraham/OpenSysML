@@ -1340,3 +1340,40 @@ The (metaclass, property) rows ranked by the corpus elements on which the pilot 
 <!-- doc-counts:end apijson-launch-ready-gaps -->
 
 Rows an evaluator rule in PR #1232 (`internal/semantic/metamodel/rules.go`) already names are marked; that PR adds a lazy metamodel evaluator and layers its derived values into the API-JSON writer, so its merge is expected to move those rows from ours-missing to present-equal or present-different, and this referee is how that movement is measured.
+
+
+## November downstream extension-library replay
+
+The full measured replay uses extension-library commit
+`38097bbc0198767590c58f89796a436678319924`. Only the `examples` root moves:
+its new qualitative fault-tree example and the self-model's registered fault-tree
+rendering/API surface facts add 329 matched elements. Every other root has exactly
+the same buckets. Totals change from 950 to 951 files, 114688 to 115017 matched
+elements and 26925 to 26927 pilot-only elements; ours-only stays 17461 and type
+mismatches stay 1317. Refused (38), unconvertible (0), colliding (53) and pilot
+failures (0) are unchanged.
+
+The added elements join the already recorded derived-property gaps: present-equal
+2332750 → 2339531, present-different 168688 → 169023, ours-missing 186616 →
+187009, pilot-missing 88681 → 88940, absent-both 2443223 → 2450591 and
+indeterminate 69509 → 69966. Pilot nondeterministic properties stay 565. The
+pilot's example-root library-element inventory grows by 2634 for the added
+failure libraries and registrations; duplicate pilot elements grow by 80 as the
+self-model imports its expanded surfaces. Existing metamodel gap classifications
+remain applicable. No other root loses agreement or acquires a failure.
+
+The browser declaration projection selects objects only after the complete graph
+is available. Its bounded memoization and redundant RDF index release are checked
+against unrestricted native API objects, including the actual authored Blue Dog
+project. They do not filter graph facts or change this full element-form baseline.
+
+
+The native example sweep independently measured 894 files: 849 stable round
+trips, seven whitespace-only, no graph differences, no unwritable or unparseable
+models and 38 refused inputs, in both Turtle and API JSON. The newly added
+`fault-tree.sysml` is stable in both forms. Its properties and the added self-model
+surface facts increase counts within the same 1346 already adjudicated agreement
+classes (including implied library typings and namespace/expose ownership); the
+clause keys and the side adjudicated correct are retained. The committed model
+inventory grows from 69 to 70, so the two round-trip inventories and agreement
+counts are re-recorded from the full downloaded corpus, without a subset.

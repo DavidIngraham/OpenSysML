@@ -236,3 +236,14 @@ pilot element counts rise to 40861 (10940 copies dropped), 15900 (40) and 2448 (
 six roots are unchanged. In `derived_census_records.tsv` the pilot's figures move on 608 rule-root
 lines, all in those three roots; ours move on none, the set of silent rules is the same, and the
 rules answering a value on each side are the same 276 and 289.
+
+
+## November downstream extension-library replay
+
+The measured structural differential changes only the examples root: 69 → 70
+models and 54046 → 54375 matched elements, with unmatched elements unchanged at
+22. These are the same 329 added example/self-model elements recorded by the
+pilot API differential for the qualitative fault-tree library and its registered
+surface. Every other corpus root retains exactly its recorded buckets. The added
+properties join the existing symbol/graph disagreement families; no existing
+corpus agreement was discarded and no conformance fixture was narrowed.
