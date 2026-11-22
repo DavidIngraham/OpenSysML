@@ -123,7 +123,7 @@ func apiJSONEachElement(graph *rdf.Graph, options APIJSONOptions, visit func(api
 	return apiJSONEachSelectedElement(graph, options, nil, visit)
 }
 
-const apiJSONDeclarationMemoWindow = 8
+const apiJSONDeclarationMemoWindow = 64
 
 func apiJSONEachSelectedElement(graph *rdf.Graph, options APIJSONOptions, selectSubject func(*rdf.Graph, rdf.Term) bool, visit func(apiJSONObject) error) error {
 	wrapped, err := withRootNamespace(graph)
