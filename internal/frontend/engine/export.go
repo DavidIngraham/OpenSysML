@@ -26,8 +26,8 @@ type JExportModelResponse struct {
 }
 
 func (e *Engine) exportModel(req *JExportModelRequest) ([]byte, error) {
-	if req.Projection != "" && req.Projection != "full" && req.Projection != "declarations" {
-		return nil, statusError(codeInvalidArgument, "projection must be full or declarations")
+	if req.Projection != "" && req.Projection != "full" && req.Projection != "declarations" && req.Projection != "declaration-index" {
+		return nil, statusError(codeInvalidArgument, "projection must be full, declarations or declaration-index")
 	}
 	cached, ok := e.get(req.ModelHash)
 	if !ok {
@@ -39,6 +39,17 @@ func (e *Engine) exportModel(req *JExportModelRequest) ([]byte, error) {
 			return nil, statusError(codeFailedPrecondition, "cannot export a model with syntax errors")
 		}
 		documents = append(documents, export.ModelDocument{File: doc.Source, Root: doc.Root})
+	}
+	if req.Projection == "declaration-index" {
+		entries, err := export.ModelDeclarationIndex(documents, cached.resolver, cached.typedModel())
+		if err != nil {
+			return nil, statusError(codeInvalidArgument, err.Error())
+		}
+		return json.Marshal(struct {
+			Projection       string                         `json:"projection"`
+			DeclarationIndex []export.DeclarationIndexEntry `json:"declarationIndex"`
+			Notice           string                         `json:"notice"`
+		}{"declaration-index", entries, "Native declaration discovery metadata; request declarations or full for API JSON properties."})
 	}
 	if req.Projection == "declarations" {
 		typed := cached.typedModel()
