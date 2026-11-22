@@ -51,7 +51,7 @@ func (e *Engine) exportModel(req *JExportModelRequest) ([]byte, error) {
 			Projection: "declarations", ElementCount: &counts.ElementCount, OmittedElementCount: &counts.OmittedElementCount,
 			CoverageNotice: "Only source-backed declaration objects are included. References to omitted expression, membership and other infrastructure objects retain their native IDs. The complete parsed model remains available for native views and symbol queries."})
 	}
-	graph, err := export.ModelToRDFWith(documents, export.IDQualifiedName)
+	graph, err := export.ModelElementGraphWith(documents, export.IDQualifiedName)
 	if err != nil {
 		return nil, statusError(codeInvalidArgument, err.Error())
 	}

@@ -1,1 +1,1 @@
-- Bound declaration export collection storage by projecting native declaration triples before annotation and serializing one indexed collection at a time without duplicating the complete RDF grouping. Preserve native references, collection order and coverage counts.
+- Write declaration API JSON through the native element-form graph, avoiding eager RDF inherited-library expansion. Preserve complete native derived-property context, canonical references, collection order and coverage counts.

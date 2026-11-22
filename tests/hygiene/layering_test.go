@@ -147,6 +147,7 @@ var packageLayer = map[string]string{
 	"internal/frontend/jupyter":                 "frontend",
 	"internal/frontend/lsp":                     "frontend",
 	"internal/frontend/grpc":                    "frontend",
+	"internal/frontend/renderidentity":          "frontend",
 	"internal/frontend/engine":                  "frontend",
 	"internal/frontend/core":                    "frontend",
 	"internal/frontend/combined":                "frontend",
