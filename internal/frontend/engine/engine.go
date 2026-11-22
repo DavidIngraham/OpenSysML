@@ -421,7 +421,10 @@ func (e *Engine) renderView(req *JRenderViewRequest) ([]byte, error) {
 		}
 		text = view.Artifact(written)
 	}
-	return marshalRenderViewExtended(cached, data, text, e.extensions.RenderingMetadata && (req.IncludeSemanticIdentity || req.IncludeRenderingMetadata))
+	if e.extensions.RenderingMetadata && (req.IncludeSemanticIdentity || req.IncludeRenderingMetadata) {
+		return marshalRenderViewExtended(cached, data, text, true)
+	}
+	return marshalRenderView(cached, data, text)
 }
 
 // renderOrigins resolves the declaration spans a rendering refers to, in the
