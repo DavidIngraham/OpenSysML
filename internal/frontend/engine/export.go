@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/Open-MBEE/OpenSysML/internal/frontend/jsonrpc"
-	"github.com/Open-MBEE/OpenSysML/internal/translate/export"
 )
 
 // JExportModelRequest selects a parsed model for API-JSON export.
@@ -33,48 +32,20 @@ func (e *Engine) exportModel(req *JExportModelRequest) ([]byte, error) {
 	if !ok {
 		return nil, statusErrorf(codeNotFound, msgModelNotFound, req.ModelHash)
 	}
-	documents := make([]export.ModelDocument, 0, len(cached.Documents))
 	for _, doc := range cached.Documents {
 		if len(doc.Errors) > 0 {
 			return nil, statusError(codeFailedPrecondition, "cannot export a model with syntax errors")
 		}
-		documents = append(documents, export.ModelDocument{File: doc.Source, Root: doc.Root})
 	}
-	if req.Projection == "declaration-index" {
-		entries, err := export.ModelDeclarationIndex(documents, cached.resolver, cached.typedModel())
-		if err != nil {
-			return nil, statusError(codeInvalidArgument, err.Error())
-		}
-		return json.Marshal(struct {
-			Projection       string                         `json:"projection"`
-			DeclarationIndex []export.DeclarationIndexEntry `json:"declarationIndex"`
-			Notice           string                         `json:"notice"`
-		}{"declaration-index", entries, "Native declaration discovery metadata; request declarations or full for API JSON properties."})
+	if e.extensions.ExportModel == nil {
+		return nil, statusError(codeUnimplemented, "model export requires the combined frontend")
 	}
-	if req.Projection == "declarations" {
-		typed := cached.typedModel()
-		elements, counts, err := export.ModelToAPIJSONDeclarationsInModel(documents, cached.resolver, typed)
-		if err != nil {
-			return nil, statusError(codeInvalidArgument, err.Error())
-		}
-		return marshalExportResponse(JExportModelResponse{Elements: elements, Experimental: true,
-			Notice:     "The SysML to API-JSON mapping is experimental; preserve source and provenance.",
-			Projection: "declarations", ElementCount: &counts.ElementCount, OmittedElementCount: &counts.OmittedElementCount,
-			CoverageNotice: "Only source-backed declaration objects are included. References to omitted expression, membership and other infrastructure objects retain their native IDs. The complete parsed model remains available for native views and symbol queries."})
-	}
-	graph, err := export.ModelElementGraphWith(documents, export.IDQualifiedName)
-	if err != nil {
-		return nil, statusError(codeInvalidArgument, err.Error())
-	}
-	elements, err := export.WriteAPIJSON(graph)
-	if err != nil {
-		return nil, statusError(codeInvalidArgument, err.Error())
-	}
-	return marshalExportResponse(JExportModelResponse{Elements: elements, Experimental: true, Notice: "The SysML to API-JSON mapping is experimental; preserve source and provenance."})
+	return e.extensions.ExportModel(cached.extensionContext(), req)
+
 }
 
-// marshalExportResponse avoids an exact-length clone of a large encoded result.
-func marshalExportResponse(response JExportModelResponse) ([]byte, error) {
+// MarshalExportResponse avoids an exact-length clone of a large encoded result.
+func MarshalExportResponse(response JExportModelResponse) ([]byte, error) {
 	if len(response.Elements) < 16<<20 {
 		return json.Marshal(response)
 	}

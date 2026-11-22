@@ -34,8 +34,6 @@ func TestEngineDependencies(t *testing.T) {
 		module + "/internal/exec/runtime",
 		module + "/internal/check/passes",
 		module + "/internal/workspace/libs",
-		module + "/internal/translate/export",
-		module + "/internal/translate/rdf/ontology",
 	}
 	checkWasmDependencies(t, "./cmd/sysml-engine", required, func(dependency string) bool {
 		return forbiddenEngineDependency(module, dependency)
@@ -150,9 +148,18 @@ func engineSubtests(t *testing.T, target wasmTarget, r runner, bins map[string]s
 		if err != nil {
 			t.Fatalf("reading %s: %v", bins["sysml-engine"], err)
 		}
-		if bytes.Contains(data, []byte("<svg xmlns=")) {
-			t.Error("sysml-engine.wasm links the run-only SVG writers: write a model view with WriteViewWith")
+		const runWriter = "github.com/Open-MBEE/OpenSysML/internal/ir/view.(*Rendering).SVGWith"
+		control, err := os.ReadFile(bins["sysml"])
+		if err != nil {
+			t.Fatal(err)
 		}
+		if !bytes.Contains(control, []byte(runWriter)) {
+			t.Fatal("run-writer marker does not identify the CLI's actual SVG writer")
+		}
+		if bytes.Contains(data, []byte(runWriter)) {
+			t.Error("sysml-engine.wasm links the run-only SVG writer")
+		}
+
 	})
 
 	t.Run("fits the engine size budget", func(t *testing.T) {

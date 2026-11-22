@@ -27,7 +27,7 @@ func TestExportResponseEncodingMatchesStandardMarshal(t *testing.T) {
 	}
 	for i, response := range responses {
 		want, wantErr := json.Marshal(response)
-		got, gotErr := marshalExportResponse(response)
+		got, gotErr := MarshalExportResponse(response)
 		if (gotErr == nil) != (wantErr == nil) || gotErr != nil && gotErr.Error() != wantErr.Error() {
 			t.Fatalf("case %d error=%v; want %v", i, gotErr, wantErr)
 		}
@@ -47,7 +47,7 @@ func TestNearbyLargeExportResponsesShareAllocationClass(t *testing.T) {
 	var capacity int
 	for _, extra := range []int{0, 205, 411, 4096} {
 		response := JExportModelResponse{Elements: json.RawMessage(`["` + strings.Repeat("x", (17<<20)+extra) + `"]`)}
-		got, err := marshalExportResponse(response)
+		got, err := MarshalExportResponse(response)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func BenchmarkLargeExportResponseBuffers(b *testing.B) {
 		b.ReportAllocs()
 		b.SetBytes(int64(len(response.Elements)))
 		for i := 0; i < b.N; i++ {
-			result, err := marshalExportResponse(response)
+			result, err := MarshalExportResponse(response)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -107,7 +107,7 @@ func BenchmarkLargeExportWireBuffers(b *testing.B) {
 		b.ReportAllocs()
 		b.SetBytes(int64(len(response.Elements)))
 		for i := 0; i < b.N; i++ {
-			body, err := marshalExportResponse(response)
+			body, err := MarshalExportResponse(response)
 			if err != nil {
 				b.Fatal(err)
 			}

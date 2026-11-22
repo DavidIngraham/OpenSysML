@@ -1,14 +1,15 @@
-package engine
+package combined
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/Open-MBEE/OpenSysML/internal/frontend/engine"
 	"os"
 	"testing"
 )
 
 func TestNativeNotationWireIdentityAndDisclosure(t *testing.T) {
-	eng, err := New()
+	eng, err := New("native-metadata-contract-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,11 +37,11 @@ func TestNativeNotationWireIdentityAndDisclosure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var parsed JParseSourcesResponse
+	var parsed engine.JParseSourcesResponse
 	call("ParseSources", map[string]any{"documents": []map[string]string{{"name": "sequence.sysml", "content": string(sequence)}, {"name": "action.sysml", "content": action}, {"name": "state-do.sysml", "content": string(state)}, {"name": "general.sysml", "content": string(general)}}}, &parsed)
 	for _, identity := range []bool{true, false, true} {
-		var out JRenderViewResponse
-		call("RenderView", JRenderViewRequest{ModelHash: parsed.ModelHash, View: "SequenceViews::pubSubView", IncludeSemanticIdentity: identity}, &out)
+		var out engine.JRenderViewResponse
+		call("RenderView", engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "SequenceViews::pubSubView", IncludeSemanticIdentity: identity, IncludeRenderingMetadata: true}, &out)
 		if len(out.Edges) != 6 || len(out.SequenceOrders) != 3 {
 			t.Fatalf("wire lost native occurrences: %+v", out)
 		}
@@ -81,7 +82,7 @@ func TestNativeNotationWireIdentityAndDisclosure(t *testing.T) {
 				t.Fatal("cached order identity leaked")
 			}
 		}
-		call("RenderView", JRenderViewRequest{ModelHash: parsed.ModelHash, View: "InstrumentViews::peas", IncludeSemanticIdentity: identity}, &out)
+		call("RenderView", engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "InstrumentViews::peas", IncludeSemanticIdentity: identity, IncludeRenderingMetadata: true}, &out)
 		behaviors := 0
 		for _, node := range out.Nodes {
 			if node.State != nil {
@@ -99,7 +100,7 @@ func TestNativeNotationWireIdentityAndDisclosure(t *testing.T) {
 		if behaviors != 7 {
 			t.Fatalf("state behavior wire count=%d", behaviors)
 		}
-		call("RenderView", JRenderViewRequest{ModelHash: parsed.ModelHash, View: "GeneralViews::requirementView", IncludeSemanticIdentity: identity}, &out)
+		call("RenderView", engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "GeneralViews::requirementView", IncludeSemanticIdentity: identity, IncludeRenderingMetadata: true}, &out)
 		derived := false
 		for _, edge := range out.Edges {
 			if edge.Kind == "derive" {
@@ -109,7 +110,7 @@ func TestNativeNotationWireIdentityAndDisclosure(t *testing.T) {
 		if !derived {
 			t.Fatal("derivation native production lost on wire")
 		}
-		call("RenderView", JRenderViewRequest{ModelHash: parsed.ModelHash, View: "Actions::pipe", IncludeSemanticIdentity: identity, Show: []string{"parameter-symbols", "typings"}}, &out)
+		call("RenderView", engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "Actions::pipe", IncludeSemanticIdentity: identity, IncludeRenderingMetadata: true, Show: []string{"parameter-symbols", "typings"}}, &out)
 		ports := 0
 		for _, node := range out.Nodes {
 			for _, port := range node.Ports {

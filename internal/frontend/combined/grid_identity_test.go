@@ -1,13 +1,14 @@
-package engine
+package combined
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/Open-MBEE/OpenSysML/internal/frontend/engine"
 	"testing"
 )
 
 func TestMatrixIdentityPreservesAxesDirectionAndDuplicateRelationships(t *testing.T) {
-	eng, err := New()
+	eng, err := New("native-metadata-contract-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,21 +26,21 @@ func TestMatrixIdentityPreservesAxesDirectionAndDuplicateRelationships(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	var parsed JParseSourcesResponse
+	var parsed engine.JParseSourcesResponse
 	if err := json.Unmarshal(response, &parsed); err != nil {
 		t.Fatal(err)
 	}
 	if len(parsed.Diagnostics) != 0 {
 		t.Fatalf("grid fixture has diagnostics: %+v", parsed.Diagnostics)
 	}
-	render := func(identity bool) JRenderViewResponse {
+	render := func(identity bool) engine.JRenderViewResponse {
 		t.Helper()
-		params, _ := json.Marshal(JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#matrix:Grid", IncludeSemanticIdentity: identity})
+		params, _ := json.Marshal(engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#matrix:Grid", IncludeSemanticIdentity: identity})
 		response, err := eng.Call(context.Background(), "RenderView", params)
 		if err != nil {
 			t.Fatal(err)
 		}
-		var rendered JRenderViewResponse
+		var rendered engine.JRenderViewResponse
 		if err := json.Unmarshal(response, &rendered); err != nil {
 			t.Fatal(err)
 		}
@@ -97,12 +98,12 @@ func TestMatrixIdentityPreservesAxesDirectionAndDuplicateRelationships(t *testin
 			}
 		}
 	}
-	params, _ = json.Marshal(JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#table:Grid", IncludeSemanticIdentity: true})
+	params, _ = json.Marshal(engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#table:Grid", IncludeSemanticIdentity: true})
 	response, err = eng.Call(context.Background(), "RenderView", params)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var table JRenderViewResponse
+	var table engine.JRenderViewResponse
 	if err := json.Unmarshal(response, &table); err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +113,7 @@ func TestMatrixIdentityPreservesAxesDirectionAndDuplicateRelationships(t *testin
 }
 
 func TestMatrixDerivationIdentityUsesOriginalToDerivedDirection(t *testing.T) {
-	eng, err := New()
+	eng, err := New("native-metadata-contract-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,19 +133,19 @@ func TestMatrixDerivationIdentityUsesOriginalToDerivedDirection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var parsed JParseSourcesResponse
+	var parsed engine.JParseSourcesResponse
 	if err := json.Unmarshal(response, &parsed); err != nil {
 		t.Fatal(err)
 	}
 	if len(parsed.Diagnostics) != 0 {
 		t.Fatalf("derivation fixture has diagnostics: %+v", parsed.Diagnostics)
 	}
-	params, _ = json.Marshal(JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#matrix:DeriveGrid", IncludeSemanticIdentity: true})
+	params, _ = json.Marshal(engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "#matrix:DeriveGrid", IncludeSemanticIdentity: true})
 	response, err = eng.Call(context.Background(), "RenderView", params)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var rendered JRenderViewResponse
+	var rendered engine.JRenderViewResponse
 	if err := json.Unmarshal(response, &rendered); err != nil {
 		t.Fatal(err)
 	}

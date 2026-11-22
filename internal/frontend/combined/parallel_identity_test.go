@@ -1,13 +1,14 @@
-package engine
+package combined
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/Open-MBEE/OpenSysML/internal/frontend/engine"
 	"testing"
 )
 
 func TestRenderParallelSatisfactionIdentities(t *testing.T) {
-	eng, err := New()
+	eng, err := New("identity-contract-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func TestRenderParallelSatisfactionIdentities(t *testing.T) {
             expose target;
         }
     }`
-	var parsed JParseSourcesResponse
+	var parsed engine.JParseSourcesResponse
 	call("ParseSources", map[string]any{"documents": []map[string]string{{"name": "parallel.sysml", "content": source}}}, &parsed)
 	if parsed.ModelHash == "" {
 		t.Fatal("no native model identity")
@@ -57,8 +58,8 @@ func TestRenderParallelSatisfactionIdentities(t *testing.T) {
 		t.Fatalf("native declaration export has %d satisfaction assertions, want 2", len(expected))
 	}
 	for iteration, identity := range []bool{true, false, true} {
-		var rendered JRenderViewResponse
-		call("RenderView", JRenderViewRequest{ModelHash: parsed.ModelHash, View: "Parallel::requirements", IncludeSemanticIdentity: identity}, &rendered)
+		var rendered engine.JRenderViewResponse
+		call("RenderView", engine.JRenderViewRequest{ModelHash: parsed.ModelHash, View: "Parallel::requirements", IncludeSemanticIdentity: identity}, &rendered)
 		byNode := map[string]string{}
 		for _, node := range rendered.Nodes {
 			byNode[node.ID] = node.SemanticID

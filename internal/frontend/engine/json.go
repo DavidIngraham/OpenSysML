@@ -353,14 +353,15 @@ type JRenderViewRequest struct {
 	Compartments string `json:"compartments,omitempty"`
 	// Form is the form to write into the reply's text beside its data, one of
 	// view.ViewForms; the rest are the options that form is written with.
-	Form                    string `json:"form,omitempty"`
-	Palette                 string `json:"palette,omitempty"`
-	Style                   string `json:"style,omitempty"`
-	Lines                   string `json:"lines,omitempty"`
-	Direction               string `json:"direction,omitempty"`
-	Link                    string `json:"link,omitempty"`
-	Unplaced                string `json:"unplaced,omitempty"`
-	IncludeSemanticIdentity bool   `json:"includeSemanticIdentity,omitempty"`
+	Form                     string `json:"form,omitempty"`
+	Palette                  string `json:"palette,omitempty"`
+	Style                    string `json:"style,omitempty"`
+	Lines                    string `json:"lines,omitempty"`
+	Direction                string `json:"direction,omitempty"`
+	Link                     string `json:"link,omitempty"`
+	Unplaced                 string `json:"unplaced,omitempty"`
+	IncludeSemanticIdentity  bool   `json:"includeSemanticIdentity,omitempty"`
+	IncludeRenderingMetadata bool   `json:"includeRenderingMetadata,omitempty"`
 }
 
 // The RenderView reply, shaped as protojson writes the service's RenderViewResponse

@@ -152,3 +152,8 @@ func BindInventory(data *view.Data, inventory *Inventory, index *symbols.Index) 
 	}
 	return nil
 }
+
+// Bind attaches the inventory through the execution engine extension contract.
+func (i *Inventory) Bind(data *view.Data, index *symbols.Index) error {
+	return BindInventory(data, i, index)
+}
