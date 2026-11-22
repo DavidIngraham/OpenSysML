@@ -61,7 +61,7 @@ library package FailureAnalysis {
         out attribute unresolvedCriticalCount : Integer = SequenceFunctions::size(review.modes->ControlFunctions::select {
             in mode : ReviewRow; mode.safetyCritical and not (mode.dispositionAccepted and mode.actionEvidenceAccepted and mode.evidenceReference != "" and mode.evidenceReference != "Not yet available") });
         out attribute openActionCount : Integer = SequenceFunctions::size(review.modes->ControlFunctions::select { in mode : ReviewRow; not mode.actionEvidenceAccepted });
-        return reviewReady : Boolean = modeCount > 0 and review.scopeReviewed and unresolvedCriticalCount == 0;
+        return reviewReady : Boolean [1] = modeCount > 0 and review.scopeReviewed and unresolvedCriticalCount == 0;
         objective inventory { require constraint { modeCount > 0 } }
     }
 }
