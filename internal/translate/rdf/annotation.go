@@ -27,7 +27,11 @@ func AnnotateCollections(g *Graph) error {
 	}
 	var order []pair
 	objects := map[pair][]Term{}
+	annotated := map[pair]bool{}
 	for _, t := range g.Triples() {
+		if IsAnnotationJSON(t.Predicate.Value) {
+			annotated[pair{t.Subject, SysML + strings.TrimPrefix(t.Predicate.Value, AnnotationJSON)}] = true
+		}
 		if !strings.HasPrefix(t.Predicate.Value, SysML) {
 			continue
 		}
@@ -43,7 +47,7 @@ func AnnotateCollections(g *Graph) error {
 			continue
 		}
 		key := strings.TrimPrefix(p.predicate, SysML)
-		if g.HasProperty(p.subject, AnnotationJSON+key) {
+		if annotated[p] {
 			continue
 		}
 		text, err := CollectionJSON(p.subject, values)

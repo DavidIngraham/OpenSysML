@@ -1,5 +1,10 @@
 package export
 
+import (
+	"github.com/Open-MBEE/OpenSysML/internal/translate/rdf"
+	"runtime"
+)
+
 const (
 	largeGraphTripleThreshold = 1 << 18
 	largeGraphTripleQuantum   = 1 << 16
@@ -21,4 +26,11 @@ func graphTripleCapacity(count int) int {
 		return count
 	}
 	return count + extra
+}
+
+// collectLargeExportPhase releases temporary graphs before the next large representation is allocated.
+func collectLargeExportPhase(graph *rdf.Graph) {
+	if graph.Len() >= largeGraphTripleThreshold {
+		runtime.GC()
+	}
 }

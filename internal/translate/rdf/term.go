@@ -468,6 +468,8 @@ func (g *Graph) subjects() map[Term]*subjectIndex {
 	if g.index != nil {
 		return g.index
 	}
+	// The subject index answers membership too; retaining the whole-triple set duplicates that storage.
+	g.seen = nil
 	g.index = make(map[Term]*subjectIndex)
 	for _, t := range g.triples {
 		g.index[t.Subject] = indexTriple(g.index[t.Subject], t)
