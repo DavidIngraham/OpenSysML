@@ -59,9 +59,10 @@ native.
 Projection writers periodically release derived-value memo tables, retaining the
 same immutable graph, ownership indexes and semantic model. Each cache boundary
 yields to the scheduler so cooperative Go/WASM collection runs before the next
-batch allocates. Every output object
+batch allocates. The window holds 64 declarations; smaller windows repeat more
+derived-property evaluation. Every output object
 is checked against the unrestricted native writer across cache-window boundaries.
-The browser target sets a 1400 MiB Go soft memory limit and GOGC=50 to leave room
+The browser target sets a 2 GiB Go soft memory limit and GOGC=50 to leave room
 inside the 4 GiB WASM address space; these settings do not change model values.
 
 Sequence event proxies and succession arrows are actual upstream records.
