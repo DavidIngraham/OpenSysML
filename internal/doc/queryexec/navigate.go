@@ -7,6 +7,7 @@ import (
 	"github.com/Open-MBEE/OpenSysML/internal/ir/queryplan"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/semantics"
 	"github.com/Open-MBEE/OpenSysML/internal/semantic/symbols"
+	"github.com/Open-MBEE/OpenSysML/internal/syntax/ast"
 )
 
 // A cell navigates from its row — `row.connectorEnd.type.name` — and
@@ -123,6 +124,11 @@ func (e *executor) navigateValue(expression queryplan.Expression, value Value, f
 		return values, nil
 	}
 	if feature == "connectorEnd" && e.context.Model.IsConnectorObjectUsage(sym) {
+		if declaredConnectorEnds(sym) {
+			if ends, ok := e.context.Model.ReflectiveElements(sym, "connectorEnd"); ok {
+				return reflectiveElementValues(sym, ends), nil
+			}
+		}
 		return e.connectorEnds(sym), nil
 	}
 	if declaring != "" {
@@ -144,6 +150,24 @@ func (e *executor) navigateValue(expression queryplan.Expression, value Value, f
 	}
 	values, _, err = e.reflectiveValues(expression, sym, feature)
 	return values, err
+}
+
+// declaredConnectorEnds distinguishes source end declarations from head attachments.
+func declaredConnectorEnds(sym *symbols.Symbol) bool {
+	for _, node := range ast.DeclMembers(sym.Decl) {
+		if member, ok := node.(*ast.Membership); ok {
+			node = member.Member
+		}
+		switch end := node.(type) {
+		case *ast.ConnectorEnd:
+			return true
+		case *ast.Usage:
+			if end.IsEnd {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // reflectiveValues reads a metaclass feature of sym: the scalars it derives

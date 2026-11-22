@@ -458,7 +458,7 @@ type JRenderPort struct {
 	Type           string `json:"type,omitempty"`
 	Direction      string `json:"direction,omitempty"`
 	Inherited      bool   `json:"inherited,omitempty"`
-	Parameter      bool   `json:"parameter"`
+	Parameter      bool   `json:"parameter,omitempty"`
 	SemanticID     string `json:"semanticId,omitempty"`
 	QualifiedName  string `json:"qualifiedName,omitempty"`
 	IdentityStatus string `json:"identityStatus,omitempty"`

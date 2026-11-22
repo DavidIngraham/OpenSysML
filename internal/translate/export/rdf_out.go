@@ -3439,8 +3439,11 @@ func (e *encoder) multiplicity(subject rdf.Term, owner string, mult *ast.Multipl
 // individual definition (§8.3.9.3; semantics.ImpliesDefaultMultiplicity) is parsed with: one with
 // no bounds, owned last among a usage's memberships and first among a definition's, as the pilot states it.
 func (e *encoder) defaultMultiplicity(subject rdf.Term, node ast.Node, mult *ast.Multiplicity) {
+	if node == nil || mult != nil {
+		return
+	}
 	sym := e.ids.declSym[node]
-	if mult != nil || sym == nil || !e.ids.model.ImpliesDefaultMultiplicity(sym) {
+	if sym == nil || !e.ids.model.ImpliesDefaultMultiplicity(sym) {
 		return
 	}
 	e.graph.Prefixes[rdf.ExpressionPrefix] = rdf.Expression
