@@ -1,10 +1,14 @@
-# Downstream compatibility on the November baseline
+# Downstream compatibility baselines
 
-The integration derives from official Open-MBEE/OpenSysML develop commit
+The November integration derives from official Open-MBEE/OpenSysML develop commit
 `318c3e02b059fe67f869cfc2dc7a9624e5a39536`. The verified November 22 nightly
 `00a68e3a61` is an ancestor. Downstream manifests identify the exact fork commit,
 Git tree and toolchain used for an artifact; a dated nightly asset is not a source
 pin or a substitute for the combined browser engine.
+
+The v0.13.0 rebase and its adjudicated measurements are recorded in
+[v0.13.0 downstream review](v0130-downstream-review.md). The replay references
+below identify the preserved November implementation.
 
 ## Fork changes
 

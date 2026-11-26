@@ -77,8 +77,12 @@ it from there with no flag: the usage is matched to the installed project by
 the slugs of the IRI's last two path segments against the manifest's
 `publisher` and `name`, which is why the project is named so that its slug is
 the repository's. An archive's checksums are verified on reading; a changed
-unit refuses the archive with a warning on its path. OpenSysML also bundles the
-same eighteen units, so an import resolves either way — the files a load lists
+unit refuses the archive with a warning on its path. Official v0.13.0 bundles eighteen extension units. This compatibility branch
+pins DavidIngraham/OpenSysML-Extensions-Library at
+`38097bbc0198767590c58f89796a436678319924`, adding `FailureAnalysis` and
+`FailureAnalysisViews` for twenty vendored units. This is a personal fork pin,
+not an official extension-library release. An import resolves from the installed
+project or the bundle — the files a load lists
 (`-validate` on the project, `:load` in the REPL) tell which copy answered.
 `tests/kpar/extensions_test.go` lays this out end to end, in both forms, from
 the vendored copy.

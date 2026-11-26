@@ -52,3 +52,23 @@ func TestRequirementContextRejectsInvalidDepth(t *testing.T) {
 		}
 	}
 }
+
+func TestRequirementContextDoesNotExpandRequirementParties(t *testing.T) {
+	text := `package Demo {
+		private import StandardViewDefinitions::*;
+		part def Vehicle;
+		requirement def Limit { subject machine : Vehicle; }
+		view legacy : GeneralView {
+			filter @SysML::RequirementDefinition; expose Limit;
+		}
+		view bounded : GeneralView {
+			@OpenSysMLRenderings::RequirementContext { relationshipDepth = 0; }
+			filter @SysML::RequirementDefinition; expose Limit;
+		}
+	}`
+	legacy := renderSource(t, "Demo::legacy", text).Data()
+	bounded := renderSource(t, "Demo::bounded", text).Data()
+	if len(legacy.Nodes) != 2 || len(bounded.Nodes) != 1 {
+		t.Fatalf("requirement party expansion: legacy=%d bounded=%d", len(legacy.Nodes), len(bounded.Nodes))
+	}
+}
