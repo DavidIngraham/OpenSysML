@@ -382,6 +382,9 @@ func TestSaveWithoutAWriterWritesThePathItIsGiven(t *testing.T) {
 	if err := os.WriteFile(target, []byte("package Old;"), 0o640); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.Chmod(target, 0o640); err != nil {
+		t.Fatal(err)
+	}
 	link := filepath.Join(t.TempDir(), "link.sysml")
 	if err := os.Symlink(target, link); err != nil {
 		t.Skip(err)

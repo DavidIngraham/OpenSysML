@@ -1,0 +1,1 @@
+- Atomic source saves honor the process creation mask for new files while preserving an existing file's mode.

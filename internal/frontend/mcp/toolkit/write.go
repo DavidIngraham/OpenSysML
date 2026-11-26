@@ -81,8 +81,10 @@ func writeThrough(root *os.Root, name string, content []byte) error {
 // file beside it is renamed over it. An existing file keeps its mode, a new one gets created.
 func WriteFile(root *os.Root, name string, content []byte, created os.FileMode) error {
 	mode := created
+	keepMode := false
 	if info, err := root.Stat(name); err == nil {
 		mode = info.Mode().Perm()
+		keepMode = true
 	}
 	var suffix [6]byte
 	if _, err := rand.Read(suffix[:]); err != nil {
@@ -102,7 +104,7 @@ func WriteFile(root *os.Root, name string, content []byte, created os.FileMode) 
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
-	if err == nil {
+	if err == nil && keepMode {
 		err = root.Chmod(tmp, mode)
 	}
 	if err == nil {

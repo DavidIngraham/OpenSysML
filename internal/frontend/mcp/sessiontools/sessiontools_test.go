@@ -1064,6 +1064,9 @@ func TestASaveInsideTheRootKeepsTheFileModeAndContent(t *testing.T) {
 	if err := os.WriteFile(path, []byte("package Old;\n"), 0o640); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.Chmod(path, 0o640); err != nil {
+		t.Fatal(err)
+	}
 	cs := connect(t, root)
 	must(t, cs, "session_submit", args("text", "package Kept { part def P; }"), nil)
 	var saved SaveResult
