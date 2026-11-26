@@ -81,7 +81,8 @@ unit refuses the archive with a warning on its path. Official v0.13.0 bundles ei
 pins DavidIngraham/OpenSysML-Extensions-Library at
 `38097bbc0198767590c58f89796a436678319924`, adding `FailureAnalysis` and
 `FailureAnalysisViews` for twenty vendored units. This is a personal fork pin,
-not an official extension-library release. An import resolves from the installed
+not an official extension-library release. The bundle contains the same twenty units
+as this pinned project. An import resolves from the installed
 project or the bundle — the files a load lists
 (`-validate` on the project, `:load` in the REPL) tell which copy answered.
 `tests/kpar/extensions_test.go` lays this out end to end, in both forms, from
